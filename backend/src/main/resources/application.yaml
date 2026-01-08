@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: build-my-home
+
+  # Database Configuration
+  datasource:
+    url: jdbc:mysql://localhost:3306/buildmyhome?useSSL=false&serverTimezone=Asia/Seoul&characterEncoding=UTF-8&allowPublicKeyRetrieval=true
+    username: buildmyhome
+    password: Build@1234!
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  # JPA and Hibernate Configuration
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+server:
+  port: 8088
+
+logging:
+  level:
+    com.buildmyhome: DEBUG
+    org.hibernate.SQL: DEBUG
+
+#JWT Configuration
+jwt:
+  secret: buildmyhome-secret-key-must-be-at-least-32-characters-long
+  expiration: 86400000
