@@ -1,5 +1,6 @@
 package com.buildmyhome.member.entity;
 
+import com.buildmyhome.common.entity.BaseTimeEntity;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -10,7 +11,7 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Member {
+public class Member extends BaseTimeEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
