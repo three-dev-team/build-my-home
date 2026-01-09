@@ -1,0 +1,23 @@
+/* 1. 최상단에 폰트 임포트 */
+@import url("https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap");
+
+/* 2. Tailwind v4 임포트 */
+@import "tailwindcss";
+
+/* 3. Tailwind 테마 확장 (v4 방식) */
+@theme {
+  --font-gaegu: "Gaegu", cursive;
+}
+
+/* 4. 전역 스타일 */
+@layer base {
+  body {
+    @apply m-0 p-0 overflow-hidden;
+    font-family: var(--font-gaegu);
+  }
+}
+
+/* 5. 커스텀 유틸리티 */
+.wood-panel {
+  @apply bg-[#fdf6e3] border-[6px] border-[#8b5a2b] shadow-[8px_8px_0px_rgba(139,90,43,0.2)];
+}
