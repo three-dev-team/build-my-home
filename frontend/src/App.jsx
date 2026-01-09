@@ -4,6 +4,7 @@ import Login from "./pages/Login";
 import Config from "./pages/Config.jsx";
 import Store from "./pages/Store.jsx";
 import Loading from "./pages/Loading.jsx";
+import Room from "./pages/Room.jsx";
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
         <Route path="/config" element={<Config />} />
         <Route path="/store" element={<Store />} />
         <Route path="/loading" element={<Loading />} />
+        <Route path="/room/:roomId" element={<Room />} />
       </Routes>
     </Router>
   );
