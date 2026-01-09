@@ -11,7 +11,7 @@ export default function Config() {
     >
       {/* 뒤로가기 버튼 */}
       <Link
-        to="/"
+        to="/home"
         className="absolute top-8 left-8 bg-[#fdf6e3] border-[4px] border-[#8b5a2b] p-3 rounded-2xl shadow-[4px_4px_0px_#8b5a2b] hover:scale-110 transition z-50"
       >
         <span className="text-2xl">🏠</span>

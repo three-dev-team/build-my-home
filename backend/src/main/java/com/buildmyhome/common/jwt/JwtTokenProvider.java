@@ -1,5 +1,6 @@
 package com.buildmyhome.common.jwt;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -25,17 +26,33 @@ public class JwtTokenProvider {
         this.expiration = expiration;
     }
 
-    // 토큰 생성
-    public String createToken(String email, String role) {
+//    // 토큰 생성
+//    public String createToken(String email) {
+//        Date now = new Date();
+//        Date expireDate = new Date(now.getTime() + expiration);
+//
+//        return Jwts.builder()
+//                .setSubject(email)
+//                .claim("role", role)
+//                .setIssuedAt(now)
+//                .setExpiration(expireDate)
+//                .signWith(key, SignatureAlgorithm.HS256)
+//                .compact();
+//    }
+
+    public String createToken(String email, String role) { // 1. 여기서 String role을 추가로 받아야 합니다.
+        Claims claims = Jwts.claims().setSubject(email);
+        // claims.put("role", role); // jjwt 버전에 따라 이 방식을 쓰기도 합니다.
+
         Date now = new Date();
-        Date expireDate = new Date(now.getTime() + expiration);
+        Date validity = new Date(now.getTime() + expiration);
 
         return Jwts.builder()
-                .setSubject(email)
-                .claim("role", role)
+                .setClaims(claims)
+                .claim("role", role) // 2. 이제 여기서 외부에서 받은 role 변수를 사용할 수 있습니다.
                 .setIssuedAt(now)
-                .setExpiration(expireDate)
-                .signWith(key, SignatureAlgorithm.HS256)
+                .setExpiration(validity)
+                .signWith(SignatureAlgorithm.HS256, key)
                 .compact();
     }
 
