@@ -1,3 +1,4 @@
+import React, { useState, useEffect, useRef } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home.jsx";
 import Login from "./pages/Login";
@@ -10,6 +11,23 @@ import MyPage from "./pages/MyPage.jsx";
 import OAuth2RedirectHandler from "./pages/OAuth2RedirectHandler";
 
 function App() {
+    const audioRef = useRef(null);
+    const [isMuted, setIsMuted] = useState(true);
+
+    // 사용자가 사이트 어디든 처음 클릭하면 재생 시작 (브라우저 정책 대응)
+    useEffect(() => {
+        const handleFirstInteraction = () => {
+            if (audioRef.current) {
+                audioRef.current.play().catch(e => console.log("재생 실패:", e));
+                setIsMuted(false);
+            }
+            // 한 번 실행 후 이벤트 제거
+            window.removeEventListener("click", handleFirstInteraction);
+        };
+
+        window.addEventListener("click", handleFirstInteraction);
+        return () => window.removeEventListener("click", handleFirstInteraction);
+    }, []);
     return (
         <Router>
             <Routes>
