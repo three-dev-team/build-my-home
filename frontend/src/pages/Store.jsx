@@ -12,7 +12,7 @@ export default function Store() {
       {/* 1. 상단 좌측: 게임 로고 */}
       <header className="absolute top-8 left-8 z-10">
         <Link
-          to="/"
+          to="/home"
           className="inline-block transform hover:scale-105 transition-transform"
         >
           <div className="bg-[#8b5a2b] px-10 py-4 rounded-[35px] border-[6px] border-[#fdf6e3] shadow-[0_8px_0_rgba(0,0,0,0.2)]">
