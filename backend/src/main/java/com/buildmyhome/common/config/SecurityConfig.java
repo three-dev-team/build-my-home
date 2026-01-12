@@ -27,41 +27,12 @@ public class SecurityConfig {
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
 
     @Bean
-    PasswordEncoder passwordEncoder(){
+    PasswordEncoder passwordEncoder() {
         return PasswordEncoderFactories.createDelegatingPasswordEncoder();
     }
 
-//    @Bean
-//    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-//        http
-//                .csrf(AbstractHttpConfigurer::disable)
-//                .sessionManagement(session ->
-//                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-//                .authorizeHttpRequests(auth -> auth
-//                        .requestMatchers("/api/auth/**").permitAll()
-//                        .anyRequest().permitAll()
-//                )
-//                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-//
-//        return http.build();
-//    }
 
-//    @Bean
-//    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-//        http
-//                .csrf(AbstractHttpConfigurer::disable)
-//                .sessionManagement(session ->
-//                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-//                .authorizeHttpRequests(auth -> auth
-//                        .requestMatchers("/api/member/join", "/api/member/login", "/api/member/check-nickname").permitAll()
-//                        .requestMatchers("/api/member/me").authenticated() // 내 정보 조회는 인증 필요!
-//                        .anyRequest().permitAll()
-//                )
-//                // JWT 필터가 작동하더라도 permitAll 된 경로는 통과시켜야 함
-//                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-//
-//        return http.build();
-//    }
+
         @Bean
         public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
             http
@@ -88,7 +59,7 @@ public class SecurityConfig {
 
                             // OAuth2 로그인 관련 경로
                             .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
-
+                            .requestMatchers("/ws/**").permitAll()               
                             // 내 정보 조회는 인증 필수
                             .requestMatchers("/api/member/me").authenticated()
 
