@@ -27,6 +27,11 @@ export default defineConfig({
         target: 'http://127.0.0.1:8088',
         changeOrigin: true
       },
+      "/ws": {
+        target: "http://localhost:8088",
+        changeOrigin: true,
+        ws: true,
+       },
     },
   }, // server 설정 끝
   build: { // server 밖으로 나와야 합니다!
