@@ -9,15 +9,15 @@ export default function Loading() {
 
     return (
         <div className="relative w-full h-screen bg-[#f8f1e7] flex items-center justify-center overflow-hidden">
-            {/* 좌상단 홈 버튼 */}
+            {/* 좌상단 홈 버튼: 이제 /가 아니라 /home으로 가야 합니다. */}
             <Link
-                to="/"
+                to="/home"
                 className="absolute top-6 left-6 bg-[#fdf6e3] border-[4px] border-[#8b5a2b] p-2 rounded-2xl shadow-md hover:scale-110 transition z-30"
             >
                 <span className="text-2xl text-[#8b5a2b]">🏠</span>
             </Link>
 
-            {/* 방 만들기 중앙 카드 (제공해주신 aside 코드로 대체) */}
+            {/* 방 만들기 중앙 카드 */}
             <div
                 className="relative w-80 bg-[#fdf6e3] p-6 rounded-[40px] border-[6px] border-[#8b5a2b] shadow-2xl z-20">
                 {/* 상단 헤더 */}
@@ -65,7 +65,6 @@ export default function Loading() {
                                 return;
                             }
                             alert(`${roomTitle} 방이 생성되었습니다!`);
-                            // 이후 API 호출 및 게임 화면 이동 로직 작성
                         }}
                     >
                         Action
