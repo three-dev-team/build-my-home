@@ -12,4 +12,14 @@ public interface MemberService {
     boolean existsByNickname(String nickname);
 
     MemberResponse getMemberInfo(String email);
+
+    void sendAuthCode(String email);
+
+    boolean verifyCode(String email, String code);
+
+    void resetPassword(String email, String newPassword);
+
+    void sendRegistrationCode(String email);
+
+    boolean existsByEmail(String email);
 }

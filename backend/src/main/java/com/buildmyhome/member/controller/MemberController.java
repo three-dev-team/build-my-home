@@ -1,45 +1,61 @@
 package com.buildmyhome.member.controller;
 
-import com.buildmyhome.member.dto.JoinRequest;
-import com.buildmyhome.member.dto.LoginRequest;
-import com.buildmyhome.member.dto.MemberResponse;
+import com.buildmyhome.member.dto.*;
 import com.buildmyhome.member.service.MemberService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
-@RequiredArgsConstructor
 @RequestMapping("/api/member")
+@RequiredArgsConstructor
 public class MemberController {
+
     private final MemberService memberService;
 
-    // 닉네임 중복 체크 메서드
-    @GetMapping("/check-nickname")
-    public ResponseEntity<Boolean> checkNickname(@RequestParam("nickname") String nickname) {
-        // 서비스에서 중복 여부를 확인 (중복이 아니면 true 반환)
-        boolean isAvailable = !memberService.existsByNickname(nickname);
-        return ResponseEntity.ok(isAvailable);
-    }
-
     @PostMapping("/join")
-    public ResponseEntity<String> join(@RequestBody JoinRequest dto) {
+    public ResponseEntity<Void> join(@RequestBody JoinRequest dto) {
         memberService.join(dto);
-        return ResponseEntity.ok("성공적으로 주민이 되셨습니다! 🍃");
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @PostMapping("/login")
-    public ResponseEntity<MemberResponse> login(@RequestBody LoginRequest dto) {
-        return ResponseEntity.ok(memberService.login(dto));
+    public ResponseEntity<MemberResponse> login(@RequestBody LoginRequest loginRequest) {
+        return ResponseEntity.ok(memberService.login(loginRequest));
     }
 
-    @GetMapping("/me")
-    public ResponseEntity<MemberResponse> getMyInfo() {
-        // Spring Security의 SecurityContextHolder에서 현재 로그인한 유저의 이메일을 가져옵니다.
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+    @GetMapping("/check-nickname")
+    public ResponseEntity<Boolean> checkNickname(@RequestParam String nickname) {
+        return ResponseEntity.ok(!memberService.existsByNickname(nickname));
+    }
 
-        MemberResponse response = memberService.getMemberInfo(email);
-        return ResponseEntity.ok(response);
+    @PostMapping("/send-registration-code")
+    public ResponseEntity<String> sendRegistrationCode(@RequestBody Map<String, String> request) {
+        String email = request.get("email");
+        if (memberService.existsByEmail(email)) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body("이미 가입된 이메일입니다. 😢");
+        }
+        memberService.sendRegistrationCode(email);
+        return ResponseEntity.ok("인증번호가 발송되었습니다.");
+    }
+
+    @PostMapping("/verify-code")
+    public ResponseEntity<Boolean> verifyCode(@RequestBody Map<String, String> request) {
+        return ResponseEntity.ok(memberService.verifyCode(request.get("email"), request.get("code")));
+    }
+
+    @PostMapping("/send-code")
+    public ResponseEntity<Void> sendAuthCode(@RequestBody Map<String, String> request) {
+        memberService.sendAuthCode(request.get("email"));
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<Void> resetPassword(@RequestBody Map<String, String> request) {
+        memberService.resetPassword(request.get("email"), request.get("password"));
+        return ResponseEntity.ok().build();
     }
 }
