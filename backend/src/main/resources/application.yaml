@@ -3,6 +3,22 @@ spring:
     include: secret
   application:
     name: build-my-home
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    # 아래 username, password는 secret 파일에서 변수로 가져옵니다.
+    username: ${spring.mail.username}
+    password: ${spring.mail.password}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
   security:
     oauth2:
       client:
