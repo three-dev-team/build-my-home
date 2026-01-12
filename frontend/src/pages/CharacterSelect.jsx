@@ -62,10 +62,7 @@ function CharacterSelect() {
 
 
     const handleSelect = (characterId) => {
-        if (takenCharacters.includes(characterId)) {
-            alert('이미 선택된 캐릭터입니다.');
-            return;
-        }
+        if (takenCharacters.includes(characterId)) return;
         setSelectedCharacter(characterId);
     };
 
@@ -93,10 +90,16 @@ function CharacterSelect() {
     };
 
     return (
-        <div>
+        <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            minHeight: '100vh',
+            paddingTop: '50px'
+        }}>
             <h1>나의 주민을 선택하세요</h1>
 
-            <div style={{display: 'flex', gap: '20px', justifyContent: 'center'}}>
+            <div style={{display: 'flex', gap: '30px', justifyContent: 'center', marginTop: '40px'}}>
                 {CHARACTERS.map(character => {
                     const isTaken = takenCharacters.includes(character.id);
                     const isSelected = selectedCharacter === character.id;
@@ -106,57 +109,49 @@ function CharacterSelect() {
                             key={character.id}
                             onClick={() => handleSelect(character.id)}
                             style={{
-                                width: '180px',
-                                padding: '20px',
-                                backgroundColor: '#f5e6c8',
-                                borderRadius: '15px',
                                 cursor: isTaken ? 'not-allowed' : 'pointer',
-                                border: isSelected ? '4px solid #f5a623' : '4px solid transparent',
-                                opacity: isTaken ? 0.7 : 1,
-                                textAlign: 'center',
-                                position: 'relative',
                             }}
                         >
-                            {isTaken && (
-                                <div style={{
-                                    position: 'absolute',
-                                    top: '50%',
-                                    left: '50%',
-                                    transform: 'translate(-50%, -50%)',
-                                    backgroundColor: 'rgba(0,0,0,0.5)',
-                                    color: 'white',
-                                    padding: '5px 15px',
-                                    borderRadius: '5px',
-                                    fontWeight: 'bold',
-                                }}>
-                                    선택됨
-                                </div>
-                            )}
                             <img
-                                src={character.profileImage}
+                                src={
+                                    isTaken ? character.selectedImage :
+                                        isSelected ? character.selectImage :
+                                            character.selectBasicImage
+                                }
                                 alt={character.name}
-                                style={{width: '120px', height: '120px'}}
+                                style={{width: '245px', height: '376px'}}
                             />
-                            <div style={{marginTop: '10px', fontWeight: 'bold'}}>
-                                {character.name}
-                            </div>
                         </div>
                     );
-
                 })}
-
             </div>
 
-
-            <div style={{marginTop: '40px', display: 'flex', gap: '20px', justifyContent: 'center'}}>
-                <button onClick={handleEnter}
-                        disabled={!selectedCharacter}
-                        style={{
-                            cursor: selectedCharacter ? 'pointer' : 'not-allowed'
-                        }}>
+            <div style={{marginTop: '50px', display: 'flex', gap: '20px'}}>
+                <button
+                    onClick={handleEnter}
+                    disabled={!selectedCharacter}
+                    style={{
+                        padding: '15px 40px',
+                        fontSize: '18px',
+                        cursor: selectedCharacter ? 'pointer' : 'not-allowed',
+                        backgroundColor: selectedCharacter ? '#f5a623' : '#ccc',
+                        border: 'none',
+                        borderRadius: '10px',
+                        color: 'white'
+                    }}>
                     입장하기
                 </button>
-                <button onClick={handleLeave}>
+                <button
+                    onClick={handleLeave}
+                    style={{
+                        padding: '15px 40px',
+                        fontSize: '18px',
+                        cursor: 'pointer',
+                        backgroundColor: '#888',
+                        border: 'none',
+                        borderRadius: '10px',
+                        color: 'white'
+                    }}>
                     나가기
                 </button>
             </div>
