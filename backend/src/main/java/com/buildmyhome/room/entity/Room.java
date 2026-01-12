@@ -23,7 +23,7 @@ public class Room extends BaseTimeEntity {
     private String title;
 
     @Column(nullable = false)
-    private Integer maxPlayers; // 2 or 4
+    private Integer maxPlayers; // 2 ~ 4
 
     @Builder.Default
     @Column(nullable = false)

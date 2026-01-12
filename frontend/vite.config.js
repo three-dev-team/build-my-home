@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite'
+import {defineConfig} from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
@@ -16,17 +16,22 @@ export default defineConfig({
     // },
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1:8088',
-        changeOrigin: true
+        target: "http://localhost:8088",
+        changeOrigin: true,
       },
-      '/oauth2': {
-        target: 'http://127.0.0.1:8088',
-        changeOrigin: true
+      '/oauth2/authorization': {
+        target: "http://localhost:8088",
+        changeOrigin: true,
       },
       '/login/oauth2': {
-        target: 'http://127.0.0.1:8088',
-        changeOrigin: true
+        target: "http://localhost:8088",
+        changeOrigin: true,
       },
+      "/ws": {
+        target: "ws://localhost:8088",
+        changeOrigin: true,
+        ws: true,
+       },
     },
   }, // server 설정 끝
   build: { // server 밖으로 나와야 합니다!

@@ -19,7 +19,7 @@ export default function Join() {
     // UI 관리
     const [modal, setModal] = useState({ isOpen: false, message: "" });
     const navigate = useNavigate();
-    const API_BASE_URL = "http://localhost:8088/api/member";
+    const API_BASE_URL = "/api/member";
 
     // 효과음
     const alertSound = useMemo(() => new Audio("/sounds/alert_ding.mp3"), []);

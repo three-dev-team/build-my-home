@@ -6,6 +6,7 @@ import com.buildmyhome.common.security.service.CustomOAuth2UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -26,57 +27,42 @@ public class SecurityConfig {
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
 
     @Bean
-    PasswordEncoder passwordEncoder(){
+    PasswordEncoder passwordEncoder() {
         return PasswordEncoderFactories.createDelegatingPasswordEncoder();
     }
-
-//    @Bean
-//    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-//        http
-//                .csrf(AbstractHttpConfigurer::disable)
-//                .sessionManagement(session ->
-//                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-//                .authorizeHttpRequests(auth -> auth
-//                        .requestMatchers("/api/auth/**").permitAll()
-//                        .anyRequest().permitAll()
-//                )
-//                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-//
-//        return http.build();
-//    }
-
-//    @Bean
-//    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-//        http
-//                .csrf(AbstractHttpConfigurer::disable)
-//                .sessionManagement(session ->
-//                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-//                .authorizeHttpRequests(auth -> auth
-//                        .requestMatchers("/api/member/join", "/api/member/login", "/api/member/check-nickname").permitAll()
-//                        .requestMatchers("/api/member/me").authenticated() // 내 정보 조회는 인증 필요!
-//                        .anyRequest().permitAll()
-//                )
-//                // JWT 필터가 작동하더라도 permitAll 된 경로는 통과시켜야 함
-//                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-//
-//        return http.build();
-//    }
 
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
+
                 // 세션을 사용하지 않으므로 STATELESS 설정
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
                 .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
                         // 권한 없이 접근 가능한 경로
-                        .requestMatchers("/api/member/join", "/api/member/login", "/api/member/check-nickname").permitAll()
+                        .requestMatchers(
+                                "/api/member/join",
+                                "/api/member/login",
+                                "/api/member/check-nickname",
+                                "/api/member/check-email",
+                                "/api/member/send-code",
+                                "/api/member/send-registration-code",
+                                "/api/member/verify-code",
+                                "/api/member/reset-password"
+                        ).permitAll()
+
+                        // OAuth2 로그인 관련 경로
                         .requestMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
+                        .requestMatchers("/ws/**").permitAll()
                         // 내 정보 조회는 인증 필수
                         .requestMatchers("/api/member/me").authenticated()
+
+                        // 그 외는 일단 허용 (필요 시 점진적으로 잠그기)
                         .anyRequest().permitAll()
                 )
 

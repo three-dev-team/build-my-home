@@ -1,39 +1,163 @@
-import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import {useState, useEffect} from 'react';
+import {useParams, useNavigate} from 'react-router-dom';
+import {Client} from '@stomp/stompjs';
+import {leaveRoom} from "../utils/roomUtils.js";
+
 
 function Room() {
-    const { roomId } = useParams();
+    const {roomId} = useParams();
     const [loading, setLoading] = useState(true);
     const [roomTitle, setRoomTitle] = useState('');
     const [players, setPlayers] = useState([]);
-    const [currentPlayerId, setCurrentPlayerId] = useState(1);
+    const [maxPlayers, setMaxPlayers] = useState(4);
+    const [currentMemberId, setCurrentMemberId] = useState(1);
+    const [stompClient, setStompClient] = useState(null);
+    const navigate = useNavigate();
 
+    // 방 정보 불러오기 REST API 호출
+    // TODO: 호스트도 players 배열에 포함시키기, isHost:true 로 설정
     useEffect(() => {
-        // TODO: 나중에 실제 API 호출로 교체
-        // const response = await fetch(`/api/rooms/${roomId}`);
-        // const data = await response.json();
-
-        // 임시 목업 데이터
-        setTimeout(() => {
-            setRoomTitle('즐거운 게임방');
-            setPlayers([
-                { id: 1, nickname: '플레이어1', character: null, isReady: false, isHost: true },
-                { id: 2, nickname: '플레이어2', character: null, isReady: false, isHost: false },
-                { id: 3, nickname: null, character: null, isReady: false, isHost: false },
-                { id: 4, nickname: null, character: null, isReady: false, isHost: false },
-            ]);
+        const fetchRoom = async () => {
+            const response = await fetch(`/api/rooms/${roomId}`);
+            const roomResponse = await response.json();
+            setRoomTitle(roomResponse.title);
+            setMaxPlayers(roomResponse.maxPlayers);
             setLoading(false);
-        }, 1000); // 1초 로딩 시뮬레이션
+        };
+        fetchRoom();
     }, [roomId]);
 
-    const currentPlayer = players.find(p => p.id === currentPlayerId);
+
+    // 현재 플레이어 정보 WebSocket 연결
+    useEffect(() => {
+        if (loading) return;
+
+        const client = new Client({
+            brokerURL: 'ws://localhost:5173/ws',
+            onConnect: () => {
+                console.log('>>> ✅ WebSocket 연결됨');
+
+                client.subscribe(`/topic/rooms/${roomId}`, (message) => {
+                    const data = JSON.parse(message.body);
+                    console.log('>>> 🔔 메시지 수신:', data);
+
+                    if (data.type === 'ROOM_STATE') {
+                        // 현재 방 상태 업데이트
+                        const currentPlayers = data.players || [];
+
+                        // 업데이트 하기전 안전하게 초기화(안하면 기존 게임 데이터가 남아있을 수 있음)
+                        const updated = Array.from({length: maxPlayers}, (_, idx) => ({
+                            index: idx + 1,
+                            memberId: null,
+                            nickname: null,
+                            characterId: null,
+                            isReady: false,
+                            isHost: false
+                        }));
+
+                        // player === RoomPlayerState
+                        currentPlayers.forEach((player, idx) => {
+                            if (idx < maxPlayers) {
+                                updated[idx] = {
+                                    index: idx + 1,
+                                    memberId: player.memberId,
+                                    nickname: player.nickname,
+                                    characterId: player.characterId,
+                                    isReady: player.isReady || false,
+                                    isHost: player.isHost || false
+                                };
+                            }
+                        });
+                        setPlayers(updated); // players
+                    }
+
+                    if (data.type === 'PLAYER_LEAVE') {
+                        setPlayers(prev => prev.map(player =>
+                            player.memberId === data.memberId
+                                ? {
+                                    ...player,
+                                    memberId: null,
+                                    nickname: null,
+                                    characterId: null,
+                                    isReady: false,
+                                    isHost: false
+                                }
+                                : player
+                        ));
+                    }
+
+                    if (data.type === 'PLAYER_JOIN') {
+                        setPlayers(prev => {
+                            // 플레이어 배열에서 비어있는 인덱스 찾기. 못찾으면 -1 리턴
+                            const emptySlotIndex = prev.findIndex(player => player.nickname === null);
+
+                            // -1이 아닐 경우 -> 배열이 비어있을 경우 -> player 업데이트
+                            if (emptySlotIndex !== -1) {
+                                const updated = [...prev];
+                                updated[emptySlotIndex] = {
+                                    index: emptySlotIndex + 1,
+                                    memberId: data.memberId,
+                                    nickname: data.nickname,
+                                    characterId: data.characterId,
+                                    isReady: false,
+                                    isHost: false
+                                };
+                                return updated;
+                            }
+                            // 배열이 비어있지 않을 경우 기존 players 상태 유지
+                            return prev;
+                        });
+                    }
+
+                    if (data.type === 'PLAYER_READY') {
+                        setPlayers(prev => prev.map(
+                            player => player.memberId === data.memberId
+                                ? {...player, isReady: data.isReady}
+                                : player
+                        ));
+                    }
+
+                });
+
+                // 현재 방 상태 요청 추가
+                client.publish({
+                    destination: '/app/rooms/get-players',
+                    body: JSON.stringify({roomId: roomId})
+                });
+
+            }
+        });
+
+        client.activate();
+        setStompClient(client);
+
+        return () => {
+            client.deactivate();
+        };
+    }, [roomId, maxPlayers, loading]);
+
+
+    const currentPlayer = players.find(player => player.memberId === currentMemberId);
     const isHost = currentPlayer?.isHost;
-    const allReady = players.filter(p => p.nickname).every(p => p.isReady || p.isHost);
+    const allReady = players.filter(player => player.nickname).every(player => player.isReady);
+
+    console.log('players:', players);
+    console.log('currentPlayer:', currentPlayer);
+    console.log('isHost:', isHost);
 
     const handleReady = () => {
-        setPlayers(players.map(p =>
-            p.id === currentPlayerId ? { ...p, isReady: !p.isReady } : p
-        ));
+
+        if (!stompClient) return;
+
+        // 레디 상태 토글은 서버에서 처리
+        // 여러명이서 누를 수 있으니 클라이언트에서 상태 관리X
+        stompClient.publish({
+            destination: '/app/rooms/ready',
+            body: JSON.stringify({
+                roomId: roomId,
+                memberId: currentMemberId,
+            })
+        })
     };
 
     const handleStartGame = () => {
@@ -43,7 +167,8 @@ function Room() {
     };
 
     const handleLeave = () => {
-        console.log('방 나가기');
+        leaveRoom(stompClient, roomId, currentMemberId);
+        navigate("/room-list");
     };
 
     const handleSettings = () => {
@@ -63,24 +188,26 @@ function Room() {
 
             <div>
                 {players.map((player, index) => (
-                    <div key={player.id}>
+                    <div key={player.index}>
                         <div>
-                            {player.nickname ? '캐릭터 이미지' : '빈 슬롯'}
+                            {player.characterId}
+                            {player.nickname ? '캐릭터 이미지 파일' : '빈 슬롯'}
                         </div>
                         <div>
                             {player.nickname ? (
                                 <>
-                                    player {index + 1}({player.nickname})
-                                    {player.isHost && ' 👑'}
+                                    {player.nickname}
+                                    {player.isHost && '[방장]'}
                                 </>
                             ) : (
-                                '대기 중...'
+                                '(플레이어 이름)'
                             )}
                         </div>
+                        {/*닉네임이 있어야 ready/unready 버튼이 보여짐*/}
                         <div>
-                            {player.nickname && (
-                                player.isHost ? 'HOST' : (player.isReady ? 'ready' : 'unready')
-                            )}
+                            {player.nickname ? (
+                                player.isReady ? 'ready' : 'unready'
+                            ) : '(준비버튼)'}
                         </div>
                     </div>
                 ))}
@@ -93,7 +220,7 @@ function Room() {
                     </button>
                 ) : (
                     <button onClick={handleReady}>
-                        {currentPlayer?.isReady ? '준비 완료' : '준비'}
+                        {currentPlayer?.isReady ? '준비완료' : '준비'}
                     </button>
                 )}
                 <button onClick={handleLeave}>나가기</button>
