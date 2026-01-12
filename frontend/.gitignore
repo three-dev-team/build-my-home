@@ -22,3 +22,10 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Secret
+**/application-secret.yml
+**/application-secret.yaml
+
+# Build output
+**/dist/

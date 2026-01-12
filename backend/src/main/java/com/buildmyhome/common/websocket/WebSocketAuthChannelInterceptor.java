@@ -40,22 +40,22 @@ public class WebSocketAuthChannelInterceptor implements ChannelInterceptor {
             if (authHeader != null && authHeader.startsWith("Bearer ")) {
                 token = authHeader.substring(7);
             }
-
-            if (token == null || !jwtTokenProvider.validateToken(token)) {
-                throw new IllegalArgumentException("인증 토큰이 없거나 유효하지 않습니다.");
-            }
-
-            String email = jwtTokenProvider.getEmail(token);
-
-            Member member = memberRepository.findByEmail(email)
-                    .orElseThrow(() -> new IllegalArgumentException("회원 정보를 찾을 수 없습니다."));
-
-            Principal principal = () -> String.valueOf(member.getId());
-
-            accessor.setUser(principal);
-
-            accessor.setLeaveMutable(true);
-            return MessageBuilder.createMessage(message.getPayload(), accessor.getMessageHeaders());
+//            TODO: WebSocket 인증 로직 나중에 다시 활성화
+//            if (token == null || !jwtTokenProvider.validateToken(token)) {
+//                throw new IllegalArgumentException("인증 토큰이 없거나 유효하지 않습니다.");
+//            }
+//
+//            String email = jwtTokenProvider.getEmail(token);
+//
+//            Member member = memberRepository.findByEmail(email)
+//                    .orElseThrow(() -> new IllegalArgumentException("회원 정보를 찾을 수 없습니다."));
+//
+//            Principal principal = () -> String.valueOf(member.getId());
+//
+//            accessor.setUser(principal);
+//
+//            accessor.setLeaveMutable(true);
+//            return MessageBuilder.createMessage(message.getPayload(), accessor.getMessageHeaders());
         }
 
         return message;
