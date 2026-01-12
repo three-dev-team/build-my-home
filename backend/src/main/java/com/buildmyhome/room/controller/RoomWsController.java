@@ -24,6 +24,7 @@ public class RoomWsController {
         messagingTemplate.convertAndSend("/topic/rooms/" + message.getRoomId(), message);
     }
 
+//    TODO: isHost 처리 추가
     @MessageMapping("/rooms/select-character")
     public void selectCharacter(RoomMessage message) {
 
@@ -65,6 +66,21 @@ public class RoomWsController {
 
         roomStateService.removePlayerFromRoom(message.getRoomId(), message.getMemberId());
         message.setType("PLAYER_LEAVE");
+        messagingTemplate.convertAndSend("/topic/rooms/" + message.getRoomId(), message);
+    }
+
+    @MessageMapping("/rooms/ready")
+    public void toggleReady(RoomMessage message){
+        // roomId, memberId
+        RoomState room = roomStateService.getRoom(message.getRoomId());
+        if( room != null) {
+            RoomPlayerState player = room.getPlayer(message.getMemberId());
+            if (player != null) {
+                player.setReady(!player.isReady()); // 서버메모리에 저장
+                message.setIsReady(player.isReady()); // websocket용 메시지에 저장
+            }
+        }
+        message.setType("PLAYER_READY");
         messagingTemplate.convertAndSend("/topic/rooms/" + message.getRoomId(), message);
     }
 

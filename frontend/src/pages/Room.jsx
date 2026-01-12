@@ -68,28 +68,28 @@ function Room() {
                                 };
                             }
                         });
-                        setPlayers(updated);
+                        setPlayers(updated); // players
                     }
 
                     if (data.type === 'PLAYER_LEAVE') {
-                        setPlayers(prev => prev.map(p =>
-                            p.memberId === data.memberId
+                        setPlayers(prev => prev.map(player =>
+                            player.memberId === data.memberId
                                 ? {
-                                    ...p,
+                                    ...player,
                                     memberId: null,
                                     nickname: null,
                                     characterId: null,
                                     isReady: false,
                                     isHost: false
                                 }
-                                : p
+                                : player
                         ));
                     }
 
                     if (data.type === 'PLAYER_JOIN') {
                         setPlayers(prev => {
                             // 플레이어 배열에서 비어있는 인덱스 찾기. 못찾으면 -1 리턴
-                            const emptySlotIndex = prev.findIndex(p => p.nickname === null);
+                            const emptySlotIndex = prev.findIndex(player => player.nickname === null);
 
                             // -1이 아닐 경우 -> 배열이 비어있을 경우 -> player 업데이트
                             if (emptySlotIndex !== -1) {
@@ -104,17 +104,25 @@ function Room() {
                                 };
                                 return updated;
                             }
-
                             // 배열이 비어있지 않을 경우 기존 players 상태 유지
                             return prev;
                         });
                     }
+
+                    if (data.type === 'PLAYER_READY') {
+                        setPlayers(prev => prev.map(
+                            player => player.memberId === data.memberId
+                                ? {...player, isReady: data.isReady}
+                                : player
+                        ));
+                    }
+
                 });
 
                 // 현재 방 상태 요청 추가
                 client.publish({
                     destination: '/app/rooms/get-players',
-                    body: JSON.stringify({ roomId: roomId })
+                    body: JSON.stringify({roomId: roomId})
                 });
 
             }
@@ -129,14 +137,27 @@ function Room() {
     }, [roomId, maxPlayers, loading]);
 
 
-    const currentPlayer = players.find(p => p.memberId === currentMemberId);
+    const currentPlayer = players.find(player => player.memberId === currentMemberId);
     const isHost = currentPlayer?.isHost;
-    const allReady = players.filter(p => p.nickname).every(p => p.isReady);
+    const allReady = players.filter(player => player.nickname).every(player => player.isReady);
+
+    console.log('players:', players);
+    console.log('currentPlayer:', currentPlayer);
+    console.log('isHost:', isHost);
 
     const handleReady = () => {
-        setPlayers(players.map(p =>
-            p.memberId === currentMemberId ? {...p, isReady: !p.isReady} : p
-        ));
+
+        if (!stompClient) return;
+
+        // 레디 상태 토글은 서버에서 처리
+        // 여러명이서 누를 수 있으니 클라이언트에서 상태 관리X
+        stompClient.publish({
+            destination: '/app/rooms/ready',
+            body: JSON.stringify({
+                roomId: roomId,
+                memberId: currentMemberId,
+            })
+        })
     };
 
     const handleStartGame = () => {
@@ -169,6 +190,7 @@ function Room() {
                 {players.map((player, index) => (
                     <div key={player.index}>
                         <div>
+                            {player.characterId}
                             {player.nickname ? '캐릭터 이미지 파일' : '빈 슬롯'}
                         </div>
                         <div>
