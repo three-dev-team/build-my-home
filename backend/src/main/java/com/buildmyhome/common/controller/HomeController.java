@@ -8,9 +8,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 public class HomeController {
     // API 요청(/api/**)을 제외한 모든 경로를 index.html로 포워딩
-    @GetMapping({"/", "/{path:[^\\.]*}", "/**/{path:[^\\.]*}"})
-    public String forward() {
-        return "forward:/index.html";
-    }
+//    @GetMapping({"/", "/{path:[^\\.]*}", "/**/{path:[^\\.]*}"})
+//    public String forward() {
+//        return "forward:/index.html";
+//    }
 
 }

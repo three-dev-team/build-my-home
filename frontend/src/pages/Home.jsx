@@ -129,7 +129,7 @@ export default function Home() {
 
       {/* 2. 화면 정중앙: 게임 시작 버튼 */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30">
-        <Link to="/loading" className="group flex flex-col items-center gap-4">
+        <Link to="/room-list" className="group flex flex-col items-center gap-4">
           <div className="bg-[#d4a373] px-24 py-10 rounded-[50px] border-[8px] border-[#8b5a2b] shadow-[0_12px_0_rgba(139,90,43,0.4)] group-hover:bg-[#bc8a5f] group-hover:translate-y-1 group-active:shadow-none transition-all flex flex-col items-center">
             <span className="text-5xl font-black text-white drop-shadow-md mb-1">
               게임 시작
