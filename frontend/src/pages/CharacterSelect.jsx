@@ -86,7 +86,7 @@ function CharacterSelect() {
         // TODO: 입장하기 눌렀을 때 roomMemebers에 등록했는지 확인
         // TODO: roomState.getPlayers().size() 로 입장인원 관리하는 방향 검토 요청
         leaveRoom(stompClient, roomId, currentMemberId);
-        navigate('/roomlist');
+        navigate('/room-list');
     };
 
     return (

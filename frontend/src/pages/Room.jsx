@@ -168,7 +168,7 @@ function Room() {
 
     const handleLeave = () => {
         leaveRoom(stompClient, roomId, currentMemberId);
-        navigate("/roomlist");
+        navigate("/room-list");
     };
 
     const handleSettings = () => {
