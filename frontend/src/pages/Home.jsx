@@ -186,7 +186,7 @@ export default function Home() {
 
         {/* 4. 우측 하단 게임 시작 버튼 (이미지로 변경됨) */}
         <div className={`absolute bottom-6 right-3 z-30 ${uiTransitionClass}`}>
-          <Link to={isLoggedIn ? "/loading" : "/login"} className="inline-block group">
+          <Link to={isLoggedIn ? "/room-list" : "/login"} className="inline-block group">
             {/* 기존 CSS 스타일 버튼 코드를 모두 제거하고 이미지 태그로 교체 */}
             <img
                 src="/images/start_button.png" // 실제 사용할 버튼 이미지 경로를 입력해주세요.

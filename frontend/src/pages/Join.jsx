@@ -222,7 +222,7 @@ export default function Join() {
     // 모달 및 네비게이션
     const [modal, setModal] = useState({ isOpen: false, message: "" });
     const navigate = useNavigate();
-    const API_BASE_URL = "http://localhost:8088/api/member";
+    const API_BASE_URL = "/api/member";
 
     // 효과음 설정
     const alertSound = useMemo(() => new Audio("/sounds/alert_ding.mp3"), []);

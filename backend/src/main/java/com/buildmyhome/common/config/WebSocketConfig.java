@@ -1,24 +1,20 @@
 package com.buildmyhome.common.config;
 
+import com.buildmyhome.common.websocket.WebSocketAuthChannelInterceptor;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.messaging.simp.config.ChannelRegistration;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
 import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 
-/*
-import com.buildmyhome.common.security.StompAuthChannelInterceptor; // 🔒 로그인 붙이면 추가
-import lombok.RequiredArgsConstructor;
-import org.springframework.messaging.simp.config.ChannelRegistration;
-*/
-
 @EnableWebSocketMessageBroker
 @Configuration
-// @RequiredArgsConstructor // 🔒 로그인 붙이면 추가
+@RequiredArgsConstructor
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-    // 🔒 로그인 붙이면 추가 (STOMP CONNECT 헤더에서 JWT 읽는 인터셉터)
-    // private final StompAuthChannelInterceptor stompAuthChannelInterceptor;
+    private final WebSocketAuthChannelInterceptor webSocketAuthChannelInterceptor;
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
@@ -33,13 +29,9 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 .withSockJS();
     }
 
-    /*
-    // 🔒 로그인 붙이면 추가
-    // WS는 HttpSecurity 필터를 안 타므로
-    // STOMP 인바운드 채널에서 JWT 인증을 직접 처리해야 함
+    // STOMP 인바운드(클라->서버) 메시지에 JWT 인증 붙이기
     @Override
     public void configureClientInboundChannel(ChannelRegistration registration) {
-        registration.interceptors(stompAuthChannelInterceptor);
+        registration.interceptors(webSocketAuthChannelInterceptor);
     }
-    */
 }

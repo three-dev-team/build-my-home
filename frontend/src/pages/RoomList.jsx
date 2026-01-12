@@ -98,10 +98,13 @@ export default function RoomList() {
 
   // WS 연결: RoomsSnapshot / Error / RoomCreatedEvent 받기
   useEffect(() => {
+    const token = sessionStorage.getItem("token");
+
     const client = new Client({
       webSocketFactory: () => new SockJS(WS_URL),
       reconnectDelay: 3000,
       debug: () => {},
+      connectHeaders: token ? { Authorization: `Bearer ${token}` } : {},
     });
 
     client.onConnect = () => {
@@ -422,7 +425,7 @@ function CreateRoomModal({ onClose, onCreate }) {
   const [maxPlayers, setMaxPlayers] = useState(4);
   const [totalRounds, setTotalRounds] = useState(10);
 
-  const canSubmit = title.trim().length >= 1 && (maxPlayers === 2 || maxPlayers === 4);
+  const canSubmit = title.trim().length >= 1 && [2,3,4].includes(maxPlayers);
 
   return (
     <div
