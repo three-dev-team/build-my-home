@@ -16,16 +16,16 @@ export default defineConfig({
     // },
     proxy: {
       '/api': {
-        target: 'http://127.0.0.1:8088',
-        changeOrigin: true
+        target: "http://localhost:8088",
+        changeOrigin: true,
       },
-      '/oauth2': {
-        target: 'http://127.0.0.1:8088',
-        changeOrigin: true
+      '/oauth2/authorization': {
+        target: "http://localhost:8088",
+        changeOrigin: true,
       },
       '/login/oauth2': {
-        target: 'http://127.0.0.1:8088',
-        changeOrigin: true
+        target: "http://localhost:8088",
+        changeOrigin: true,
       },
       "/ws": {
         target: "http://localhost:8088",

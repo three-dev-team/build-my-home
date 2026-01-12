@@ -22,7 +22,7 @@ export default function MyPage() {
     const [inquiryContent, setInquiryContent] = useState("");
 
     const navigate = useNavigate();
-    const API_BASE_URL = "http://localhost:8088/api/member";
+    const API_BASE_URL = "/api/member";
 
     useEffect(() => {
         const fetchUserData = async () => {

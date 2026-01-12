@@ -54,7 +54,7 @@ export default function Login() {
     const [modal, setModal] = useState({ isOpen: false, message: "" });
     const alertSound = useMemo(() => new Audio("/sounds/alert_ding.mp3"), []);
 
-    const API_BASE_URL = "http://localhost:8088/api/member";
+    const API_BASE_URL = "/api/member";
 
     const openAlert = (msg) => {
         alertSound.currentTime = 0;

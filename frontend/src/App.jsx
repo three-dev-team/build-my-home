@@ -40,7 +40,7 @@ function App() {
                 <Route path="/room/:roomId" element={<Room />} />
                 <Route path="/room-list" element={<RoomList />} />
                 <Route path="/join" element={<Join />} />
-                <Route path="/myPage" element={<MyPage />} />
+                <Route path="/mypage" element={<MyPage />} />
                 <Route path="/oauth2/redirect" element={<OAuth2RedirectHandler />} />
             </Routes>
         </Router>

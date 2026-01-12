@@ -23,6 +23,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
     private final JwtTokenProvider tokenProvider;
     private final MemberRepository memberRepository;
+    private static final String FRONT_REDIRECT_BASE = "http://localhost:5173/oauth2/redirect";
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
@@ -46,20 +47,20 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
         // 4. 프론트엔드로 리다이렉트할 URL 생성
         // 파라미터에 토큰, 닉네임, 벨, 레벨을 담아 보냅니다 (기존 로그인 로직과 통일)
-//        String targetUrl = UriComponentsBuilder.fromUriString("http://localhost:3000/oauth2/redirect")
-//                .queryParam("token", token)
-//                .queryParam("nickname", URLEncoder.encode(member.getNickname(), StandardCharsets.UTF_8))
-//                .queryParam("bell", member.getBell())
-//                .queryParam("level", member.getLevel())
-//                .build().toUriString();
-
-        // OAuth2SuccessHandler.java 내 리다이렉트 부분
-        String targetUrl = UriComponentsBuilder.fromUriString("http://localhost:8088/oauth2/redirect") // 3000 -> 5173으로 수정
+        String targetUrl = UriComponentsBuilder.fromUriString(FRONT_REDIRECT_BASE)
                 .queryParam("token", token)
                 .queryParam("nickname", URLEncoder.encode(member.getNickname(), StandardCharsets.UTF_8))
                 .queryParam("bell", member.getBell())
                 .queryParam("level", member.getLevel())
                 .build().toUriString();
+
+//        // OAuth2SuccessHandler.java 내 리다이렉트 부분
+//        String targetUrl = UriComponentsBuilder.fromUriString("http://localhost:8088/oauth2/redirect") // 3000 -> 5173으로 수정
+//                .queryParam("token", token)
+//                .queryParam("nickname", URLEncoder.encode(member.getNickname(), StandardCharsets.UTF_8))
+//                .queryParam("bell", member.getBell())
+//                .queryParam("level", member.getLevel())
+//                .build().toUriString();
 
         // 5. 리다이렉트 실행
         getRedirectStrategy().sendRedirect(request, response, targetUrl);
