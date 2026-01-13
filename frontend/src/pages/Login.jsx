@@ -59,13 +59,13 @@ export default function Login() {
     const alertSound = useMemo(() => new Audio("/sounds/alert_ding.mp3"), []);
     const API_BASE_URL = "http://localhost:8088/api/member";
 
-    // 이미 토큰이 있다면 바로 홈으로 이동
-    useEffect(() => {
-        const token = sessionStorage.getItem("token");
-        if (token) {
-            navigate("/home");
-        }
-    }, [navigate]);
+    // // 이미 토큰이 있다면 바로 홈으로 이동
+    // useEffect(() => {
+    //     const token = sessionStorage.getItem("token");
+    //     if (token) {
+    //         navigate("/home");
+    //     }
+    // }, [navigate]);
 
     // --- 컴포넌트 로드 시 저장된 아이디 불러오기 ---
     useEffect(() => {
@@ -98,6 +98,36 @@ export default function Login() {
         setModal({ isOpen: true, message: msg });
     };
 
+    // const handleLogin = async () => {
+    //     try {
+    //         const response = await axios.post(`${API_BASE_URL}/login`, {
+    //             email: memberId,
+    //             password: password,
+    //         });
+    //
+    //         if (response.status === 200) {
+    //             const { token, nickname, bell, level } = response.data;
+    //
+    //             // --- 아이디 저장 로직 ---
+    //             if (rememberId) {
+    //                 localStorage.setItem("savedMemberId", memberId);
+    //             } else {
+    //                 localStorage.removeItem("savedMemberId");
+    //             }
+    //
+    //             sessionStorage.setItem("token", token);
+    //             sessionStorage.setItem("nickname", nickname);
+    //             sessionStorage.setItem("bell", bell);
+    //             sessionStorage.setItem("level", level);
+    //
+    //             openAlert(`${nickname}님 환영합니다! 🍃`);
+    //             setTimeout(() => navigate("/home"), 1500);
+    //         }
+    //     } catch (error) {
+    //         openAlert("로그인 정보를 확인해주세요. 😢");
+    //     }
+    // };
+
     const handleLogin = async () => {
         try {
             const response = await axios.post(`${API_BASE_URL}/login`, {
@@ -106,9 +136,9 @@ export default function Login() {
             });
 
             if (response.status === 200) {
-                const { token, nickname, bell, level } = response.data;
+                // 1. id(memberId)를 추가로 받습니다.
+                const { token, nickname, bell, level, id } = response.data;
 
-                // --- 아이디 저장 로직 ---
                 if (rememberId) {
                     localStorage.setItem("savedMemberId", memberId);
                 } else {
@@ -117,6 +147,7 @@ export default function Login() {
 
                 sessionStorage.setItem("token", token);
                 sessionStorage.setItem("nickname", nickname);
+                sessionStorage.setItem("memberId", id); // 2. 세션에 id 저장
                 sessionStorage.setItem("bell", bell);
                 sessionStorage.setItem("level", level);
 
@@ -186,7 +217,8 @@ export default function Login() {
     };
 
     const handleSocialLogin = (provider) => {
-        window.location.href = `/oauth2/authorization/${provider}`;
+        // window.location.href = `/oauth2/authorization/${provider}`;
+        window.location.href = `http://localhost:8088/oauth2/authorization/${provider}`;
     };
 
     return (

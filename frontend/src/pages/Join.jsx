@@ -17,9 +17,11 @@ export default function Join() {
     const [isNicknameChecked, setIsNicknameChecked] = useState(false); // 닉네임 체크 완료 여부
 
     // UI 관리
-    const [modal, setModal] = useState({ isOpen: false, message: "" });
+    // const [modal, setModal] = useState({ isOpen: false, message: "" });
+    const [modal, setModal] = useState({ isOpen: false, message: "", showButton: true });
     const navigate = useNavigate();
     const API_BASE_URL = "/api/member";
+
 
     // 효과음
     const alertSound = useMemo(() => new Audio("/sounds/alert_ding.mp3"), []);
@@ -49,10 +51,10 @@ export default function Join() {
     const isPasswordInvalid = password.length > 0 && !validatePassword(password);
     const isPasswordMismatch = confirmPassword.length > 0 && password !== confirmPassword;
 
-    const openModal = (msg) => {
+    const openModal = (msg, showBtn = true) => {
         alertSound.currentTime = 0;
         alertSound.play().catch(() => {});
-        setModal({ isOpen: true, message: msg });
+        setModal({ isOpen: true, message: msg, showButton: showBtn });
     };
 
     const closeModal = () => setModal({ isOpen: false, message: "" });
@@ -60,14 +62,20 @@ export default function Join() {
     // 1. 인증번호 발송
     const handleSendVerification = async () => {
         if (!email) return openModal("이메일을 입력해주세요! 📧");
+
         setIsSending(true);
+        openModal("이메일 중복 확인 및\n인증번호 발송 중... 🕊️", false);
+
         try {
             await axios.post(`${API_BASE_URL}/send-registration-code`, { email });
-            openModal("사용 가능한 이메일입니다! ✨\n인증번호를 발송했습니다.🕊️");
+            // 성공 시: 버튼이 있는 모달로 내용 업데이트
+            openModal("사용 가능한 이메일입니다! ✨\n인증번호를 발송했습니다.🕊️", true);
             setIsEmailSent(true);
-            setTimeLeft(300); // 5분
+            setTimeLeft(300);
         } catch (error) {
-            openModal(error.response?.data || "메일 발송에 실패했습니다. 😢");
+            // 실패 시: 에러 메시지와 함께 버튼 노출
+            const errorMsg = error.response?.data || "메일 발송에 실패했습니다. 😢";
+            openModal(errorMsg, true);
         } finally {
             setIsSending(false);
         }
