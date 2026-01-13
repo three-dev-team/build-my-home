@@ -10,7 +10,7 @@ export default function Home() {
   const videoRef = useRef(null);
   const audioRef = useRef(null);
 
-  // --- 기존 로직 유지 (오디오/비디오/로그인 체크) ---
+  // --- (오디오/비디오/로그인 체크) ---
   useEffect(() => {
     let audioTimer;
     if (audioRef.current) {
@@ -63,7 +63,6 @@ export default function Home() {
 
   return (
       <div className="relative w-full h-screen overflow-hidden bg-black">
-        {/* 주석 유지 영역 */}
         {/*<audio ref={audioRef} src="/sounds/home_bgm.mp3" loop />*/}
         {/*<video ... />*/}
 
@@ -84,12 +83,17 @@ export default function Home() {
         <div className={`absolute top-6 right-10 z-20 flex gap-8 items-start ${uiTransitionClass}`}>
           {/* 유저(마이페이지) 버튼 */}
           <Link to={isLoggedIn ? "/myPage" : "/login"} className="flex flex-col items-center gap-2 group">
-            <div className="w-16 h-16 bg-[#efe7d1] border-[4px] border-[#a67c52] rounded-full flex items-center justify-center text-3xl shadow-md group-hover:scale-110 transition-transform">
-              👤
+            <div className="w-16 h-16 bg-[#efe7d1] border-[4px] border-[#a67c52] rounded-full flex items-center justify-center shadow-md group-hover:scale-110 transition-transform overflow-hidden relative">
+              {/* 이모티콘 대신 이미지 태그 사용 */}
+              <img
+                  src="/images/villager_avatar.png"
+                  alt="유저 아바타"
+                  className="w-full h-full object-cover"
+              />
             </div>
             <span className="text-sm font-black text-[#8b5a2b] bg-white/90 px-3 py-0.5 rounded-full shadow-sm">
-            {isLoggedIn ? `${nickname}님` : "로그인"}
-          </span>
+              {isLoggedIn ? `${nickname}님` : "로그인"}
+            </span>
           </Link>
 
           {/* 알람 버튼 (새로 추가) */}
