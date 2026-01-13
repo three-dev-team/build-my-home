@@ -48,7 +48,10 @@ export default function Login() {
     const [newPassword, setNewPassword] = useState("");
     const [confirmNewPassword, setConfirmNewPassword] = useState("");
 
-    // --- 추가: 비밀번호 찾기 기능 강화 상태 ---
+    // --- 아이디 기억하기 상태 ---
+    const [rememberId, setRememberId] = useState(false);
+
+    // --- 비밀번호 찾기 기능 강화 상태 ---
     const [isSending, setIsSending] = useState(false); // 버튼 비활성화용
     const [timeLeft, setTimeLeft] = useState(0); // 타이머용(초)
 
@@ -56,7 +59,24 @@ export default function Login() {
     const alertSound = useMemo(() => new Audio("/sounds/alert_ding.mp3"), []);
     const API_BASE_URL = "http://localhost:8088/api/member";
 
-    // --- 추가: 타이머 핸들러 ---
+    // 이미 토큰이 있다면 바로 홈으로 이동
+    useEffect(() => {
+        const token = sessionStorage.getItem("token");
+        if (token) {
+            navigate("/home");
+        }
+    }, [navigate]);
+
+    // --- 컴포넌트 로드 시 저장된 아이디 불러오기 ---
+    useEffect(() => {
+        const savedId = localStorage.getItem("savedMemberId");
+        if (savedId) {
+            setMemberId(savedId);
+            setRememberId(true);
+        }
+    }, []);
+
+    // --- 타이머 핸들러 ---
     useEffect(() => {
         if (timeLeft <= 0) return;
         const timer = setInterval(() => {
@@ -87,6 +107,14 @@ export default function Login() {
 
             if (response.status === 200) {
                 const { token, nickname, bell, level } = response.data;
+
+                // --- 아이디 저장 로직 ---
+                if (rememberId) {
+                    localStorage.setItem("savedMemberId", memberId);
+                } else {
+                    localStorage.removeItem("savedMemberId");
+                }
+
                 sessionStorage.setItem("token", token);
                 sessionStorage.setItem("nickname", nickname);
                 sessionStorage.setItem("bell", bell);
@@ -100,7 +128,7 @@ export default function Login() {
         }
     };
 
-    // Step 1: 인증번호 발송 (중복 클릭 방지 추가)
+    // 인증번호 발송 (중복 클릭 방지 추가)
     const handleSendCode = async () => {
         if (!findEmail) return openAlert("이메일을 입력해주세요! 📧");
         setIsSending(true); // 버튼 비활성화 시작
@@ -116,7 +144,7 @@ export default function Login() {
         }
     };
 
-    // Step 2: 인증번호 검증 (시간 만료 체크 추가)
+    // 인증번호 검증 (시간 만료 체크 추가)
     const handleVerifyCode = async () => {
         if (!authCode) return openAlert("인증번호를 입력해주세요!");
         if (timeLeft <= 0) return openAlert("인증 시간이 만료되었습니다. \n다시 시도해주세요. ⏳");
@@ -166,7 +194,7 @@ export default function Login() {
             className="relative w-full h-screen bg-cover bg-center overflow-hidden flex items-center justify-center"
             style={{backgroundImage: "url('/images/background.jpg')"}}
         >
-            {/* --- A. 커스텀 알림 모달 --- */}
+            {/* --- 커스텀 알림 모달 --- */}
             {modal.isOpen && (
                 <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/50 backdrop-blur-sm">
                     <div className="relative w-[350px] bg-[#fdf6e3] rounded-[40px] border-[6px] border-[#8b5a2b] shadow-2xl p-8 flex flex-col items-center animate-in zoom-in-95 duration-200">
@@ -176,7 +204,7 @@ export default function Login() {
                 </div>
             )}
 
-            {/* --- B. 비밀번호 재설정 모달 --- */}
+            {/* --- 비밀번호 재설정 모달 --- */}
             {showFindModal && (
                 <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm">
                     <div className="relative w-[450px] bg-[#fdf6e3] p-10 rounded-[50px] border-[8px] border-[#8b5a2b] shadow-2xl flex flex-col items-center animate-in zoom-in-95 duration-200">
@@ -235,7 +263,7 @@ export default function Login() {
                 </div>
             )}
 
-            {/* --- C. 메인 로그인 박스 --- */}
+            {/* --- 메인 로그인 박스 --- */}
             <div className="relative w-[450px] bg-[#fdf6e3] p-10 rounded-[50px] border-[8px] border-[#8b5a2b] shadow-[15px_15px_0px_rgba(139,90,43,0.15)] flex flex-col items-center">
                 <div className="absolute -top-32">
                     <img src="/images/logo.png" alt="지어봐요 마이홈" className="w-[300px] drop-shadow-xl" />
@@ -263,6 +291,19 @@ export default function Login() {
                             onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
                             className="w-full bg-[#efe7d1] border-none rounded-3xl py-4 pl-12 pr-4 text-[#5d4037] font-bold placeholder-[#a67c52] focus:ring-4 ring-[#8b5a2b]/20 outline-none transition-all"
                         />
+                    </div>
+
+                    {/* --- 아이디 저장 체크박스 --- */}
+                    <div className="flex justify-start px-2">
+                        <label className="flex items-center gap-2 cursor-pointer group text-[#8b5a2b] font-bold text-sm">
+                            <input
+                                type="checkbox"
+                                checked={rememberId}
+                                onChange={(e) => setRememberId(e.target.checked)}
+                                className="w-4 h-4 accent-[#8b5a2b] cursor-pointer"
+                            />
+                            <span className="group-hover:underline">아이디 저장</span>
+                        </label>
                     </div>
 
                     <button
