@@ -1,103 +1,561 @@
-import React, { useState, useEffect } from "react";
+// import React, { useState, useEffect, useRef } from "react";
+// import { useNavigate } from "react-router-dom";
+// import axios from "axios";
+//
+// export default function MyPage() {
+//     const navigate = useNavigate();
+//     const API_BASE_URL = "http://localhost:8088/api/member";
+//     const nicknameInputRef = useRef(null);
+//
+//     const [activeTab, setActiveTab] = useState("account");
+//     const [userData, setUserData] = useState({
+//         nickname: "", email: "", bell: 0, level: 1, role: "MEMBER"
+//     });
+//     const [isLoading, setIsLoading] = useState(true);
+//
+//     // --- [추가] 설정 및 문의 상태 관리 ---
+//     const [bgmVolume, setBgmVolume] = useState(Number(localStorage.getItem("bgmVolume")) || 50);
+//     const [sfxVolume, setSfxVolume] = useState(Number(localStorage.getItem("sfxVolume")) || 50);
+//     const [inquiryTitle, setInquiryTitle] = useState("");
+//     const [inquiryContent, setInquiryContent] = useState("");
+//
+//     // 모달 상태
+//     const [isModalOpen, setIsModalOpen] = useState(false);
+//     const [editNickname, setEditNickname] = useState("");
+//     const [isConfirmStep, setIsConfirmStep] = useState(false);
+//
+//     useEffect(() => {
+//         const fetchData = async () => {
+//             const token = sessionStorage.getItem("token");
+//             if (!token) return navigate("/");
+//             try {
+//                 const res = await axios.get(`${API_BASE_URL}/me`, {
+//                     headers: { Authorization: `Bearer ${token}` }
+//                 });
+//                 setUserData(res.data);
+//                 setEditNickname(res.data.nickname);
+//                 sessionStorage.setItem("role", res.data.role);
+//                 setIsLoading(false);
+//             } catch (e) {
+//                 console.error(e);
+//                 setIsLoading(false);
+//                 if (e.response?.status === 401) navigate("/");
+//             }
+//         };
+//         fetchData();
+//     }, [navigate]);
+//
+//     // --- [추가] 설정 변경 핸들러 ---
+//     const handleVolumeChange = (type, value) => {
+//         if (type === "BGM") {
+//             setBgmVolume(value);
+//             localStorage.setItem("bgmVolume", value); // 로컬 스토리지 저장 (게임 로드 시 참조용)
+//         } else {
+//             setSfxVolume(value);
+//             localStorage.setItem("sfxVolume", value);
+//         }
+//     };
+//
+//     // --- [추가] 문의하기 접수 핸들러 ---
+//     const handleInquirySubmit = async () => {
+//         if (!inquiryTitle.trim() || !inquiryContent.trim()) {
+//             alert("제목과 내용을 모두 입력해주세요! 📮");
+//             return;
+//         }
+//
+//         try {
+//             const token = sessionStorage.getItem("token");
+//             // 백엔드에 문의사항 저장 API가 있다고 가정 (/api/member/inquiry)
+//             await axios.post(`${API_BASE_URL}/inquiry`,
+//                 { title: inquiryTitle, content: inquiryContent },
+//                 { headers: { Authorization: `Bearer ${token}` } }
+//             );
+//             alert("주민님의 문의가 정상적으로 접수되었습니다! 🍃");
+//             setInquiryTitle("");
+//             setInquiryContent("");
+//         } catch (e) {
+//             console.error(e);
+//             alert("문의 접수에 실패했습니다. 잠시 후 다시 시도해주세요.");
+//         }
+//     };
+//
+//     const handleLogout = () => {
+//         if (window.confirm("로그아웃 하시겠습니까? 🍃")) {
+//             sessionStorage.clear();
+//             navigate("/");
+//         }
+//     };
+//
+//     // ---  회원 탈퇴 핸들러 ---
+//     const handleWithdraw = async () => {
+//         // 1차 확인
+//         const firstCheck = window.confirm("정말 마이홈을 떠나실 건가요? 😢\n탈퇴 시 주민님의 모든 데이터(벨, 레벨, 아이템 등)가 영구 삭제되며 복구할 수 없습니다.");
+//
+//         if (firstCheck) {
+//             // 2차 확인 (실수 방지용 텍스트 입력 유도 등을 할 수도 있지만, 여기선 더블 체크로 진행)
+//             const secondCheck = window.confirm("마지막 확인입니다. 정말로 탈퇴하시겠습니까? 🍃");
+//
+//             if (secondCheck) {
+//                 try {
+//                     const token = sessionStorage.getItem("token");
+//                     // 백엔드 DELETE 매핑 호출
+//                     await axios.delete(`${API_BASE_URL}/withdraw`, {
+//                         headers: { Authorization: `Bearer ${token}` }
+//                     });
+//
+//                     alert("그동안 마이홈과 함께해주셔서 감사했습니다. 주민님의 앞날을 응원할게요! 🕊️");
+//                     sessionStorage.clear();
+//                     navigate("/");
+//                 } catch (e) {
+//                     console.error(e);
+//                     alert("탈퇴 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+//                 }
+//             }
+//         }
+//     };
+//
+//     const handleSaveNickname = async () => {
+//         try {
+//             const token = sessionStorage.getItem("token");
+//             await axios.put(`${API_BASE_URL}/nickname`,
+//                 { nickname: editNickname },
+//                 { headers: { Authorization: `Bearer ${token}` } }
+//             );
+//
+//             alert("닉네임이 성공적으로 변경되었습니다! ✨");
+//             setUserData(prev => ({ ...prev, nickname: editNickname }));
+//             sessionStorage.setItem("nickname", editNickname);
+//             closeModal();
+//         } catch (e) {
+//             if (e.response && e.response.status === 409) {
+//                 alert("이미 사용 중인 닉네임입니다. 다른 이름을 입력해주세요! 😢");
+//                 setEditNickname("");
+//                 setIsConfirmStep(false);
+//                 setTimeout(() => nicknameInputRef.current?.focus(), 100);
+//             } else {
+//                 alert("변경에 실패했습니다. 다시 시도해주세요.");
+//             }
+//         }
+//     };
+//
+//     const closeModal = () => {
+//         setIsModalOpen(false);
+//         setIsConfirmStep(false);
+//         setEditNickname(userData.nickname);
+//     };
+//
+//     if (isLoading) return (
+//         <div className="h-screen flex items-center justify-center bg-[#FFFCEF]">
+//             <div className="text-center">
+//                 <div className="text-4xl animate-bounce mb-4">🍃</div>
+//                 <div className="text-xl font-black text-[#8b5a2b]">주민 정보를 불러오는 중...</div>
+//             </div>
+//         </div>
+//     );
+//
+//     return (
+//         <div className="relative w-full h-screen flex items-center justify-center overflow-hidden font-sans">
+//             <div
+//                 className="absolute inset-0 bg-cover bg-center"
+//                 style={{ backgroundImage: "url('/images/background.jpg')" }}
+//             />
+//
+//             {isModalOpen && (
+//                 <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+//                     <div className="bg-[#FFFCEF] w-[380px] p-8 rounded-[40px] border-[6px] border-[#8b5a2b] shadow-2xl">
+//                         {!isConfirmStep ? (
+//                             <div className="space-y-6 text-center">
+//                                 <h3 className="text-2xl font-black text-[#8b5a2b]">이름 변경하기 🍃</h3>
+//                                 <input
+//                                     ref={nicknameInputRef}
+//                                     type="text"
+//                                     value={editNickname}
+//                                     onChange={(e) => setEditNickname(e.target.value)}
+//                                     className="w-full p-4 rounded-2xl bg-white border-4 border-[#efe7d1] text-[#5d4037] font-bold text-center outline-none focus:border-[#bc8a5f]"
+//                                     placeholder="새 이름을 입력하세요"
+//                                 />
+//                                 <div className="flex gap-3">
+//                                     <button onClick={closeModal} className="flex-1 py-3 bg-[#DED0A6] text-[#5d4037] rounded-2xl font-bold">취소</button>
+//                                     <button onClick={() => setIsConfirmStep(true)} className="flex-1 py-3 bg-[#8b5a2b] text-white rounded-2xl font-bold">변경</button>
+//                                 </div>
+//                             </div>
+//                         ) : (
+//                             <div className="space-y-6 text-center">
+//                                 <h3 className="text-2xl font-black text-[#8b5a2b]">정말 바꿀까요?</h3>
+//                                 <p className="text-[#5d4037] font-bold text-lg">
+//                                     <span className="text-[#bc8a5f]">"{editNickname}"</span>(으)로<br/>결정하시겠습니까?
+//                                 </p>
+//                                 <div className="flex gap-3">
+//                                     <button onClick={() => setIsConfirmStep(false)} className="flex-1 py-3 bg-[#DED0A6] text-[#5d4037] rounded-2xl font-bold">아니오</button>
+//                                     <button onClick={handleSaveNickname} className="flex-1 py-3 bg-[#e2f0a1] border-4 border-[#8b5a2b] rounded-2xl font-black text-[#8b5a2b]">네!</button>
+//                                 </div>
+//                             </div>
+//                         )}
+//                     </div>
+//                 </div>
+//             )}
+//
+//             <div className="relative z-10 w-[95%] max-w-[850px] bg-[#efe7d1] p-8 rounded-[50px] border-[8px] border-[#8b5a2b] shadow-[15px_15px_0px_rgba(139,90,43,0.15)]">
+//                 <div className="flex flex-row gap-6">
+//                     <div className="flex flex-col gap-3 min-w-[150px]">
+//                         {[
+//                             { id: "account", label: "계정 정보" },
+//                             { id: "settings", label: "설정" },
+//                             { id: "inquiry", label: "문의하기" },
+//                             ...(userData.role?.includes("ADMIN") ? [{ id: "admin", label: "관리자" }] : [])
+//                         ].map(tab => (
+//                             <button
+//                                 key={tab.id}
+//                                 onClick={() => {
+//                                     if (tab.id === "admin") { navigate("/admin"); }
+//                                     else { setActiveTab(tab.id); }
+//                                 }}
+//                                 className={`py-4 px-6 rounded-[25px] font-black text-lg transition-all shadow-sm ${
+//                                     activeTab === tab.id
+//                                         ? "bg-[#e2f0a1] text-[#8b5a2b] border-[4px] border-[#8b5a2b] translate-x-2"
+//                                         : "bg-white text-[#8b5a2b] hover:bg-[#FFFCEF]"
+//                                 }`}
+//                             >
+//                                 {tab.label}
+//                             </button>
+//                         ))}
+//                     </div>
+//
+//                     <div className="flex-1 bg-[#FFFCEF] rounded-[40px] p-8 border-4 border-[#8b5a2b]/20 shadow-inner h-[450px] overflow-y-auto">
+//                         {/* 1. 계정 정보 탭 */}
+//                         {activeTab === "account" && (
+//                             <div className="space-y-6">
+//                                 <div className="flex justify-between items-center bg-white p-6 rounded-[30px] border-2 border-[#DED0A6]">
+//                                     <div className="space-y-1">
+//                                         <p className="text-3xl font-black text-[#8b5a2b]">Lv. {userData.level}</p>
+//                                         <p className="font-bold text-[#5d4037] text-lg">{userData.bell.toLocaleString()} Bell 💰</p>
+//                                     </div>
+//                                     <span className="px-4 py-1 bg-[#8b5a2b] text-white rounded-full text-xs font-bold uppercase">{userData.role}</span>
+//                                 </div>
+//                                 <div className="space-y-4">
+//                                     <div className="space-y-2">
+//                                         <label className="text-sm font-black text-[#8b5a2b] ml-2">주민 이름</label>
+//                                         <div className="flex gap-3">
+//                                             <input type="text" value={userData.nickname} readOnly className="flex-1 bg-[#F4F0D7] rounded-2xl p-4 font-bold text-[#8d7b6d] outline-none cursor-default border-2 border-transparent" />
+//                                             <button onClick={() => setIsModalOpen(true)} className="bg-[#bc8a5f] text-white px-8 rounded-2xl font-black hover:bg-[#8b5a2b] shadow-md transition-all active:scale-95">변경</button>
+//                                         </div>
+//                                     </div>
+//                                     <div className="space-y-2">
+//                                         <label className="text-sm font-black text-[#8b5a2b] ml-2">연결된 이메일</label>
+//                                         <input type="text" value={userData.email || "정보 없음"} readOnly className="w-full bg-[#F4F0D7] rounded-2xl p-4 font-bold text-[#8d7b6d] outline-none cursor-default" />
+//                                     </div>
+//                                 </div>
+//                                 <button onClick={handleLogout} className="w-full bg-[#FFB3B3] py-4 rounded-[25px] font-black text-[#D32F2F] shadow-sm hover:bg-[#FF9999] transition-all mt-4">로그아웃</button>
+//                             </div>
+//                         )}
+//
+//                         {/* 2. 설정 탭 (BGM/SFX 볼륨 조절) */}
+//                         {activeTab === "settings" && (
+//                             <div className="space-y-10 py-4">
+//                                 <h3 className="text-2xl font-black text-[#8b5a2b] border-b-2 border-[#DED0A6] pb-2">환경 설정 ⚙️</h3>
+//                                 <div className="space-y-8">
+//                                     <div className="space-y-3">
+//                                         <div className="flex justify-between font-black text-[#8b5a2b]">
+//                                             <span>배경음악 (BGM)</span>
+//                                             <span>{bgmVolume}%</span>
+//                                         </div>
+//                                         <input
+//                                             type="range" min="0" max="100" value={bgmVolume}
+//                                             onChange={(e) => handleVolumeChange("BGM", e.target.value)}
+//                                             className="w-full h-4 bg-[#F4F0D7] rounded-lg appearance-none cursor-pointer accent-[#8b5a2b]"
+//                                         />
+//                                     </div>
+//                                     <div className="space-y-3">
+//                                         <div className="flex justify-between font-black text-[#8b5a2b]">
+//                                             <span>효과음 (SFX)</span>
+//                                             <span>{sfxVolume}%</span>
+//                                         </div>
+//                                         <input
+//                                             type="range" min="0" max="100" value={sfxVolume}
+//                                             onChange={(e) => handleVolumeChange("SFX", e.target.value)}
+//                                             className="w-full h-4 bg-[#F4F0D7] rounded-lg appearance-none cursor-pointer accent-[#8b5a2b]"
+//                                         />
+//                                     </div>
+//                                 </div>
+//                             </div>
+//                         )}
+//
+//                         {/* 3. 문의하기 탭 */}
+//                         {activeTab === "inquiry" && (
+//                             <div className="space-y-6 py-4 flex flex-col h-full">
+//                                 <h3 className="text-2xl font-black text-[#8b5a2b] border-b-2 border-[#DED0A6] pb-2">도움센터 📮</h3>
+//                                 <div className="space-y-4 flex-1 flex flex-col">
+//                                     <input
+//                                         type="text" placeholder="문의 제목을 입력하세요." value={inquiryTitle}
+//                                         onChange={(e) => setInquiryTitle(e.target.value)}
+//                                         className="w-full p-4 rounded-2xl bg-white border-2 border-[#DED0A6] text-[#5d4037] font-bold outline-none focus:border-[#bc8a5f]"
+//                                     />
+//                                     <textarea
+//                                         placeholder="문의 내용을 상세히 적어주시면 '마이홈' 주민센터에서 확인 후 답변 드릴게요! 🍃"
+//                                         value={inquiryContent} onChange={(e) => setInquiryContent(e.target.value)}
+//                                         className="w-full flex-1 p-4 rounded-2xl bg-white border-2 border-[#DED0A6] text-[#5d4037] font-bold outline-none focus:border-[#bc8a5f] resize-none"
+//                                     />
+//                                     <button
+//                                         onClick={handleInquirySubmit}
+//                                         className="w-full bg-[#bc8a5f] text-white py-4 rounded-2xl font-black text-lg shadow-md hover:bg-[#8b5a2b] transition-all"
+//                                     >
+//                                         문의 제출하기
+//                                     </button>
+//                                 </div>
+//                             </div>
+//                         )}
+//                     </div>
+//                 </div>
+//
+//                 <div className="mt-8 flex justify-center">
+//                     <button onClick={() => navigate(-1)} className="bg-white/90 hover:bg-white text-[#5d4037] px-24 py-3 rounded-full font-black text-xl border-4 border-[#8b5a2b]/30 shadow-md transition-all active:scale-95">
+//                         마이홈으로 돌아가기
+//                     </button>
+//                 </div>
+//             </div>
+//         </div>
+//     );
+// }
+
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 export default function MyPage() {
-    // 탭 상태 관리: 'settings' (환경설정), 'account' (마이페이지), 'inquiry' (문의등록)
+    const navigate = useNavigate();
+    const API_BASE_URL = "http://localhost:8088/api/member";
+    const nicknameInputRef = useRef(null);
+
     const [activeTab, setActiveTab] = useState("account");
+    const [userData, setUserData] = useState({
+        nickname: "", email: "", bell: 0, level: 1, role: "MEMBER"
+    });
+    const [isLoading, setIsLoading] = useState(true);
 
-    // 데이터 상태 관리
-    const [nickname, setNickname] = useState(sessionStorage.getItem("nickname") || "");
-    const [email, setEmail] = useState("");
-    const [bell, setBell] = useState(Number(sessionStorage.getItem("bell")) || 0);
-    const [level, setLevel] = useState(Number(sessionStorage.getItem("level")) || 1);
-    const [profileImg, setProfileImg] = useState("/images/default_profile.png");
-
-    // 설정 관련 상태 (환경설정 탭)
-    const [sfxVolume, setSfxVolume] = useState(50);
-    const [bgmVolume, setBgmVolume] = useState(70);
-
-    // 문의 관련 상태 (문의등록 탭)
+    // 설정 및 문의 상태 관리
+    const [bgmVolume, setBgmVolume] = useState(Number(localStorage.getItem("bgmVolume")) || 50);
+    const [sfxVolume, setSfxVolume] = useState(Number(localStorage.getItem("sfxVolume")) || 50);
     const [inquiryTitle, setInquiryTitle] = useState("");
     const [inquiryContent, setInquiryContent] = useState("");
 
-    const navigate = useNavigate();
-    const API_BASE_URL = "/api/member";
+    // 닉네임 모달 상태
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editNickname, setEditNickname] = useState("");
+    const [isConfirmStep, setIsConfirmStep] = useState(false);
+
+    // 회원 탈퇴 모달 상태
+    const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
+    const [isWithdrawConfirmStep, setIsWithdrawConfirmStep] = useState(false);
 
     useEffect(() => {
-        const fetchUserData = async () => {
+        const fetchData = async () => {
             const token = sessionStorage.getItem("token");
-            if (!token) {
-                navigate("/login");
-                return;
-            }
+            if (!token) return navigate("/");
             try {
-                const response = await axios.get(`${API_BASE_URL}/me`, {
+                const res = await axios.get(`${API_BASE_URL}/me`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
-                const { email, nickname, bell, level, profileImageUrl } = response.data;
-                setEmail(email);
-                setNickname(nickname);
-                setBell(bell);
-                setLevel(level);
-                if (profileImageUrl) setProfileImg(profileImageUrl);
-
-                sessionStorage.setItem("nickname", nickname);
-            } catch (error) {
-                console.error("데이터 로드 실패", error);
+                setUserData(res.data);
+                setEditNickname(res.data.nickname);
+                sessionStorage.setItem("role", res.data.role);
+                setIsLoading(false);
+            } catch (e) {
+                console.error(e);
+                setIsLoading(false);
+                if (e.response?.status === 401) navigate("/");
             }
         };
-        fetchUserData();
+        fetchData();
     }, [navigate]);
 
-    const handleUpdateNickname = async () => {
+    // 설정 변경 핸들러
+    const handleVolumeChange = (type, value) => {
+        if (type === "BGM") {
+            setBgmVolume(value);
+            localStorage.setItem("bgmVolume", value);
+        } else {
+            setSfxVolume(value);
+            localStorage.setItem("sfxVolume", value);
+        }
+    };
+
+    // 문의하기 접수 핸들러
+    const handleInquirySubmit = async () => {
+        if (!inquiryTitle.trim() || !inquiryContent.trim()) {
+            alert("제목과 내용을 모두 입력해주세요! 📮");
+            return;
+        }
         try {
             const token = sessionStorage.getItem("token");
-            await axios.put(`${API_BASE_URL}/nickname`, { nickname }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            sessionStorage.setItem("nickname", nickname);
-            alert("닉네임이 성공적으로 변경되었습니다! ✨");
-        } catch (error) {
-            alert("변경에 실패했습니다. 중복된 닉네임인지 확인해주세요.");
+            await axios.post(`${API_BASE_URL}/inquiry`,
+                { title: inquiryTitle, content: inquiryContent },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            alert("주민님의 문의가 정상적으로 접수되었습니다! 🍃");
+            setInquiryTitle("");
+            setInquiryContent("");
+        } catch (e) {
+            console.error(e);
+            alert("문의 접수에 실패했습니다. 잠시 후 다시 시도해주세요.");
         }
     };
 
     const handleLogout = () => {
-        sessionStorage.clear();
-        alert("다음에 또 만나요! 🍃");
-        navigate("/");
+        if (window.confirm("로그아웃 하시겠습니까? 🍃")) {
+            sessionStorage.clear();
+            navigate("/");
+        }
     };
 
-    const handleInquirySubmit = () => {
-        alert("문의가 접수되었습니다. 곧 답변 드릴게요! 📮");
-        setInquiryTitle("");
-        setInquiryContent("");
+    // 회원 탈퇴 처리
+    const handleWithdraw = async () => {
+        try {
+            const token = sessionStorage.getItem("token");
+            await axios.delete(`${API_BASE_URL}/withdraw`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            alert("그동안 마이홈과 함께해주셔서 감사합니다. 🕊️");
+            sessionStorage.clear();
+            navigate("/");
+        } catch (e) {
+            console.error(e);
+            alert("탈퇴 처리 중 오류가 발생했습니다.");
+            setIsWithdrawModalOpen(false);
+        }
     };
+
+    const handleSaveNickname = async () => {
+        try {
+            const token = sessionStorage.getItem("token");
+            await axios.put(`${API_BASE_URL}/nickname`,
+                { nickname: editNickname },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            alert("닉네임이 성공적으로 변경되었습니다! ✨");
+            setUserData(prev => ({ ...prev, nickname: editNickname }));
+            sessionStorage.setItem("nickname", editNickname);
+            closeModal();
+        } catch (e) {
+            if (e.response && e.response.status === 409) {
+                alert("이미 사용 중인 닉네임입니다. 다른 이름을 입력해주세요! 😢");
+                setEditNickname("");
+                setIsConfirmStep(false);
+                setTimeout(() => nicknameInputRef.current?.focus(), 100);
+            } else {
+                alert("변경에 실패했습니다. 다시 시도해주세요.");
+            }
+        }
+    };
+
+    const closeModal = () => {
+        setIsModalOpen(false);
+        setIsConfirmStep(false);
+        setEditNickname(userData.nickname);
+    };
+
+    const closeWithdrawModal = () => {
+        setIsWithdrawModalOpen(false);
+        setIsWithdrawConfirmStep(false);
+    };
+
+    if (isLoading) return (
+        <div className="h-screen flex items-center justify-center bg-[#FFFCEF]">
+            <div className="text-center">
+                <div className="text-4xl animate-bounce mb-4">🍃</div>
+                <div className="text-xl font-black text-[#8b5a2b]">주민 정보를 불러오는 중...</div>
+            </div>
+        </div>
+    );
 
     return (
-        <div className="relative w-full h-screen bg-[#fdf6e3] flex items-center justify-center overflow-hidden"
-             style={{ backgroundImage: "url('/images/background.jpg')", backgroundSize: 'cover' }}>
+        <div className="relative w-full h-screen flex items-center justify-center overflow-hidden font-sans">
+            <div
+                className="absolute inset-0 bg-cover bg-center"
+                style={{ backgroundImage: "url('/images/background.jpg')" }}
+            />
 
-            {/* 메인 컨테이너 (와이어프레임 회색 박스 형태 반영) */}
-            <div className="relative w-[90%] max-w-[850px] bg-[#d1d1d1] p-10 rounded-[40px] border-[6px] border-[#8b5a2b] shadow-2xl">
+            {/* --- 닉네임 변경 모달 --- */}
+            {isModalOpen && (
+                <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+                    <div className="bg-[#FFFCEF] w-[380px] p-8 rounded-[40px] border-[6px] border-[#8b5a2b] shadow-2xl">
+                        {!isConfirmStep ? (
+                            <div className="space-y-6 text-center">
+                                <h3 className="text-2xl font-black text-[#8b5a2b]">이름 변경하기 🍃</h3>
+                                <input
+                                    ref={nicknameInputRef}
+                                    type="text"
+                                    value={editNickname}
+                                    onChange={(e) => setEditNickname(e.target.value)}
+                                    className="w-full p-4 rounded-2xl bg-white border-4 border-[#efe7d1] text-[#5d4037] font-bold text-center outline-none focus:border-[#bc8a5f]"
+                                    placeholder="새 이름을 입력하세요"
+                                />
+                                <div className="flex gap-3">
+                                    <button onClick={closeModal} className="flex-1 py-3 bg-[#DED0A6] text-[#5d4037] rounded-2xl font-bold">취소</button>
+                                    <button onClick={() => setIsConfirmStep(true)} className="flex-1 py-3 bg-[#8b5a2b] text-white rounded-2xl font-bold">변경</button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="space-y-6 text-center">
+                                <h3 className="text-2xl font-black text-[#8b5a2b]">정말 바꿀까요?</h3>
+                                <p className="text-[#5d4037] font-bold text-lg">
+                                    <span className="text-[#bc8a5f]">"{editNickname}"</span>(으)로<br/>결정하시겠습니까?
+                                </p>
+                                <div className="flex gap-3">
+                                    <button onClick={() => setIsConfirmStep(false)} className="flex-1 py-3 bg-[#DED0A6] text-[#5d4037] rounded-2xl font-bold">아니오</button>
+                                    <button onClick={handleSaveNickname} className="flex-1 py-3 bg-[#e2f0a1] border-4 border-[#8b5a2b] rounded-2xl font-black text-[#8b5a2b]">네!</button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
 
-                <div className="flex gap-6 min-h-[400px]">
+            {/* --- 회원 탈퇴 모달 --- */}
+            {isWithdrawModalOpen && (
+                <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                    <div className="bg-[#FFFCEF] w-[380px] p-8 rounded-[40px] border-[6px] border-[#D32F2F] shadow-2xl animate-in zoom-in-95">
+                        {!isWithdrawConfirmStep ? (
+                            <div className="space-y-6 text-center">
+                                <h3 className="text-2xl font-black text-[#D32F2F]">마이홈을 떠나시나요? 😢</h3>
+                                <p className="text-[#5d4037] font-bold">탈퇴 시 모든 게임 데이터와<br/>벨(Bell)이 영구 삭제됩니다.</p>
+                                <div className="flex gap-3">
+                                    <button onClick={closeWithdrawModal} className="flex-1 py-3 bg-gray-200 rounded-2xl font-bold">취소</button>
+                                    <button onClick={() => setIsWithdrawConfirmStep(true)} className="flex-1 py-3 bg-[#D32F2F] text-white rounded-2xl font-bold">탈퇴하기</button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="space-y-6 text-center">
+                                <h3 className="text-2xl font-black text-[#D32F2F]">마지막 확인!</h3>
+                                <p className="text-[#5d4037] font-bold text-lg">정말로 모든 정보를 삭제하고<br/>주민 등록을 해지할까요?</p>
+                                <div className="flex gap-3">
+                                    <button onClick={() => setIsWithdrawConfirmStep(false)} className="flex-1 py-3 bg-gray-200 rounded-2xl font-bold">아니오</button>
+                                    <button onClick={handleWithdraw} className="flex-1 py-3 bg-[#FFB3B3] border-4 border-[#D32F2F] rounded-2xl font-black text-[#D32F2F]">네, 탈퇴합니다.</button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
 
-                    {/* 왼쪽: 탭 메뉴 (와이어프레임 좌측 버튼 세로 배열) */}
-                    <div className="flex flex-col gap-3 min-w-[120px]">
+            <div className="relative z-10 w-[95%] max-w-[850px] bg-[#efe7d1] p-8 rounded-[50px] border-[8px] border-[#8b5a2b] shadow-[15px_15px_0px_rgba(139,90,43,0.15)]">
+                <div className="flex flex-row gap-6">
+                    <div className="flex flex-col gap-3 min-w-[150px]">
                         {[
+                            { id: "account", label: "계정 정보" },
                             { id: "settings", label: "설정" },
-                            { id: "account", label: "계정" },
-                            { id: "inquiry", label: "문의" }
-                        ].map((tab) => (
+                            { id: "inquiry", label: "문의하기" },
+                            ...(userData.role?.includes("ADMIN") ? [{ id: "admin", label: "관리자" }] : [])
+                        ].map(tab => (
                             <button
                                 key={tab.id}
-                                onClick={() => setActiveTab(tab.id)}
-                                className={`py-3 px-6 rounded-2xl font-black text-lg transition-all shadow-md ${
+                                onClick={() => {
+                                    if (tab.id === "admin") { navigate("/admin"); }
+                                    else { setActiveTab(tab.id); }
+                                }}
+                                className={`py-4 px-6 rounded-[25px] font-black text-lg transition-all shadow-sm ${
                                     activeTab === tab.id
-                                        ? "bg-[#e2f0a1] text-[#5d4037] border-4 border-[#8b5a2b]"
-                                        : "bg-white text-[#8b5a2b] border-4 border-transparent hover:bg-[#efe7d1]"
+                                        ? "bg-[#e2f0a1] text-[#8b5a2b] border-[4px] border-[#8b5a2b] translate-x-2"
+                                        : "bg-white text-[#8b5a2b] hover:bg-[#FFFCEF]"
                                 }`}
                             >
                                 {tab.label}
@@ -105,91 +563,84 @@ export default function MyPage() {
                         ))}
                     </div>
 
-                    {/* 오른쪽: 콘텐츠 영역 (와이어프레임 우측 흰색 박스) */}
-                    <div className="flex-1 bg-white rounded-[30px] p-8 border-4 border-[#8b5a2b]/20 shadow-inner overflow-y-auto">
-
-                        {/* 1. 환경설정 탭 */}
-                        {activeTab === "settings" && (
-                            <div className="space-y-8 flex flex-col justify-center h-full">
-                                <div className="flex items-center gap-6">
-                                    <span className="font-black text-[#8b5a2b] w-20 text-lg">효과음</span>
-                                    <span className="text-xl">🔈</span>
-                                    <input type="range" value={sfxVolume} onChange={(e) => setSfxVolume(e.target.value)} className="flex-1 accent-[#8b5a2b]" />
-                                    <span className="text-xl">🔊</span>
-                                </div>
-                                <div className="flex items-center gap-6">
-                                    <span className="font-black text-[#8b5a2b] w-20 text-lg">배경음</span>
-                                    <span className="text-xl">🔈</span>
-                                    <input type="range" value={bgmVolume} onChange={(e) => setBgmVolume(e.target.value)} className="flex-1 accent-[#8b5a2b]" />
-                                    <span className="text-xl">🔊</span>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* 2. 마이페이지(계정) 탭 */}
+                    <div className="flex-1 bg-[#FFFCEF] rounded-[40px] p-8 border-4 border-[#8b5a2b]/20 shadow-inner h-[450px] overflow-y-auto">
                         {activeTab === "account" && (
-                            <div className="space-y-4">
-                                <div className="flex items-center gap-4 mb-4">
-                                    <div className="w-16 h-16 bg-[#efe7d1] rounded-2xl border-2 border-[#bc8a5f] flex items-center justify-center overflow-hidden">
-                                        <img src={profileImg} alt="P" className="w-full h-full object-cover" />
+                            <div className="space-y-6">
+                                <div className="flex justify-between items-center bg-white p-6 rounded-[30px] border-2 border-[#DED0A6]">
+                                    <div className="space-y-1">
+                                        <p className="text-3xl font-black text-[#8b5a2b]">Lv. {userData.level}</p>
+                                        <p className="font-bold text-[#5d4037] text-lg">{userData.bell.toLocaleString()} Bell 💰</p>
                                     </div>
-                                    <div>
-                                        <p className="text-[#8b5a2b] font-black">Lv. {level}</p>
-                                        <p className="text-[#5d4037] text-sm font-bold">{bell.toLocaleString()} Bell 💰</p>
+                                    <span className="px-4 py-1 bg-[#8b5a2b] text-white rounded-full text-xs font-bold uppercase">{userData.role}</span>
+                                </div>
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-black text-[#8b5a2b] ml-2">주민 이름</label>
+                                        <div className="flex gap-3">
+                                            <input type="text" value={userData.nickname} readOnly className="flex-1 bg-[#F4F0D7] rounded-2xl p-4 font-bold text-[#8d7b6d] outline-none cursor-default border-2 border-transparent" />
+                                            <button onClick={() => setIsModalOpen(true)} className="bg-[#bc8a5f] text-white px-8 rounded-2xl font-black hover:bg-[#8b5a2b] shadow-md transition-all active:scale-95">변경</button>
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-black text-[#8b5a2b] ml-2">연결된 이메일</label>
+                                        <input type="text" value={userData.email || "정보 없음"} readOnly className="w-full bg-[#F4F0D7] rounded-2xl p-4 font-bold text-[#8d7b6d] outline-none cursor-default" />
                                     </div>
                                 </div>
+                                <div className="flex gap-3 mt-4 pt-6 border-t-2 border-[#DED0A6]">
+                                    {/*<button onClick={handleLogout} className="flex-1 bg-[#FFB3B3] py-4 rounded-[25px] font-black text-[#D32F2F] shadow-sm hover:bg-[#FF9999] transition-all">로그아웃</button>*/}
+                                    {/*<button onClick={() => setIsWithdrawModalOpen(true)} className="flex-1 bg-[#efe7d1] py-4 rounded-[25px] font-black text-[#8d7b6d] shadow-sm hover:bg-[#e5d9b5] transition-all text-sm">주민 탈퇴</button>*/}
+                                    {/* 로그아웃 버튼 (싱그러운 녹색) */}
+                                    <button
+                                        onClick={handleLogout}
+                                        className="flex-1 bg-[#e2f0a1] py-4 rounded-[25px] font-black text-[#5d7a22] shadow-sm hover:bg-[#d4e68d] transition-all"
+                                    >
+                                        로그아웃
+                                    </button>
 
-                                <div className="space-y-2">
-                                    <label className="text-xs font-black text-[#8b5a2b]">닉네임</label>
-                                    <div className="flex gap-2">
-                                        <input type="text" value={nickname} onChange={(e) => setNickname(e.target.value)} className="flex-1 bg-[#f0f0f0] rounded-xl p-3 font-bold text-[#5d4037] border-none outline-none" />
-                                        <button onClick={handleUpdateNickname} className="bg-[#bc8a5f] text-white px-4 rounded-xl font-bold text-sm">변경</button>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-2">
-                                    <label className="text-xs font-black text-[#8b5a2b]">이메일</label>
-                                    <input type="text" value={email} readOnly className="w-full bg-[#f0f0f0] rounded-xl p-3 font-bold text-[#8d7b6d] cursor-not-allowed" />
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-3 mt-6">
-                                    <button className="bg-[#efe7d1] py-3 rounded-xl font-black text-[#8b5a2b] shadow-sm hover:bg-[#e5ddd0]">내 문의 내역</button>
-                                    <button className="bg-[#efe7d1] py-3 rounded-xl font-black text-[#8b5a2b] shadow-sm hover:bg-[#e5ddd0]">공지사항</button>
-                                    <button onClick={handleLogout} className="bg-[#ffb3b3] py-3 rounded-xl font-black text-[#d32f2f] shadow-sm col-span-2 mt-2">로그아웃</button>
+                                    {/* 주민 탈퇴 버튼 (경고의 레드) */}
+                                    <button
+                                        onClick={() => {
+                                            setIsWithdrawModalOpen(true);
+                                            setIsWithdrawConfirmStep(false);
+                                        }}
+                                        className="flex-1 bg-[#FFB3B3] py-4 rounded-[25px] font-black text-[#D32F2F] shadow-sm hover:bg-[#FF9999] transition-all text-sm"
+                                    >
+                                        주민 탈퇴
+                                    </button>
                                 </div>
                             </div>
                         )}
 
-                        {/* 3. 문의등록 탭 */}
+                        {activeTab === "settings" && (
+                            <div className="space-y-10 py-4">
+                                <h3 className="text-2xl font-black text-[#8b5a2b] border-b-2 border-[#DED0A6] pb-2">환경 설정 ⚙️</h3>
+                                <div className="space-y-8">
+                                    <div className="space-y-3">
+                                        <div className="flex justify-between font-black text-[#8b5a2b]"><span>배경음악 (BGM)</span><span>{bgmVolume}%</span></div>
+                                        <input type="range" min="0" max="100" value={bgmVolume} onChange={(e) => handleVolumeChange("BGM", e.target.value)} className="w-full h-4 bg-[#F4F0D7] rounded-lg appearance-none cursor-pointer accent-[#8b5a2b]" />
+                                    </div>
+                                    <div className="space-y-3">
+                                        <div className="flex justify-between font-black text-[#8b5a2b]"><span>효과음 (SFX)</span><span>{sfxVolume}%</span></div>
+                                        <input type="range" min="0" max="100" value={sfxVolume} onChange={(e) => handleVolumeChange("SFX", e.target.value)} className="w-full h-4 bg-[#F4F0D7] rounded-lg appearance-none cursor-pointer accent-[#8b5a2b]" />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         {activeTab === "inquiry" && (
-                            <div className="space-y-4 h-full flex flex-col">
-                                <input
-                                    type="text"
-                                    placeholder="제목"
-                                    value={inquiryTitle}
-                                    onChange={(e) => setInquiryTitle(e.target.value)}
-                                    className="w-full bg-[#f0f0f0] rounded-xl p-3 font-bold text-[#5d4037] outline-none"
-                                />
-                                <textarea
-                                    placeholder="내용을 입력해주세요."
-                                    value={inquiryContent}
-                                    onChange={(e) => setInquiryContent(e.target.value)}
-                                    className="w-full flex-1 bg-[#f0f0f0] rounded-xl p-4 font-bold text-[#5d4037] outline-none resize-none"
-                                />
-                                <button onClick={handleInquirySubmit} className="w-full bg-[#bc8a5f] text-white py-3 rounded-xl font-black text-lg shadow-md hover:brightness-110">제출</button>
+                            <div className="space-y-6 py-4 flex flex-col h-full">
+                                <h3 className="text-2xl font-black text-[#8b5a2b] border-b-2 border-[#DED0A6] pb-2">도움센터 📮</h3>
+                                <div className="space-y-4 flex-1 flex flex-col">
+                                    <input type="text" placeholder="문의 제목을 입력하세요." value={inquiryTitle} onChange={(e) => setInquiryTitle(e.target.value)} className="w-full p-4 rounded-2xl bg-white border-2 border-[#DED0A6] text-[#5d4037] font-bold outline-none focus:border-[#bc8a5f]" />
+                                    <textarea placeholder="문의 내용을 상세히 적어주시면 확인 후 답변 드릴게요! 🍃" value={inquiryContent} onChange={(e) => setInquiryContent(e.target.value)} className="w-full flex-1 p-4 rounded-2xl bg-white border-2 border-[#DED0A6] text-[#5d4037] font-bold outline-none focus:border-[#bc8a5f] resize-none" />
+                                    <button onClick={handleInquirySubmit} className="w-full bg-[#bc8a5f] text-white py-4 rounded-2xl font-black text-lg shadow-md hover:bg-[#8b5a2b] transition-all">문의 제출하기</button>
+                                </div>
                             </div>
                         )}
                     </div>
                 </div>
-
-                {/* 하단 공통 닫기 버튼 */}
                 <div className="mt-8 flex justify-center">
-                    <button
-                        onClick={() => navigate(-1)}
-                        className="bg-white/50 text-[#5d4037] px-16 py-2 rounded-full font-black text-lg border-2 border-[#8b5a2b]/30 hover:bg-white transition-all"
-                    >
-                        닫기
-                    </button>
+                    <button onClick={() => navigate(-1)} className="bg-white/90 hover:bg-white text-[#5d4037] px-24 py-3 rounded-full font-black text-xl border-4 border-[#8b5a2b]/30 shadow-md transition-all active:scale-95">마이홈으로 돌아가기</button>
                 </div>
             </div>
         </div>

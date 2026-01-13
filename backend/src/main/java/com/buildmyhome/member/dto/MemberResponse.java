@@ -13,4 +13,5 @@ public class MemberResponse {
     private Integer level;     // 유저 레벨
     private Integer bell;      // 보유 벨
     private Integer playCount; // 총 플레이 횟수
+    private String role;
 }
