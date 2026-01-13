@@ -26,22 +26,11 @@ public class JwtTokenProvider {
         this.expiration = expiration;
     }
 
-//    // 토큰 생성
-//    public String createToken(String email) {
-//        Date now = new Date();
-//        Date expireDate = new Date(now.getTime() + expiration);
-//
-//        return Jwts.builder()
-//                .setSubject(email)
-//                .claim("role", role)
-//                .setIssuedAt(now)
-//                .setExpiration(expireDate)
-//                .signWith(key, SignatureAlgorithm.HS256)
-//                .compact();
-//    }
-
-    public String createToken(String email, String role) { // 1. 여기서 String role을 추가로 받아야 합니다.
+    // 토큰 생성
+    // 토큰에 저장되는 정보: 이메일, 유저권한, 토큰 발급 시간, 토큰 만료 시간
+    public String createToken(String email, String role, Long memberId) { // 1. 여기서 String role을 추가로 받아야 합니다.
         Claims claims = Jwts.claims().setSubject(email);
+        claims.put("memberId", memberId);
         // claims.put("role", role); // jjwt 버전에 따라 이 방식을 쓰기도 합니다.
 
         Date now = new Date();

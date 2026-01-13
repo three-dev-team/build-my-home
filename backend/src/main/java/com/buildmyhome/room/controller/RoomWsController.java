@@ -1,5 +1,7 @@
 package com.buildmyhome.room.controller;
 
+import com.buildmyhome.member.entity.Member;
+import com.buildmyhome.member.repository.MemberRepository;
 import com.buildmyhome.room.dto.RoomMessage;
 import com.buildmyhome.room.dto.RoomPlayerState;
 import com.buildmyhome.room.dto.RoomState;
@@ -9,6 +11,7 @@ import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
+import java.security.Principal;
 import java.util.ArrayList;
 
 @Controller
@@ -17,6 +20,7 @@ public class RoomWsController {
 
     private final SimpMessagingTemplate messagingTemplate;
     private final RoomStateService roomStateService;
+    private final MemberRepository memberRepository;
 
     @MessageMapping("/rooms/join")
     public void joinRoom(RoomMessage message) {
@@ -26,16 +30,21 @@ public class RoomWsController {
 
 //    TODO: isHost 처리 추가
     @MessageMapping("/rooms/select-character")
-    public void selectCharacter(RoomMessage message) {
+    public void selectCharacter(RoomMessage message, Principal principal) {
+
+        Long memberId = Long.parseLong(principal.getName());
+        Member member = memberRepository.findById(memberId).orElseThrow();
 
         RoomPlayerState player = new RoomPlayerState();
-        player.setMemberId(message.getMemberId());
-        player.setNickname(message.getNickname());
+        player.setMemberId(memberId);
+        player.setNickname(member.getNickname());
         player.setCharacterId(message.getCharacterId());
         roomStateService.addPlayerToRoom(message.getRoomId(), player);
 
         // 플레이어 추가 후 캐릭터 선택 메시지 브로드캐스트
         message.setType("CHARACTER_SELECT");
+        message.setMemberId(memberId);
+        message.setNickname(member.getNickname());
         messagingTemplate.convertAndSend("/topic/rooms/" + message.getRoomId(), message);
     }
 
@@ -54,72 +63,41 @@ public class RoomWsController {
     }
 
     @MessageMapping("/rooms/leave")
-    public void leaveRoom(RoomMessage message){
+    public void leaveRoom(RoomMessage message, Principal principal) {
+        Long memberId = Long.parseLong(principal.getName());
         RoomState room = roomStateService.getRoom(message.getRoomId());
         if(room != null){
-            RoomPlayerState player = room.getPlayer(message.getMemberId());
+            RoomPlayerState player = room.getPlayer(memberId);
             if(player != null){
+                message.setMemberId(memberId);
                 message.setNickname(player.getNickname());
                 message.setCharacterId(player.getCharacterId());
             }
         }
 
-        roomStateService.removePlayerFromRoom(message.getRoomId(), message.getMemberId());
+        roomStateService.removePlayerFromRoom(message.getRoomId(), memberId);
         message.setType("PLAYER_LEAVE");
         messagingTemplate.convertAndSend("/topic/rooms/" + message.getRoomId(), message);
     }
 
     @MessageMapping("/rooms/ready")
-    public void toggleReady(RoomMessage message){
-        // roomId, memberId
+    public void toggleReady(RoomMessage message, Principal principal) {
+        // roomId(message), memberId(principal)
+        Long memberId = Long.parseLong(principal.getName());
         RoomState room = roomStateService.getRoom(message.getRoomId());
         if( room != null) {
-            RoomPlayerState player = room.getPlayer(message.getMemberId());
+            RoomPlayerState player = room.getPlayer(memberId);
             if (player != null) {
                 player.setReady(!player.isReady()); // 서버메모리에 저장
                 message.setIsReady(player.isReady()); // websocket용 메시지에 저장
             }
         }
         message.setType("PLAYER_READY");
+        message.setMemberId(memberId);
         messagingTemplate.convertAndSend("/topic/rooms/" + message.getRoomId(), message);
     }
 
 }
-
-
-//public class RoomState {
-//    private final Long roomId;
-//
-//    // Key: memberId Value: RoomPlayerState
-//    private final Map<Long, RoomPlayerState> players = new ConcurrentHashMap<>();
-//
-//    public RoomState(Long roomId) {
-//        this.roomId = roomId;
-//    }
-//
-//    public void addPlayer(RoomPlayerState player) {
-//        players.put(player.getMemberId(), player);
-//    }
-//
-//    public void removePlayer(Long memberId) {
-//        players.remove(memberId);
-//    }
-//
-//    public RoomPlayerState getPlayer(Long memberId) {
-//        return players.get(memberId);
-//    }
-//}
-
-//@Getter
-//@Setter
-//public class RoomMessage {
-//    private String type;      // JOIN, CHARACTER_SELECT, READY ...
-//    private Long roomId;
-//    private Long memberId;
-//    private String nickname;
-//    private Long characterId;
-//    private List<RoomPlayerState> players;  // 방에 있는 플레이어 목록
-//}
 
 
 

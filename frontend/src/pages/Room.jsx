@@ -10,9 +10,25 @@ function Room() {
     const [roomTitle, setRoomTitle] = useState('');
     const [players, setPlayers] = useState([]);
     const [maxPlayers, setMaxPlayers] = useState(4);
-    const [currentMemberId, setCurrentMemberId] = useState(1);
+    const [totalRounds, setTotalRounds] = useState(10);
     const [stompClient, setStompClient] = useState(null);
     const navigate = useNavigate();
+    const token = sessionStorage.getItem('token');
+
+    let currentMemberId = null;
+    if (token) {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        currentMemberId = Number(payload.memberId);
+    }
+
+    const currentPlayer = players.find(player => player.memberId === currentMemberId);
+    const isHost = currentPlayer?.isHost;
+    const allReady = players.filter(player => player.nickname).every(player => player.isReady);
+
+
+    console.log("currentPlayer:{}", currentPlayer);
+    console.log('currentMemberId:', currentMemberId, typeof currentMemberId);
+    console.log('players:', players);
 
     // 방 정보 불러오기 REST API 호출
     // TODO: 호스트도 players 배열에 포함시키기, isHost:true 로 설정
@@ -22,6 +38,7 @@ function Room() {
             const roomResponse = await response.json();
             setRoomTitle(roomResponse.title);
             setMaxPlayers(roomResponse.maxPlayers);
+            setTotalRounds(roomResponse.totalRounds);
             setLoading(false);
         };
         fetchRoom();
@@ -34,6 +51,7 @@ function Room() {
 
         const client = new Client({
             brokerURL: 'ws://localhost:5173/ws',
+            connectHeaders: token ? {Authorization: `Bearer ${token}`} : {},
             onConnect: () => {
                 console.log('>>> ✅ WebSocket 연결됨');
 
@@ -116,7 +134,6 @@ function Room() {
                                 : player
                         ));
                     }
-
                 });
 
                 // 현재 방 상태 요청 추가
@@ -136,15 +153,6 @@ function Room() {
         };
     }, [roomId, maxPlayers, loading]);
 
-
-    const currentPlayer = players.find(player => player.memberId === currentMemberId);
-    const isHost = currentPlayer?.isHost;
-    const allReady = players.filter(player => player.nickname).every(player => player.isReady);
-
-    console.log('players:', players);
-    console.log('currentPlayer:', currentPlayer);
-    console.log('isHost:', isHost);
-
     const handleReady = () => {
 
         if (!stompClient) return;
@@ -153,10 +161,7 @@ function Room() {
         // 여러명이서 누를 수 있으니 클라이언트에서 상태 관리X
         stompClient.publish({
             destination: '/app/rooms/ready',
-            body: JSON.stringify({
-                roomId: roomId,
-                memberId: currentMemberId,
-            })
+            body: JSON.stringify({roomId: roomId})
         })
     };
 
@@ -167,7 +172,7 @@ function Room() {
     };
 
     const handleLeave = () => {
-        leaveRoom(stompClient, roomId, currentMemberId);
+        leaveRoom(stompClient, roomId);
         navigate("/room-list");
     };
 
@@ -182,8 +187,10 @@ function Room() {
     return (
         <div>
             <div>
-                <h1>{roomTitle}</h1>
                 <button onClick={handleSettings}>설정</button>
+                <h1>{roomTitle}</h1>
+                <h3>참여 인원: {maxPlayers}명</h3>
+                <h3>판수: {totalRounds}</h3>
             </div>
 
             <div>
