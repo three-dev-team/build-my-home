@@ -42,7 +42,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
 // 3. JWT 토큰 생성 (인자를 두 개 전달하도록 수정)
 // member.getRole().name() 또는 프로젝트 설정에 따라 "ROLE_MEMBER" 형태가 필요할 수 있습니다.
-        String token = tokenProvider.createToken(member.getEmail(), member.getRole().name());
+        String token = tokenProvider.createToken(member.getEmail(), member.getRole().name(), member.getId());
 
 
         // 4. 프론트엔드로 리다이렉트할 URL 생성

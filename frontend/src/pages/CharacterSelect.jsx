@@ -10,15 +10,13 @@ function CharacterSelect() {
     const [selectedCharacter, setSelectedCharacter] = useState(null);
     const [takenCharacters, setTakenCharacters] = useState([]);
     const [stompClient, setStompClient] = useState(null);
-
-    // TODO : 실제 로그인 유저 정보로 대체 필요
-    const currentMemberId = 1;
-    const currentNickname = "티파니";
+    const token = sessionStorage.getItem('token');
 
     // websocket 연결
     useEffect(() => {
         const client = new Client({
             brokerURL: 'ws://localhost:5173/ws',
+            connectHeaders: token ? { Authorization: `Bearer ${token}` } : {},
             onConnect: () => {
                 console.log('>>> ✅ WebSocket 연결됨');
 
@@ -74,8 +72,6 @@ function CharacterSelect() {
             destination: '/app/rooms/select-character',
             body: JSON.stringify({
                 roomId: roomId,
-                memberId: currentMemberId,
-                nickname: currentNickname,
                 characterId: selectedCharacter
             })
         });
@@ -85,7 +81,7 @@ function CharacterSelect() {
     const handleLeave = () => {
         // TODO: 입장하기 눌렀을 때 roomMemebers에 등록했는지 확인
         // TODO: roomState.getPlayers().size() 로 입장인원 관리하는 방향 검토 요청
-        leaveRoom(stompClient, roomId, currentMemberId);
+        leaveRoom(stompClient, roomId);
         navigate('/room-list');
     };
 

@@ -53,7 +53,7 @@ public class MemberServiceImpl implements MemberService {
             throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
         }
 
-        String token = jwtTokenProvider.createToken(member.getEmail(), "USER");
+        String token = jwtTokenProvider.createToken(member.getEmail(), "USER", member.getId());
 
         return MemberResponse.builder()
                 .token(token).email(member.getEmail()).nickname(member.getNickname())
