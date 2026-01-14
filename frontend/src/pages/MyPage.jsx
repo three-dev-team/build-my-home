@@ -4,7 +4,7 @@ import axios from "axios";
 
 export default function MyPage() {
     const navigate = useNavigate();
-    const API_BASE_URL = "http://localhost:8088/api/member";
+    const API_BASE_URL = "/api/member";
     const nicknameInputRef = useRef(null);
 
     const [activeTab, setActiveTab] = useState("account");

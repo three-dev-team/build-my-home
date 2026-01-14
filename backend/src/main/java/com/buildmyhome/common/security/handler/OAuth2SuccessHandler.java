@@ -6,6 +6,7 @@ import com.buildmyhome.member.repository.MemberRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
@@ -23,7 +24,9 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
     private final JwtTokenProvider tokenProvider;
     private final MemberRepository memberRepository;
-    private static final String FRONT_REDIRECT_BASE = "http://localhost:5173/oauth2/redirect";
+    
+    @Value("${app.frontBaseUrl}")
+    private String frontBaseUrl;
 
     @Override
     public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,
@@ -47,12 +50,14 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
         // 4. 프론트엔드로 리다이렉트할 URL 생성
         // 파라미터에 토큰, 닉네임, 벨, 레벨을 담아 보냅니다 (기존 로그인 로직과 통일)
-        String targetUrl = UriComponentsBuilder.fromUriString(FRONT_REDIRECT_BASE)
+        String targetUrl = UriComponentsBuilder
+                .fromUriString(frontBaseUrl + "/oauth2/redirect")
                 .queryParam("token", token)
-                .queryParam("nickname", URLEncoder.encode(member.getNickname(), StandardCharsets.UTF_8))
+                .queryParam("nickname", member.getNickname())
                 .queryParam("bell", member.getBell())
                 .queryParam("level", member.getLevel())
-                .build().toUriString();
+                .build()
+                .toUriString();
 
 //        // OAuth2SuccessHandler.java 내 리다이렉트 부분
 //        String targetUrl = UriComponentsBuilder.fromUriString("http://localhost:8088/oauth2/redirect") // 3000 -> 5173으로 수정
