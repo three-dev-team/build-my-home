@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 
@@ -37,24 +37,60 @@ const NaverIcon = () => (
 );
 
 export default function Login() {
-    // --- 1. 상태 관리 ---
     const [memberId, setMemberId] = useState("");
     const [password, setPassword] = useState("");
     const navigate = useNavigate();
 
-    // --- 2. 비밀번호 재설정 관련 상태 ---
     const [showFindModal, setShowFindModal] = useState(false);
-    const [findStep, setFindStep] = useState(1); // 1: 이메일 입력, 2: 인증번호 확인, 3: 새 비번 설정
+    const [findStep, setFindStep] = useState(1);
     const [findEmail, setFindEmail] = useState("");
     const [authCode, setAuthCode] = useState("");
     const [newPassword, setNewPassword] = useState("");
     const [confirmNewPassword, setConfirmNewPassword] = useState("");
 
-    // --- 3. 커스텀 알림 모달 상태 & 효과음 ---
+    // --- 아이디 기억하기 상태 ---
+    const [rememberId, setRememberId] = useState(false);
+
+    // --- 비밀번호 찾기 기능 강화 상태 ---
+    const [isSending, setIsSending] = useState(false); // 버튼 비활성화용
+    const [timeLeft, setTimeLeft] = useState(0); // 타이머용(초)
+
     const [modal, setModal] = useState({ isOpen: false, message: "" });
     const alertSound = useMemo(() => new Audio("/sounds/alert_ding.mp3"), []);
-
     const API_BASE_URL = "/api/member";
+
+    // // 이미 토큰이 있다면 바로 홈으로 이동
+    // useEffect(() => {
+    //     const token = sessionStorage.getItem("token");
+    //     if (token) {
+    //         navigate("/home");
+    //     }
+    // }, [navigate]);
+
+    // --- 컴포넌트 로드 시 저장된 아이디 불러오기 ---
+    useEffect(() => {
+        const savedId = localStorage.getItem("savedMemberId");
+        if (savedId) {
+            setMemberId(savedId);
+            setRememberId(true);
+        }
+    }, []);
+
+    // --- 타이머 핸들러 ---
+    useEffect(() => {
+        if (timeLeft <= 0) return;
+        const timer = setInterval(() => {
+            setTimeLeft((prev) => prev - 1);
+        }, 1000);
+        return () => clearInterval(timer);
+    }, [timeLeft]);
+
+    // 시간 포맷 함수 (초 -> 0:00)
+    const formatTime = (seconds) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+    };
 
     const openAlert = (msg) => {
         alertSound.currentTime = 0;
@@ -62,7 +98,36 @@ export default function Login() {
         setModal({ isOpen: true, message: msg });
     };
 
-    // --- 4. 로그인 핸들러 ---
+    // const handleLogin = async () => {
+    //     try {
+    //         const response = await axios.post(`${API_BASE_URL}/login`, {
+    //             email: memberId,
+    //             password: password,
+    //         });
+    //
+    //         if (response.status === 200) {
+    //             const { token, nickname, bell, level } = response.data;
+    //
+    //             // --- 아이디 저장 로직 ---
+    //             if (rememberId) {
+    //                 localStorage.setItem("savedMemberId", memberId);
+    //             } else {
+    //                 localStorage.removeItem("savedMemberId");
+    //             }
+    //
+    //             sessionStorage.setItem("token", token);
+    //             sessionStorage.setItem("nickname", nickname);
+    //             sessionStorage.setItem("bell", bell);
+    //             sessionStorage.setItem("level", level);
+    //
+    //             openAlert(`${nickname}님 환영합니다! 🍃`);
+    //             setTimeout(() => navigate("/home"), 1500);
+    //         }
+    //     } catch (error) {
+    //         openAlert("로그인 정보를 확인해주세요. 😢");
+    //     }
+    // };
+
     const handleLogin = async () => {
         try {
             const response = await axios.post(`${API_BASE_URL}/login`, {
@@ -71,9 +136,18 @@ export default function Login() {
             });
 
             if (response.status === 200) {
-                const { token, nickname, bell, level } = response.data;
+                // 1. id(memberId)를 추가로 받습니다.
+                const { token, nickname, bell, level, id } = response.data;
+
+                if (rememberId) {
+                    localStorage.setItem("savedMemberId", memberId);
+                } else {
+                    localStorage.removeItem("savedMemberId");
+                }
+
                 sessionStorage.setItem("token", token);
                 sessionStorage.setItem("nickname", nickname);
+                sessionStorage.setItem("memberId", id); // 2. 세션에 id 저장
                 sessionStorage.setItem("bell", bell);
                 sessionStorage.setItem("level", level);
 
@@ -85,23 +159,26 @@ export default function Login() {
         }
     };
 
-    // --- 5. 비밀번호 찾기 로직 (Step 1 -> 2 -> 3) ---
-
-    // Step 1: 인증번호 발송
+    // 인증번호 발송 (중복 클릭 방지 추가)
     const handleSendCode = async () => {
         if (!findEmail) return openAlert("이메일을 입력해주세요! 📧");
+        setIsSending(true); // 버튼 비활성화 시작
         try {
             await axios.post(`${API_BASE_URL}/send-code`, { email: findEmail });
             openAlert("인증번호를 발송했습니다! \n메일함을 확인해주세요. 🕊️");
             setFindStep(2);
+            setTimeLeft(300); // 5분(300초) 설정
         } catch (error) {
             openAlert("등록되지 않은 주민이거나 \n발송 중 오류가 발생했습니다.");
+        } finally {
+            setIsSending(false); // 버튼 다시 활성화
         }
     };
 
-    // Step 2: 인증번호 검증
+    // 인증번호 검증 (시간 만료 체크 추가)
     const handleVerifyCode = async () => {
         if (!authCode) return openAlert("인증번호를 입력해주세요!");
+        if (timeLeft <= 0) return openAlert("인증 시간이 만료되었습니다. \n다시 시도해주세요. ⏳");
         try {
             const response = await axios.post(`${API_BASE_URL}/verify-code`, {
                 email: findEmail,
@@ -110,6 +187,7 @@ export default function Login() {
             if (response.data === true) {
                 openAlert("인증 성공! ✨ \n새로운 비밀번호를 설정해주세요.");
                 setFindStep(3);
+                setTimeLeft(0); // 타이머 종료
             } else {
                 openAlert("인증번호가 일치하지 않습니다. ❌");
             }
@@ -118,7 +196,6 @@ export default function Login() {
         }
     };
 
-    // Step 3: 비밀번호 재설정
     const handleResetPassword = async () => {
         const pwRegex = /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,16}$/;
         if (!pwRegex.test(newPassword)) return openAlert("비밀번호 규칙을 확인해주세요! \n(8~16자, 영문/숫자/특수문자 포함) 🔒");
@@ -133,12 +210,14 @@ export default function Login() {
             setShowFindModal(false);
             setFindStep(1);
             setFindEmail("");
+            setTimeLeft(0);
         } catch (error) {
             openAlert("재설정에 실패했습니다.");
         }
     };
 
     const handleSocialLogin = (provider) => {
+        // window.location.href = `/oauth2/authorization/${provider}`;
         window.location.href = `/oauth2/authorization/${provider}`;
     };
 
@@ -147,17 +226,17 @@ export default function Login() {
             className="relative w-full h-screen bg-cover bg-center overflow-hidden flex items-center justify-center"
             style={{backgroundImage: "url('/images/background.jpg')"}}
         >
-            {/* --- A. 커스텀 알림 모달 --- */}
+            {/* --- 커스텀 알림 모달 --- */}
             {modal.isOpen && (
                 <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-                    <div className="relative w-[350px] bg-[#fdf6e3] rounded-[40px] border-[6px] border-[#8b5a2b] p-8 flex flex-col items-center shadow-2xl animate-in zoom-in-95 duration-200">
+                    <div className="relative w-[350px] bg-[#fdf6e3] rounded-[40px] border-[6px] border-[#8b5a2b] shadow-2xl p-8 flex flex-col items-center animate-in zoom-in-95 duration-200">
                         <p className="text-[#5d4037] font-bold text-center whitespace-pre-wrap mb-6">{modal.message}</p>
                         <button onClick={() => setModal({isOpen:false, message:""})} className="bg-[#8b5a2b] text-white px-10 py-2 rounded-full font-black active:scale-95 transition-all">확인</button>
                     </div>
                 </div>
             )}
 
-            {/* --- B. 비밀번호 재설정 모달 --- */}
+            {/* --- 비밀번호 재설정 모달 --- */}
             {showFindModal && (
                 <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm">
                     <div className="relative w-[450px] bg-[#fdf6e3] p-10 rounded-[50px] border-[8px] border-[#8b5a2b] shadow-2xl flex flex-col items-center animate-in zoom-in-95 duration-200">
@@ -169,15 +248,36 @@ export default function Login() {
                             <div className="w-full mt-6 space-y-5 text-center">
                                 <p className="font-bold text-[#8b5a2b]">비밀번호를 찾고자 하는<br/>이메일을 입력해주세요.</p>
                                 <input type="email" placeholder="이메일 주소 입력" value={findEmail} onChange={(e)=>setFindEmail(e.target.value)} className="w-full bg-[#efe7d1] border-none rounded-3xl py-4 px-6 text-[#5d4037] font-bold outline-none focus:ring-4 ring-[#8b5a2b]/20" />
-                                <button onClick={handleSendCode} className="w-full bg-[#8b5a2b] text-white py-4 rounded-3xl font-black text-xl shadow-lg active:scale-95 transition-all">인증번호 발송</button>
+                                <button
+                                    onClick={handleSendCode}
+                                    disabled={isSending}
+                                    className={`w-full py-4 rounded-3xl font-black text-xl shadow-lg active:scale-95 transition-all ${isSending ? 'bg-gray-400 opacity-70' : 'bg-[#8b5a2b] text-white'}`}
+                                >
+                                    {isSending ? '발송 중...' : '인증번호 발송'}
+                                </button>
                             </div>
                         )}
 
                         {findStep === 2 && (
                             <div className="w-full mt-6 space-y-5 text-center">
-                                <p className="font-bold text-[#8b5a2b]">메일로 발송된<br/>6자리 번호를 입력해주세요.</p>
+                                <div className="flex flex-col gap-2">
+                                    <p className="font-bold text-[#8b5a2b]">메일로 발송된<br/>6자리 번호를 입력해주세요.</p>
+                                    <span className="text-red-500 font-bold text-lg animate-pulse">{formatTime(timeLeft)}</span>
+                                </div>
                                 <input type="text" placeholder="인증번호 6자리" value={authCode} onChange={(e)=>setAuthCode(e.target.value)} className="w-full bg-[#efe7d1] border-none rounded-3xl py-4 px-6 font-bold outline-none text-center text-2xl tracking-[0.5em]" maxLength={6} />
-                                <button onClick={handleVerifyCode} className="w-full bg-[#8b5a2b] text-white py-4 rounded-3xl font-black text-xl shadow-lg active:scale-95 transition-all">인증 확인</button>
+                                <button
+                                    onClick={handleVerifyCode}
+                                    className="w-full bg-[#8b5a2b] text-white py-4 rounded-3xl font-black text-xl shadow-lg active:scale-95 transition-all"
+                                >
+                                    인증 확인
+                                </button>
+                                <button
+                                    onClick={handleSendCode}
+                                    disabled={isSending}
+                                    className="text-sm text-[#8b5a2b] font-bold underline opacity-80 hover:opacity-100"
+                                >
+                                    인증번호 재발송
+                                </button>
                             </div>
                         )}
 
@@ -190,12 +290,12 @@ export default function Login() {
                             </div>
                         )}
 
-                        <button onClick={() => {setShowFindModal(false); setFindStep(1);}} className="mt-8 text-[#a67c52] font-bold underline cursor-pointer">돌아가기</button>
+                        <button onClick={() => {setShowFindModal(false); setFindStep(1); setTimeLeft(0);}} className="mt-8 text-[#a67c52] font-bold underline cursor-pointer">돌아가기</button>
                     </div>
                 </div>
             )}
 
-            {/* --- C. 메인 로그인 박스 --- */}
+            {/* --- 메인 로그인 박스 --- */}
             <div className="relative w-[450px] bg-[#fdf6e3] p-10 rounded-[50px] border-[8px] border-[#8b5a2b] shadow-[15px_15px_0px_rgba(139,90,43,0.15)] flex flex-col items-center">
                 <div className="absolute -top-32">
                     <img src="/images/logo.png" alt="지어봐요 마이홈" className="w-[300px] drop-shadow-xl" />
@@ -223,6 +323,19 @@ export default function Login() {
                             onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
                             className="w-full bg-[#efe7d1] border-none rounded-3xl py-4 pl-12 pr-4 text-[#5d4037] font-bold placeholder-[#a67c52] focus:ring-4 ring-[#8b5a2b]/20 outline-none transition-all"
                         />
+                    </div>
+
+                    {/* --- 아이디 저장 체크박스 --- */}
+                    <div className="flex justify-start px-2">
+                        <label className="flex items-center gap-2 cursor-pointer group text-[#8b5a2b] font-bold text-sm">
+                            <input
+                                type="checkbox"
+                                checked={rememberId}
+                                onChange={(e) => setRememberId(e.target.checked)}
+                                className="w-4 h-4 accent-[#8b5a2b] cursor-pointer"
+                            />
+                            <span className="group-hover:underline">아이디 저장</span>
+                        </label>
                     </div>
 
                     <button
