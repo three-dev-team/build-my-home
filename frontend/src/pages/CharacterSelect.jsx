@@ -126,7 +126,7 @@ function CharacterSelect() {
                         borderRadius: '10px',
                         color: 'white'
                     }}>
-                    입장하기
+                    선택하기
                 </button>
                 <button
                     onClick={handleLeave}
