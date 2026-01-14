@@ -53,7 +53,7 @@ public class MemberServiceImpl implements MemberService {
             throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
         }
 
-        String token = jwtTokenProvider.createToken(member.getEmail(), "USER");
+        String token = jwtTokenProvider.createToken(member.getEmail(), "USER", member.getId());
 
         return MemberResponse.builder()
                 .token(token).email(member.getEmail()).nickname(member.getNickname())
@@ -97,11 +97,28 @@ public class MemberServiceImpl implements MemberService {
         return MemberResponse.builder()
                 .email(member.getEmail()).nickname(member.getNickname())
                 .level(member.getLevel()).bell(member.getBell())
+                .role(member.getRole().name())
                 .build();
     }
 
     @Override
     public boolean existsByEmail(String email) { return memberRepository.existsByEmail(email); }
+
+    @Override
+    @Transactional
+    public void updateNickname(String email, String newNickname) {
+        // 1. 중복 체크
+        if (memberRepository.existsByNickname(newNickname)) {
+            throw new IllegalStateException("이미 사용 중인 닉네임입니다.");
+        }
+
+        // 2. 유저 조회 및 업데이트
+        Member member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        member.setNickname(newNickname);
+        // @Transactional이 걸려있으면 save()를 안 써도 메서드 종료 시 DB에 반영됩니다(더티 체킹).
+    }
 
     @Override
     public boolean existsByNickname(String nickname) { return memberRepository.existsByNickname(nickname); }
@@ -124,5 +141,22 @@ public class MemberServiceImpl implements MemberService {
             log.error("메일 발송 에러: {}", e.getMessage());
             throw new RuntimeException("메일 발송 실패");
         }
+    }
+
+    @Override
+    @Transactional
+    public void withdraw(String email) {
+        // 1. 유저 존재 여부 확인
+        Member member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("해당 주민을 찾을 수 없습니다."));
+
+        // 2. [주의] 연관 데이터 처리
+        // 여기서 해당 유저가 작성한 문의사항을 먼저 지워주어야 합니다.
+
+        // 3. 유저 삭제
+        memberRepository.delete(member);
+
+        // 로그 남기기 (선택)
+        log.info("회원 탈퇴 완료: {}", email);
     }
 }

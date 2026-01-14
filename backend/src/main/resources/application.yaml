@@ -95,6 +95,8 @@ logging:
   level:
     com.buildmyhome: DEBUG
     org.hibernate.SQL: DEBUG
+    org.springframework.web.socket: DEBUG
+    org.springframework.web: DEBUG
 
 #JWT Configuration
 jwt:

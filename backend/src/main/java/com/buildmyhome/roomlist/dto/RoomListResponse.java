@@ -1,5 +1,7 @@
 package com.buildmyhome.roomlist.dto;
 
+import com.buildmyhome.room.dto.RoomResponse;
+import com.buildmyhome.room.entity.Room;
 import lombok.Builder;
 import lombok.Getter;
 
