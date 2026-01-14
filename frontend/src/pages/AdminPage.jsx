@@ -10,6 +10,11 @@ export default function AdminPage() {
     const [selectedInquiry, setSelectedInquiry] = useState(null);
     const [answerContent, setAnswerContent] = useState("");
 
+    // 페이징 관련 상태 추가
+    const [currentPage, setCurrentPage] = useState(0);  // 현재 페이지
+    const [totalPages, setTotalPages] = useState(0);    // 전체 페이지 수
+    const [totalElements, setTotalElements] = useState(0);  // 전체 문의 개수
+
     // 회원 관련 상태
     const [members, setMembers] = useState([]);
     const [selectedMember, setSelectedMember] = useState(null);
@@ -33,14 +38,17 @@ export default function AdminPage() {
     }, [activeTab]);
 
     // 문의 목록 가져오기
-    const fetchInquiries = async () => {
+    const fetchInquiries = async (page = 0) => {
         try {
             setLoading(true);
             const token = sessionStorage.getItem("token");
-            const response = await axios.get("/api/admin/inquiries?page=0&size=20", {
+            const response = await axios.get(`/api/admin/inquiries?page=${page}&size=4`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setInquiries(response.data.content);
+            setCurrentPage(response.data.number);  // 현재 페이지
+            setTotalPages(response.data.totalPages);  // 전체 페이지 수
+            setTotalElements(response.data.totalElements);  // 전체 개수
         } catch (error) {
             console.error("문의 목록 조회 실패:", error);
             if (error.response?.status === 403) {
@@ -112,6 +120,13 @@ export default function AdminPage() {
         }
     };
 
+    // 페이지 변경
+    const handlePageChange = (newPage) => {
+        setCurrentPage(newPage);
+        fetchInquiries(newPage);
+        setSelectedInquiry(null);  // 선택 초기화
+    };
+
     return (
         <div className="relative w-full min-h-screen bg-[#fdf6e3] flex items-center justify-center overflow-auto p-8"
              style={{ backgroundImage: "url('/images/background.jpg')", backgroundSize: 'cover' }}>
@@ -160,50 +175,104 @@ export default function AdminPage() {
                 {activeTab === "inquiry" && (
                     <div className="flex gap-4 h-[600px]">
                         {/* 왼쪽: 문의 목록 */}
-                        <div className="w-1/3 bg-white rounded-[30px] p-6 border-4 border-[#8b5a2b]/20 shadow-inner overflow-y-auto">
-                            <h2 className="text-xl font-black text-[#8b5a2b] mb-4 flex items-center gap-2">
-                                <span>📬</span> 문의 목록
-                            </h2>
+                        <div className="w-1/3 bg-white rounded-[30px] p-6 border-4 border-[#8b5a2b]/20 shadow-inner flex flex-col">
+                            <div className="flex items-center justify-between mb-4">
+                                <h2 className="text-xl font-black text-[#8b5a2b] flex items-center gap-2">
+                                    <span>📬</span> 문의 목록
+                                </h2>
+                                <span className="text-sm text-[#8d7b6d] font-bold">
+                                    전체 {totalElements}개
+                                </span>
+                            </div>
 
-                            {loading ? (
-                                <p className="text-center text-[#8b5a2b]">불러오는 중...</p>
-                            ) : inquiries.length === 0 ? (
-                                <div className="text-center py-8">
-                                    <p className="text-4xl mb-2">🍃</p>
-                                    <p className="text-[#8b5a2b] font-bold">문의가 없습니다</p>
-                                </div>
-                            ) : (
-                                <div className="space-y-2">
-                                    {inquiries.map((inquiry) => (
+                            {/* 문의 리스트 */}
+                            <div className="flex-1 overflow-y-auto mb-4">
+                                {loading ? (
+                                    <p className="text-center text-[#8b5a2b] py-8">불러오는 중...</p>
+                                ) : inquiries.length === 0 ? (
+                                    <div className="text-center py-8">
+                                        <p className="text-4xl mb-2">🍃</p>
+                                        <p className="text-[#8b5a2b] font-bold">문의가 없습니다</p>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-2">
+                                        {inquiries.map((inquiry) => (
+                                            <button
+                                                key={inquiry.id}
+                                                onClick={() => handleSelectInquiry(inquiry.id)}
+                                                className={`w-full text-left p-4 rounded-2xl transition-all ${
+                                                    selectedInquiry?.id === inquiry.id
+                                                        ? "bg-[#e2f0a1] border-3 border-[#8b5a2b]"
+                                                        : "bg-[#f5f5f5] hover:bg-[#efe7d1]"
+                                                }`}
+                                            >
+                                                <div className="flex items-center justify-between mb-2">
+                            <span className={`text-xs px-3 py-1 rounded-full font-bold ${
+                                inquiry.status === "ANSWERED"
+                                    ? "bg-green-200 text-green-800"
+                                    : "bg-yellow-200 text-yellow-800"
+                            }`}>
+                                {inquiry.status === "ANSWERED" ? "답변완료" : "답변대기"}
+                            </span>
+                            <span className="text-xs text-gray-500">
+                                {new Date(inquiry.createdAt).toLocaleDateString()}
+                            </span>
+                                                </div>
+                                                <p className="font-bold text-[#5d4037] text-sm mb-1 truncate">
+                                                    {inquiry.title}
+                                                </p>
+                                                <p className="text-xs text-[#8b5a2b]">
+                                                    작성자: {inquiry.memberNickname}
+                                                </p>
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* 페이징 버튼 */}
+                            {!loading && totalPages > 0 && (
+                                <div className="flex items-center justify-center gap-2 pt-4 border-t-2 border-gray-200">
+                                    {/* 이전 버튼 */}
+                                    <button
+                                        onClick={() => handlePageChange(currentPage - 1)}
+                                        disabled={currentPage === 0}
+                                        className={`px-3 py-2 rounded-lg font-bold text-sm transition-all ${
+                                            currentPage === 0
+                                                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                                                : "bg-[#efe7d1] text-[#8b5a2b] hover:bg-[#e2f0a1]"
+                                        }`}
+                                    >
+                                        ◀
+                                    </button>
+
+                                    {/* 페이지 번호 버튼들 */}
+                                    {Array.from({ length: totalPages }, (_, i) => i).map((pageNum) => (
                                         <button
-                                            key={inquiry.id}
-                                            onClick={() => handleSelectInquiry(inquiry.id)}
-                                            className={`w-full text-left p-4 rounded-2xl transition-all ${
-                                                selectedInquiry?.id === inquiry.id
-                                                    ? "bg-[#e2f0a1] border-3 border-[#8b5a2b]"
-                                                    : "bg-[#f5f5f5] hover:bg-[#efe7d1]"
+                                            key={pageNum}
+                                            onClick={() => handlePageChange(pageNum)}
+                                            className={`px-3 py-2 rounded-lg font-bold text-sm transition-all ${
+                                                currentPage === pageNum
+                                                    ? "bg-[#bc8a5f] text-white"
+                                                    : "bg-[#efe7d1] text-[#8b5a2b] hover:bg-[#e2f0a1]"
                                             }`}
                                         >
-                                            <div className="flex items-center justify-between mb-2">
-                                                <span className={`text-xs px-3 py-1 rounded-full font-bold ${
-                                                    inquiry.status === "ANSWERED"
-                                                        ? "bg-green-200 text-green-800"
-                                                        : "bg-yellow-200 text-yellow-800"
-                                                }`}>
-                                                    {inquiry.status === "ANSWERED" ? "답변완료" : "답변대기"}
-                                                </span>
-                                                <span className="text-xs text-gray-500">
-                                                    {new Date(inquiry.createdAt).toLocaleDateString()}
-                                                </span>
-                                            </div>
-                                            <p className="font-bold text-[#5d4037] text-sm mb-1 truncate">
-                                                {inquiry.title}
-                                            </p>
-                                            <p className="text-xs text-[#8b5a2b]">
-                                                작성자: {inquiry.memberNickname}
-                                            </p>
+                                            {pageNum + 1}
                                         </button>
                                     ))}
+
+                                    {/* 다음 버튼 */}
+                                    <button
+                                        onClick={() => handlePageChange(currentPage + 1)}
+                                        disabled={currentPage === totalPages - 1}
+                                        className={`px-3 py-2 rounded-lg font-bold text-sm transition-all ${
+                                            currentPage === totalPages - 1
+                                                ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                                                : "bg-[#efe7d1] text-[#8b5a2b] hover:bg-[#e2f0a1]"
+                                        }`}
+                                    >
+                                        ▶
+                                    </button>
                                 </div>
                             )}
                         </div>
