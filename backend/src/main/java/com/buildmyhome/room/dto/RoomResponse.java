@@ -22,11 +22,8 @@ public class RoomResponse {
                 .id(room.getId())
                 .title(room.getTitle())
                 .maxPlayers(room.getMaxPlayers())
-                .currentPlayers(room.getCurrentPlayers())
                 .status(room.getStatus().name())
                 .totalRounds(room.getTotalRounds())
-                .hostId(room.getHost().getId())
-                .hostNickname(room.getHost().getNickname())
                 .build();
     }
 }
