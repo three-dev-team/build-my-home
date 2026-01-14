@@ -59,13 +59,13 @@ export default function Login() {
     const alertSound = useMemo(() => new Audio("/sounds/alert_ding.mp3"), []);
     const API_BASE_URL = "/api/member";
 
-    // // 이미 토큰이 있다면 바로 홈으로 이동
-    // useEffect(() => {
-    //     const token = sessionStorage.getItem("token");
-    //     if (token) {
-    //         navigate("/home");
-    //     }
-    // }, [navigate]);
+    // 이미 토큰이 있다면 바로 홈으로 이동
+    useEffect(() => {
+        const token = sessionStorage.getItem("token");
+        if (token) {
+            navigate("/home");
+        }
+    }, [navigate]);
 
     // --- 컴포넌트 로드 시 저장된 아이디 불러오기 ---
     useEffect(() => {
