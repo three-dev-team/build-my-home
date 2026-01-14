@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Home from "./pages/Home.jsx";
 import Login from "./pages/Login";
 import Config from "./pages/Config.jsx";
@@ -11,12 +11,22 @@ import RoomList from "./pages/RoomList.jsx";
 import Join from "./pages/Join.jsx";
 import MyPage from "./pages/MyPage.jsx";
 import OAuth2RedirectHandler from "./pages/OAuth2RedirectHandler";
+import AdminPage from "./pages/AdminPage.jsx";
 
 function App() {
     const audioRef = useRef(null);
     const [isMuted, setIsMuted] = useState(true);
     // 기능 수정을 위해 필요한 상태 선언
     const [isInitialized, setIsInitialized] = useState(false);
+    // 권한 확인 - 경로로 admin 페이지로 들어오려고 하면 차단
+    const ProtectedAdminRoute = ({ children }) => {
+        const userRole = sessionStorage.getItem("role");
+        if (userRole !== "ADMIN") {
+            alert("관리자만 접근 가능한 페이지입니다! ⛔");
+            return <Navigate to="/home" replace />;
+        }
+        return children;
+    };
 
     // useEffect(() => {
     //     // 초기 로드 시 즉시 복구 (useEffect 안에서 가장 먼저 실행)
@@ -89,6 +99,7 @@ function App() {
                 <Route path="/join" element={<Join />} />
                 <Route path="/mypage" element={<MyPage />} />
                 <Route path="/oauth2/redirect" element={<OAuth2RedirectHandler />} />
+                <Route path="/admin" element={<ProtectedAdminRoute> <AdminPage /> </ProtectedAdminRoute>} />
             </Routes>
         </Router>
     );

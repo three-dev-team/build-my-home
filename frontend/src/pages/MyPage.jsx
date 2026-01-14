@@ -69,8 +69,16 @@ export default function MyPage() {
         try {
             const token = sessionStorage.getItem("token");
             await axios.post(`${API_BASE_URL}/inquiry`,
-                { title: inquiryTitle, content: inquiryContent },
-                { headers: { Authorization: `Bearer ${token}` } }
+                {
+                    title: inquiryTitle,
+                    content: inquiryContent
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                }
             );
             alert("주민님의 문의가 정상적으로 접수되었습니다! 🍃");
             setInquiryTitle("");
