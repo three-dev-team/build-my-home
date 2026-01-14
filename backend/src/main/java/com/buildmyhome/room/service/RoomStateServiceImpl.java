@@ -4,6 +4,7 @@ import com.buildmyhome.room.dto.RoomPlayerState;
 import com.buildmyhome.room.dto.RoomState;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -16,7 +17,9 @@ public class RoomStateServiceImpl implements RoomStateService {
     @Override
     public void addPlayerToRoom(Long roomId, RoomPlayerState player) {
         RoomState room = roomStates.computeIfAbsent(roomId, RoomState::new);
-        room.addPlayer(player);
+        synchronized (room) {
+            room.addPlayer(player);
+        }
     }
 
     @Override
@@ -27,8 +30,19 @@ public class RoomStateServiceImpl implements RoomStateService {
     @Override
     public void removePlayerFromRoom(Long roomId, Long memberId) {
         RoomState room = roomStates.get(roomId);
-        if (room != null) {
+        synchronized (room) {
             room.removePlayer(memberId);
+            if (room.getPlayers().isEmpty()) roomStates.remove(roomId);
         }
+    }
+
+    @Override
+    public void removeRoom(Long roomId) {
+        roomStates.remove(roomId);
+    }
+
+    @Override
+    public Map<Long, RoomState> getAllRoomStates() {
+        return new HashMap<>(roomStates);
     }
 }

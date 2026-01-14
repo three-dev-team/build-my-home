@@ -25,20 +25,13 @@ function CharacterSelect() {
                     const data = JSON.parse(message.body);
                     console.log('>>> 메시지 수신:', data);
 
-                    if(data.type === 'ROOM_STATE') {
-                        // 현재 방 상태 업데이트
-                        const takenCharacters = data.players.map(player => player.characterId);
-                        setTakenCharacters(takenCharacters);
-                    }
+                    if (data.players) {
+                        // 이미 누군가가 선택한 캐릭터 ID들만 모아서 상태 업데이트
+                        const selectedIds = data.players
+                            .filter(p => p.characterId !== null)
+                            .map(p => Number(p.characterId));
 
-                    if (data.type === 'CHARACTER_SELECT') {
-                        // 캐릭터 선택하면 takenCharacters에 추가
-                        setTakenCharacters(prev => [...prev, data.characterId]);
-                    }
-
-                    if (data.type === 'PLAYER_LEAVE') {
-                        // 플레이어가 나가면 takenCharacters에서 제거
-                        setTakenCharacters(prev => prev.filter(id => id !== data.characterId));
+                        setTakenCharacters(selectedIds);
                     }
                 });
 
@@ -79,8 +72,6 @@ function CharacterSelect() {
     };
 
     const handleLeave = () => {
-        // TODO: 입장하기 눌렀을 때 roomMemebers에 등록했는지 확인
-        // TODO: roomState.getPlayers().size() 로 입장인원 관리하는 방향 검토 요청
         leaveRoom(stompClient, roomId);
         navigate('/room-list');
     };

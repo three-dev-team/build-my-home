@@ -110,6 +110,7 @@ export default function RoomList() {
         });
 
         client.onConnect = () => {
+            console.log('>>> ✅ WebSocket 연결됨');
             client.subscribe(WS_TOPIC_ROOMS, (message) => {
                 try {
                     const payload = JSON.parse(message.body);
