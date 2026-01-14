@@ -1,5 +1,6 @@
 import React, {useEffect, useMemo, useRef, useState} from "react";
 import {useNavigate} from "react-router-dom";
+import { getBrokerURL } from "../utils/ws.js";
 
 // import SockJS from "sockjs-client/dist/sockjs";
 import {Client} from "@stomp/stompjs";
@@ -99,14 +100,14 @@ export default function RoomList() {
     // WS 연결: RoomsSnapshot / Error / RoomCreatedEvent 받기
     useEffect(() => {
         const token = sessionStorage.getItem("token");
+        const wsProto = window.location.protocol === "https:" ? "wss" : "ws";
+        const brokerURL = `${wsProto}://${window.location.host}/ws`;
 
         const client = new Client({
-            brokerURL: 'ws://localhost:5173/ws',
-            // webSocketFactory: () => new SockJS(WS_URL),
-            reconnectDelay: 3000,
-            debug: () => {
-            },
-            connectHeaders: token ? {Authorization: `Bearer ${token}`} : {},
+          brokerURL,
+          reconnectDelay: 3000,
+          debug: () => {},
+          connectHeaders: token ? { Authorization: `Bearer ${token}` } : {},
         });
 
         client.onConnect = () => {

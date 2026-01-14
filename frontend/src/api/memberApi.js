@@ -1,8 +1,13 @@
 import axios from 'axios';
 
 const API = axios.create({
-    baseURL: 'http://localhost:8088/api/member',
+  baseURL: "/api/member",
 });
+
+// 토큰 저장소가 섞여 있어도 안전하게 가져오도록 처리
+function getToken() {
+  return sessionStorage.getItem("token") || localStorage.getItem("token");
+}
 
 // 토큰이 있다면 모든 요청 헤더에 자동으로 포함
 API.interceptors.request.use((config) => {

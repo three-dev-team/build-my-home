@@ -3,6 +3,7 @@ import {useParams, useNavigate} from 'react-router-dom';
 import {Client} from '@stomp/stompjs';
 import {CHARACTERS} from '../constants/characters';
 import {leaveRoom} from "../utils/roomUtils.js";
+import { getBrokerURL } from "../utils/ws.js";
 
 function CharacterSelect() {
     const {roomId} = useParams();
@@ -15,7 +16,7 @@ function CharacterSelect() {
     // websocket 연결
     useEffect(() => {
         const client = new Client({
-            brokerURL: 'ws://localhost:5173/ws',
+            brokerURL: getBrokerURL(),
             connectHeaders: token ? { Authorization: `Bearer ${token}` } : {},
             onConnect: () => {
                 console.log('>>> ✅ WebSocket 연결됨');

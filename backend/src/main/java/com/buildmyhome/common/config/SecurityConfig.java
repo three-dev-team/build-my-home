@@ -1,9 +1,11 @@
 package com.buildmyhome.common.config;
 
 import com.buildmyhome.common.jwt.JwtAuthenticationFilter;
+import com.buildmyhome.common.jwt.JwtTokenProvider;
 import com.buildmyhome.common.security.handler.OAuth2SuccessHandler;
 import com.buildmyhome.common.security.service.CustomOAuth2UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -21,7 +23,7 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final JwtTokenProvider jwtTokenProvider;
 
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
@@ -31,9 +33,23 @@ public class SecurityConfig {
         return PasswordEncoderFactories.createDelegatingPasswordEncoder();
     }
 
+    // JWT 필터는 여기서 생성
+    @Bean
+    public JwtAuthenticationFilter jwtAuthenticationFilter() {
+        return new JwtAuthenticationFilter(jwtTokenProvider);
+    }
+
+     // JwtAuthenticationFilter가 "서블릿 필터로 자동 등록"되는 걸 막기
+     // (이중 등록되면 StackOverflowError 터질 수 있음)
+    @Bean
+    public FilterRegistrationBean<JwtAuthenticationFilter> jwtFilterRegistration(JwtAuthenticationFilter filter) {
+        FilterRegistrationBean<JwtAuthenticationFilter> reg = new FilterRegistrationBean<>(filter);
+        reg.setEnabled(false);
+        return reg;
+    }
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
 
@@ -75,6 +91,7 @@ public class SecurityConfig {
                 )
 
                 // JWT 인증 필터를 UsernamePasswordAuthenticationFilter 앞에 배치
+                // 시큐리티 체인에서만 1번 돌게 한다
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();

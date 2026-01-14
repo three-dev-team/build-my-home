@@ -1,21 +1,18 @@
 package com.buildmyhome.common.controller;
 
-import jakarta.servlet.http.HttpServletRequest;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 
-@Slf4j
 @Controller
 public class HomeController {
 
-    @GetMapping("/")
-    public String home() {
-        return "forward:/index.html";
-    }
+    @GetMapping(value = {
+            "/",
+            "/{path:^(?!api$|ws$|assets$|images$|sounds$|videos$|oauth2$|login$|error$)[^\\.]*}",
+            "/{path:^(?!api$|ws$|assets$|images$|sounds$|videos$|oauth2$|login$|error$)[^\\.]*}/**"
+    })
 
-    @GetMapping("/{path:^(?!ws|api).*$}")
-    public String forward() {
+    public String forwardToIndex() {
         return "forward:/index.html";
     }
 }

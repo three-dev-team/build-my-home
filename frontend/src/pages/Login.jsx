@@ -57,7 +57,7 @@ export default function Login() {
 
     const [modal, setModal] = useState({ isOpen: false, message: "" });
     const alertSound = useMemo(() => new Audio("/sounds/alert_ding.mp3"), []);
-    const API_BASE_URL = "http://localhost:8088/api/member";
+    const API_BASE_URL = "/api/member";
 
     // // 이미 토큰이 있다면 바로 홈으로 이동
     // useEffect(() => {
@@ -218,7 +218,7 @@ export default function Login() {
 
     const handleSocialLogin = (provider) => {
         // window.location.href = `/oauth2/authorization/${provider}`;
-        window.location.href = `http://localhost:8088/oauth2/authorization/${provider}`;
+        window.location.href = `/oauth2/authorization/${provider}`;
     };
 
     return (

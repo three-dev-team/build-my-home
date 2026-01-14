@@ -8,6 +8,7 @@ export default defineConfig({
     tailwindcss(),
   ],
   server: {
+    host: true,
     proxy: {
       '/api': {
         target: "http://localhost:8088",
@@ -31,5 +32,5 @@ export default defineConfig({
   build: { // server 밖으로 나와야 합니다!
     outDir: '../backend/src/main/resources/static',
     emptyOutDir: true,
-  }
-})
+  },
+});
