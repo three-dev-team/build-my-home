@@ -333,7 +333,7 @@ export default function MyPage() {
                     </div>
                 </div>
                 <div className="mt-8 flex justify-center">
-                    <button onClick={() => navigate(-1)} className="bg-white/90 hover:bg-white text-[#5d4037] px-24 py-3 rounded-full font-black text-xl border-4 border-[#8b5a2b]/30 shadow-md transition-all active:scale-95">마이홈으로 돌아가기</button>
+                    <button onClick={() => navigate("/home")} className="bg-white/90 hover:bg-white text-[#5d4037] px-24 py-3 rounded-full font-black text-xl border-4 border-[#8b5a2b]/30 shadow-md transition-all active:scale-95">마이홈으로 돌아가기</button>
                 </div>
             </div>
         </div>
