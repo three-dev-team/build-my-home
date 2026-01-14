@@ -60,35 +60,6 @@ export default function MyPage() {
         }
     };
 
-    // 문의하기 접수 핸들러
-    const handleInquirySubmit = async () => {
-        if (!inquiryTitle.trim() || !inquiryContent.trim()) {
-            alert("제목과 내용을 모두 입력해주세요! 📮");
-            return;
-        }
-        try {
-            const token = sessionStorage.getItem("token");
-            await axios.post(`${API_BASE_URL}/inquiry`,
-                {
-                    title: inquiryTitle,
-                    content: inquiryContent
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    }
-                }
-            );
-            alert("주민님의 문의가 정상적으로 접수되었습니다! 🍃");
-            setInquiryTitle("");
-            setInquiryContent("");
-        } catch (e) {
-            console.error(e);
-            alert("문의 접수에 실패했습니다. 잠시 후 다시 시도해주세요.");
-        }
-    };
-
     const handleLogout = () => {
         if (window.confirm("로그아웃 하시겠습니까? 🍃")) {
             sessionStorage.clear();
@@ -247,6 +218,8 @@ export default function MyPage() {
                                 key={tab.id}
                                 onClick={() => {
                                     if (tab.id === "admin") { navigate("/admin"); }
+                                    // --- 추가된 부분: /user-inquiry로 이동 ---
+                                    else if (tab.id === "inquiry") {navigate("/user-inquiry");}
                                     else { setActiveTab(tab.id); }
                                 }}
                                 className={`py-4 px-6 rounded-[25px] font-black text-lg transition-all shadow-sm ${
