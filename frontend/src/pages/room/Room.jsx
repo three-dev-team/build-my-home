@@ -1,8 +1,8 @@
 import {useState, useEffect} from 'react';
 import {useParams, useNavigate} from 'react-router-dom';
 import {Client} from '@stomp/stompjs';
-import {leaveRoom} from "../utils/roomUtils.js";
-import { getBrokerURL } from "../utils/ws.js";
+import {leaveRoom} from "../../utils/roomUtils.js";
+import { getBrokerURL } from "../../utils/ws.js";
 
 
 function Room() {

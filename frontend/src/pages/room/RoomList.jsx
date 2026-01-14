@@ -1,6 +1,6 @@
 import React, {useEffect, useMemo, useRef, useState} from "react";
 import {useNavigate} from "react-router-dom";
-import { getBrokerURL } from "../utils/ws.js";
+import { getBrokerURL } from "../../utils/ws.js";
 
 // import SockJS from "sockjs-client/dist/sockjs";
 import {Client} from "@stomp/stompjs";

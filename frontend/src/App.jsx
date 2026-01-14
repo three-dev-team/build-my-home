@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useRef } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Home from "./pages/Home.jsx";
-import Login from "./pages/Login";
+import Login from "./pages/auth/Login.jsx";
 import Config from "./pages/Config.jsx";
 import Store from "./pages/Store.jsx";
-import Room from "./pages/Room.jsx";
-import CharacterSelect from "./pages/CharacterSelect.jsx";
-import RoomList from "./pages/RoomList.jsx";
-import Join from "./pages/Join.jsx";
+import Room from "./pages/room/Room.jsx";
+import CharacterSelect from "./pages/room/CharacterSelect.jsx";
+import RoomList from "./pages/room/RoomList.jsx";
+import Join from "./pages/auth/Join.jsx";
 import MyPage from "./pages/MyPage.jsx";
-import OAuth2RedirectHandler from "./pages/OAuth2RedirectHandler";
+import OAuth2RedirectHandler from "./pages/auth/OAuth2RedirectHandler.jsx";
 import AdminPage from "./pages/AdminPage.jsx";
 
 function App() {
