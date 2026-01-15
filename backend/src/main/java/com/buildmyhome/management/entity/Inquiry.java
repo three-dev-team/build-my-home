@@ -27,6 +27,10 @@ public class Inquiry extends BaseTimeEntity {
     @Column(nullable = false, columnDefinition = "TEXT")
     private String content;  // 문의 내용
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private InquiryCategory category;   // 문의 카테고리 추가
+
     @Column(length = 500)
     private String imageUrl;  // 업로드된 이미지 경로
 
