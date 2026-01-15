@@ -13,9 +13,11 @@ public class GamePlayerState {
     private Long characterId;
 
     // 게임 진행 정보
-    private int position = 0;   // 현재 칸 위치
-    private int bell = 10;      // 시작 벨 10
-    private int houseLevel = 0; // 집 레벨
+    private Integer orderDiceValue;  // 순서 정하기용 주사위 값
+    private Integer diceValue;      // 주사위 값
+    private int position = 0;       // 현재 칸 위치
+    private int bell = 10;          // 시작 벨 10
+    private int houseLevel = 0;     // 집 레벨
 
     // 재화 정보
     private Map<ResourceType, Integer> resources = new EnumMap<>(ResourceType.class);

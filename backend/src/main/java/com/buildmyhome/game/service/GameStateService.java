@@ -4,4 +4,6 @@ import com.buildmyhome.game.dto.GameState;
 
 public interface GameStateService {
     void saveGame(Long roomId, GameState gameState);
+
+    GameState getGame(Long roomId);
 }
