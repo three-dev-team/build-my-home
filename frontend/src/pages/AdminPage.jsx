@@ -23,6 +23,22 @@ export default function AdminPage() {
 
     const navigate = useNavigate();
 
+    // 카테고리 배지 컴포넌트
+    const CategoryBadge = ({ category }) => {
+        const categoryConfig = {
+            USER_REPORT: { label: "🚨 유저신고", color: "bg-red-100 text-red-800" },
+            BUG_REPORT: { label: "🐛 버그신고", color: "bg-orange-100 text-orange-800" },
+            ETC: { label: "📦 기타", color: "bg-white text-black" }
+        };
+        const config = categoryConfig[category] || categoryConfig.ETC;
+
+        return (
+            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${config.color}`}>
+                {config.label}
+            </span>
+        );
+    };
+
     // 문의 목록 조회
     useEffect(() => {
         if (activeTab === "inquiry") {
@@ -207,16 +223,19 @@ export default function AdminPage() {
                                                 }`}
                                             >
                                                 <div className="flex items-center justify-between mb-2">
-                            <span className={`text-xs px-3 py-1 rounded-full font-bold ${
-                                inquiry.status === "ANSWERED"
-                                    ? "bg-green-200 text-green-800"
-                                    : "bg-yellow-200 text-yellow-800"
-                            }`}>
-                                {inquiry.status === "ANSWERED" ? "답변완료" : "답변대기"}
-                            </span>
-                            <span className="text-xs text-gray-500">
-                                {new Date(inquiry.createdAt).toLocaleDateString()}
-                            </span>
+                                                    <div className="flex items-center gap-1">
+                                                        <CategoryBadge category={inquiry.category} />
+                                                        <span className={`text-xs px-3 py-1 rounded-full font-bold ${
+                                                            inquiry.status === "ANSWERED"
+                                                                ? "bg-green-200 text-green-800"
+                                                                : "bg-yellow-200 text-yellow-800"
+                                                        }`}>
+                                                            {inquiry.status === "ANSWERED" ? "답변완료" : "답변대기"}
+                                                        </span>
+                                                    </div>
+                                                    <span className="text-xs text-gray-500">
+                                                        {new Date(inquiry.createdAt).toLocaleDateString()}
+                                                    </span>
                                                 </div>
                                                 <p className="font-bold text-[#5d4037] text-sm mb-1 truncate">
                                                     {inquiry.title}
@@ -294,16 +313,21 @@ export default function AdminPage() {
                                     {/* 문의 정보 */}
                                     <div className="bg-[#fef9ed] rounded-2xl p-6 border-2 border-[#bc8a5f]">
                                         <div className="flex items-center justify-between mb-4">
-                                            <h3 className="text-2xl font-black text-[#5d4037]">
-                                                {selectedInquiry.title}
-                                            </h3>
-                                            <span className={`text-xs px-3 py-1 rounded-full font-bold ${
-                                                selectedInquiry.status === "ANSWERED"
-                                                    ? "bg-green-200 text-green-800"
-                                                    : "bg-yellow-200 text-yellow-800"
-                                            }`}>
-                                                {selectedInquiry.status === "ANSWERED" ? "답변완료" : "답변대기"}
-                                            </span>
+                                            <div className="flex-1">
+                                                <h3 className="text-2xl font-black text-[#5d4037] mb-2">
+                                                    {selectedInquiry.title}
+                                                </h3>
+                                                <div className="flex items-center gap-2">
+                                                    <CategoryBadge category={selectedInquiry.category} />
+                                                    <span className={`text-xs px-3 py-1 rounded-full font-bold ${
+                                                        selectedInquiry.status === "ANSWERED"
+                                                            ? "bg-green-200 text-green-800"
+                                                            : "bg-yellow-200 text-yellow-800"
+                                                    }`}>
+                                                        {selectedInquiry.status === "ANSWERED" ? "답변완료" : "답변대기"}
+                                                    </span>
+                                                </div>
+                                            </div>
                                         </div>
                                         <div className="flex items-center gap-4 text-sm text-[#8b5a2b] mb-4">
                                             <span>👤 {selectedInquiry.memberNickname}</span>

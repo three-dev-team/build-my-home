@@ -14,9 +14,10 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
 
 @RestController
-@RequestMapping("/api/member/inquiry")
+@RequestMapping("/api/member/inquiries")
 @RequiredArgsConstructor
 public class InquiryController {
 
@@ -33,13 +34,14 @@ public class InquiryController {
         return ResponseEntity.ok(response);
     }
 
-    // 내 문의 목록 조회
+    // 내 문의 목록 조회 (커서 기반) - 새로 추가
     @GetMapping("/my")
-    public ResponseEntity<Page<InquiryListResponse>> getMyInquiries(
-            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+    public ResponseEntity<List<InquiryListResponse>> getMyInquiries(
+            @RequestParam(required = false) Long cursor,
+            @RequestParam(defaultValue = "10") int size) {
 
         Member member = getCurrentMember();
-        Page<InquiryListResponse> responses = inquiryService.getMyInquiries(member, pageable);
+        List<InquiryListResponse> responses = inquiryService.getMyInquiriesWithCursor(member, cursor, size);
         return ResponseEntity.ok(responses);
     }
 

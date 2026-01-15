@@ -13,6 +13,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -27,6 +30,7 @@ public class InquiryService {
                 .member(member)
                 .title(request.getTitle())
                 .content(request.getContent())
+                .category(request.getCategory())  // 카테고리 추가
                 .build();
         return toResponse(inquiryRepository.save(inquiry));
     }
@@ -35,6 +39,25 @@ public class InquiryService {
     @Transactional(readOnly = true)
     public Page<InquiryListResponse> getMyInquiries(Member member, Pageable pageable) {
         return inquiryRepository.findByMemberId(member.getId(), pageable).map(this::toListResponse);
+    }
+
+    // 2-1. 내 문의 목록 (커서 기반) - 새로 추가
+    @Transactional(readOnly = true)
+    public List<InquiryListResponse> getMyInquiriesWithCursor(Member member, Long cursor, int size) {
+        Pageable pageable = Pageable.ofSize(size);
+
+        List<Inquiry> inquiries;
+        if (cursor == null) {
+            // 첫 페이지
+            inquiries = inquiryRepository.findByMemberIdFirstPage(member.getId(), pageable);
+        } else {
+            // 다음 페이지
+            inquiries = inquiryRepository.findByMemberIdWithCursor(member.getId(), cursor, pageable);
+        }
+
+        return inquiries.stream()
+                .map(this::toListResponse)
+                .collect(Collectors.toList());
     }
 
     // 3. 전체 문의 목록 (관리자)
@@ -70,7 +93,9 @@ public class InquiryService {
     private InquiryResponse toResponse(Inquiry inquiry) {
         return InquiryResponse.builder()
                 .id(inquiry.getId()).title(inquiry.getTitle()).content(inquiry.getContent())
-                .status(inquiry.getStatus()).memberId(inquiry.getMember().getId())
+                .status(inquiry.getStatus())
+                .category(inquiry.getCategory())  // 카테고리 추가
+                .memberId(inquiry.getMember().getId())
                 .memberNickname(inquiry.getMember().getNickname())
                 .createdAt(inquiry.getCreatedAt()).updatedAt(inquiry.getUpdatedAt())
                 .answer(inquiry.getAnswer() != null ? toAnswerResponse(inquiry.getAnswer()) : null)
@@ -80,6 +105,7 @@ public class InquiryService {
     private InquiryListResponse toListResponse(Inquiry inquiry) {
         return InquiryListResponse.builder()
                 .id(inquiry.getId()).title(inquiry.getTitle()).status(inquiry.getStatus())
+                .category(inquiry.getCategory())  // 카테고리 추가
                 .memberNickname(inquiry.getMember().getNickname())
                 .createdAt(inquiry.getCreatedAt()).hasAnswer(inquiry.getAnswer() != null)
                 .build();
