@@ -36,8 +36,7 @@ public class GameState {
     public GameState(Long roomId, int totalRounds) {
         this.roomId = roomId;
         this.totalRounds = totalRounds;
-        this.status = GameStatus.DETERMINING_ORDER;
-        Collections.shuffle(availableDiceNumbers);
+        this.status = GameStatus.INTRO;
     }
 
     // 다음 턴으로 넘기는 메서드

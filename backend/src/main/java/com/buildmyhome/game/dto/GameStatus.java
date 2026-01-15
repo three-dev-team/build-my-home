@@ -1,6 +1,8 @@
 package com.buildmyhome.game.dto;
 
 public enum GameStatus {
+    INTRO,      // 소개 페이지
+
     DETERMINING_ORDER, // 순서 정하기 페이지
 
     // --- 여기서부터 PLAYING 영역 ---

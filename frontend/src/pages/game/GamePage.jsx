@@ -8,6 +8,7 @@ import ChatToggle from "../../components/common/ChatToggle.jsx";
 import RollForOrder from "./RollForOrder.jsx";
 import {getMyIdFromToken} from "../../utils/auth.js";
 import MainBoardPage from "./MainBoardPage.jsx";
+import GameIntro from "./GameIntro.jsx";
 
 
 const GamePage = () => {
@@ -63,6 +64,14 @@ const GamePage = () => {
         };
     }, [roomId, token]); // roomId, token이 바뀔 때마다 재실행
 
+
+    const handleIntroComplete = () => {
+        stompClient.publish({
+            destination: '/app/games/intro-complete',
+            body: JSON.stringify({ roomId: roomId })
+        });
+    };
+
     if (!gameState) return <Loading />;
 
     console.log("players:", gameState.players);
@@ -78,6 +87,10 @@ const GamePage = () => {
             )}
             {/* 2. 게임 콘텐츠 영역 */}
             <main>
+                {gameState.status === 'INTRO' && stompClient && (
+                    <GameIntro onComplete={handleIntroComplete} />
+                )}
+
                 {gameState.status === 'DETERMINING_ORDER' && stompClient && (
                     <RollForOrder
                         players={gameState.players || []}
@@ -86,6 +99,7 @@ const GamePage = () => {
                         stompClient={stompClient}
                     />
                 )}
+
                 {gameState.status === 'WAITING_DICE' && <MainBoardPage />}
             </main>
         </div>
