@@ -6,13 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(
-        name = "rooms",
-        indexes = {
-                // 방이 많아졌을 때 "WAITING만" + "id 범위조회(>=, <)"를 빠르게 하기 위한 인덱스
-                @Index(name = "idx_rooms_status_id", columnList = "status,id")
-        }
-)
+@Table(name = "rooms")
 @Getter
 @Setter
 @NoArgsConstructor
