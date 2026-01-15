@@ -7,14 +7,17 @@ import java.util.Map;
 @Getter
 public class RoomState {
     private final Long roomId;
+    // TODO : 판수 바꾸는 옵션 추가 (final X)
+    private int totalRounds;
     private String hostNickname = "";
 
     // 접속할 때 쿠키로 로컬로 다운을 받을 수 있으면 좋을 듯
     // Key: memberId Value: RoomPlayerState
     private final Map<Long, RoomPlayerState> players = new ConcurrentHashMap<>();
 
-    public RoomState(Long roomId) {
+    public RoomState(Long roomId, int totalRounds) {
         this.roomId = roomId;
+        this.totalRounds = totalRounds;
     }
 
     public void addPlayer(RoomPlayerState player) {

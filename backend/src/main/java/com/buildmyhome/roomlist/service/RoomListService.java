@@ -137,6 +137,8 @@ public class RoomListService {
 
         Room saved = roomRepository.save(room);
 
+        roomStateService.createRoom(saved.getId(), totalRounds);
+
         // 서버 메모리에 방장 정보 업데이트
         RoomPlayerState hostPlayer = new RoomPlayerState();
         hostPlayer.setMemberId(hostMemberId);

@@ -2,7 +2,7 @@ import {useState, useEffect} from 'react';
 import {useParams, useNavigate} from 'react-router-dom';
 import {Client} from '@stomp/stompjs';
 import {leaveRoom} from "../../utils/roomUtils.js";
-import { getBrokerURL } from "../../utils/ws.js";
+import {getBrokerURL} from "../../utils/ws.js";
 
 
 function Room() {
@@ -25,7 +25,6 @@ function Room() {
     const currentPlayer = players.find(player => player.memberId === currentMemberId);
     const isHost = currentPlayer?.isHost;
     const allReady = players.filter(player => player.nickname).every(player => player.isReady);
-
 
 
     // 방 정보 불러오기 REST API 호출
@@ -57,6 +56,10 @@ function Room() {
                     const data = JSON.parse(message.body);
                     console.log('>>> 🔔 메시지 수신:', data);
 
+                    if (data.type === 'GAME_START') {
+                        navigate(`/games/${roomId}`, { state: { initialGameData: data } });
+                    }
+
                     if (data.players) {
                         const updated = Array.from({length: maxPlayers}, (_, idx) => ({
                             index: idx + 1,
@@ -78,82 +81,6 @@ function Room() {
                         });
                         setPlayers(updated);
                     }
-
-                    // if (data.type === 'ROOM_STATE') {
-                    //     // 현재 방 상태 업데이트
-                    //     const currentPlayers = data.players || [];
-                    //
-                    //     // 업데이트 하기전 안전하게 초기화(안하면 기존 게임 데이터가 남아있을 수 있음)
-                    //     const updated = Array.from({length: maxPlayers}, (_, idx) => ({
-                    //         index: idx + 1,
-                    //         memberId: null,
-                    //         nickname: null,
-                    //         characterId: null,
-                    //         isReady: false,
-                    //         isHost: false
-                    //     }));
-                    //
-                    //     // player === RoomPlayerState
-                    //     currentPlayers.forEach((player, idx) => {
-                    //         if (idx < maxPlayers) {
-                    //             updated[idx] = {
-                    //                 index: idx + 1,
-                    //                 memberId: player.memberId,
-                    //                 nickname: player.nickname,
-                    //                 characterId: player.characterId,
-                    //                 isReady: player.isReady || false,
-                    //                 isHost: player.isHost || false
-                    //             };
-                    //         }
-                    //     });
-                    //     setPlayers(updated); // players
-                    // }
-                    //
-                    // if (data.type === 'PLAYER_LEAVE') {
-                    //     setPlayers(prev => prev.map(player =>
-                    //         player.memberId === data.memberId
-                    //             ? {
-                    //                 ...player,
-                    //                 memberId: null,
-                    //                 nickname: null,
-                    //                 characterId: null,
-                    //                 isReady: false,
-                    //                 isHost: false
-                    //             }
-                    //             : player
-                    //     ));
-                    // }
-                    //
-                    // if (data.type === 'PLAYER_JOIN') {
-                    //     setPlayers(prev => {
-                    //         // 플레이어 배열에서 비어있는 인덱스 찾기. 못찾으면 -1 리턴
-                    //         const emptySlotIndex = prev.findIndex(player => player.nickname === null);
-                    //
-                    //         // -1이 아닐 경우 -> 배열이 비어있을 경우 -> player 업데이트
-                    //         if (emptySlotIndex !== -1) {
-                    //             const updated = [...prev];
-                    //             updated[emptySlotIndex] = {
-                    //                 index: emptySlotIndex + 1,
-                    //                 memberId: data.memberId,
-                    //                 nickname: data.nickname,
-                    //                 characterId: data.characterId,
-                    //                 isReady: false,
-                    //                 isHost: false
-                    //             };
-                    //             return updated;
-                    //         }
-                    //         // 배열이 비어있지 않을 경우 기존 players 상태 유지
-                    //         return prev;
-                    //     });
-                    // }
-                    //
-                    // if (data.type === 'PLAYER_READY') {
-                    //     setPlayers(prev => prev.map(
-                    //         player => player.memberId === data.memberId
-                    //             ? {...player, isReady: data.isReady}
-                    //             : player
-                    //     ));
-                    // }
                 });
 
                 // 현재 방 상태 요청 추가
@@ -169,7 +96,10 @@ function Room() {
         setStompClient(client);
 
         return () => {
-            client.deactivate();
+            if (client.active){
+                client.deactivate();
+                console.log('>>> ❌ WebSocket 연결 해제됨');
+            }
         };
     }, [roomId, maxPlayers, loading]);
 
@@ -186,8 +116,12 @@ function Room() {
     };
 
     const handleStartGame = () => {
+        console.log('게임 시작 버튼 클릭');
         if (allReady) {
-            console.log('게임 시작!');
+            stompClient.publish({
+                destination: '/app/games/start',
+                body: JSON.stringify({ roomId: roomId })
+            });
         }
     };
 
@@ -248,24 +182,10 @@ function Room() {
 
                 {/* 2. 방장에게만 추가로 '게임 시작' 버튼 표시 */}
                 {isHost && (
-                    <button
-                        onClick={handleStartGame}
-                        disabled={!allReady}
-                        style={{
-                            marginLeft: '10px',
-                            padding: '15px 40px',
-                            backgroundColor: allReady ? '#f5a623' : '#ccc',
-                            cursor: allReady ? 'pointer' : 'not-allowed',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '10px'
-                        }}
-                    >
-                        게임 시작
-                    </button>
+                    <button onClick={handleStartGame} disabled={!allReady}> 게임 시작 </button>
                 )}
 
-                <button onClick={handleLeave} style={{ marginLeft: '10px' }}>나가기</button>
+                <button onClick={handleLeave} style={{marginLeft: '10px'}}>나가기</button>
             </div>
         </div>
     );

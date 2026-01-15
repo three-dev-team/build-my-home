@@ -15,4 +15,6 @@ public interface RoomStateService {
     void removeRoom(Long roomId);
 
     Map<Long, RoomState> getAllRoomStates();
+
+    void createRoom(Long roomId, int totalRounds);
 }

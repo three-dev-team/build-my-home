@@ -34,7 +34,7 @@ public class GameState {
     private boolean isGameOver = false;
     private Long winnerId;
 
-    public GameState(Long roomId, int totalRounds, List<Long> playerIds) {
+    public GameState(Long roomId, int totalRounds) {
         this.roomId = roomId;
         this.totalRounds = totalRounds;
         this.status = GameStatus.DETERMINING_ORDER;
@@ -56,5 +56,9 @@ public class GameState {
         }
 
         this.status = GameStatus.WAITING_DICE;
+    }
+
+    public void addPlayer(GamePlayerState player) {
+        players.put(player.getMemberId(), player);
     }
 }
