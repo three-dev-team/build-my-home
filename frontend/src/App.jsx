@@ -11,6 +11,7 @@ import Join from "./pages/auth/Join.jsx";
 import MyPage from "./pages/MyPage.jsx";
 import OAuth2RedirectHandler from "./pages/auth/OAuth2RedirectHandler.jsx";
 import AdminPage from "./pages/AdminPage.jsx";
+import MainBoardPage from "./pages/game/MainBoardPage.jsx";
 
 function App() {
     const audioRef = useRef(null);
@@ -98,6 +99,7 @@ function App() {
                 <Route path="/mypage" element={<MyPage />} />
                 <Route path="/oauth2/redirect" element={<OAuth2RedirectHandler />} />
                 <Route path="/admin" element={<ProtectedAdminRoute> <AdminPage /> </ProtectedAdminRoute>} />
+                <Route path="/game/:roomId" element={<MainBoardPage />} />
             </Routes>
         </Router>
     );
