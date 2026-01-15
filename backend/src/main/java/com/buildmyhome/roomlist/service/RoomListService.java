@@ -10,15 +10,21 @@ import com.buildmyhome.room.entity.Room;
 import com.buildmyhome.room.entity.Room.Status;
 import com.buildmyhome.room.repository.RoomRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 @RequiredArgsConstructor
 public class RoomListService {
+
+    private static final int DEFAULT_RANDOM_SIZE = 20;
 
     private final RoomRepository roomRepository;
     private final MemberRepository memberRepository;
@@ -31,41 +37,86 @@ public class RoomListService {
         if (!List.of(5, 10, 15, 20).contains(totalRounds)) throw new IllegalArgumentException("라운드 설정이 잘못되었습니다.");
     }
 
-    @Transactional(readOnly = true)
-    public List<RoomListResponse> getRoomList() {
+    private RoomListResponse toRoomListResponse(Room room) {
+        RoomState roomState = roomStateService.getRoom(room.getId());
 
-        // 현재 WAITING 또는 PLAYING 상태인 방들을 생성일시 내림차순으로 조회
-        List<Room> rooms = roomRepository.findByStatusInOrderByCreatedAtDesc(
-                List.of(Status.WAITING, Status.PLAYING)
+        int cur = (roomState != null) ? roomState.getPlayers().size() : 0;
+        String hostNickname = (roomState != null) ? roomState.getHostNickname() : "";
+
+        // roomState가 없는 방은(서버 재시작/메모리 유실 등) 실제 입장이 실패할 수 있으니 joinable=false
+        boolean joinable = (roomState != null)
+                && room.getStatus() == Status.WAITING
+                && cur < room.getMaxPlayers();
+
+        return RoomListResponse.builder()
+                .roomId(room.getId())
+                .title(room.getTitle())
+                .currentPlayers(cur)
+                .maxPlayers(room.getMaxPlayers())
+                .totalRounds(room.getTotalRounds())
+                .joinable(joinable)
+                .hostNickname(hostNickname)
+                .createdAt(room.getCreatedAt())
+                .build();
+    }
+
+    // 대기방(WAITING)만 랜덤 20개에 뽑아오는 메서드
+    // 방이 많아지면 ORDER BY RAND() 같은 전수 정렬 : DB 과부화 -> 인덱스 범위 조회 방식 사용
+    // WAITING 방의 minId/maxId 조회 -> minId~maxId 사이에서 랜덤 startId 선택
+    // startId 이상에서 LIMIT size 부족하면 startId 미만에서 이어서 채움(랩어라운드)
+    @Transactional(readOnly = true)
+    public List<RoomListResponse> getRandomWaitingRooms(int size) {
+        int pageSize = Math.min(Math.max(size, 1), 50); // 서버 터짐 방지: 1~50 제한
+
+        Room minRoom = roomRepository.findFirstByStatusOrderByIdAsc(Status.WAITING).orElse(null);
+        Room maxRoom = roomRepository.findFirstByStatusOrderByIdDesc(Status.WAITING).orElse(null);
+
+        if (minRoom == null || maxRoom == null) {
+            return List.of();
+        }
+
+        long minId = minRoom.getId();
+        long maxId = maxRoom.getId();
+
+        long startId = (minId == maxId)
+                ? minId
+                : ThreadLocalRandom.current().nextLong(minId, maxId + 1);
+
+        List<Room> picked = new ArrayList<>(pageSize);
+
+        // 1) startId 이상 구간
+        picked.addAll(
+                roomRepository.findByStatusAndIdGreaterThanEqualOrderByIdAsc(
+                        Status.WAITING,
+                        startId,
+                        PageRequest.of(0, pageSize)
+                )
         );
 
-        // 성능 최적화
-        Map<Long, RoomState> allStates = roomStateService.getAllRoomStates();
+        // 2) 부족하면 startId 미만 구간에서 이어서 채우기(랩어라운드)
+        if (picked.size() < pageSize) {
+            int remain = pageSize - picked.size();
+            picked.addAll(
+                    roomRepository.findByStatusAndIdLessThanOrderByIdAsc(
+                            Status.WAITING,
+                            startId,
+                            PageRequest.of(0, remain)
+                    )
+            );
+        }
 
-        // Room -> RoomListResponse
-        return rooms.stream()
-                .map(room -> {
-                    RoomState roomState = allStates.get(room.getId());
-                    int cur = (roomState != null) ? roomState.getPlayers().size() : 0; // 현재 접속한 플레이어 수
+        // 같은 구간에서 뽑히면 id 순서가 비슷해 보여서, 최종 출력은 한번 섞어주기(메모리에서만)
+        Collections.shuffle(picked, ThreadLocalRandom.current());
 
-                    // 방장 정보
-                    String hostNickname = (roomState != null) ? roomState.getHostNickname() : "";
-
-                    // 방이 입장 가능한지 여부 계산 (Waiting 상태이고 현재 인원이 최대 인원보다 적은 경우)
-                    boolean joinable = room.getStatus() == Status.WAITING && cur < room.getMaxPlayers();
-
-                    return RoomListResponse.builder()
-                            .roomId(room.getId())
-                            .title(room.getTitle())
-                            .currentPlayers(cur)
-                            .maxPlayers(room.getMaxPlayers())
-                            .totalRounds(room.getTotalRounds())
-                            .joinable(joinable)
-                            .hostNickname(hostNickname)
-                            .createdAt(room.getCreatedAt())
-                            .build();
-                })
+        return picked.stream()
+                .map(this::toRoomListResponse)
                 .toList();
+    }
+
+    // 기본: 대기방(WAITING) 랜덤 20개 - 첫 페이지
+    @Transactional(readOnly = true)
+    public List<RoomListResponse> getRoomList() {
+        return getRandomWaitingRooms(DEFAULT_RANDOM_SIZE);
     }
 
     //    TODO: 예외 처리 구체화 RoomValidationException, MemberNotFoundException 등

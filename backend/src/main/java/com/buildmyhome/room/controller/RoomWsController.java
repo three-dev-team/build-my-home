@@ -97,11 +97,11 @@ public class RoomWsController {
         messagingTemplate.convertAndSend("/topic/rooms/" + roomId, message);
 
         // 방 목록 업데이트 브로드캐스트
-        RoomsSnapshot snapshot = RoomsSnapshot.builder()
-                .type("ROOMS_SNAPSHOT")
-                .rooms(roomListService.getRoomList())
-                .build();
-        messagingTemplate.convertAndSend("/topic/roomlist/rooms", snapshot);
+//        RoomsSnapshot snapshot = RoomsSnapshot.builder()
+//                .type("ROOMS_SNAPSHOT")
+//                .rooms(roomListService.getRoomList())
+//                .build();
+//        messagingTemplate.convertAndSend("/topic/roomlist/rooms", snapshot);
     }
 
     @MessageMapping("/rooms/ready")
