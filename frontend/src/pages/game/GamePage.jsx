@@ -1,18 +1,20 @@
 import { useEffect, useState } from "react";
 import { Client } from "@stomp/stompjs";
 import {getBrokerURL} from "../../utils/ws.js";
-import {useNavigate, useParams} from "react-router-dom";
-import LoadingScreen from "../../components/common/LoadingScreen.jsx";
-import MenuButton from "../../components/game/MenuButton.jsx";
-import ChatToggle from "../../components/game/ChatToggle.jsx";
-import RollForOrder from "../../components/game/RollForOrder.jsx";
+import {useLocation, useNavigate, useParams} from "react-router-dom";
+import Loading from "../../components/common/Loading.jsx";
+import MenuButton from "../../components/common/MenuButton.jsx";
+import ChatToggle from "../../components/common/ChatToggle.jsx";
+import RollForOrder from "./RollForOrder.jsx";
 
 
 const GamePage = () => {
     const {roomId} = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
     const token = sessionStorage.getItem('token');
-    const [gameState, setGameState] = useState(null);
+    // `useParams`가 URL에서 `:roomId` 가져오는 거고, `useLocation`은 `navigate`로 넘긴 `state` 가져옴
+    const [gameState, setGameState] = useState(location.state?.initialGameData || null);
 
     // 공통 UI(채팅, 메뉴버튼 등)를 보여줄지 말지 결정하는 변수
     const showCommonUI = gameState &&
@@ -56,7 +58,7 @@ const GamePage = () => {
         };
     }, [roomId, token]); // roomId, token이 바뀔 때마다 재실행
 
-    if (!gameState) return <LoadingScreen />;
+    if (!gameState) return <Loading />;
 
     return (
         <div className="game-container">
@@ -74,3 +76,5 @@ const GamePage = () => {
         </div>
     );
 };
+
+export default GamePage;

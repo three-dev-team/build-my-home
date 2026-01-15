@@ -16,7 +16,10 @@ public class RoomStateServiceImpl implements RoomStateService {
 
     @Override
     public void addPlayerToRoom(Long roomId, RoomPlayerState player) {
-        RoomState room = roomStates.computeIfAbsent(roomId, RoomState::new);
+        RoomState room = roomStates.get(roomId);
+        if (room == null) {
+            throw new IllegalArgumentException("방이 존재하지 않습니다: " + roomId);
+        }
         synchronized (room) {
             room.addPlayer(player);
         }
@@ -44,5 +47,11 @@ public class RoomStateServiceImpl implements RoomStateService {
     @Override
     public Map<Long, RoomState> getAllRoomStates() {
         return new HashMap<>(roomStates);
+    }
+
+    @Override
+    public void createRoom(Long roomId, int totalRounds) {
+        RoomState room = new RoomState(roomId, totalRounds);
+        roomStates.put(roomId, room);
     }
 }
