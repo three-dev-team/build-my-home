@@ -6,6 +6,8 @@ import Loading from "../../components/common/Loading.jsx";
 import MenuButton from "../../components/common/MenuButton.jsx";
 import ChatToggle from "../../components/common/ChatToggle.jsx";
 import RollForOrder from "./RollForOrder.jsx";
+import {getMyIdFromToken} from "../../utils/auth.js";
+import MainBoardPage from "./MainBoardPage.jsx";
 
 
 const GamePage = () => {
@@ -13,8 +15,10 @@ const GamePage = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const token = sessionStorage.getItem('token');
-    // `useParams`가 URL에서 `:roomId` 가져오는 거고, `useLocation`은 `navigate`로 넘긴 `state` 가져옴
+    const myId = getMyIdFromToken(); // myId -> 로그인한 유저 아이디
+
     const [gameState, setGameState] = useState(location.state?.initialGameData || null);
+    const [stompClient, setStompClient] = useState(null);
 
     // 공통 UI(채팅, 메뉴버튼 등)를 보여줄지 말지 결정하는 변수
     const showCommonUI = gameState &&
@@ -28,12 +32,12 @@ const GamePage = () => {
             connectHeaders: token ? { Authorization: `Bearer ${token}` } : {},
             onConnect: () => {
                 console.log('>>> ✅ WebSocket 연결됨');
+                setStompClient(client);
 
-                client.subscribe(`/topic/rooms/${roomId}`, (message) => {
+                client.subscribe(`/topic/games/${roomId}`, (message) => {
                     const data = JSON.parse(message.body);
                     console.log('>>> 🔔 메시지 수신:', data);
 
-                    // TODO: 수신한 게임 상태 데이터를 gameState에 반영
                     setGameState(data);
                 });
             },
@@ -53,12 +57,15 @@ const GamePage = () => {
         return () => {
             if (client.active){
                 client.deactivate();
+                setStompClient(null);
                 console.log('>>> ❌ WebSocket 연결 해제됨');
             }
         };
     }, [roomId, token]); // roomId, token이 바뀔 때마다 재실행
 
     if (!gameState) return <Loading />;
+
+    console.log("players:", gameState.players);
 
     return (
         <div className="game-container">
@@ -71,7 +78,15 @@ const GamePage = () => {
             )}
             {/* 2. 게임 콘텐츠 영역 */}
             <main>
-                {gameState.status === 'DETERMINING_ORDER' && <RollForOrder />}
+                {gameState.status === 'DETERMINING_ORDER' && stompClient && (
+                    <RollForOrder
+                        players={gameState.players || []}
+                        roomId={roomId}
+                        myId={myId}
+                        stompClient={stompClient}
+                    />
+                )}
+                {gameState.status === 'WAITING_DICE' && <MainBoardPage />}
             </main>
         </div>
     );

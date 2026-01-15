@@ -25,7 +25,6 @@ public class GameState {
 
     // 시작전 순서 정하기용 임시 데이터 (주사위 숫자 중복 선택 못하게 선언)
     private final List<Integer> availableDiceNumbers = Collections.synchronizedList(new ArrayList<>(Arrays.asList(1, 2, 3, 4, 5, 6)));
-    private final Map<Long, Integer> playerDiceValueForTurnOrder = new ConcurrentHashMap<>();
 
     // 플레이어 서버메모리 (플레이어별 상세 상태)
     private Map<Long, GamePlayerState> players = new ConcurrentHashMap<>();

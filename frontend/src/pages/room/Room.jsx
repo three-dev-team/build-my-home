@@ -3,6 +3,7 @@ import {useParams, useNavigate} from 'react-router-dom';
 import {Client} from '@stomp/stompjs';
 import {leaveRoom} from "../../utils/roomUtils.js";
 import {getBrokerURL} from "../../utils/ws.js";
+import {getMyIdFromToken} from "../../utils/auth.js";
 
 
 function Room() {
@@ -16,13 +17,9 @@ function Room() {
     const navigate = useNavigate();
     const token = sessionStorage.getItem('token');
 
-    let currentMemberId = null;
-    if (token) {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        currentMemberId = Number(payload.memberId);
-    }
+    const myId = getMyIdFromToken()
 
-    const currentPlayer = players.find(player => player.memberId === currentMemberId);
+    const currentPlayer = players.find(player => player.memberId === myId);
     const isHost = currentPlayer?.isHost;
     const allReady = players.filter(player => player.nickname).every(player => player.isReady);
 

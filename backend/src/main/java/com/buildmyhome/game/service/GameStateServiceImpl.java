@@ -16,4 +16,9 @@ public class GameStateServiceImpl implements GameStateService {
     public void saveGame(Long roomId, GameState gameState) {
         gameStates.put(roomId, gameState);
     }
+
+    @Override
+    public GameState getGame(Long roomId) {
+        return gameStates.get(roomId);
+    }
 }
