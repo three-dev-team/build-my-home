@@ -47,10 +47,29 @@ public class GameWsController {
         GameMessage response = new GameMessage();
         response.setType("GAME_START");
         response.setRoomId(roomId);
-        response.setStatus("DETERMINING_ORDER");
+        response.setStatus("INTRO");
         response.setPlayers(new ArrayList<>(gameState.getPlayers().values()));
         simpMessagingTemplate.convertAndSend("/topic/rooms/" + roomId, response);
     }
+
+    @MessageMapping("/games/intro-complete")
+    public void introComplete(GameMessage message) {
+        Long roomId = message.getRoomId();
+
+        GameState gameState = gameStateService.getGame(roomId);
+        if (gameState == null) return;
+
+        gameState.setStatus(GameStatus.DETERMINING_ORDER);
+
+        GameMessage response = new GameMessage();
+        response.setType("INTRO_COMPLETE");
+        response.setRoomId(roomId);
+        response.setStatus("DETERMINING_ORDER");
+        response.setPlayers(new ArrayList<>(gameState.getPlayers().values()));
+
+        simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
+    }
+
 
     @MessageMapping("/games/roll-order")
     public void rollForOrder(GameMessage message, Principal principal) {
@@ -96,6 +115,5 @@ public class GameWsController {
 
             simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
         }
-
     }
 }
