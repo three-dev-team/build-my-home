@@ -168,8 +168,7 @@ public class GameWsController {
         startResponse.setCurrentPlayerId(gameState.getCurrentPlayerId());
         startResponse.setTurnOrder(gameState.getTurnOrder());
         startResponse.setCurrentRound(gameState.getCurrentRound());
-        startResponse.setTotalRounds(gameState.getTotalRounds());
-        
+
         simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, startResponse);
 
         // 2. 20초 후 WAITING_DICE로 복귀하는 스케줄러 실행
@@ -188,8 +187,7 @@ public class GameWsController {
             endResponse.setCurrentPlayerId(gameState.getCurrentPlayerId());
             endResponse.setTurnOrder(gameState.getTurnOrder());
             endResponse.setCurrentRound(gameState.getCurrentRound());
-            endResponse.setTotalRounds(gameState.getTotalRounds());
-            
+
             System.out.println(">>> ⏰ 20초 경과: MainBoard로 복귀");
             simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, endResponse);
         }, 20, TimeUnit.SECONDS);
