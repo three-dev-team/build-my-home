@@ -34,8 +34,8 @@ public class RoomCleanupScheduler {
     private static final Duration MAX_PLAYING_AGE = Duration.ofHours(12);
 
     // 기본 : 1분마다 실행
-    // - fixedDelay : 이전 실행이 끝난 뒤 N ms 후 실행 (동시 실행 방지에 유리)
-    @Scheduled(fixedDelayString = "${room.cleanup.fixed-delay-ms:60000}")
+    // - fixedDelay : 이전 실행이 끝난 뒤 N ms 후 실행 (동시 실행 방지에 유리) 10분 설정
+    @Scheduled(fixedDelay = 600000)
     @Transactional
     public void cleanupRooms() {
         // 메모리(RoomState)에는 있는데 DB에는 없는 찌거기 정리
