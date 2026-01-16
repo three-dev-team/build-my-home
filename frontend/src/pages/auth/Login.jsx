@@ -147,7 +147,6 @@ export default function Login() {
 
                 sessionStorage.setItem("token", token);
                 sessionStorage.setItem("nickname", nickname);
-                sessionStorage.setItem("memberId", id); // 2. 세션에 id 저장
                 sessionStorage.setItem("bell", bell);
                 sessionStorage.setItem("level", level);
 

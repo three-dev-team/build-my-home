@@ -29,8 +29,23 @@ public class GameWsController {
     private final SimpMessagingTemplate simpMessagingTemplate;
     private final RoomStateService roomStateService;
     private final GameStateService gameStateService;
-
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+
+    @MessageMapping("/games/get-state")
+    public void getGameState(GameMessage message) {
+        Long roomId = message.getRoomId();
+        GameState gameState = gameStateService.getGame(roomId);
+        if (gameState == null) return;
+
+        GameMessage response = new GameMessage();
+        response.setType("CURRENT_GAME_STATE");
+        response.setRoomId(roomId);
+        response.setStatus(gameState.getStatus().name());
+        response.setCurrentPlayerId(gameState.getCurrentPlayerId());
+        response.setPlayers(new ArrayList<>(gameState.getPlayers().values()));
+
+        simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
+    }
 
     @MessageMapping("/games/start")
     public void startGame(GameMessage message) {
@@ -108,7 +123,7 @@ public class GameWsController {
                         .toList();
 
                 gameState.setTurnOrder(sortedTurnOrder);
-                System.out.println(">>>✅turnOrder: " + sortedTurnOrder);
+                gameState.setCurrentPlayerId(sortedTurnOrder.get(0));
                 gameState.setStatus(GameStatus.WAITING_DICE); // 서버 상태 변경
             }
 
@@ -116,6 +131,7 @@ public class GameWsController {
             response.setType(allDone ? "ALL_DICE_ROLLED" : "DICE_ROLLED");
             response.setRoomId(roomId);
             response.setMemberId(memberId);
+            response.setCurrentPlayerId(gameState.getCurrentPlayerId());
             response.setStatus(gameState.getStatus().name()); // 서버의 최신 상태를 그대로 가져옴
             response.setPlayers(new ArrayList<>(gameState.getPlayers().values()));
 
