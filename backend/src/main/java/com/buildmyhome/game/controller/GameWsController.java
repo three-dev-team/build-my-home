@@ -38,7 +38,7 @@ public class GameWsController {
         RoomState room = roomStateService.getRoom(roomId);
 
         // GameState 생성 -> 게임 관련 모든 데이터가 여기에 저장됨 (현재 몇턴이고, 누가 1등이고, 플레이어 상태가 어떻고 ..)
-        GameState gameState = new GameState(roomId, room.getTotalRounds());
+        GameState gameState = new GameState(roomId);
 
         for (RoomPlayerState player : room.getPlayers().values()) {
             gameState.addPlayer(new GamePlayerState(
@@ -152,7 +152,6 @@ public class GameWsController {
         startResponse.setCurrentPlayerId(gameState.getCurrentPlayerId());
         startResponse.setTurnOrder(gameState.getTurnOrder());
         startResponse.setCurrentRound(gameState.getCurrentRound());
-        startResponse.setTotalRounds(gameState.getTotalRounds());
         
         simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, startResponse);
 
@@ -172,7 +171,6 @@ public class GameWsController {
             endResponse.setCurrentPlayerId(gameState.getCurrentPlayerId());
             endResponse.setTurnOrder(gameState.getTurnOrder());
             endResponse.setCurrentRound(gameState.getCurrentRound());
-            endResponse.setTotalRounds(gameState.getTotalRounds());
             
             System.out.println(">>> ⏰ 20초 경과: MainBoard로 복귀");
             simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, endResponse);

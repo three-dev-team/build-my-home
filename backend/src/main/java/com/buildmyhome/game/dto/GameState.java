@@ -11,8 +11,8 @@ import java.util.concurrent.ConcurrentHashMap;
 @Setter
 public class GameState {
     // 룸 정보
+    // 룸 정보
     private final Long roomId;
-    private final int totalRounds;
 
     // 게임 진행 정보
     private int currentRound = 1;
@@ -33,9 +33,8 @@ public class GameState {
     private boolean isGameOver = false;
     private Long winnerId;
 
-    public GameState(Long roomId, int totalRounds) {
+    public GameState(Long roomId) {
         this.roomId = roomId;
-        this.totalRounds = totalRounds;
         this.status = GameStatus.INTRO;
     }
 

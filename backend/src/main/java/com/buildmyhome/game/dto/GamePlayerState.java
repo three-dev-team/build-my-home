@@ -17,6 +17,7 @@ public class GamePlayerState {
     private Integer diceValue;      // 주사위 값
     private int position = 0;       // 현재 칸 위치
     private int bell = 10;          // 시작 벨 10
+    private int loan = 0;           // 대출금
     private int houseLevel = 0;     // 집 레벨
 
     // 재화 정보

@@ -126,4 +126,24 @@ public class RoomWsController {
         }
     }
 
+    @MessageMapping("/rooms/delegate-host")
+    public void delegateHost(RoomMessage message, Principal principal) {
+        Long currentHostId = Long.parseLong(principal.getName());
+        Long roomId = message.getRoomId();
+        Long newHostId = message.getMemberId(); // 위임받을 대상 ID
+
+        try {
+            roomStateService.delegateHost(roomId, currentHostId, newHostId);
+
+            // 변경된 방 상태 브로드캐스트
+            RoomState room = roomStateService.getRoom(roomId);
+            if (room != null) {
+                message.setType("HOST_DELEGATED");
+                message.setPlayers(room.getPlayers().values().stream().toList());
+                messagingTemplate.convertAndSend("/topic/rooms/" + roomId, message);
+            }
+        } catch (IllegalStateException e) {
+            System.err.println("Delegate failed: " + e.getMessage());
+        }
+    }
 }

@@ -20,5 +20,4 @@ public class GameMessage {
     private Long currentPlayerId;
     private List<Long> turnOrder;
     private int currentRound;
-    private int totalRounds;
 }

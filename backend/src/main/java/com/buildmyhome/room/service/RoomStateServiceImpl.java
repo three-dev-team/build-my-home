@@ -21,6 +21,7 @@ public class RoomStateServiceImpl implements RoomStateService {
             throw new IllegalArgumentException("방이 존재하지 않습니다: " + roomId);
         }
         synchronized (room) {
+            player.setEnteredAt(java.time.LocalDateTime.now()); // 입장 시간 기록
             room.addPlayer(player);
         }
     }
@@ -34,8 +35,26 @@ public class RoomStateServiceImpl implements RoomStateService {
     public void removePlayerFromRoom(Long roomId, Long memberId) {
         RoomState room = roomStates.get(roomId);
         synchronized (room) {
+            RoomPlayerState removingPlayer = room.getPlayer(memberId);
+            if (removingPlayer == null) return;
+
+            boolean wasHost = removingPlayer.isHost();
             room.removePlayer(memberId);
-            if (room.getPlayers().isEmpty()) roomStates.remove(roomId);
+
+            if (room.getPlayers().isEmpty()) {
+                roomStates.remove(roomId);
+            } else if (wasHost) {
+                // 방장이 나갔으면 가장 오래된 유저에게 방장 위임
+                RoomPlayerState nextHost = room.getPlayers().values().stream()
+                        .min(java.util.Comparator.comparing(RoomPlayerState::getEnteredAt))
+                        .orElse(null);
+
+                if (nextHost != null) {
+                    nextHost.setHost(true);
+                    room.setHostNickname(nextHost.getNickname());
+                    System.out.println(">>> 👑 New Host: " + nextHost.getNickname());
+                }
+            }
         }
     }
 
@@ -53,5 +72,30 @@ public class RoomStateServiceImpl implements RoomStateService {
     public void createRoom(Long roomId, int totalRounds) {
         RoomState room = new RoomState(roomId, totalRounds);
         roomStates.put(roomId, room);
+    }
+
+    @Override
+    public void delegateHost(Long roomId, Long currentHostId, Long newHostId) {
+        RoomState room = roomStates.get(roomId);
+        if (room == null) return;
+
+        synchronized (room) {
+            RoomPlayerState currentHost = room.getPlayer(currentHostId);
+            RoomPlayerState newHost = room.getPlayer(newHostId);
+
+            if (currentHost == null || newHost == null) return;
+
+            // 권한 검증: 요청자가 진짜 방장인지 확인
+            if (!currentHost.isHost()) {
+                throw new IllegalStateException("방장 위임 권한이 없습니다.");
+            }
+
+            // 위임 처리
+            currentHost.setHost(false);
+            newHost.setHost(true);
+            room.setHostNickname(newHost.getNickname());
+
+            System.out.println(">>> 👑 Host Delegated: " + currentHost.getNickname() + " -> " + newHost.getNickname());
+        }
     }
 }
