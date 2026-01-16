@@ -33,6 +33,9 @@ public class GameState {
     private boolean isGameOver = false;
     private Long winnerId;
 
+    // 상점 세션
+    private com.buildmyhome.shop.dto.ShopSession shopSession;
+
     public GameState(Long roomId) {
         this.roomId = roomId;
         this.status = GameStatus.INTRO;

@@ -185,6 +185,18 @@ function Room() {
               ) : (
                 "(플레이어 이름)"
               )}
+              {player.memberId === myId && !player.isReady && (
+                <button
+                  onClick={() => navigate(`/rooms/${roomId}/select`)}
+                  style={{
+                    marginLeft: "5px",
+                    fontSize: "12px",
+                    cursor: "pointer",
+                  }}
+                >
+                  ↺
+                </button>
+              )}
             </div>
             {/*닉네임이 있어야 ready/unready 버튼이 보여짐*/}
             <div>

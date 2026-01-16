@@ -39,6 +39,11 @@ public class RoomWsController {
                 RoomPlayerState player = room.getPlayer(memberId);
 
                 if (player != null) {
+                    // [Added] 준비 상태에서는 캐릭터 변경 불가
+                    if (player.isReady()) {
+                        return;
+                    }
+
                     player.setCharacterId(message.getCharacterId());
                     // 플레이어 추가 후 캐릭터 선택 메시지 브로드캐스트
                     message.setType("CHARACTER_SELECT");
