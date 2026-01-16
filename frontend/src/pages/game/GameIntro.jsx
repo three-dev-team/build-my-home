@@ -1,8 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import './GameIntro.css';
 
-// TODO: 버튼 대신 초로, skip 버튼만 남기기
-const GameIntro = ({ onComplete }) => {
+const GameIntro = ({ onSkip }) => {
     const [currentSlide, setCurrentSlide] = useState(0);
 
     const slides = [
@@ -28,18 +27,38 @@ const GameIntro = ({ onComplete }) => {
         }
     ];
 
-    const handleNext = () => {
-        if (currentSlide < slides.length - 1) {
-            setCurrentSlide(currentSlide + 1);
-        } else {
-            onComplete();  // 마지막이면 게임 시작
-        }
-    };
+    // 자동 슬라이드 (5초마다)
+    useEffect(() => {
+        const timer = setInterval(() => {
+            setCurrentSlide(prev => {
+                if (prev < slides.length - 1) {
+                    return prev + 1;
+                } else {
+                    clearInterval(timer);
+                    onSkip();  // 마지막이면 자동으로 넘어감
+                    return prev;
+                }
+            });
+        }, 5000);
+
+        return () => clearInterval(timer);
+    }, []);
 
     const slide = slides[currentSlide];
 
     return (
         <div className="intro-container">
+            {currentSlide < slides.length - 1 ? (
+                <button className="skip-button" onClick={onSkip}>
+                    Skip →
+                </button>
+            ) : (
+                <button className="start-button" onClick={onSkip}>
+                    🎮 시작하기
+                </button>
+            )}
+
+
             <div className="intro-content">
                 <h1>{slide.title}</h1>
                 <p>{slide.description}</p>
@@ -57,9 +76,6 @@ const GameIntro = ({ onComplete }) => {
                         />
                     ))}
                 </div>
-                <button onClick={handleNext}>
-                    {currentSlide < slides.length - 1 ? '다음' : '게임 시작'}
-                </button>
             </div>
         </div>
     );

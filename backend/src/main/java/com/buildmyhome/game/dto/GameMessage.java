@@ -4,7 +4,6 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.List;
-import java.util.Map;
 
 @Getter
 @Setter
@@ -14,4 +13,5 @@ public class GameMessage {
     private Long memberId;
     private String status;
     private List<GamePlayerState> players;
+    private Long currentPlayerId;
 }

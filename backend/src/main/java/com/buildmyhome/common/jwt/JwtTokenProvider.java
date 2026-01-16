@@ -27,10 +27,9 @@ public class JwtTokenProvider {
     }
 
     // 토큰 생성
-    // 토큰에 저장되는 정보: 이메일, 유저권한, 토큰 발급 시간, 토큰 만료 시간
+    // 토큰에 저장되는 정보: 이메일, 멤버 아이디, 유저권한, 토큰 발급 시간, 토큰 만료 시간
     public String createToken(String email, String role, Long memberId) { // 1. 여기서 String role을 추가로 받아야 합니다.
         Claims claims = Jwts.claims().setSubject(email);
-        claims.put("memberId", memberId);
         // claims.put("role", role); // jjwt 버전에 따라 이 방식을 쓰기도 합니다.
 
         Date now = new Date();
@@ -38,6 +37,7 @@ public class JwtTokenProvider {
 
         return Jwts.builder()
                 .setClaims(claims)
+                .claim("memberId", memberId)
                 .claim("role", role) // 2. 이제 여기서 외부에서 받은 role 변수를 사용할 수 있습니다.
                 .setIssuedAt(now)
                 .setExpiration(validity)
