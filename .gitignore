@@ -1,0 +1,8 @@
+# Project IDX & History
+.history/
+.antigravityrules
+history/*.md
+
+# Media files (용량이 크다면 제외 권장)
+*.mp3
+*.mp4

@@ -16,8 +16,12 @@ import org.springframework.stereotype.Controller;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
+
 import java.util.List;
+
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 @Controller
 @RequiredArgsConstructor
@@ -25,6 +29,7 @@ public class GameWsController {
     private final SimpMessagingTemplate simpMessagingTemplate;
     private final RoomStateService roomStateService;
     private final GameStateService gameStateService;
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     @MessageMapping("/games/get-state")
     public void getGameState(GameMessage message) {
@@ -132,5 +137,61 @@ public class GameWsController {
 
             simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
         }
+    }
+
+
+    @MessageMapping("/games/trigger-event")
+    public void triggerEvent(GameMessage message) {
+        Long roomId = message.getRoomId();
+        String requestedStatusStr = message.getStatus(); // 클라이언트가 요청한 상태 (예: WAITING_LOAN)
+
+        GameState gameState = gameStateService.getGame(roomId);
+        if (gameState == null) return;
+
+        // 1. 유효한 상태인지 확인 및 변경
+        GameStatus targetStatus;
+        try {
+            targetStatus = GameStatus.valueOf(requestedStatusStr);
+        } catch (IllegalArgumentException | NullPointerException e) {
+            System.err.println("Invalid status requested: " + requestedStatusStr);
+            return;
+        }
+
+        gameState.setStatus(targetStatus);
+        
+        GameMessage startResponse = new GameMessage();
+        startResponse.setType("EVENT_START");
+        startResponse.setRoomId(roomId);
+        startResponse.setStatus(targetStatus.name());
+        startResponse.setPlayers(new ArrayList<>(gameState.getPlayers().values()));
+        // 추가 필드 설정
+        startResponse.setCurrentPlayerId(gameState.getCurrentPlayerId());
+        startResponse.setTurnOrder(gameState.getTurnOrder());
+        startResponse.setCurrentRound(gameState.getCurrentRound());
+        startResponse.setTotalRounds(gameState.getTotalRounds());
+        
+        simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, startResponse);
+
+        // 2. 20초 후 WAITING_DICE로 복귀하는 스케줄러 실행
+
+        scheduler.schedule(() -> {
+            // 게임이 이미 종료됐거나 다른 상태로 변했을 수도 있으니 체크 필요할 수 있음
+            // (여기서는 단순하게 강제 복귀 처리)
+            gameState.setStatus(GameStatus.WAITING_DICE);
+
+            GameMessage endResponse = new GameMessage();
+            endResponse.setType("EVENT_END");
+            endResponse.setRoomId(roomId);
+            endResponse.setStatus("WAITING_DICE");
+            endResponse.setPlayers(new ArrayList<>(gameState.getPlayers().values()));
+            // 추가 필드 설정 (복귀 시에도 상태 유지 필요)
+            endResponse.setCurrentPlayerId(gameState.getCurrentPlayerId());
+            endResponse.setTurnOrder(gameState.getTurnOrder());
+            endResponse.setCurrentRound(gameState.getCurrentRound());
+            endResponse.setTotalRounds(gameState.getTotalRounds());
+            
+            System.out.println(">>> ⏰ 20초 경과: MainBoard로 복귀");
+            simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, endResponse);
+        }, 20, TimeUnit.SECONDS);
     }
 }
