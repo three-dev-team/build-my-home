@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import './RollForOrder.css';
 
-const RollForOrder = ({ players, roomId, myId, stompClient }) => {
+const RollForOrder = ({ players, myId, onRoll }) => {
     const [isRolling, setIsRolling] = useState(false);
     const myDiceValue = players.find(p => p.memberId === myId)?.orderDiceValue;
 
@@ -22,13 +22,7 @@ const RollForOrder = ({ players, roomId, myId, stompClient }) => {
 
     const handleRoll = () => {
         setIsRolling(true);
-
-        // 서버에 주사위 굴림 요청 전송
-        stompClient.publish({
-            destination: `/app/games/roll-order`,
-            body: JSON.stringify({ roomId: roomId })
-        });
-
+        onRoll(); // 부모 컴포넌트에 알림
         // 시각적인 효과를 위해 약간의 딜레이 후 굴림 애니메이션 중단
         setTimeout(() => setIsRolling(false), 1000);
     };
