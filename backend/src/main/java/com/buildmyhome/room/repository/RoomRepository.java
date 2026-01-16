@@ -18,4 +18,7 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
 
     // 위에서 size가 안 찼을 때, 아래쪽(작은 id)에서 이어서 채움(랩어라운드)
     List<Room> findByStatusAndIdLessThanOrderByIdAsc(Room.Status status, Long id, Pageable pageable);
+
+    // 스케줄러/관리용: 특정 상태 방 전체 조회
+    List<Room> findByStatusIn(List<Room.Status> statuses);
 }
