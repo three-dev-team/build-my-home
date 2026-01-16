@@ -29,8 +29,23 @@ public class GameWsController {
     private final SimpMessagingTemplate simpMessagingTemplate;
     private final RoomStateService roomStateService;
     private final GameStateService gameStateService;
-
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+
+    @MessageMapping("/games/get-state")
+    public void getGameState(GameMessage message) {
+        Long roomId = message.getRoomId();
+        GameState gameState = gameStateService.getGame(roomId);
+        if (gameState == null) return;
+
+        GameMessage response = new GameMessage();
+        response.setType("CURRENT_GAME_STATE");
+        response.setRoomId(roomId);
+        response.setStatus(gameState.getStatus().name());
+        response.setCurrentPlayerId(gameState.getCurrentPlayerId());
+        response.setPlayers(new ArrayList<>(gameState.getPlayers().values()));
+
+        simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
+    }
 
     @MessageMapping("/games/start")
     public void startGame(GameMessage message) {
@@ -108,7 +123,7 @@ public class GameWsController {
                         .toList();
 
                 gameState.setTurnOrder(sortedTurnOrder);
-                System.out.println(">>>✅turnOrder: " + sortedTurnOrder);
+                gameState.setCurrentPlayerId(sortedTurnOrder.get(0));
                 gameState.setStatus(GameStatus.WAITING_DICE); // 서버 상태 변경
             }
 
@@ -116,6 +131,7 @@ public class GameWsController {
             response.setType(allDone ? "ALL_DICE_ROLLED" : "DICE_ROLLED");
             response.setRoomId(roomId);
             response.setMemberId(memberId);
+            response.setCurrentPlayerId(gameState.getCurrentPlayerId());
             response.setStatus(gameState.getStatus().name()); // 서버의 최신 상태를 그대로 가져옴
             response.setPlayers(new ArrayList<>(gameState.getPlayers().values()));
 
@@ -152,7 +168,7 @@ public class GameWsController {
         startResponse.setCurrentPlayerId(gameState.getCurrentPlayerId());
         startResponse.setTurnOrder(gameState.getTurnOrder());
         startResponse.setCurrentRound(gameState.getCurrentRound());
-        
+
         simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, startResponse);
 
         // 2. 20초 후 WAITING_DICE로 복귀하는 스케줄러 실행
@@ -171,7 +187,7 @@ public class GameWsController {
             endResponse.setCurrentPlayerId(gameState.getCurrentPlayerId());
             endResponse.setTurnOrder(gameState.getTurnOrder());
             endResponse.setCurrentRound(gameState.getCurrentRound());
-            
+
             System.out.println(">>> ⏰ 20초 경과: MainBoard로 복귀");
             simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, endResponse);
         }, 20, TimeUnit.SECONDS);
