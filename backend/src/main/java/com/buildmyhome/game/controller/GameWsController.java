@@ -43,6 +43,7 @@ public class GameWsController {
         response.setPlayers(new ArrayList<>(gameState.getPlayers().values()));
         response.setTurnOrder(gameState.getTurnOrder());
         response.setCurrentRound(gameState.getCurrentRound());
+        response.setTimeoutSeconds(gameState.getStatus().getTimeoutSeconds());
         return response;
     }
 
@@ -61,8 +62,7 @@ public class GameWsController {
         Long roomId = message.getRoomId();
         RoomState room = roomStateService.getRoom(roomId);
 
-        // GameState 생성 -> 게임 관련 모든 데이터가 여기에 저장됨 (현재 몇턴이고, 누가 1등이고, 플레이어 상태가 어떻고 ..)
-        GameState gameState = new GameState(roomId, room.getTotalRounds());
+        GameState gameState = new GameState(roomId);
         gameState.setStatus(GameStatus.INTRO);
 
         for (RoomPlayerState player : room.getPlayers().values()) {
@@ -170,7 +170,6 @@ public class GameWsController {
             int diceValue = (int) (Math.random() * DICE_MAX) + DICE_MIN;
             player.setDiceValue(diceValue);
 
-            // TODO : 보드칸 수에 따라 수정 필요
             int newPosition = (player.getPosition() + diceValue) % BOARD_SIZE;
             player.setPosition(newPosition);
 
@@ -199,10 +198,61 @@ public class GameWsController {
             GamePlayerState player = gameState.getPlayers().get(memberId);
             if (player == null) return;
 
+            // 플레이어가 도착한 칸에 맞는 상태로 전환 (예: KK 칸이면 WAITING_KK)
             GameStatus nextStatus = BoardData.getNextStatus(player.getPosition());
             gameState.setStatus(nextStatus);
 
+            // 타임아웃이 설정된 상태라면 스케줄러로 타임아웃 처리 등록
+            if (nextStatus.isAutoProceed()){
+                scheduler.schedule(() -> {
+                    synchronized (gameState) {
+                        if (gameState.getStatus() == nextStatus) {
+
+                            // 시간 초과한 경우 다음 플레이어로 넘김
+                            gameState.nextTurn();
+
+                            GameMessage timeoutResponse = defaultGameResponse("EVENT_TIMEOUT", gameState);
+                            simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, timeoutResponse);
+                            System.out.println(">>> ⏰ " + nextStatus.getTimeoutSeconds() + "초 경과: 타임아웃으로 복귀");
+                        }
+                    }
+                }, nextStatus.getTimeoutSeconds(), TimeUnit.SECONDS);
+            }
+
             GameMessage response = defaultGameResponse("MOVE_COMPLETE", gameState);
+            simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
+        }
+    }
+
+    @MessageMapping("/games/action")
+    public void handleGameAction(GameMessage message, Principal principal) {
+        Long roomId = message.getRoomId();
+        String actionType = message.getType(); // 프론트에서 보낸 "LOAN_ACTION", "STAMP_ACTION" 등
+
+        GameState gameState = gameStateService.getGame(roomId);
+        if (gameState == null) return;
+
+        synchronized (gameState) {
+            // 1. 공통 검증 (현재 턴인지 등)
+            Long memberId = Long.parseLong(principal.getName());
+            if (!memberId.equals(gameState.getCurrentPlayerId())) return;
+
+            // 2. 타입에 따라 분기 처리
+            switch (actionType) {
+                case "LOAN_ACTION":
+                    // 대출 서비스 호출 혹은 로직 처리
+                    // 예: player.setBell(player.getBell() + message.getAmount());
+                    break;
+                case "STAMP_ACTION":
+                    // 스탬프 획득 로직 처리
+                    break;
+                case "BUY_ITEM":
+                    // 아이템 구매 로직 처리
+                    break;
+            }
+
+            // 3. 결과 전송
+            GameMessage response = defaultGameResponse("ACTION_PROCESSED", gameState);
             simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
         }
     }
@@ -241,22 +291,32 @@ public class GameWsController {
         try {
             targetStatus = GameStatus.valueOf(requestedStatusStr);
         } catch (IllegalArgumentException | NullPointerException e) {
-            System.err.println("Invalid status requested: " + requestedStatusStr);
             return;
         }
 
+        // 1. 상태 변경 및 전송
         gameState.setStatus(targetStatus);
-
         GameMessage startResponse = defaultGameResponse("EVENT_START", gameState);
         simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, startResponse);
 
-        scheduler.schedule(() -> {
-            gameState.setStatus(GameStatus.WAITING_PLAYER_ACTION);
+        // 2. Enum에서 설정한 시간을 가져옴
+        int timeout = targetStatus.getTimeoutSeconds();
 
-            GameMessage endResponse = defaultGameResponse("EVENT_END", gameState);
-            simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, endResponse);
-
-            System.out.println(">>> ⏰ 20초 경과: MainBoard로 복귀");
-        }, 20, TimeUnit.SECONDS);
+        // 3. 타임아웃 설정이 있는 상태(0보다 큰 경우)일 때만 스케줄러 실행
+        if (timeout > 0) {
+            scheduler.schedule(() -> {
+                synchronized (gameState) {
+                    // 시간이 다 됐을 때 여전히 그 상태일 때만 메인보드 복귀
+                    if (gameState.getStatus() == targetStatus) {
+                        gameState.setStatus(GameStatus.WAITING_PLAYER_ACTION);
+                        GameMessage endResponse = defaultGameResponse("EVENT_END", gameState);
+                        simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, endResponse);
+                        System.out.println(">>> ⏰ " + timeout + "초 경과: 타임아웃으로 복귀");
+                    }
+                }
+            }, timeout, TimeUnit.SECONDS); // 20 대신 Enum의 값을 사용!
+        } else {
+            System.out.println(">>> ℹ️ " + targetStatus + " 상태는 제한 시간이 없으므로 스케줄러를 실행하지 않습니다.");
+        }
     }
 }

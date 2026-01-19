@@ -1,5 +1,5 @@
 // 테스트 위한 임시 컴포넌트
-const DevControls = ({ onStatusChange, onMockGameStart, setDevMyId, setGameState, roomId }) => {
+const DevControls = ({ onStatusChange }) => {
     // 개발 환경에서만 렌더링
     if (import.meta.env.PROD) return null;
 
@@ -26,6 +26,12 @@ const DevControls = ({ onStatusChange, onMockGameStart, setDevMyId, setGameState
                     className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded shadow"
                 >
                     🎲 주사위 굴리기 (RollDicePage)
+                </button>
+                <button
+                    onClick={() => onStatusChange("WAITING_PLAYER_ACTION")}
+                    className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded shadow"
+                >
+                    ⏎ 맵으로 돌아가기
                 </button>
             </div>
         </div>
