@@ -27,6 +27,7 @@ const DevControls = ({ onStatusChange }) => {
                 >
                     🎲 주사위 굴리기 (RollDicePage)
                 </button>
+<<<<<<< HEAD
                 <button
                     onClick={() => onStatusChange("WAITING_PLAYER_ACTION")}
                     className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded shadow"
@@ -41,6 +42,8 @@ const DevControls = ({ onStatusChange }) => {
                         className="px-3 py-1 bg-pink-500 hover:bg-pink-600 text-white text-xs rounded shadow">
                     재화 상점
                 </button>
+=======
+>>>>>>> e23c125 (feat(BMH-132):일반 로그인 유저 소셜 로그인 연동 추가, github -> kakao로 변경)
             </div>
         </div>
     );

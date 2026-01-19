@@ -43,7 +43,10 @@ public class GameWsController {
         response.setPlayers(new ArrayList<>(gameState.getPlayers().values()));
         response.setTurnOrder(gameState.getTurnOrder());
         response.setCurrentRound(gameState.getCurrentRound());
+<<<<<<< HEAD
         response.setTimeoutSeconds(gameState.getStatus().getTimeoutSeconds());
+=======
+>>>>>>> e23c125 (feat(BMH-132):일반 로그인 유저 소셜 로그인 연동 추가, github -> kakao로 변경)
         return response;
     }
 
@@ -129,6 +132,7 @@ public class GameWsController {
 
     @MessageMapping("/games/select-dice")
     public void selectDice(GameMessage message, Principal principal) {
+<<<<<<< HEAD
         Long roomId = message.getRoomId();
         Long memberId = Long.parseLong(principal.getName());
         GameState gameState = gameStateService.getGame(roomId);
@@ -282,6 +286,111 @@ public class GameWsController {
     @MessageMapping("/games/trigger-event")
     public void triggerEvent(GameMessage message) {
         Long roomId = message.getRoomId();
+=======
+        Long roomId = message.getRoomId();
+        Long memberId = Long.parseLong(principal.getName());
+        GameState gameState = gameStateService.getGame(roomId);
+
+        if (gameState == null) return;
+
+        synchronized (gameState) {
+            if (!memberId.equals(gameState.getCurrentPlayerId()) ||
+                    gameState.getStatus() != GameStatus.WAITING_PLAYER_ACTION) {
+                // 잘못된 턴이거나 상태일 경우 에러 메시지 전송 로직 추가 가능
+                return;
+            }
+
+            gameState.setStatus(GameStatus.WAITING_DICE);
+            simpMessagingTemplate.convertAndSend("/topic/games/" + roomId,
+                    defaultGameResponse("DICE_SELECTED", gameState));
+        }
+    }
+
+    @MessageMapping("/games/roll-dice")
+    public void rollDice(GameMessage message, Principal principal){
+        Long roomId = message.getRoomId();
+        Long memberId = Long.parseLong(principal.getName());
+        GameState gameState = gameStateService.getGame(roomId);
+
+        if (gameState == null) return;
+
+        synchronized (gameState) {
+            if (!memberId.equals(gameState.getCurrentPlayerId()) ||
+                    gameState.getStatus() != GameStatus.WAITING_DICE) {
+                // 잘못된 턴이거나 상태일 경우 에러 메시지 전송 로직 추가 가능
+                return;
+            }
+
+            GamePlayerState player = gameState.getPlayers().get(memberId);
+            if (player == null) return;
+
+            // 서버에서 주사위 값 생성
+            int diceValue = (int) (Math.random() * DICE_MAX) + DICE_MIN;
+            player.setDiceValue(diceValue);
+
+            // TODO : 보드칸 수에 따라 수정 필요
+            int newPosition = (player.getPosition() + diceValue) % BOARD_SIZE;
+            player.setPosition(newPosition);
+
+            gameState.setStatus(GameStatus.MOVING);
+
+            GameMessage response = defaultGameResponse("DICE_ROLLED", gameState);
+            response.setDiceValue(diceValue);
+            simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
+        }
+    }
+
+    @MessageMapping("/games/move-complete")
+    public void moveComplete(GameMessage message, Principal principal) {
+        Long roomId = message.getRoomId();
+        Long memberId = Long.parseLong(principal.getName());
+        GameState gameState = gameStateService.getGame(roomId);
+
+        if (gameState == null) return;
+
+        synchronized (gameState) {
+            if (!memberId.equals(gameState.getCurrentPlayerId()) ||
+                    gameState.getStatus() != GameStatus.MOVING) {
+                return;
+            }
+
+            GamePlayerState player = gameState.getPlayers().get(memberId);
+            if (player == null) return;
+
+            GameStatus nextStatus = BoardData.getNextStatus(player.getPosition());
+            gameState.setStatus(nextStatus);
+
+            GameMessage response = defaultGameResponse("MOVE_COMPLETE", gameState);
+            simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
+        }
+    }
+
+    @MessageMapping("/games/event-complete")
+    public void eventComplete(GameMessage message, Principal principal) {
+        Long roomId = message.getRoomId();
+        Long memberId = Long.parseLong(principal.getName());
+        GameState gameState = gameStateService.getGame(roomId);
+
+        if (gameState == null) return;
+
+        synchronized (gameState) {
+            if (!memberId.equals(gameState.getCurrentPlayerId())) {
+                return;
+            }
+
+            // TODO: 최대 라운드 도달 시 게임 종료 처리
+            gameState.nextTurn();
+
+            GameMessage response = defaultGameResponse("TURN_COMPLETED", gameState);
+            simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
+        }
+    }
+
+    // DEV 용: 특정 이벤트 상태로 강제 진입시키고 20초 후 메인보드로 복귀시키기
+    @MessageMapping("/games/trigger-event")
+    public void triggerEvent(GameMessage message) {
+        Long roomId = message.getRoomId();
+>>>>>>> e23c125 (feat(BMH-132):일반 로그인 유저 소셜 로그인 연동 추가, github -> kakao로 변경)
         String requestedStatusStr = message.getStatus();
 
         GameState gameState = gameStateService.getGame(roomId);
@@ -296,6 +405,7 @@ public class GameWsController {
 
         // 1. 상태 변경 및 전송
         gameState.setStatus(targetStatus);
+<<<<<<< HEAD
         GameMessage startResponse = defaultGameResponse("EVENT_START", gameState);
         simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, startResponse);
 
@@ -318,5 +428,19 @@ public class GameWsController {
         } else {
             System.out.println(">>> ℹ️ " + targetStatus + " 상태는 제한 시간이 없으므로 스케줄러를 실행하지 않습니다.");
         }
+=======
+
+        GameMessage startResponse = defaultGameResponse("EVENT_START", gameState);
+        simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, startResponse);
+
+        scheduler.schedule(() -> {
+            gameState.setStatus(GameStatus.WAITING_PLAYER_ACTION);
+
+            GameMessage endResponse = defaultGameResponse("EVENT_END", gameState);
+            simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, endResponse);
+
+            System.out.println(">>> ⏰ 20초 경과: MainBoard로 복귀");
+        }, 20, TimeUnit.SECONDS);
+>>>>>>> e23c125 (feat(BMH-132):일반 로그인 유저 소셜 로그인 연동 추가, github -> kakao로 변경)
     }
 }
