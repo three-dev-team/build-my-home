@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import './GameIntro.css';
+import './css/GameIntro.css';
 
 const GameIntro = ({ onSkip }) => {
     const [currentSlide, setCurrentSlide] = useState(0);

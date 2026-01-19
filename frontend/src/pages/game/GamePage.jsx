@@ -13,6 +13,8 @@ import PlayerStatusPanel from "./PlayerStatusPanel.jsx";
 import DevControls from "./DevControls.jsx";
 import Loan from "./Loan.jsx";
 import Stamp from "./Stamp.jsx";
+import PlayerActionPanel from "./PlayerActionPanel.jsx";
+import RollDicePage from "./RollDicePage.jsx";
 
 
 const GamePage = () => {
@@ -27,6 +29,10 @@ const GamePage = () => {
 
     const [gameState, setGameState] = useState(location.state?.initialGameData || null);
     const [stompClient, setStompClient] = useState(null);
+
+    // 현재 턴 플레이어 정보
+    const currentPlayer = gameState?.players?.find(p => p.memberId === gameState.currentPlayerId) || null;
+    const isMyTurn = gameState ? myId === gameState.currentPlayerId : false;
 
     // 공통 UI(채팅, 메뉴버튼 등)를 보여줄지 말지 결정하는 변수
     const showCommonUI = gameState &&
@@ -86,6 +92,23 @@ const GamePage = () => {
             }
         };
     }, [roomId, token]); // roomId, token이 바뀔 때마다 재실행
+
+    // 이동 후 2초 후에 다음 페이지로 이동
+    useEffect(() => {
+        console.log('>>> MOVING 체크:', gameState?.status, stompClient ? '연결됨' : '미연결', isMyTurn);
+
+        if (gameState?.status === 'MOVING' && stompClient && isMyTurn) {
+            console.log('>>> 2초 후 move-complete 호출 예정');
+            const timer = setTimeout(() => {
+                console.log('>>> move-complete 호출!');
+                stompClient.publish({
+                    destination: '/app/games/move-complete',
+                    body: JSON.stringify({ roomId })
+                });
+            }, 2000);
+            return () => clearTimeout(timer);
+        }
+    }, [gameState?.status, stompClient, isMyTurn, roomId]);
 
     // --------------------------------- useEffect --------------------------------- //
     // --------------------------------- 핸들러 함수 --------------------------------- //
@@ -147,11 +170,7 @@ const GamePage = () => {
 
     if (!gameState) return <Loading/>;
 
-    // 현재 턴 플레이어 정보
-    const currentPlayer = gameState.players?.find(p => p.memberId === gameState.currentPlayerId);
-    const activePlayerName = currentPlayer?.nickname || "알 수 없음";
-    const isActivePlayer = myId === gameState.currentPlayerId;
-    const myPlayer = gameState.players?.find(p => p.memberId === myId); // 내 플레이어 정보
+
 
     return (
         <div className="game-container">
@@ -183,7 +202,7 @@ const GamePage = () => {
                     <RollForOrder
                         players={gameState.players}
                         myId={myId}
-                        onRoll={handleRollDice} // 소켓 대신 '할 일'을 넘깁니다.
+                        onRoll={handleRollDice}
                     />
                 )}
 
@@ -207,7 +226,7 @@ const GamePage = () => {
                 {/* 스탬프 이벤트 (WAITING_STAMP) */}
                 {gameState.status === "WAITING_STAMP" && (
                     <Stamp
-                        isActivePlayer={isActivePlayer}
+                        isMyTurn={isMyTurn}
                         activePlayerName={activePlayerName}
                         initialCount={currentPlayer?.collectedStamps?.length || 0} // TODO: 연동 필요
                         onReward={(reward) => console.log(`Reward: ${reward}`)}
@@ -217,10 +236,42 @@ const GamePage = () => {
                     />
                 )}
 
-                {gameState.status === 'WAITING_DICE' && <MainBoardPage/>}
+                {/* 사용자 액션 패널 */}
+                {gameState.status === 'WAITING_PLAYER_ACTION' &&
+                    <PlayerActionPanel
+                        isMyTurn={isMyTurn}
+                        items={currentPlayer?.items || []}
+                        onSelectDice={() => {
+                            stompClient.publish({
+                                destination: '/app/games/select-dice',
+                                body: JSON.stringify({roomId})
+                            });
+                        }}
+                        onSelectItem={() => console.log('아이템 선택')}
+                        onSelectMap={() => console.log('맵 선택')}
+                    />}
+
+                {/* 주사위 굴리는 페이지 */}
+                {gameState.status === 'WAITING_DICE' && (
+                    <RollDicePage
+                        currentPlayer={currentPlayer}
+                        isMyTurn={isMyTurn}
+                        onRollComplete={() => {
+                            stompClient.publish({
+                                destination: '/app/games/roll-dice',
+                                body: JSON.stringify({ roomId })
+                            });
+                        }}
+                    />
+                )}
+
+                {/* 메인 보드 */}
+                {['WAITING_PLAYER_ACTION', 'MOVING'].includes(gameState.status) && (
+                    <MainBoardPage players={gameState.players}/>
+                )}
             </main>
 
-            {/* 사용자 패널 표시 */}
+            {/* 사용자 상태 패널 표시(하단) */}
             {!['INTRO', 'DETERMINING_ORDER'].includes(gameState.status) && (
                 <PlayerStatusPanel
                     players={gameState.players || []}
