@@ -53,7 +53,7 @@ public class GameState {
             this.currentRound++;
         }
 
-        this.status = GameStatus.WAITING_DICE;
+        this.status = GameStatus.WAITING_PLAYER_ACTION;
     }
 
     public void addPlayer(GamePlayerState player) {

@@ -1,18 +1,18 @@
 package com.buildmyhome.game.dto;
 
 public enum GameStatus {
-    INTRO,      // 소개 페이지
+    INTRO,              // 소개 페이지
+    DETERMINING_ORDER,  // 순서 정하기 페이지
 
-    DETERMINING_ORDER, // 순서 정하기 페이지
-
-    // --- 여기서부터 PLAYING 영역 ---
-    WAITING_DICE,      // 주사위 굴리기 대기 (현재 턴 유저의 굴리기 버튼 활성화)
-    MOVING,            // 캐릭터 이동 중 (애니메이션 연출 시간 확보용)
+    // --- PLAYING 영역 ---
+    WAITING_PLAYER_ACTION,  // 유저 액션 (주사위, 아이템, 맵) 선택 대기 중
+    WAITING_DICE,           // 주사위 굴리기 대기
+    MOVING,                 // 캐릭터 이동 중 (애니메이션 연출 시간 확보용)
 
     // --- 칸 이벤트별 유저 입력을 기다리는 상태 ---
     WAITING_STAMP,         // 스탬프칸 이용 중
-//    WAITING_RESOURCES,     // 재화칸 이용 중
-//    WAITING_HARVEST,       // 수확물칸 이용 중
+    WAITING_RESOURCES,     // 재화칸 이용 중
+    WAITING_HARVEST,       // 수확물칸 이용 중
     WAITING_SHOP_ITEM,     // 아이템 상점 이용 중
     WAITING_SHOP_RESOURCE, // 재화 상점 이용 중
     WAITING_LOAN,          // 대출 여부 선택 중

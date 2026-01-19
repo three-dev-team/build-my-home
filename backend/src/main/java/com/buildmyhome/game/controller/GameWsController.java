@@ -1,5 +1,6 @@
 package com.buildmyhome.game.controller;
 
+import com.buildmyhome.game.constants.BoardData;
 import com.buildmyhome.game.dto.GameMessage;
 import com.buildmyhome.game.dto.GamePlayerState;
 import com.buildmyhome.game.dto.GameState;
@@ -23,6 +24,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import static com.buildmyhome.game.constants.GameConstants.*;
+
 @Controller
 @RequiredArgsConstructor
 public class GameWsController {
@@ -31,19 +34,25 @@ public class GameWsController {
     private final GameStateService gameStateService;
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
+    // 서버메모리 -> 프론트로 전달하는 공통 응답 DTO 생성하는 메서드
+    private GameMessage defaultGameResponse(String type, GameState gameState) {
+        GameMessage response = new GameMessage();
+        response.setType(type);
+        response.setStatus(gameState.getStatus().name());
+        response.setCurrentPlayerId(gameState.getCurrentPlayerId());
+        response.setPlayers(new ArrayList<>(gameState.getPlayers().values()));
+        response.setTurnOrder(gameState.getTurnOrder());
+        response.setCurrentRound(gameState.getCurrentRound());
+        return response;
+    }
+
     @MessageMapping("/games/get-state")
     public void getGameState(GameMessage message) {
         Long roomId = message.getRoomId();
         GameState gameState = gameStateService.getGame(roomId);
         if (gameState == null) return;
 
-        GameMessage response = new GameMessage();
-        response.setType("CURRENT_GAME_STATE");
-        response.setRoomId(roomId);
-        response.setStatus(gameState.getStatus().name());
-        response.setCurrentPlayerId(gameState.getCurrentPlayerId());
-        response.setPlayers(new ArrayList<>(gameState.getPlayers().values()));
-
+        GameMessage response = defaultGameResponse("CURRENT_GAME_STATE", gameState);
         simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
     }
 
@@ -54,6 +63,7 @@ public class GameWsController {
 
         // GameState 생성 -> 게임 관련 모든 데이터가 여기에 저장됨 (현재 몇턴이고, 누가 1등이고, 플레이어 상태가 어떻고 ..)
         GameState gameState = new GameState(roomId, room.getTotalRounds());
+        gameState.setStatus(GameStatus.INTRO);
 
         for (RoomPlayerState player : room.getPlayers().values()) {
             gameState.addPlayer(new GamePlayerState(
@@ -62,32 +72,20 @@ public class GameWsController {
                     player.getCharacterId()
             ));
         }
-
         gameStateService.saveGame(roomId, gameState);
 
-        GameMessage response = new GameMessage();
-        response.setType("GAME_START");
-        response.setRoomId(roomId);
-        response.setStatus("INTRO");
-        response.setPlayers(new ArrayList<>(gameState.getPlayers().values()));
+        GameMessage response = defaultGameResponse("GAME_START", gameState);
         simpMessagingTemplate.convertAndSend("/topic/rooms/" + roomId, response);
     }
 
     @MessageMapping("/games/intro-complete")
     public void introComplete(GameMessage message) {
         Long roomId = message.getRoomId();
-
         GameState gameState = gameStateService.getGame(roomId);
         if (gameState == null) return;
-
         gameState.setStatus(GameStatus.DETERMINING_ORDER);
 
-        GameMessage response = new GameMessage();
-        response.setType("INTRO_COMPLETE");
-        response.setRoomId(roomId);
-        response.setStatus("DETERMINING_ORDER");
-        response.setPlayers(new ArrayList<>(gameState.getPlayers().values()));
-
+        GameMessage response = defaultGameResponse("INTRO_COMPLETE", gameState);
         simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
     }
 
@@ -95,11 +93,8 @@ public class GameWsController {
     @MessageMapping("/games/roll-order")
     public void rollForOrder(GameMessage message, Principal principal) {
         Long roomId = message.getRoomId();
-        System.out.println(">>> roll-order roomId: " + roomId);
         Long memberId = Long.parseLong(principal.getName());
-
         GameState gameState = gameStateService.getGame(roomId);
-        System.out.println(">>> gameState: " + gameState);
 
         synchronized (gameState) {
             GamePlayerState player = gameState.getPlayers().get(memberId);
@@ -124,31 +119,124 @@ public class GameWsController {
 
                 gameState.setTurnOrder(sortedTurnOrder);
                 gameState.setCurrentPlayerId(sortedTurnOrder.get(0));
-                gameState.setStatus(GameStatus.WAITING_DICE); // 서버 상태 변경
+                gameState.setStatus(GameStatus.WAITING_PLAYER_ACTION); // 서버 상태 변경
             }
 
-            GameMessage response = new GameMessage();
-            response.setType(allDone ? "ALL_DICE_ROLLED" : "DICE_ROLLED");
-            response.setRoomId(roomId);
-            response.setMemberId(memberId);
-            response.setCurrentPlayerId(gameState.getCurrentPlayerId());
-            response.setStatus(gameState.getStatus().name()); // 서버의 최신 상태를 그대로 가져옴
-            response.setPlayers(new ArrayList<>(gameState.getPlayers().values()));
-
+            GameMessage response = defaultGameResponse(allDone ? "ALL_DICE_ROLLED" : "DICE_ROLLED", gameState);
             simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
         }
     }
 
+    @MessageMapping("/games/select-dice")
+    public void selectDice(GameMessage message, Principal principal) {
+        Long roomId = message.getRoomId();
+        Long memberId = Long.parseLong(principal.getName());
+        GameState gameState = gameStateService.getGame(roomId);
 
+        if (gameState == null) return;
+
+        synchronized (gameState) {
+            if (!memberId.equals(gameState.getCurrentPlayerId()) ||
+                    gameState.getStatus() != GameStatus.WAITING_PLAYER_ACTION) {
+                // 잘못된 턴이거나 상태일 경우 에러 메시지 전송 로직 추가 가능
+                return;
+            }
+
+            gameState.setStatus(GameStatus.WAITING_DICE);
+            simpMessagingTemplate.convertAndSend("/topic/games/" + roomId,
+                    defaultGameResponse("DICE_SELECTED", gameState));
+        }
+    }
+
+    @MessageMapping("/games/roll-dice")
+    public void rollDice(GameMessage message, Principal principal){
+        Long roomId = message.getRoomId();
+        Long memberId = Long.parseLong(principal.getName());
+        GameState gameState = gameStateService.getGame(roomId);
+
+        if (gameState == null) return;
+
+        synchronized (gameState) {
+            if (!memberId.equals(gameState.getCurrentPlayerId()) ||
+                    gameState.getStatus() != GameStatus.WAITING_DICE) {
+                // 잘못된 턴이거나 상태일 경우 에러 메시지 전송 로직 추가 가능
+                return;
+            }
+
+            GamePlayerState player = gameState.getPlayers().get(memberId);
+            if (player == null) return;
+
+            // 서버에서 주사위 값 생성
+            int diceValue = (int) (Math.random() * DICE_MAX) + DICE_MIN;
+            player.setDiceValue(diceValue);
+
+            // TODO : 보드칸 수에 따라 수정 필요
+            int newPosition = (player.getPosition() + diceValue) % BOARD_SIZE;
+            player.setPosition(newPosition);
+
+            gameState.setStatus(GameStatus.MOVING);
+
+            GameMessage response = defaultGameResponse("DICE_ROLLED", gameState);
+            response.setDiceValue(diceValue);
+            simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
+        }
+    }
+
+    @MessageMapping("/games/move-complete")
+    public void moveComplete(GameMessage message, Principal principal) {
+        Long roomId = message.getRoomId();
+        Long memberId = Long.parseLong(principal.getName());
+        GameState gameState = gameStateService.getGame(roomId);
+
+        if (gameState == null) return;
+
+        synchronized (gameState) {
+            if (!memberId.equals(gameState.getCurrentPlayerId()) ||
+                    gameState.getStatus() != GameStatus.MOVING) {
+                return;
+            }
+
+            GamePlayerState player = gameState.getPlayers().get(memberId);
+            if (player == null) return;
+
+            GameStatus nextStatus = BoardData.getNextStatus(player.getPosition());
+            gameState.setStatus(nextStatus);
+
+            GameMessage response = defaultGameResponse("MOVE_COMPLETE", gameState);
+            simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
+        }
+    }
+
+    @MessageMapping("/games/event-complete")
+    public void eventComplete(GameMessage message, Principal principal) {
+        Long roomId = message.getRoomId();
+        Long memberId = Long.parseLong(principal.getName());
+        GameState gameState = gameStateService.getGame(roomId);
+
+        if (gameState == null) return;
+
+        synchronized (gameState) {
+            if (!memberId.equals(gameState.getCurrentPlayerId())) {
+                return;
+            }
+
+            // TODO: 최대 라운드 도달 시 게임 종료 처리
+            gameState.nextTurn();
+
+            GameMessage response = defaultGameResponse("TURN_COMPLETED", gameState);
+            simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
+        }
+    }
+
+    // DEV 용: 특정 이벤트 상태로 강제 진입시키고 20초 후 메인보드로 복귀시키기
     @MessageMapping("/games/trigger-event")
     public void triggerEvent(GameMessage message) {
         Long roomId = message.getRoomId();
-        String requestedStatusStr = message.getStatus(); // 클라이언트가 요청한 상태 (예: WAITING_LOAN)
+        String requestedStatusStr = message.getStatus();
 
         GameState gameState = gameStateService.getGame(roomId);
         if (gameState == null) return;
 
-        // 1. 유효한 상태인지 확인 및 변경
         GameStatus targetStatus;
         try {
             targetStatus = GameStatus.valueOf(requestedStatusStr);
@@ -158,38 +246,17 @@ public class GameWsController {
         }
 
         gameState.setStatus(targetStatus);
-        
-        GameMessage startResponse = new GameMessage();
-        startResponse.setType("EVENT_START");
-        startResponse.setRoomId(roomId);
-        startResponse.setStatus(targetStatus.name());
-        startResponse.setPlayers(new ArrayList<>(gameState.getPlayers().values()));
-        // 추가 필드 설정
-        startResponse.setCurrentPlayerId(gameState.getCurrentPlayerId());
-        startResponse.setTurnOrder(gameState.getTurnOrder());
-        startResponse.setCurrentRound(gameState.getCurrentRound());
 
+        GameMessage startResponse = defaultGameResponse("EVENT_START", gameState);
         simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, startResponse);
 
-        // 2. 20초 후 WAITING_DICE로 복귀하는 스케줄러 실행
-
         scheduler.schedule(() -> {
-            // 게임이 이미 종료됐거나 다른 상태로 변했을 수도 있으니 체크 필요할 수 있음
-            // (여기서는 단순하게 강제 복귀 처리)
-            gameState.setStatus(GameStatus.WAITING_DICE);
+            gameState.setStatus(GameStatus.WAITING_PLAYER_ACTION);
 
-            GameMessage endResponse = new GameMessage();
-            endResponse.setType("EVENT_END");
-            endResponse.setRoomId(roomId);
-            endResponse.setStatus("WAITING_DICE");
-            endResponse.setPlayers(new ArrayList<>(gameState.getPlayers().values()));
-            // 추가 필드 설정 (복귀 시에도 상태 유지 필요)
-            endResponse.setCurrentPlayerId(gameState.getCurrentPlayerId());
-            endResponse.setTurnOrder(gameState.getTurnOrder());
-            endResponse.setCurrentRound(gameState.getCurrentRound());
+            GameMessage endResponse = defaultGameResponse("EVENT_END", gameState);
+            simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, endResponse);
 
             System.out.println(">>> ⏰ 20초 경과: MainBoard로 복귀");
-            simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, endResponse);
         }, 20, TimeUnit.SECONDS);
     }
 }
