@@ -1,6 +1,7 @@
 package com.buildmyhome.room.dto;
 
 import lombok.Getter;
+import lombok.Setter;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 
@@ -9,6 +10,7 @@ public class RoomState {
     private final Long roomId;
     // TODO : 판수 바꾸는 옵션 추가 (final X)
     private int totalRounds;
+    @Setter
     private String hostNickname = "";
 
     // 접속할 때 쿠키로 로컬로 다운을 받을 수 있으면 좋을 듯

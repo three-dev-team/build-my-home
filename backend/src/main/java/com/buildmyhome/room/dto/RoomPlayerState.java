@@ -3,6 +3,8 @@ package com.buildmyhome.room.dto;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
+
 @Getter
 @Setter
 public class RoomPlayerState {
@@ -11,4 +13,5 @@ public class RoomPlayerState {
     private Long characterId;
     private boolean isReady;
     private boolean isHost;
+    private LocalDateTime enteredAt;
 }
