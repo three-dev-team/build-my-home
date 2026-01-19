@@ -15,6 +15,7 @@ import Loan from "./Loan.jsx";
 import Stamp from "./Stamp.jsx";
 import PlayerActionPanel from "./PlayerActionPanel.jsx";
 import RollDicePage from "./RollDicePage.jsx";
+import KK from "./KK.jsx";
 
 
 const GamePage = () => {
@@ -264,6 +265,20 @@ const GamePage = () => {
                         onExit={handleEventComplete}
                     />
                 )}
+
+                {gameState.status === "WAITING_KK" && (
+                    <KK
+                        isMyTurn={isMyTurn}
+                        currentPlayerName={currentPlayer?.nickname}
+                        userBell={currentPlayer?.bell || 0}
+                        timeoutSeconds={gameState.timeoutSeconds || 0}
+                        onAction={(type, payload) => handleAction(type, payload)}
+                        onExit={handleEventComplete}
+                    />
+                )}
+
+
+
                 {/* ------------------------------------- 개별 이벤트 추가 ------------------------------------- */}
 
                 {/* TODO: 팀원 모두 코드 로직 이해 완료 후에는 공통 props -> commonEventProps 사용 */}
