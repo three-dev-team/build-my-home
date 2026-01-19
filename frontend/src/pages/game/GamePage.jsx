@@ -15,6 +15,7 @@ import Loan from "./Loan.jsx";
 import Stamp from "./Stamp.jsx";
 import PlayerActionPanel from "./PlayerActionPanel.jsx";
 import RollDicePage from "./RollDicePage.jsx";
+import ShopPage from "./ShopPage.jsx";
 
 
 const GamePage = () => {
@@ -262,6 +263,28 @@ const GamePage = () => {
                         onReward={(reward) => console.log(`Reward: ${reward}`)}
                         onStampClick={() => handleAction("STAMP_ACTION", {})}
                         onExit={handleEventComplete}
+                    />
+                )}
+
+                {/* 아이템 상점 이벤트 (WAITING_SHOP_ITEM) */}
+                {gameState.status === "WAITING_SHOP_ITEM" && (
+                    <ShopPage
+                        gameState={gameState}
+                        stompClient={stompClient}
+                        myId={myId}
+                        roomId={roomId}
+                        shopType="ITEM_SHOP"
+                    />
+                )}
+
+                {/* 재화 상점 이벤트 (WAITING_SHOP_RESOURCE) */}
+                {gameState.status === "WAITING_SHOP_RESOURCE" && (
+                    <ShopPage
+                        gameState={gameState}
+                        stompClient={stompClient}
+                        myId={myId}
+                        roomId={roomId}
+                        shopType="HARVEST_SHOP"
                     />
                 )}
                 {/* ------------------------------------- 개별 이벤트 추가 ------------------------------------- */}

@@ -1,6 +1,6 @@
 import React from 'react';
 import useDiceRoll from '../../hooks/useDiceRoll';
-import '/Users/suminhong/web_0826_hsm/workspace/buildmyhome_workspace/frontend/src/pages/game/css/RollDicePage.css';
+import './css/RollDicePage.css';
 
 const RollDicePage = ({ currentPlayer, isMyTurn, onRollComplete }) => {
     const { isRolling, diceDisplay } = useDiceRoll({
