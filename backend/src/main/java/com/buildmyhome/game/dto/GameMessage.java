@@ -17,6 +17,7 @@ public class GameMessage {
     
     // 상태 동기화를 위한 추가 필드
     private Long currentPlayerId;
+    private Integer diceValue;
     private List<Long> turnOrder;
     private int currentRound;
 }

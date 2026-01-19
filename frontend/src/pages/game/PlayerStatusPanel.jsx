@@ -1,4 +1,4 @@
-import './PlayerStatusPanel.css';
+import './css/PlayerStatusPanel.css';
 
 const getRankText = (index) => {
     const rank = index + 1;
