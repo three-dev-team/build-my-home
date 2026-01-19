@@ -7,4 +7,7 @@ public class GameConstants {
 
     // 보드
     public static final int BOARD_SIZE = 24;
+
+    // KK 공연장
+    public static final int KK_ENTRY_FEE = 100;
 }

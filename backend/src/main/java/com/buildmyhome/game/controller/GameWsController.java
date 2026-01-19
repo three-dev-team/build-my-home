@@ -1,6 +1,7 @@
 package com.buildmyhome.game.controller;
 
 import com.buildmyhome.game.constants.BoardData;
+import com.buildmyhome.game.constants.GameConstants;
 import com.buildmyhome.game.dto.GameMessage;
 import com.buildmyhome.game.dto.GamePlayerState;
 import com.buildmyhome.game.dto.GameState;
@@ -150,7 +151,7 @@ public class GameWsController {
     }
 
     @MessageMapping("/games/roll-dice")
-    public void rollDice(GameMessage message, Principal principal){
+    public void rollDice(GameMessage message, Principal principal) {
         Long roomId = message.getRoomId();
         Long memberId = Long.parseLong(principal.getName());
         GameState gameState = gameStateService.getGame(roomId);
@@ -204,7 +205,7 @@ public class GameWsController {
             gameState.setStatus(nextStatus);
 
             // 타임아웃이 설정된 상태라면 스케줄러로 타임아웃 처리 등록
-            if (nextStatus.isAutoProceed()){
+            if (nextStatus.isAutoProceed()) {
                 scheduler.schedule(() -> {
                     synchronized (gameState) {
                         if (gameState.getStatus() == nextStatus) {
@@ -238,6 +239,8 @@ public class GameWsController {
             Long memberId = Long.parseLong(principal.getName());
             if (!memberId.equals(gameState.getCurrentPlayerId())) return;
 
+            GamePlayerState player = gameState.getPlayers().get(memberId);
+
             // 2. 타입에 따라 분기 처리
             switch (actionType) {
                 case "LOAN_ACTION":
@@ -249,6 +252,17 @@ public class GameWsController {
                     break;
                 case "BUY_ITEM":
                     // 아이템 구매 로직 처리
+                    break;
+                case "KK_ACTION":
+                    int fee = KK_ENTRY_FEE;
+                    int userBell = player.getBell();
+                    if (userBell > fee) {
+                        player.setBell(player.getBell() - KK_ENTRY_FEE);
+                    }else{
+                        int shortage = fee - userBell;
+                        player.setBell(0);
+                        player.setLoan(player.getLoan() + shortage);
+                    }
                     break;
             }
 

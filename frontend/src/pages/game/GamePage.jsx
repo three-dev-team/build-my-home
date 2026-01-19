@@ -15,6 +15,7 @@ import Loan from "./Loan.jsx";
 import Stamp from "./Stamp.jsx";
 import PlayerActionPanel from "./PlayerActionPanel.jsx";
 import RollDicePage from "./RollDicePage.jsx";
+import KK from "./KK.jsx";
 import ShopPage from "./ShopPage.jsx";
 import KK from "./KK.jsx";
 
