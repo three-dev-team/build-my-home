@@ -16,6 +16,7 @@ import Stamp from "./Stamp.jsx";
 import PlayerActionPanel from "./PlayerActionPanel.jsx";
 import RollDicePage from "./RollDicePage.jsx";
 import KK from "./KK.jsx";
+import ShopPage from "./ShopPage.jsx";
 
 
 const GamePage = () => {
@@ -279,6 +280,27 @@ const GamePage = () => {
 
 
 
+                {/* 아이템 상점 이벤트 (WAITING_SHOP_ITEM) */}
+                {gameState.status === "WAITING_SHOP_ITEM" && (
+                    <ShopPage
+                        gameState={gameState}
+                        stompClient={stompClient}
+                        myId={myId}
+                        roomId={roomId}
+                        shopType="ITEM_SHOP"
+                    />
+                )}
+
+                {/* 재화 상점 이벤트 (WAITING_SHOP_RESOURCE) */}
+                {gameState.status === "WAITING_SHOP_RESOURCE" && (
+                    <ShopPage
+                        gameState={gameState}
+                        stompClient={stompClient}
+                        myId={myId}
+                        roomId={roomId}
+                        shopType="HARVEST_SHOP"
+                    />
+                )}
                 {/* ------------------------------------- 개별 이벤트 추가 ------------------------------------- */}
 
                 {/* TODO: 팀원 모두 코드 로직 이해 완료 후에는 공통 props -> commonEventProps 사용 */}
