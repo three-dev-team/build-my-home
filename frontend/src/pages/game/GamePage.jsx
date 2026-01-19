@@ -13,6 +13,9 @@ import PlayerStatusPanel from "./PlayerStatusPanel.jsx";
 import DevControls from "./DevControls.jsx";
 import Loan from "./Loan.jsx";
 import Stamp from "./Stamp.jsx";
+import PlayerActionPanel from "./PlayerActionPanel.jsx";
+import RollDicePage from "./RollDicePage.jsx";
+import KK from "./KK.jsx";
 
 const GamePage = () => {
   const { roomId } = useParams();
@@ -29,6 +32,12 @@ const GamePage = () => {
   );
   const [stompClient, setStompClient] = useState(null);
 
+  // 현재 턴 플레이어 정보
+  const currentPlayer =
+    gameState?.players?.find((p) => p.memberId === gameState.currentPlayerId) ||
+    null;
+  const isMyTurn = gameState ? myId === gameState.currentPlayerId : false;
+
   // 공통 UI(채팅, 메뉴버튼 등)를 보여줄지 말지 결정하는 변수
   const showCommonUI =
     gameState && !["DETERMINING_ORDER", "FINISHED"].includes(gameState.status);
@@ -38,7 +47,7 @@ const GamePage = () => {
     // 1. 토큰이 없으면 아예 소켓 시도도 하지 않음
     if (!token) {
       alert("로그인이 필요합니다.");
-      navigate("/");
+      navigate("/login");
       return;
     }
   }, [token, navigate]);
@@ -87,8 +96,51 @@ const GamePage = () => {
     };
   }, [roomId, token]); // roomId, token이 바뀔 때마다 재실행
 
+  // 이동 후 2초 후에 다음 페이지로 이동
+  useEffect(() => {
+    console.log(
+      ">>> MOVING 체크:",
+      gameState?.status,
+      stompClient ? "연결됨" : "미연결",
+      isMyTurn,
+    );
+
+    if (gameState?.status === "MOVING" && stompClient && isMyTurn) {
+      console.log(">>> 2초 후 move-complete 호출 예정");
+      const timer = setTimeout(() => {
+        console.log(">>> move-complete 호출!");
+        stompClient.publish({
+          destination: "/app/games/move-complete",
+          body: JSON.stringify({ roomId }),
+        });
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [gameState?.status, stompClient, isMyTurn, roomId]);
+
   // --------------------------------- useEffect --------------------------------- //
   // --------------------------------- 핸들러 함수 --------------------------------- //
+  // TODO: 팀원들 코드 로직 이해 후에 공통 함수로 관리
+
+  // // 모든 소켓 메시지 전송을 담당하는 공통 내부 함수
+  // const sendWS = (destination, payload = {}) => {
+  //     if (!stompClient) return;
+  //     stompClient.publish({
+  //         destination: `/app/games/${destination}`,
+  //         body: JSON.stringify({ roomId, ...payload })
+  //     });
+  // };
+  //
+  // const handleIntroComplete = () => sendWS('intro-complete');
+  // const handleRollDiceForOrder = () => sendWS('roll-order');
+  //
+  // const onSelectDice = () => sendWS('select-dice');
+  // const onRollComplete = () => sendWS('roll-dice');
+  //
+  // const handleAction = (actionType, payload) => {
+  //     if (!isMyTurn || gameState.status === 'MOVING') return;
+  //     sendWS('action', { type: actionType, ...payload });
+  // };
 
   const handleIntroComplete = () => {
     stompClient.publish({
@@ -97,7 +149,7 @@ const GamePage = () => {
     });
   };
 
-  const handleRollDice = () => {
+  const handleRollDiceForOrder = () => {
     if (stompClient) {
       stompClient.publish({
         destination: `/app/games/roll-order`,
@@ -108,13 +160,27 @@ const GamePage = () => {
 
   const handleAction = (actionType, payload) => {
     if (!stompClient) return;
+
+    // 내 턴이 아니거나 이동 중일 때는 액션 차단
+    if (!isMyTurn || gameState.status === "MOVING") {
+      console.warn("내 턴이 아니거나 캐릭터가 이동 중입니다.");
+      return;
+    }
+
     stompClient.publish({
       destination: "/app/games/action",
       body: JSON.stringify({
         roomId: roomId,
-        type: actionType,
-        ...payload,
+        type: actionType, // 백엔드에서 구분할 핵심 키
+        ...payload, // 추가 데이터 (amount, itemId, diceType 등)
       }),
+    });
+  };
+
+  const handleEventComplete = () => {
+    stompClient.publish({
+      destination: "/app/games/event-complete",
+      body: JSON.stringify({ roomId }),
     });
   };
 
@@ -146,14 +212,6 @@ const GamePage = () => {
 
   if (!gameState) return <Loading />;
 
-  // 현재 턴 플레이어 정보
-  const currentPlayer = gameState.players?.find(
-    (p) => p.memberId === gameState.currentPlayerId,
-  );
-  const activePlayerName = currentPlayer?.nickname || "알 수 없음";
-  const isActivePlayer = myId === gameState.currentPlayerId;
-  const myPlayer = gameState.players?.find((p) => p.memberId === myId); // 내 플레이어 정보
-
   return (
     <div className="game-container">
       {/* 1. 설정/채팅 버튼은 본 게임 중에만 표시 */}
@@ -166,13 +224,7 @@ const GamePage = () => {
 
       {/* 2. 게임 콘텐츠 영역 */}
       <main>
-        <DevControls
-          onStatusChange={handleDevStatusChange}
-          stompClient={stompClient}
-          roomId={roomId}
-          setGameState={setGameState}
-          setDevMyId={setDevMyId}
-        />
+        <DevControls onStatusChange={handleDevStatusChange} />
 
         {/* INTRO */}
         {gameState.status === "INTRO" && stompClient && (
@@ -184,43 +236,108 @@ const GamePage = () => {
           <RollForOrder
             players={gameState.players}
             myId={myId}
-            onRoll={handleRollDice} // 소켓 대신 '할 일'을 넘깁니다.
+            onRoll={handleRollDiceForOrder}
           />
         )}
 
+        {/* ------------------------------------- 개별 이벤트 추가 ------------------------------------- */}
         {/* 은행 이벤트 (WAITING_LOAN) */}
         {gameState.status === "WAITING_LOAN" && (
           <Loan
-            isActivePlayer={isActivePlayer}
-            activePlayerName={activePlayerName}
-            userBalance={currentPlayer?.bell || 0} //
-            currentLoan={currentPlayer?.loan || 0}
-            isBankSquare={true} // TODO: 연동 필요
-            onAction={(type, amount, isBankSquare) =>
-              handleAction("LOAN_ACTION", { type, amount, isBankSquare })
+            isMyTurn={isMyTurn}
+            currentPlayerName={currentPlayer?.nickname}
+            userBell={currentPlayer?.bell || 0}
+            userLoan={currentPlayer?.loan || 0}
+            timeoutSeconds={gameState.timeoutSeconds || 0}
+            isBankTile={true} // TODO: 연동 필요
+            onAction={(type, amount, isBankTile) =>
+              handleAction("LOAN_ACTION", { type, amount, isBankTile })
             }
-            // TODO: 은행 이벤트 종료 시점 연동 필요 "LOAN_COMPLETE"
-            onExit={() => handleDevStatusChange("WAITING_DICE")}
+            onExit={handleEventComplete}
           />
         )}
 
         {/* 스탬프 이벤트 (WAITING_STAMP) */}
         {gameState.status === "WAITING_STAMP" && (
           <Stamp
-            isActivePlayer={isActivePlayer}
-            activePlayerName={activePlayerName}
-            initialCount={currentPlayer?.collectedStamps?.length || 0} // TODO: 연동 필요
+            isMyTurn={isMyTurn}
+            currentPlayerName={currentPlayer?.nickname}
+            userStampsCount={currentPlayer?.collectedStamps?.length || 0}
+            timeoutSeconds={gameState.timeoutSeconds || 0}
             onReward={(reward) => console.log(`Reward: ${reward}`)}
-            // TODO: 스탬프 이벤트 종료 시점 연동 필요 "STAMP_COMPLETE"
-            onExit={() => handleDevStatusChange("WAITING_DICE")}
             onStampClick={() => handleAction("STAMP_ACTION", {})}
+            onExit={handleEventComplete}
           />
         )}
 
-        {gameState.status === "WAITING_DICE" && <MainBoardPage />}
+        {gameState.status === "WAITING_KK" && (
+          <KK
+            isMyTurn={isMyTurn}
+            currentPlayerName={currentPlayer?.nickname}
+            userBell={currentPlayer?.bell || 0}
+            timeoutSeconds={gameState.timeoutSeconds || 0}
+            onAction={(type, payload) => handleAction(type, payload)}
+            onExit={handleEventComplete}
+          />
+        )}
+
+        {/* ------------------------------------- 개별 이벤트 추가 ------------------------------------- */}
+
+        {/* TODO: 팀원 모두 코드 로직 이해 완료 후에는 공통 props -> commonEventProps 사용 */}
+        {/*
+const commonEventProps = {
+    isMyTurn,
+    currentPlayerName: currentPlayer?.nickname,
+    onExit: handleEventComplete,
+    gameState: gameState // 필요하다면 전체 상태 전달
+};
+
+// 사용 시
+{gameState.status === "WAITING_LOAN" && (
+    <Loan
+        {...commonEventProps}
+        userBell={currentPlayer?.bell || 0}
+        onAction={(type, amount) => handleAction("LOAN_ACTION", {type, amount})}
+    />
+)}
+                 */}
+        {/* 사용자 액션 패널 */}
+        {gameState.status === "WAITING_PLAYER_ACTION" && (
+          <PlayerActionPanel
+            isMyTurn={isMyTurn}
+            items={currentPlayer?.items || []}
+            onSelectDice={() => {
+              stompClient.publish({
+                destination: "/app/games/select-dice",
+                body: JSON.stringify({ roomId }),
+              });
+            }}
+            onSelectItem={() => console.log("아이템 선택")}
+            onSelectMap={() => console.log("맵 선택")}
+          />
+        )}
+
+        {/* 주사위 굴리는 페이지 */}
+        {gameState.status === "WAITING_DICE" && (
+          <RollDicePage
+            currentPlayer={currentPlayer}
+            isMyTurn={isMyTurn}
+            onRollComplete={() => {
+              stompClient.publish({
+                destination: "/app/games/roll-dice",
+                body: JSON.stringify({ roomId }),
+              });
+            }}
+          />
+        )}
+
+        {/* 메인 보드 */}
+        {["WAITING_PLAYER_ACTION", "MOVING"].includes(gameState.status) && (
+          <MainBoardPage players={gameState.players} />
+        )}
       </main>
 
-      {/* 사용자 패널 표시 */}
+      {/* 사용자 상태 패널 표시(하단) */}
       {!["INTRO", "DETERMINING_ORDER"].includes(gameState.status) && (
         <PlayerStatusPanel
           players={gameState.players || []}
