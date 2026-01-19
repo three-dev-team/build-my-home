@@ -17,4 +17,6 @@ public interface RoomStateService {
     Map<Long, RoomState> getAllRoomStates();
 
     void createRoom(Long roomId, int totalRounds);
+
+    void delegateHost(Long roomId, Long currentHostId, Long newHostId);
 }
