@@ -1,3 +1,4 @@
+
 package com.buildmyhome.shop.controller;
 
 import com.buildmyhome.game.dto.GameMessage;
@@ -160,3 +161,4 @@ public class ShopWsController {
     simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, errorResponse);
   }
 }
+

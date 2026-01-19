@@ -129,6 +129,7 @@ public class GameWsController {
 
     @MessageMapping("/games/select-dice")
     public void selectDice(GameMessage message, Principal principal) {
+
         Long roomId = message.getRoomId();
         Long memberId = Long.parseLong(principal.getName());
         GameState gameState = gameStateService.getGame(roomId);
