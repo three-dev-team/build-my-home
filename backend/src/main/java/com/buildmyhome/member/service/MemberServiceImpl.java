@@ -56,8 +56,10 @@ public class MemberServiceImpl implements MemberService {
         String token = jwtTokenProvider.createToken(member.getEmail(), "USER", member.getId());
 
         return MemberResponse.builder()
+                .id(member.getId())
                 .token(token).email(member.getEmail()).nickname(member.getNickname())
                 .level(member.getLevel()).bell(member.getBell()).playCount(member.getPlayCount())
+                .kakaoId(member.getKakaoId()).naverId(member.getNaverId()).googleId(member.getGoogleId())
                 .build();
     }
 
@@ -95,9 +97,11 @@ public class MemberServiceImpl implements MemberService {
     public MemberResponse getMemberInfo(String email) {
         Member member = memberRepository.findByEmail(email).orElseThrow();
         return MemberResponse.builder()
+                .id(member.getId())
                 .email(member.getEmail()).nickname(member.getNickname())
                 .level(member.getLevel()).bell(member.getBell())
                 .role(member.getRole().name())
+                .kakaoId(member.getKakaoId()).naverId(member.getNaverId()).googleId(member.getGoogleId())
                 .build();
     }
 
@@ -153,10 +157,36 @@ public class MemberServiceImpl implements MemberService {
         // 2. [주의] 연관 데이터 처리
         // 여기서 해당 유저가 작성한 문의사항을 먼저 지워주어야 합니다.
 
-        // 3. 유저 삭제
-        memberRepository.delete(member);
+        // 3. 유저 삭제 (Soft Delete)
+        member.setIsDel("Y");
+        member.setDeletedAt(java.time.LocalDateTime.now());
+        // memberRepository.delete(member); // 하드 딜리트 대신 소프트 딜리트 적용
+        
+        // 더티 체킹에 의해 변경사항 자동 저장됨
 
         // 로그 남기기 (선택)
-        log.info("회원 탈퇴 완료: {}", email);
+        log.info("회원 탈퇴 완료 (Soft Delete): {}", email);
+    }
+
+    @Override
+    @Transactional
+    public void unlinkSocialAccount(String email, String provider) {
+        Member member = memberRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+
+        switch (provider.toLowerCase()) {
+            case "kakao":
+                member.setKakaoId(null);
+                break;
+            case "naver":
+                member.setNaverId(null);
+                break;
+            case "google":
+                member.setGoogleId(null);
+                break;
+            default:
+                throw new IllegalArgumentException("지원하지 않는 소셜 서비스입니다: " + provider);
+        }
+        log.info("Social Account Unlinked: User={}, Provider={}", email, provider);
     }
 }

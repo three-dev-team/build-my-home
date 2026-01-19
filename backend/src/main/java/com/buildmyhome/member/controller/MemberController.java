@@ -96,4 +96,12 @@ public class MemberController {
         // 3. 성공 응답 반환
         return ResponseEntity.ok().build();
     }
+    @DeleteMapping("/social/{provider}")
+    public ResponseEntity<Void> unlinkSocialAccount(
+            @PathVariable String provider,
+            Authentication authentication) {
+        String email = authentication.getName();
+        memberService.unlinkSocialAccount(email, provider);
+        return ResponseEntity.ok().build();
+    }
 }
