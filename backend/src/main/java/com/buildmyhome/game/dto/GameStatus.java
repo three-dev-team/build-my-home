@@ -23,7 +23,7 @@ public enum GameStatus {
     WAITING_LOAN(30),          // 대출 여부 선택 중
     WAITING_FISHING(30),       // 낚시 미니게임 진행 중
     SUPER_EVENT(0),           // 은행/스탬프 등 슈퍼 이벤트 진행 중
-    WAITING_KK(0),            // KK칸 진행 중 (KK 노래 여러개)
+    WAITING_KK(20),            // KK칸 진행 중 (KK 노래 여러개)
 
     // --- 다음 턴으로 넘어가기 전 ---
     TURN_END_PENDING(0),      // 턴 종료 전 확인 단계(공통)

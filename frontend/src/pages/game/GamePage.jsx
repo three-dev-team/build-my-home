@@ -15,6 +15,7 @@ import Loan from "./Loan.jsx";
 import Stamp from "./Stamp.jsx";
 import PlayerActionPanel from "./PlayerActionPanel.jsx";
 import RollDicePage from "./RollDicePage.jsx";
+import KK from "./KK.jsx";
 import ShopPage from "./ShopPage.jsx";
 
 
@@ -265,6 +266,19 @@ const GamePage = () => {
                         onExit={handleEventComplete}
                     />
                 )}
+
+                {gameState.status === "WAITING_KK" && (
+                    <KK
+                        isMyTurn={isMyTurn}
+                        currentPlayerName={currentPlayer?.nickname}
+                        userBell={currentPlayer?.bell || 0}
+                        timeoutSeconds={gameState.timeoutSeconds || 0}
+                        onAction={(type, payload) => handleAction(type, payload)}
+                        onExit={handleEventComplete}
+                    />
+                )}
+
+
 
                 {/* 아이템 상점 이벤트 (WAITING_SHOP_ITEM) */}
                 {gameState.status === "WAITING_SHOP_ITEM" && (

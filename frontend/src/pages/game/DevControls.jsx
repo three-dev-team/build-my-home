@@ -28,6 +28,12 @@ const DevControls = ({ onStatusChange }) => {
                     🎲 주사위 굴리기 (RollDicePage)
                 </button>
                 <button
+                    onClick={() => onStatusChange("WAITING_KK")}
+                    className="px-3 py-1 bg-yellow-500 hover:bg-yellow-600 text-white text-xs rounded shadow"
+                >
+                    🎵 KK (Music)
+                </button>
+                <button
                     onClick={() => onStatusChange("WAITING_PLAYER_ACTION")}
                     className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded shadow"
                 >
