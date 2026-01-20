@@ -1,6 +1,7 @@
 // constants/boardData.js
 // 24개 타일의 이름과 타입 정의
 // 각 타일의 좌표(x, y) 계산
+// TODO: 반드시 서버 데이터(BoardData.java)와 일치해야 함
 
 export const TILE_TYPES = {
     START: 'START',
