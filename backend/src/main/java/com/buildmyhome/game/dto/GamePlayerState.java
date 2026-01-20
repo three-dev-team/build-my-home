@@ -1,6 +1,6 @@
 package com.buildmyhome.game.dto;
 
-import com.buildmyhome.game.constants.HouseLevel;
+import com.buildmyhome.house.constants.HouseLevel;
 import lombok.*;
 
 import java.util.*;

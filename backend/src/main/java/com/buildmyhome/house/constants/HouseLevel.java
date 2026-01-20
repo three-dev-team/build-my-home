@@ -1,4 +1,4 @@
-package com.buildmyhome.game.constants;
+package com.buildmyhome.house.constants;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 
-const BuildPlayerHousePage = ({ player, onClose, onUpgrade }) => {
+const House = ({ player, onClose, onUpgrade }) => {
     const [step, setStep] = useState(0);
 
     const currentLevel = player?.houseLevel || "NONE";
@@ -205,4 +205,4 @@ const BuildPlayerHousePage = ({ player, onClose, onUpgrade }) => {
     );
 };
 
-export default BuildPlayerHousePage;
+export default House;
