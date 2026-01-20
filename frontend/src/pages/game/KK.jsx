@@ -80,6 +80,15 @@ const KK = ({
                 backgroundPosition: "center",
             }}
         >
+            {/* 타이머 - 상단 중앙 */}
+            {hasTimeOutPanel && (mode === "select" || mode === "loan") && (
+                <div className="absolute top-8 left-1/2 -translate-x-1/2 bg-white/80 px-6 py-2 rounded-full">
+                <span className={`text-3xl font-bold ${isUrgent ? "text-red-500" : "text-gray-800"}`}>
+                    {timeLeft}s
+                </span>
+                </div>
+            )}
+
             {/* 노래 선택 모드 */}
             {mode === "select" && (
                 <div
@@ -91,10 +100,11 @@ const KK = ({
                         backgroundRepeat: "no-repeat",
                     }}
                 >
-                    <div >
+                    {/* 말풍선 내부 컨텐츠 */}
+                    <div className="absolute inset-0 flex items-center justify-center px-32 pb-16">
                         {/* 왼쪽: KK 대사 */}
-                        <div>
-                            <p className="text-2xl text-gray-800">
+                        <div className="flex-1">
+                            <p className="text-2xl text-gray-800 leading-relaxed">
                                 안녕, {currentPlayerName}.<br/>
                                 기분에 맞는 노래를 골라보겠어?<br/>
                                 공연료는 {ENTRY_FEE}벨이라구.
@@ -102,15 +112,15 @@ const KK = ({
                         </div>
 
                         {/* 오른쪽: 노래 선택 버튼 */}
-                        <div>
+                        <div className="flex flex-col gap-2">
                             {songs.map((song) => (
                                 <button
                                     key={song.id}
                                     onClick={() => handleSelectSong(song)}
                                     disabled={!isMyTurn}
                                     className={`px-6 py-2 rounded-full text-lg font-bold transition-all
-                                        ${isMyTurn
-                                        ? "bg-[#FFF8DC] hover:bg-[#FFE4B5] cursor-pointer"
+                                    ${isMyTurn
+                                        ? "bg-[#FFF8DC] hover:bg-[#FFE4B5] cursor-pointer border-2 border-[#DEB887]"
                                         : "bg-gray-300 cursor-not-allowed"
                                     }`}
                                 >
@@ -125,6 +135,7 @@ const KK = ({
             {/* 대출 확인 모드 */}
             {mode === "loan" && (
                 <div
+                    className="relative w-full max-w-[1400px] aspect-[2.5/1] transform scale-[1.3] origin-bottom mb-[-120px]"
                     style={{
                         backgroundImage: "url('/images/bubble_select.webp')",
                         backgroundSize: "contain",
@@ -132,10 +143,11 @@ const KK = ({
                         backgroundRepeat: "no-repeat",
                     }}
                 >
-                    <div>
+                    {/* 말풍선 내부 컨텐츠 */}
+                    <div className="absolute inset-0 flex items-center justify-center px-32 pb-16">
                         {/* 왼쪽: KK 대사 */}
-                        <div>
-                            <p className="text-2xl text-gray-800">
+                        <div className="flex-1">
+                            <p className="text-2xl text-gray-800 leading-relaxed">
                                 앗... {currentPlayerName}....<br/>
                                 벨이 부족한 거 같네...<br/>
                                 너굴씨에게 {loanAmount}벨 대출금 올려놓을게.
@@ -143,14 +155,16 @@ const KK = ({
                         </div>
 
                         {/* 오른쪽: 확인 버튼 */}
-                        <div>
+                        <div className="flex flex-col gap-2">
                             <button
                                 onClick={() => confirmSelectSong(pendingSong)}
+                                className="px-6 py-2 rounded-full text-lg font-bold bg-[#FFF8DC] hover:bg-[#FFE4B5] border-2 border-[#DEB887]"
                             >
                                 좋아! 알았어!
                             </button>
                             <button
                                 onClick={() => confirmSelectSong(pendingSong)}
+                                className="px-6 py-2 rounded-full text-lg font-bold bg-[#FFF8DC] hover:bg-[#FFE4B5] border-2 border-[#DEB887]"
                             >
                                 어쩔수 없지...
                             </button>
@@ -179,15 +193,6 @@ const KK = ({
                     >
                         Skip
                     </button>
-                </div>
-            )}
-
-            {/* 타이머 표시 */}
-            {hasTimeOutPanel && (mode === "select" || mode === "loan") && (
-                <div className="absolute top-8 right-8">
-                    <span className={`text-3xl font-bold ${isUrgent ? "text-red-500" : "text-white"}`}>
-                        {timeLeft}s
-                    </span>
                 </div>
             )}
         </motion.div>

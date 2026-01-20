@@ -21,16 +21,6 @@ public class RoomListWsController {
     private final RoomListService roomListService;
     private final SimpMessagingTemplate messagingTemplate;
 
-    // 전체 방 목록 스냅샷 브로드캐스트
-//    private void broadcastSnapshot() {
-//        RoomsSnapshot snapshot = RoomsSnapshot.builder()
-//                .type("ROOMS_SNAPSHOT")
-//                .rooms(roomListService.getRoomList())
-//                .build();
-//
-//        messagingTemplate.convertAndSend("/topic/roomlist/rooms", snapshot);
-//    }
-
     // 인증된 사용자의 memberId 추출
     private Long memberIdFromPrincipal(Principal principal) {
         if (principal == null || principal.getName() == null) {
@@ -57,8 +47,6 @@ public class RoomListWsController {
                 .build();
 
         messagingTemplate.convertAndSend("/topic/roomlist/rooms", event);
-
-//        broadcastSnapshot();
     }
 
     @MessageMapping("/roomlist/rooms/join")
@@ -66,7 +54,6 @@ public class RoomListWsController {
         Long memberId = memberIdFromPrincipal(principal);
 
         roomListService.joinRoom(memberId, req.getRoomId());
-//        broadcastSnapshot();
     }
 
     @MessageExceptionHandler({IllegalArgumentException.class, IllegalStateException.class})
