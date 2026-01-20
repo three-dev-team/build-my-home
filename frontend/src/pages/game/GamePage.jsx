@@ -1,12 +1,12 @@
-import {useEffect, useState} from "react";
-import {Client} from "@stomp/stompjs";
-import {getBrokerURL} from "../../utils/ws.js";
-import {useLocation, useNavigate, useParams} from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Client } from "@stomp/stompjs";
+import { getBrokerURL } from "../../utils/ws.js";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import Loading from "../../components/common/Loading.jsx";
 import MenuButton from "../../components/common/MenuButton.jsx";
 import ChatToggle from "../../components/common/ChatToggle.jsx";
 import RollForOrder from "./RollForOrder.jsx";
-import {getMyIdFromToken} from "../../utils/auth.js";
+import { getMyIdFromToken } from "../../utils/auth.js";
 import MainBoardPage from "./MainBoardPage.jsx";
 import GameIntro from "./GameIntro.jsx";
 import PlayerStatusPanel from "./PlayerStatusPanel.jsx";
@@ -19,9 +19,10 @@ import KK from "./KK.jsx";
 import ShopPage from "./ShopPage.jsx";
 import FixedPlayerButtons from "./FixedPlayerButtons.jsx";
 import TurnCounter from "./TurnCounter.jsx";
+import Fishing from "./Fishing.jsx";
 
 const GamePage = () => {
-    const {roomId} = useParams();
+    const { roomId } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
     const token = sessionStorage.getItem("token");
@@ -60,7 +61,7 @@ const GamePage = () => {
         // stomp 소켓 연결 및 구독 설정
         const client = new Client({
             brokerURL: getBrokerURL(),
-            connectHeaders: token ? {Authorization: `Bearer ${token}`} : {},
+            connectHeaders: token ? { Authorization: `Bearer ${token}` } : {},
             onConnect: () => {
                 console.log(">>> ✅ WebSocket 연결됨");
                 setStompClient(client);
@@ -68,24 +69,13 @@ const GamePage = () => {
                 client.subscribe(`/topic/games/${roomId}`, (message) => {
                     const data = JSON.parse(message.body);
                     console.log(">>> 🔔 메시지 수신:", data);
-              
-                  // fishing만 추가: 낚시 룸 이벤트 메시지는 gameState를 덮어쓰지 않게 분리
-                  const t = data?.type;
-                  if (
-                      typeof t === "string" &&
-                      (t.startsWith("ROOM_EVENT_") || t === "ERROR")
-                  ) {
-                    setFishingEventMessage(data);
-                    return;
-                  }
-
-                  setGameState(data);
+                    setGameState(data);
                 });
 
                 // 웹소켓 연결 시 현재 게임 상태 요청 - 에러, 새로고침 방지용
                 client.publish({
                     destination: "/app/games/get-state",
-                    body: JSON.stringify({roomId: roomId}),
+                    body: JSON.stringify({ roomId: roomId }),
                 });
             },
             onStompError: (frame) => {
@@ -125,41 +115,19 @@ const GamePage = () => {
                 console.log(">>> move-complete 호출!");
                 stompClient.publish({
                     destination: "/app/games/move-complete",
-                    body: JSON.stringify({roomId}),
+                    body: JSON.stringify({ roomId }),
                 });
             }, 2000);
             return () => clearTimeout(timer);
         }
     }, [gameState?.status, stompClient, isMyTurn, roomId]);
 
-    // --------------------------------- useEffect --------------------------------- //
     // --------------------------------- 핸들러 함수 --------------------------------- //
-    // TODO: 팀원들 코드 로직 이해 후에 공통 함수로 관리
-
-    // // 모든 소켓 메시지 전송을 담당하는 공통 내부 함수
-    // const sendWS = (destination, payload = {}) => {
-    //     if (!stompClient) return;
-    //     stompClient.publish({
-    //         destination: `/app/games/${destination}`,
-    //         body: JSON.stringify({ roomId, ...payload })
-    //     });
-    // };
-    //
-    // const handleIntroComplete = () => sendWS('intro-complete');
-    // const handleRollDiceForOrder = () => sendWS('roll-order');
-    //
-    // const onSelectDice = () => sendWS('select-dice');
-    // const onRollComplete = () => sendWS('roll-dice');
-    //
-    // const handleAction = (actionType, payload) => {
-    //     if (!isMyTurn || gameState.status === 'MOVING') return;
-    //     sendWS('action', { type: actionType, ...payload });
-    // };
 
     const handleIntroComplete = () => {
         stompClient.publish({
             destination: "/app/games/intro-complete",
-            body: JSON.stringify({roomId: roomId}),
+            body: JSON.stringify({ roomId: roomId }),
         });
     };
 
@@ -167,7 +135,7 @@ const GamePage = () => {
         if (stompClient) {
             stompClient.publish({
                 destination: `/app/games/roll-order`,
-                body: JSON.stringify({roomId: roomId}),
+                body: JSON.stringify({ roomId: roomId }),
             });
         }
     };
@@ -194,13 +162,11 @@ const GamePage = () => {
     const handleEventComplete = () => {
         stompClient.publish({
             destination: "/app/games/event-complete",
-            body: JSON.stringify({roomId}),
+            body: JSON.stringify({ roomId }),
         });
+        // 낚시 메시지 잔상 방지
+        setFishingEventMessage(null);
     };
-  
-    // 낚시 메시지 잔상 방지
-    setFishingEventMessage(null);
-  };
 
     // ------------------- [DEV] 상태 강제 변경 핸들러 ------------------- //
     const handleDevStatusChange = (newStatus) => {
@@ -211,7 +177,7 @@ const GamePage = () => {
             try {
                 stompClient.publish({
                     destination: "/app/games/trigger-event",
-                    body: JSON.stringify({roomId: Number(roomId), status: newStatus}),
+                    body: JSON.stringify({ roomId: Number(roomId), status: newStatus }),
                 });
                 console.log(">>> [DEV] Server publish sent");
             } catch (e) {
@@ -224,42 +190,42 @@ const GamePage = () => {
             ...prev,
             status: newStatus,
         }));
-  
-      // 낚시로 강제 진입 시 메시지 초기화
-      if (newStatus === "WAITING_FISHING") {
-        setFishingEventMessage(null);
-      }
+
+        // 낚시로 강제 진입 시 메시지 초기화
+        if (newStatus === "WAITING_FISHING") {
+            setFishingEventMessage(null);
+        }
     };
     // ------------------- [DEV] 상태 강제 변경 핸들러 ------------------- //
-    // --------------------------------- 핸들러 함수 --------------------------------- //
 
-    if (!gameState) return <Loading/>;
+    if (!gameState) return <Loading />;
 
     return (
         <div className="game-container">
             {/* 1. 설정/채팅 버튼은 본 게임 중에만 표시 */}
             {showCommonUI && (
                 <div className="game-overlay">
-                    <MenuButton/>
-                    <ChatToggle/>
+                    <MenuButton />
+                    <ChatToggle />
                 </div>
             )}
             {/* 2. 턴 카운터 - INTRO, DETERMINING_ORDER 제외하고 표시 */}
-            {!['INTRO', 'DETERMINING_ORDER', 'FINISHED'].includes(gameState.status) && (
+            {!["INTRO", "DETERMINING_ORDER", "FINISHED"].includes(
+                gameState.status,
+            ) && (
                 <TurnCounter
                     currentRound={gameState.currentRound || 1}
                     totalRounds={gameState.totalRounds || 20}
                 />
             )}
 
-
             {/* 2. 게임 콘텐츠 영역 */}
             <main>
-                <DevControls onStatusChange={handleDevStatusChange}/>
+                <DevControls onStatusChange={handleDevStatusChange} />
 
                 {/* INTRO */}
                 {gameState.status === "INTRO" && stompClient && (
-                    <GameIntro onSkip={handleIntroComplete}/>
+                    <GameIntro onSkip={handleIntroComplete} />
                 )}
 
                 {/* 주사위 던져서 순서 정하기 페이지 */}
@@ -280,11 +246,10 @@ const GamePage = () => {
                         userBell={currentPlayer?.bell || 0}
                         userLoan={currentPlayer?.loan || 0}
                         timeoutSeconds={gameState.timeoutSeconds || 0}
-                        isBankTile={true} // TODO: 연동 필요
-                        onAction={(type, amount, isBankTile) =>
-                            handleAction("LOAN_ACTION", {type, amount, isBankTile})
-                        }
+                        isBankTile={true} // TODO: 서버에서 BankTile 여부 받아와야 함
                         onExit={handleEventComplete}
+                        stompClient={stompClient}
+                        roomId={roomId}
                     />
                 )}
 
@@ -298,20 +263,9 @@ const GamePage = () => {
                         onReward={(reward) => console.log(`Reward: ${reward}`)}
                         onStampClick={() => handleAction("STAMP_ACTION", {})}
                         onExit={handleEventComplete}
-                    />
-                )}
-                
-                {/* 낚시 이벤트 (WAITING_FISHING) */}
-                {gameState.status === "WAITING_FISHING" && stompClient && (
-                    <Fishing
-                        roomId={roomId}
                         stompClient={stompClient}
-                        isMyTurn={isMyTurn}
-                        currentPlayerName={currentPlayer?.nickname}
-                        timeoutSeconds={gameState.timeoutSeconds || 0}
-                        eventMessage={fishingEventMessage}
-                        onExit={handleEventComplete}
-                   />
+                        roomId={roomId}
+                    />
                 )}
 
                 {/* 아이템 상점 이벤트 (WAITING_SHOP_ITEM) */}
@@ -348,24 +302,6 @@ const GamePage = () => {
                 )}
                 {/* ------------------------------------- 개별 이벤트 추가 ------------------------------------- */}
 
-                {/* TODO: 팀원 모두 코드 로직 이해 완료 후에는 공통 props -> commonEventProps 사용 */}
-                {/*
-const commonEventProps = {
-    isMyTurn,
-    currentPlayerName: currentPlayer?.nickname,
-    onExit: handleEventComplete,
-    gameState: gameState // 필요하다면 전체 상태 전달
-};
-
-// 사용 시
-{gameState.status === "WAITING_LOAN" && (
-    <Loan
-        {...commonEventProps}
-        userBell={currentPlayer?.bell || 0}
-        onAction={(type, amount) => handleAction("LOAN_ACTION", {type, amount})}
-    />
-)}
-                 */}
                 {/* 사용자 액션 패널 */}
                 {gameState.status === "WAITING_PLAYER_ACTION" && (
                     <PlayerActionPanel
@@ -374,7 +310,7 @@ const commonEventProps = {
                         onSelectDice={() => {
                             stompClient.publish({
                                 destination: "/app/games/select-dice",
-                                body: JSON.stringify({roomId}),
+                                body: JSON.stringify({ roomId }),
                             });
                         }}
                         onSelectItem={() => console.log("아이템 선택")}
@@ -390,20 +326,20 @@ const commonEventProps = {
                         onRollComplete={() => {
                             stompClient.publish({
                                 destination: "/app/games/roll-dice",
-                                body: JSON.stringify({roomId}),
+                                body: JSON.stringify({ roomId }),
                             });
                         }}
                     />
                 )}
 
                 {/* 메인 보드 */}
-                {['WAITING_PLAYER_ACTION', 'MOVING'].includes(gameState.status) && (
+                {["WAITING_PLAYER_ACTION", "MOVING"].includes(gameState.status) && (
                     <>
-                        <MainBoardPage players={gameState.players}/>
+                        <MainBoardPage players={gameState.players} />
                         <FixedPlayerButtons
                             isMyTurn={isMyTurn}
-                            onATMClick={() => console.log('ATM 클릭')}
-                            onBuildClick={() => console.log('집짓기 클릭')}
+                            onATMClick={() => console.log("ATM 클릭")}
+                            onBuildClick={() => console.log("집짓기 클릭")}
                         />
                     </>
                 )}

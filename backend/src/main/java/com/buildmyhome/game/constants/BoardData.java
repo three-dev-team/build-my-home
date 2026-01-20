@@ -2,7 +2,7 @@ package com.buildmyhome.game.constants;
 
 import com.buildmyhome.game.dto.GameStatus;
 
-// boardData.js 참고
+// TODO: 반드시 프론트 데이터(boardData.js)와 일치해야 함
 
 public class BoardData {
     private static final TileType[] TILES = {
