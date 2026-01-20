@@ -45,7 +45,16 @@ public class GameWsController {
         response.setTurnOrder(gameState.getTurnOrder());
         response.setCurrentRound(gameState.getCurrentRound());
         response.setTotalRounds(gameState.getTotalRounds());
-        response.setTimeoutSeconds(gameState.getStatus().getTimeoutSeconds());
+
+        // 타임아웃 계산 로직 (경과 시간 반영)
+        int definitionTimeout = gameState.getStatus().getTimeoutSeconds();
+        if (definitionTimeout > 0 && gameState.getStatusUpdatedAt() != null) {
+            long elapsedSeconds = java.time.Duration.between(gameState.getStatusUpdatedAt(), java.time.LocalDateTime.now()).toSeconds();
+            int remainingSeconds = Math.max(0, definitionTimeout - (int) elapsedSeconds);
+            response.setTimeoutSeconds(remainingSeconds);
+        } else {
+            response.setTimeoutSeconds(definitionTimeout);
+        }
         return response;
     }
 

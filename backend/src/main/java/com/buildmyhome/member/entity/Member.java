@@ -47,6 +47,7 @@
         @Builder.Default
         private Integer bell = 0;           // 보유 벨(게임 화폐)
 
+
         @Builder.Default
         private Integer playCount = 0;      // 총 플레이 횟수
 
