@@ -37,14 +37,11 @@ const GamePage = () => {
   const [stompClient, setStompClient] = useState(null);
 
   // 현재 턴 플레이어 정보
-  const currentPlayer =
-    gameState?.players?.find((p) => p.memberId === gameState.currentPlayerId) ||
-    null;
+  const currentPlayer = gameState?.players?.find((p) => p.memberId === gameState.currentPlayerId) || null;
   const isMyTurn = gameState ? myId === gameState.currentPlayerId : false;
 
   // 공통 UI(채팅, 메뉴버튼 등)를 보여줄지 말지 결정하는 변수
-  const showCommonUI =
-    gameState && !["DETERMINING_ORDER", "FINISHED"].includes(gameState.status);
+  const showCommonUI = gameState && !["DETERMINING_ORDER", "FINISHED"].includes(gameState.status);
 
   // --------------------------------- useEffect --------------------------------- //
   useEffect(() => {
@@ -102,17 +99,8 @@ const GamePage = () => {
 
   // 이동 후 2초 후에 다음 페이지로 이동
   useEffect(() => {
-    console.log(
-      ">>> MOVING 체크:",
-      gameState?.status,
-      stompClient ? "연결됨" : "미연결",
-      isMyTurn,
-    );
-
     if (gameState?.status === "MOVING" && stompClient && isMyTurn) {
-      console.log(">>> 2초 후 move-complete 호출 예정");
       const timer = setTimeout(() => {
-        console.log(">>> move-complete 호출!");
         stompClient.publish({
           destination: "/app/games/move-complete",
           body: JSON.stringify({ roomId }),
@@ -164,8 +152,6 @@ const GamePage = () => {
       destination: "/app/games/event-complete",
       body: JSON.stringify({ roomId }),
     });
-    // 낚시 메시지 잔상 방지
-    setFishingEventMessage(null);
   };
 
   // ------------------- [DEV] 상태 강제 변경 핸들러 ------------------- //
@@ -190,11 +176,6 @@ const GamePage = () => {
       ...prev,
       status: newStatus,
     }));
-
-    // 낚시로 강제 진입 시 메시지 초기화
-    if (newStatus === "WAITING_FISHING") {
-      setFishingEventMessage(null);
-    }
   };
   // ------------------- [DEV] 상태 강제 변경 핸들러 ------------------- //
 
