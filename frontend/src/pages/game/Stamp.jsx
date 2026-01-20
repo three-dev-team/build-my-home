@@ -19,9 +19,7 @@ const Stamp = ({
   timeoutSeconds,
   onReward,
   onExit,
-  onStampClick, // GamePage에서 전달받는 핸들러 (더미) -> 아래에서 직접 구현
-  stompClient, // WebSocket Client
-  roomId, // Room ID
+  onAction, // WebSocket 직접 사용 대신 핸들러 사용
 }) => {
   const [displayStamps, setDisplayStamps] = useState(userStampsCount);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -95,14 +93,8 @@ const Stamp = ({
     if (hasActionStarted) return;
     setHasActionStarted(true);
 
-    if (stompClient && roomId) {
-      stompClient.publish({
-        destination: "/app/games/action",
-        body: JSON.stringify({
-          type: "STAMP_ACQUIRE",
-          roomId: Number(roomId),
-        }),
-      });
+    if (onAction) {
+      onAction("STAMP_ACQUIRE", {});
     }
   };
 

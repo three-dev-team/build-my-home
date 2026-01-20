@@ -18,14 +18,12 @@ const Loan = ({
   userLoan = 0,
   currentPlayerName = "익명의 주민",
   isMyTurn = false,
-  isBankTile = false,
 
   timeoutSeconds,
   onExit,
 
   // WebSocket Client
-  stompClient,
-  roomId,
+  onAction, // WebSocket 직접 사용 대신 핸들러 사용
 }) => {
   const [amount, setAmount] = useState(10);
   const [mode, setMode] = useState("menu");
@@ -42,35 +40,24 @@ const Loan = ({
   if (!hasTimeOutPanel) return null;
 
   const handleConfirm = (type) => {
-    if (!isMyTurn || !stompClient) return;
+    // onAction이 없거나 내 턴이 아니면 중단
+    if (!isMyTurn || !onAction) return;
 
     setMode("processing");
     setTimeout(() => {
       if (type === "LOAN") {
-        const feeText = !isBankTile ? " (수수료 10% 포함)" : "";
-
-        // WebSocket 전송
-        stompClient.publish({
-          destination: "/app/games/action",
-          body: JSON.stringify({
-            type: "LOAN_BORROW",
-            roomId: Number(roomId),
-            amount: amount,
-            isBankTile: isBankTile,
-          }),
+        // 대출 요청
+        onAction("LOAN_BORROW", {
+          amount: amount,
+          isBankTile: true, // Loan.jsx는 항상 은행(Bank)이므로 true 고정
         });
 
-        setFeedbackMsg(`${amount}벨 대출 완료!${feeText} 빚도 실력이다구리!`);
+        setFeedbackMsg(`${amount}벨 대출 완료! 빚도 실력이다구리!`);
       } else {
-        // 상환
-        stompClient.publish({
-          destination: "/app/games/action",
-          body: JSON.stringify({
-            type: "LOAN_REPAY",
-            roomId: Number(roomId),
-            amount: userLoan, // 전액 상환
-            isBankTile: isBankTile,
-          }),
+        // 상환 요청
+        onAction("LOAN_REPAY", {
+          amount: userLoan, // 전액 상환
+          isBankTile: true,
         });
 
         setFeedbackMsg(`정직하게 빚을 갚다니 대견하다구리!`);
@@ -99,15 +86,6 @@ const Loan = ({
               {timeLeft}s
             </span>
           </div>
-        )}
-        {!isBankTile && isMyTurn && (
-          <motion.div
-            initial={{ y: -20 }}
-            animate={{ y: 0 }}
-            className="bg-red-500 text-white px-6 py-1 rounded-full text-xl font-bold shadow-lg animate-bounce"
-          >
-            ⚠️ 현재 일반 칸: 대출 시 수수료 10% 발생!
-          </motion.div>
         )}
       </div>
 
@@ -158,7 +136,7 @@ const Loan = ({
                     icon="💰"
                     label="대출 신청"
                     disabled={!isMyTurn}
-                    subLabel={!isBankTile ? "수수료 10%" : "수수료 없음"}
+                    subLabel="수수료 없음"
                   />
                   <BankButton
                     onClick={() => handleConfirm("REPAY")}
@@ -202,11 +180,6 @@ const Loan = ({
                       </span>
                       <span className="text-4xl text-[#5a4a42]">벨</span>
                     </div>
-                    {!isBankTile && (
-                      <span className="text-red-500 text-xl font-bold mt-2">
-                        나중에 {amount + amount * 0.1}벨로 갚아야 함!
-                      </span>
-                    )}
                   </div>
                   <motion.button
                     whileTap={{ scale: 0.8 }}
@@ -266,9 +239,7 @@ const Loan = ({
         >
           <p className="text-2xl font-bold text-[#5a4a42] leading-relaxed text-center">
             {isMyTurn
-              ? isBankTile
-                ? "은행 칸에 잘 왔다구리!\n여긴 수수료가 없다구리~"
-                : "급하게 빌리는 거니\n수수료 10%는 이해하라구리!"
+              ? "은행 칸에 잘 왔다구리!\n여긴 수수료가 없다구리~"
               : `${currentPlayerName} 님이\n대출 상담 중이라구리. 기다려라구리!`}
           </p>
           {/* 말풍선 꼬리 (중앙 아래로) */}
