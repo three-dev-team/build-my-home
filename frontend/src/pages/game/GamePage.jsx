@@ -19,6 +19,7 @@ import KK from "./KK.jsx";
 import ShopPage from "./ShopPage.jsx";
 import FixedPlayerButtons from "./FixedPlayerButtons.jsx";
 import TurnCounter from "./TurnCounter.jsx";
+import Fishing from "./Fishing.jsx";
 
 const GamePage = () => {
     const {roomId} = useParams();
@@ -34,6 +35,7 @@ const GamePage = () => {
         location.state?.initialGameData || null,
     );
     const [stompClient, setStompClient] = useState(null);
+    const [fishingEventMessage, setFishingEventMessage] = useState(null);
 
     // 현재 턴 플레이어 정보
     const currentPlayer =
@@ -68,18 +70,18 @@ const GamePage = () => {
                 client.subscribe(`/topic/games/${roomId}`, (message) => {
                     const data = JSON.parse(message.body);
                     console.log(">>> 🔔 메시지 수신:", data);
-              
-                  // fishing만 추가: 낚시 룸 이벤트 메시지는 gameState를 덮어쓰지 않게 분리
-                  const t = data?.type;
-                  if (
-                      typeof t === "string" &&
-                      (t.startsWith("ROOM_EVENT_") || t === "ERROR")
-                  ) {
-                    setFishingEventMessage(data);
-                    return;
-                  }
 
-                  setGameState(data);
+                  // fishing만 추가: 낚시 룸 이벤트 메시지는 gameState를 덮어쓰지 않게 분리
+                    const t = data?.type;
+                    if (
+                        typeof t === "string" &&
+                        (t.startsWith("ROOM_EVENT_") || t === "ERROR")
+                    ) {
+                        setFishingEventMessage(data);
+                        return;
+                    }
+
+                    setGameState(data);
                 });
 
                 // 웹소켓 연결 시 현재 게임 상태 요청 - 에러, 새로고침 방지용
@@ -196,7 +198,6 @@ const GamePage = () => {
             destination: "/app/games/event-complete",
             body: JSON.stringify({roomId}),
         });
-    };
   
     // 낚시 메시지 잔상 방지
     setFishingEventMessage(null);
