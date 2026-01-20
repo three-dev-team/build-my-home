@@ -11,10 +11,10 @@ import java.util.concurrent.ConcurrentHashMap;
 @Setter
 public class GameState {
     // 룸 정보
-    // 룸 정보
     private final Long roomId;
 
     // 게임 진행 정보
+    private int totalRounds;
     private int currentRound = 1;
     private GameStatus status;
 

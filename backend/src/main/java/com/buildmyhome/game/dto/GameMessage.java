@@ -20,5 +20,6 @@ public class GameMessage {
     private Integer diceValue;
     private List<Long> turnOrder;
     private int currentRound;
+    private int totalRounds;
     private int timeoutSeconds;
 }
