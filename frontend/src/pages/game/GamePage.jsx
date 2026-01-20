@@ -68,7 +68,18 @@ const GamePage = () => {
                 client.subscribe(`/topic/games/${roomId}`, (message) => {
                     const data = JSON.parse(message.body);
                     console.log(">>> 🔔 메시지 수신:", data);
-                    setGameState(data);
+              
+                  // fishing만 추가: 낚시 룸 이벤트 메시지는 gameState를 덮어쓰지 않게 분리
+                  const t = data?.type;
+                  if (
+                      typeof t === "string" &&
+                      (t.startsWith("ROOM_EVENT_") || t === "ERROR")
+                  ) {
+                    setFishingEventMessage(data);
+                    return;
+                  }
+
+                  setGameState(data);
                 });
 
                 // 웹소켓 연결 시 현재 게임 상태 요청 - 에러, 새로고침 방지용
@@ -186,6 +197,10 @@ const GamePage = () => {
             body: JSON.stringify({roomId}),
         });
     };
+  
+    // 낚시 메시지 잔상 방지
+    setFishingEventMessage(null);
+  };
 
     // ------------------- [DEV] 상태 강제 변경 핸들러 ------------------- //
     const handleDevStatusChange = (newStatus) => {
@@ -209,6 +224,11 @@ const GamePage = () => {
             ...prev,
             status: newStatus,
         }));
+  
+      // 낚시로 강제 진입 시 메시지 초기화
+      if (newStatus === "WAITING_FISHING") {
+        setFishingEventMessage(null);
+      }
     };
     // ------------------- [DEV] 상태 강제 변경 핸들러 ------------------- //
     // --------------------------------- 핸들러 함수 --------------------------------- //
@@ -279,6 +299,19 @@ const GamePage = () => {
                         onStampClick={() => handleAction("STAMP_ACTION", {})}
                         onExit={handleEventComplete}
                     />
+                )}
+                
+                {/* 낚시 이벤트 (WAITING_FISHING) */}
+                {gameState.status === "WAITING_FISHING" && stompClient && (
+                    <Fishing
+                        roomId={roomId}
+                        stompClient={stompClient}
+                        isMyTurn={isMyTurn}
+                        currentPlayerName={currentPlayer?.nickname}
+                        timeoutSeconds={gameState.timeoutSeconds || 0}
+                        eventMessage={fishingEventMessage}
+                        onExit={handleEventComplete}
+                   />
                 )}
 
                 {/* 아이템 상점 이벤트 (WAITING_SHOP_ITEM) */}
