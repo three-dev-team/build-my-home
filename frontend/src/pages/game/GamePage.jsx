@@ -37,6 +37,9 @@ const GamePage = () => {
     );
     const [stompClient, setStompClient] = useState(null);
 
+    // fishing 추가: 낚시 룸 이벤트 메시지 분리 저장소
+    const [fishingEventMessage, setFishingEventMessage] = useState(null);
+
     // 현재 턴 플레이어 정보
     const currentPlayer = gameState?.players?.find((p) => p.memberId === gameState.currentPlayerId) || null;
     const isMyTurn = gameState ? myId === gameState.currentPlayerId : false;
@@ -71,6 +74,20 @@ const GamePage = () => {
                 client.subscribe(`/topic/games/${roomId}`, (message) => {
                     const data = JSON.parse(message.body);
                     console.log(">>> 🔔 메시지 수신:", data);
+
+                    // fishing: 룸 이벤트(ROOM_EVENT_*)는 gameState를 덮어쓰지 않게 분리
+                    const t = data?.type;
+
+                    const isRoomEvent = typeof t === "string" && t.startsWith("ROOM_EVENT_");
+                    // ERROR는 낚시 에러만 분리 (다른 ERROR까지 낚시가 먹어버리는 문제 방지)
+                    const isFishingError =
+                        t === "ERROR" && typeof data?.eventType === "string" && data.eventType === "FISHING";
+
+                    if (isRoomEvent || isFishingError) {
+                        setFishingEventMessage(data);
+                        return;
+                    }
+
                     setGameState(data);
                 });
 
@@ -157,6 +174,27 @@ const GamePage = () => {
             destination: "/app/games/event-complete",
             body: JSON.stringify({roomId}),
         });
+        // 낚시 메시지 잔상 방지
+        setFishingEventMessage(null);
+    };
+
+    // fishing : UI(Fishing)에서 stompClient 직접 쓰지 않게 publish를 상위로 올림
+    const handleFishingStart = () => {
+        if (!stompClient) return;
+
+        stompClient.publish({
+            destination: "/app/games/fishing/start",
+            body: JSON.stringify({ roomId: Number(roomId) }),
+        });
+    };
+
+    const handleFishingAction = (action) => {
+        if (!stompClient) return;
+
+        stompClient.publish({
+            destination: "/app/games/fishing/action",
+            body: JSON.stringify({ roomId: Number(roomId), action }),
+        });
     };
 
     // ------------------- [DEV] 상태 강제 변경 핸들러 ------------------- //
@@ -181,10 +219,19 @@ const GamePage = () => {
             ...prev,
             status: newStatus,
         }));
+
+        // 낚시로 강제 진입/테스트 시 메시지 초기화
+        if (newStatus === "WAITING_FISHING" || newStatus === "FISHING_IN_PROGRESS") {
+            setFishingEventMessage(null);
+        }
     };
     // ------------------- [DEV] 상태 강제 변경 핸들러 ------------------- //
 
     if (!gameState) return <Loading/>;
+
+    // 낚시 렌더링 상태 확장 (새로고침/재접속 대비)
+    const isFishingPhase =
+        ["WAITING_FISHING", "FISHING_IN_PROGRESS"].includes(gameState.status) && stompClient;
 
     return (
         <div className="game-container">
@@ -248,6 +295,20 @@ const GamePage = () => {
                         onStampClick={() => handleAction("STAMP_ACTION", {})}
                         onExit={handleEventComplete}
                         onAction={handleAction}
+                    />
+                )}
+
+                {/* 낚시 이벤트 (WAITING_FISHING / FISHING_IN_PROGRESS) */}
+                {isFishingPhase && (
+                    <Fishing
+                        roomId={roomId}
+                        isMyTurn={isMyTurn}
+                        currentPlayerName={currentPlayer?.nickname}
+                        timeoutSeconds={gameState.timeoutSeconds || 0}
+                        eventMessage={fishingEventMessage}
+                        onExit={handleEventComplete}
+                        onStartFishing={handleFishingStart}
+                        onFishingAction={handleFishingAction}
                     />
                 )}
 

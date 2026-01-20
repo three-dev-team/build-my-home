@@ -21,7 +21,8 @@ public enum GameStatus {
     WAITING_SHOP_ITEM(20),     // 아이템 상점 이용 중
     WAITING_SHOP_RESOURCE(20), // 재화 상점 이용 중
     WAITING_LOAN(30),          // 대출 여부 선택 중
-    WAITING_FISHING(30),       // 낚시 미니게임 진행 중
+    WAITING_FISHING(10),       // 시작하기 버튼/연출 단계
+    FISHING_IN_PROGRESS(0),    // 실제 미니게임 진행(낚시 내부 타이머로 종료)
     SUPER_EVENT(0),           // 은행/스탬프 등 슈퍼 이벤트 진행 중
     WAITING_KK(20),            // KK칸 진행 중 (KK 노래 여러개)
 
