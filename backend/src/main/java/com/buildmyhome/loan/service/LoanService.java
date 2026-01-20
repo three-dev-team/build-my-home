@@ -1,8 +1,6 @@
 package com.buildmyhome.loan.service;
 
-import com.buildmyhome.loan.dto.LoanMessage;
-
 public interface LoanService {
-    void borrow(LoanMessage message);
-    void repay(LoanMessage message);
+    void borrow(Long roomId, Long memberId, int amount, boolean isBankTile);
+    void repay(Long roomId, Long memberId, int amount);
 }

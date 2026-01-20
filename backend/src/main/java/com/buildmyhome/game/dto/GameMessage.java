@@ -22,4 +22,13 @@ public class GameMessage {
     private int currentRound;
     private int totalRounds;
     private int timeoutSeconds;
+
+    // 대출/스탬프/에러 처리를 위한 추가 필드
+    private int amount;
+    
+    @com.fasterxml.jackson.annotation.JsonProperty("isBankTile")
+    private boolean isBankTile;
+    
+    private String stampType;
+    private String errorMessage;
 }

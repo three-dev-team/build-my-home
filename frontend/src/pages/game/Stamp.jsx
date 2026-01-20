@@ -97,8 +97,11 @@ const Stamp = ({
 
     if (stompClient && roomId) {
       stompClient.publish({
-        destination: "/app/stamp/acquire",
-        body: JSON.stringify({ roomId: roomId }),
+        destination: "/app/games/action",
+        body: JSON.stringify({
+          type: "STAMP_ACQUIRE",
+          roomId: Number(roomId),
+        }),
       });
     }
   };
