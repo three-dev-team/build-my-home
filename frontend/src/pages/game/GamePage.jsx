@@ -19,6 +19,7 @@ import KK from "./KK.jsx";
 import ShopPage from "./ShopPage.jsx";
 import FixedPlayerButtons from "./FixedPlayerButtons.jsx";
 import TurnCounter from "./TurnCounter.jsx";
+import Fishing from "./Fishing.jsx";
 
 const GamePage = () => {
   const { roomId } = useParams();
@@ -121,7 +122,6 @@ const GamePage = () => {
     }
   }, [gameState?.status, stompClient, isMyTurn, roomId]);
 
-  // --------------------------------- useEffect --------------------------------- //
   // --------------------------------- 핸들러 함수 --------------------------------- //
 
   const handleIntroComplete = () => {
@@ -164,6 +164,8 @@ const GamePage = () => {
       destination: "/app/games/event-complete",
       body: JSON.stringify({ roomId }),
     });
+    // 낚시 메시지 잔상 방지
+    setFishingEventMessage(null);
   };
 
   // ------------------- [DEV] 상태 강제 변경 핸들러 ------------------- //
@@ -188,9 +190,13 @@ const GamePage = () => {
       ...prev,
       status: newStatus,
     }));
+
+    // 낚시로 강제 진입 시 메시지 초기화
+    if (newStatus === "WAITING_FISHING") {
+      setFishingEventMessage(null);
+    }
   };
   // ------------------- [DEV] 상태 강제 변경 핸들러 ------------------- //
-  // --------------------------------- 핸들러 함수 --------------------------------- //
 
   if (!gameState) return <Loading />;
 

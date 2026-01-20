@@ -7,6 +7,8 @@ import com.buildmyhome.fishing.dto.RoomEventUpdateMessage;
 import com.buildmyhome.fishing.handler.FishingHandler;
 import com.buildmyhome.fishing.model.FishingSession;
 import com.buildmyhome.fishing.policy.FishingPolicy;
+import com.buildmyhome.game.dto.GameMessage;
+import com.buildmyhome.game.dto.GamePlayerState;
 import com.buildmyhome.game.dto.GameState;
 import com.buildmyhome.game.dto.GameStatus;
 import com.buildmyhome.game.dto.HarvestType;
@@ -16,6 +18,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.*;
@@ -25,40 +28,48 @@ import java.util.concurrent.atomic.AtomicBoolean;
 @RequiredArgsConstructor
 public class FishingService {
 
+    // 방(roomId)당 진행 중인 낚시 이벤트는 1개만 유지
+    // 낚시 이벤트 메시지는 게임 채널(/topic/games/{roomId})로 브로드캐스트
+    // LARGE는 서버가 진행도/장력 업데이트(ROOM_EVENT_UPDATE)를 주기적으로 쏴줘야 해서 tick 스케줄을 추가
+    private static final long START_DELAY_MIN_MS = 200L;
+    private static final long START_DELAY_MAX_MS = 400L;
+
+    private static final long DURATION_SMALL_MS = 6000L;
+    private static final long DURATION_MEDIUM_MS = 8000L;
+    private static final long DURATION_LARGE_MS = 10000L;
+
+    // LARGE 서버 tick 주기 (프론트는 이 update를 받아서 부드럽게 표현 가능)
+    private static final long LARGE_TICK_PERIOD_MS = 100L;
+
+    private static final String ACTION_TICK = "TICK";
+
     private final SimpMessagingTemplate messagingTemplate;
     private final GameStateService gameStateService;
     private final FishingHandler fishingHandler;
 
-    // TODO(공통화-이벤트엔진 v1):
-    // [현재 역할]
-    // - roomId당 "진행 중 이벤트 1개"를 Map(sessions)으로 관리한다.
-    // - start 시 putIfAbsent로 중복 이벤트 시작을 막는다.
-    // - 스케줄러로 timeoutFuture를 걸어 제한시간 내 액션이 없으면 자동 실패 처리한다.
-    // - resolveOnce(AtomicBoolean)로 결과(성공/실패)를 "단 1회"만 확정한다.
-    // - resolve 이후 timeout 취소 + sessions.remove로 메모리/상태를 정리한다.
-    //
-    // [왜 공통으로 빼야 하나]
-    // - 상점/대출/미니게임/선택지 등 "시간 제한 + 1회 확정 + 정리" 패턴이 동일하게 반복된다.
-    // - 각 도메인마다 이 로직을 복붙하면:
-    //   (1) 중복 resolve / timeout 누락 / sessions 정리 누락 버그가 이벤트마다 재발생한다.
-    //   (2) 에러 메시지 형식(type/eventType)도 이벤트마다 달라져 프론트 분기가 폭증한다.
-    // - 따라서 이벤트 생명주기(등록/timeout/resolve/정리)는 공통 엔진이 책임지고,
-    //   도메인(낚시/상점/대출)은 "규칙/판정/보상"만 제공하는 구조가 유지보수에 유리하다.
-
     private final ConcurrentHashMap<Long, FishingEventSession> sessions = new ConcurrentHashMap<>();
-    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
+
+    // tick + timeout 스케줄러
+    private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     @PreDestroy
     public void shutdown() {
         scheduler.shutdownNow();
     }
 
+    // 게임 흐름에서 자동으로 호출되는 시작 (GameWsController 등)
+    // - SMALL/MEDIUM/LARGE 중 "동일 확률(1/3)"로 랜덤 선택
+    public void startFishing(Long roomId, Long actorId) {
+        HarvestType ht = pickAutoHarvestType();
+        startFishing(roomId, actorId, ht.name());
+    }
+
+    // (디버그/확장용) 외부에서 낚시 타입을 지정해 시작
     public void startFishing(Long roomId, Long actorId, String harvestTypeStr) {
         Objects.requireNonNull(roomId, "roomId is required");
         Objects.requireNonNull(actorId, "actorId is required");
         Objects.requireNonNull(harvestTypeStr, "harvestType is required");
 
-        //  enum 검증 +  fish-only 제한
         HarvestType ht;
         try {
             ht = HarvestType.valueOf(harvestTypeStr);
@@ -66,31 +77,33 @@ public class FishingService {
             sendError(roomId, "harvestType 값이 올바르지 않아요: " + harvestTypeStr);
             return;
         }
+
         if (!(ht == HarvestType.FISH_SMALL || ht == HarvestType.FISH_MEDIUM || ht == HarvestType.FISH_LARGE)) {
             sendError(roomId, "낚시에서는 FISH_SMALL / FISH_MEDIUM / FISH_LARGE 만 사용할 수 있어요: " + harvestTypeStr);
             return;
         }
 
-        // 게임 상태가 있으면 '턴 유저/상태' 강제
+        // 게임이 존재하면: (1) 현재 턴 유저인지 (2) 상태가 WAITING_FISHING 인지
         if (!canActorStartFishing(roomId, actorId)) {
             sendError(roomId, "현재 턴 유저만 낚시를 시작할 수 있어요.");
             return;
         }
 
         long now = System.currentTimeMillis();
-        long startAt = now + ThreadLocalRandom.current().nextLong(200, 401);
+        long startAt = now + ThreadLocalRandom.current().nextLong(START_DELAY_MIN_MS, START_DELAY_MAX_MS + 1);
 
         long durationMs = switch (ht) {
-            case FISH_SMALL -> 6000;
-            case FISH_MEDIUM -> 8000;
-            case FISH_LARGE -> 10000;
-            default -> 6000; // 여기 도달 X
+            case FISH_SMALL -> DURATION_SMALL_MS;
+            case FISH_MEDIUM -> DURATION_MEDIUM_MS;
+            case FISH_LARGE -> DURATION_LARGE_MS;
+            default -> DURATION_SMALL_MS;
         };
 
         long expiresAt = startAt + durationMs;
         long seed = makeSeed(roomId, actorId, startAt);
 
-        FishingSession data = FishingPolicy.createSessionData(harvestTypeStr, durationMs, seed, startAt);
+        // FishingPolicy는 타입별 룰(타이밍/2스테이지/릴링 파라미터)을 seed 기반으로 생성
+        FishingSession data = FishingPolicy.createSessionData(ht, durationMs, seed, startAt);
 
         FishingEventSession session = new FishingEventSession(
                 roomId, actorId, startAt, expiresAt, seed, data
@@ -102,14 +115,25 @@ public class FishingService {
             return;
         }
 
-        setGameStatusIfExists(roomId, GameStatus.WAITING_FISHING);
-
         RoomEventStartedMessage started = buildStartedMessage(session, durationMs);
-        broadcast(roomId, started);
+        broadcastToGame(roomId, started);
 
-        long delay = Math.max(0, expiresAt - System.currentTimeMillis());
-        ScheduledFuture<?> future = scheduler.schedule(() -> onTimeout(roomId), delay, TimeUnit.MILLISECONDS);
-        session.setTimeoutFuture(future);
+        // 타임아웃 예약
+        long timeoutDelay = Math.max(0, expiresAt - System.currentTimeMillis());
+        ScheduledFuture<?> timeoutFuture = scheduler.schedule(() -> onTimeout(roomId), timeoutDelay, TimeUnit.MILLISECONDS);
+        session.setTimeoutFuture(timeoutFuture);
+
+        // LARGE는 진행도/장력 업데이트를 계속 보내야 하므로 tick 예약
+        if (ht == HarvestType.FISH_LARGE) {
+            long tickStartDelay = Math.max(0, startAt - System.currentTimeMillis());
+            ScheduledFuture<?> tickFuture = scheduler.scheduleAtFixedRate(
+                    () -> onTick(roomId),
+                    tickStartDelay,
+                    LARGE_TICK_PERIOD_MS,
+                    TimeUnit.MILLISECONDS
+            );
+            session.setTickFuture(tickFuture);
+        }
     }
 
     public void handleAction(Long roomId, Long actorId, String action) {
@@ -123,30 +147,106 @@ public class FishingService {
             return;
         }
 
-        // actorId 일치 + (게임 상태가 있으면) 현재 턴 유저 강제
+        // 이벤트를 시작한 actor만 조작 가능 + (게임이 있으면) 현재 턴 유저/상태 강제
         if (!session.actorId.equals(actorId)) return;
-        if (!isCurrentTurnActorIfGameExists(roomId, actorId)) return;
+        if (!isCurrentTurnActorIfGameExists(roomId, actorId)) {
+            // 게임 흐름이 이미 넘어갔으면(타임아웃/턴 종료 등) 세션을 조용히 정리
+            cancelIfRunning(roomId);
+            return;
+        }
+
+        if (session.resolved.get()) return;
 
         long now = System.currentTimeMillis();
-        if (session.resolved.get()) return;
+        if (now >= session.expiresAtEpochMs) {
+            onTimeout(roomId);
+            return;
+        }
+
+        FishingHandler.ActionOutcome out;
+        synchronized (session.mutex) {
+            if (session.resolved.get()) return;
+
+            out = fishingHandler.handleAction(
+                    session.eventStartTimeMs,
+                    session.expiresAtEpochMs,
+                    now,
+                    roomId,
+                    actorId,
+                    session.data,
+                    action
+            );
+        }
+
+        RoomEventUpdateMessage update = out.updateMessage();
+        if (update != null) broadcastToGame(roomId, update);
+
+        RoomEventResultMessage result = out.resultMessage();
+        if (result != null) resolve(roomId, session, result);
+    }
+
+    // 게임이 턴을 강제로 넘기거나(타임아웃 등) UI가 정리될 때, 혹시 남아있는 세션을 제거.
+    public void cancelIfRunning(Long roomId) {
+        FishingEventSession session = sessions.remove(roomId);
+        if (session == null) return;
+
+        session.resolved.set(true);
+
+        ScheduledFuture<?> timeoutFuture = session.timeoutFuture;
+        if (timeoutFuture != null) timeoutFuture.cancel(false);
+
+        ScheduledFuture<?> tickFuture = session.tickFuture;
+        if (tickFuture != null) tickFuture.cancel(false);
+    }
+
+    private void onTick(Long roomId) {
+        FishingEventSession session = sessions.get(roomId);
+        if (session == null) return;
+
+        // 게임이 이미 다른 상태로 넘어갔으면 세션 정리
+        if (!isCurrentTurnActorIfGameExists(roomId, session.actorId)) {
+            cancelIfRunning(roomId);
+            return;
+        }
+
+        if (session.resolved.get()) {
+            ScheduledFuture<?> tickFuture = session.tickFuture;
+            if (tickFuture != null) tickFuture.cancel(false);
+            return;
+        }
+
+        // LARGE만 tick 의미 있음
+        if (session.data.getHarvestType() != HarvestType.FISH_LARGE) {
+            ScheduledFuture<?> tickFuture = session.tickFuture;
+            if (tickFuture != null) tickFuture.cancel(false);
+            return;
+        }
+
+        long now = System.currentTimeMillis();
 
         if (now >= session.expiresAtEpochMs) {
             onTimeout(roomId);
             return;
         }
 
-        FishingHandler.ActionOutcome out = fishingHandler.handleAction(
-                session.eventStartTimeMs,
-                session.expiresAtEpochMs,
-                now,
-                roomId,
-                actorId,
-                session.data,
-                action
-        );
+        FishingHandler.ActionOutcome out;
+        synchronized (session.mutex) {
+            if (session.resolved.get()) return;
+
+            // 서버 tick도 handler에 통일 (진행도/장력 계산 + update/result 생성)
+            out = fishingHandler.handleAction(
+                    session.eventStartTimeMs,
+                    session.expiresAtEpochMs,
+                    now,
+                    roomId,
+                    session.actorId,
+                    session.data,
+                    ACTION_TICK
+            );
+        }
 
         RoomEventUpdateMessage update = out.updateMessage();
-        if (update != null) broadcast(roomId, update);
+        if (update != null) broadcastToGame(roomId, update);
 
         RoomEventResultMessage result = out.resultMessage();
         if (result != null) resolve(roomId, session, result);
@@ -155,8 +255,13 @@ public class FishingService {
     private void onTimeout(Long roomId) {
         FishingEventSession session = sessions.get(roomId);
         if (session == null) return;
-
         if (session.resolved.get()) return;
+
+        // 게임이 이미 다른 상태로 넘어갔으면 세션 정리
+        if (!isCurrentTurnActorIfGameExists(roomId, session.actorId)) {
+            cancelIfRunning(roomId);
+            return;
+        }
 
         long now = System.currentTimeMillis();
         RoomEventResultMessage result = fishingHandler.handleTimeout(roomId, session.actorId, now, session.data);
@@ -166,12 +271,24 @@ public class FishingService {
     private void resolve(Long roomId, FishingEventSession session, RoomEventResultMessage resultMessage) {
         if (!session.resolved.compareAndSet(false, true)) return;
 
-        ScheduledFuture<?> future = session.timeoutFuture;
-        if (future != null) future.cancel(false);
+        ScheduledFuture<?> timeoutFuture = session.timeoutFuture;
+        if (timeoutFuture != null) timeoutFuture.cancel(false);
 
-        setGameStatusIfExists(roomId, GameStatus.TURN_END_PENDING);
+        ScheduledFuture<?> tickFuture = session.tickFuture;
+        if (tickFuture != null) tickFuture.cancel(false);
 
-        broadcast(roomId, resultMessage);
+        // 결과를 게임 상태(GameState)에 반영 + 타임아웃(=WAITING_FISHING) 예약이 다시 턴을 넘기지 않도록 상태 전환
+        // - Shop은 endShopSession에서 WAITING_PLAYER_ACTION으로 전환하듯,
+        //   Fishing은 결과 확정 시 TURN_END_PENDING으로 전환해 "이벤트 종료"를 명확히 한다.
+        GameMessage sync = applyFishingResultToGameStateIfExists(roomId, session.actorId, resultMessage);
+
+        // 1) 낚시 결과 (낚시 UI용)
+        broadcastToGame(roomId, resultMessage);
+
+        // 2) 갱신된 GameState 스냅샷 (게임 HUD/인벤토리 동기화용)
+        if (sync != null) {
+            broadcastToGame(roomId, sync);
+        }
         sessions.remove(roomId);
     }
 
@@ -181,7 +298,7 @@ public class FishingService {
 
         synchronized (game) {
             if (game.getCurrentPlayerId() == null) return false;
-            // 필요하면 여기서 status도 강제 (예: WAITING_FISHING로만 허용)
+            if (game.getStatus() != GameStatus.WAITING_FISHING) return false;
             return actorId.equals(game.getCurrentPlayerId());
         }
     }
@@ -191,7 +308,9 @@ public class FishingService {
         if (game == null) return true;
 
         synchronized (game) {
-            return game.getCurrentPlayerId() != null && actorId.equals(game.getCurrentPlayerId());
+            if (game.getCurrentPlayerId() == null) return false;
+            if (game.getStatus() != GameStatus.WAITING_FISHING) return false;
+            return actorId.equals(game.getCurrentPlayerId());
         }
     }
 
@@ -203,7 +322,7 @@ public class FishingService {
                 .eventType("FISHING")
                 .roomId(session.roomId)
                 .actorMemberId(session.actorId)
-                .harvestType(session.data.getHarvestType())
+                .harvestType(session.data.getHarvestType().name())
                 .eventStartTimeMs(session.eventStartTimeMs)
                 .durationMs(durationMs)
                 .seed(session.seed)
@@ -211,8 +330,7 @@ public class FishingService {
                 .build();
     }
 
-    private void broadcast(Long roomId, Object payload) {
-        messagingTemplate.convertAndSend("/topic/rooms/" + roomId, payload);
+    private void broadcastToGame(Long roomId, Object payload) {
         messagingTemplate.convertAndSend("/topic/games/" + roomId, payload);
     }
 
@@ -222,15 +340,71 @@ public class FishingService {
                 .roomId(roomId)
                 .message(message)
                 .build();
-        broadcast(roomId, err);
+        broadcastToGame(roomId, err);
     }
 
-    private void setGameStatusIfExists(Long roomId, GameStatus status) {
+    /**
+     * 낚시 결과를 GameState에 반영한다.
+     * - 성공이면: 현재 턴 플레이어의 harvests[HarvestType]에 gainedQty만큼 누적
+     * - 결과 확정 시: GameStatus를 TURN_END_PENDING으로 전환해서
+     *   GameWsController의 "WAITING_FISHING 타임아웃 예약"이 중복으로 턴을 넘기지 않도록 한다.
+     *
+     * @return 프론트 동기화를 위한 GameMessage 스냅샷(없으면 null)
+     */
+    private GameMessage applyFishingResultToGameStateIfExists(Long roomId, Long actorId, RoomEventResultMessage result) {
         GameState game = gameStateService.getGame(roomId);
-        if (game == null) return;
+        if (game == null) return null; // 낚시 단독 테스트 허용
+
         synchronized (game) {
-            game.setStatus(status);
+            if (game.getCurrentPlayerId() == null) return null;
+            if (!actorId.equals(game.getCurrentPlayerId())) return null;
+
+            // WAITING_FISHING이 아니면(이미 다른 흐름으로 넘어감) 결과를 반영하지 않는다.
+            if (game.getStatus() != GameStatus.WAITING_FISHING) return null;
+
+            // 성공이면 수확물 누적
+            if (result != null && result.isSuccess() && result.getGainedQty() > 0) {
+                try {
+                    HarvestType ht = HarvestType.valueOf(result.getHarvestType());
+                    GamePlayerState player = game.getPlayers().get(actorId);
+                    if (player != null) {
+                        int prev = player.getHarvests().getOrDefault(ht, 0);
+                        player.getHarvests().put(ht, prev + result.getGainedQty());
+                    }
+                } catch (IllegalArgumentException ignored) {
+                    // harvestType 파싱 실패는 낚시 결과 UI에는 영향 없으니 조용히 무시
+                }
+            }
+
+            // 이벤트 종료 상태로 전환 (타임아웃 중복 nextTurn 방지)
+            game.setStatus(GameStatus.TURN_END_PENDING);
+
+            return buildGameSnapshotMessage("CURRENT_GAME_STATE", game, actorId);
         }
+    }
+
+    private GameMessage buildGameSnapshotMessage(String type, GameState gameState, Long actorId) {
+        GameMessage msg = new GameMessage();
+        msg.setType(type);
+        msg.setRoomId(gameState.getRoomId());
+        msg.setMemberId(actorId);
+        msg.setStatus(gameState.getStatus().name());
+        msg.setCurrentPlayerId(gameState.getCurrentPlayerId());
+        msg.setPlayers(new ArrayList<>(gameState.getPlayers().values()));
+        msg.setTurnOrder(gameState.getTurnOrder());
+        msg.setCurrentRound(gameState.getCurrentRound());
+        msg.setTimeoutSeconds(gameState.getStatus().getTimeoutSeconds());
+        return msg;
+    }
+
+    private HarvestType pickAutoHarvestType() {
+        // 동일 확률(1/3) 랜덤
+        int r = ThreadLocalRandom.current().nextInt(3);
+        return switch (r) {
+            case 0 -> HarvestType.FISH_SMALL;
+            case 1 -> HarvestType.FISH_MEDIUM;
+            default -> HarvestType.FISH_LARGE;
+        };
     }
 
     private long makeSeed(Long roomId, Long actorId, long startAt) {
@@ -241,22 +415,6 @@ public class FishingService {
         return x;
     }
 
-    // TODO(공통화 대상): 이 내부 클래스 FishingEventSession은 "낚시 전용"이 아니라
-    // roomId당 '진행 중 이벤트 1개'를 관리하기 위한 "이벤트 엔진 세션 래퍼"에 가깝다.
-    //
-    // [현재 용도]
-    // - roomId/actorId/startAt/expiresAt/seed : 이벤트 생명주기와 판정 기준 시간 관리
-    // - resolved(AtomicBoolean) : timeout과 마지막 action이 동시에 오더라도 결과가 1번만 나가게 보장(resolveOnce)
-    // - timeoutFuture : Scheduled timeout 예약을 취소하기 위해 보관
-    // - data(FishingSession) : 이벤트별 전용 데이터(낚시는 FishingSession) 를 붙여서 운용
-    //
-    // [왜 공통으로 빼야 하나]
-    // - 낚시/상점/대출/기타 이벤트가 모두 "세션 1개 + timeout + resolveOnce" 패턴을 공유한다.
-    // - 이벤트마다 이 래퍼를 각자 만들면
-    //   1) 중복 결과(2번 브로드캐스트) 버그가 이벤트마다 재발하고
-    //   2) timeout 누락/취소 누락 같은 운영 버그가 누적되며
-    //   3) 프론트는 이벤트별로 다른 동작을 처리해야 해서 분기 지옥이 된다.
-    // - 공통 엔진에서 한 번만 구현하면 모든 이벤트가 안정적으로 동일한 생명주기 규칙을 갖게 된다.
     private static class FishingEventSession {
         private final Long roomId;
         private final Long actorId;
@@ -266,8 +424,12 @@ public class FishingService {
 
         private final FishingSession data;
 
+        // tick 스레드 / WS 액션 스레드가 같은 data를 만지므로 mutex로 보호
+        private final Object mutex = new Object();
+
         private final AtomicBoolean resolved = new AtomicBoolean(false);
         private volatile ScheduledFuture<?> timeoutFuture;
+        private volatile ScheduledFuture<?> tickFuture;
 
         private FishingEventSession(
                 Long roomId,
@@ -287,6 +449,10 @@ public class FishingService {
 
         public void setTimeoutFuture(ScheduledFuture<?> future) {
             this.timeoutFuture = future;
+        }
+
+        public void setTickFuture(ScheduledFuture<?> future) {
+            this.tickFuture = future;
         }
     }
 }
