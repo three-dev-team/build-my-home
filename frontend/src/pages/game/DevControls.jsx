@@ -47,6 +47,11 @@ const DevControls = ({ onStatusChange }) => {
                         className="px-3 py-1 bg-pink-500 hover:bg-pink-600 text-white text-xs rounded shadow">
                     재화 상점
                 </button>
+                <button
+                    onClick={() => onStatusChange("WAITING_FISHING")}
+                    className="px-3 py-1 bg-cyan-500 hover:bg-cyan-600 text-white text-xs rounded shadow">
+                    🎣 낚시 (Fishing)
+                </button>
             </div>
         </div>
     );
