@@ -44,6 +44,7 @@ public class GameWsController {
         response.setPlayers(new ArrayList<>(gameState.getPlayers().values()));
         response.setTurnOrder(gameState.getTurnOrder());
         response.setCurrentRound(gameState.getCurrentRound());
+        response.setTotalRounds(gameState.getTotalRounds());
         response.setTimeoutSeconds(gameState.getStatus().getTimeoutSeconds());
         return response;
     }
@@ -65,6 +66,7 @@ public class GameWsController {
 
         GameState gameState = new GameState(roomId);
         gameState.setStatus(GameStatus.INTRO);
+        gameState.setTotalRounds(room.getTotalRounds());
 
         for (RoomPlayerState player : room.getPlayers().values()) {
             gameState.addPlayer(new GamePlayerState(

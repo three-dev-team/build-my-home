@@ -1,12 +1,9 @@
 package com.buildmyhome.room.controller;
 
-import com.buildmyhome.member.entity.Member;
-import com.buildmyhome.member.repository.MemberRepository;
 import com.buildmyhome.room.dto.RoomMessage;
 import com.buildmyhome.room.dto.RoomPlayerState;
 import com.buildmyhome.room.dto.RoomState;
 import com.buildmyhome.room.service.RoomStateService;
-import com.buildmyhome.roomlist.dto.RoomsSnapshot;
 import com.buildmyhome.roomlist.service.RoomListService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -100,13 +97,6 @@ public class RoomWsController {
             message.setPlayers(new ArrayList<>());
         }
         messagingTemplate.convertAndSend("/topic/rooms/" + roomId, message);
-
-        // 방 목록 업데이트 브로드캐스트
-//        RoomsSnapshot snapshot = RoomsSnapshot.builder()
-//                .type("ROOMS_SNAPSHOT")
-//                .rooms(roomListService.getRoomList())
-//                .build();
-//        messagingTemplate.convertAndSend("/topic/roomlist/rooms", snapshot);
     }
 
     @MessageMapping("/rooms/ready")
