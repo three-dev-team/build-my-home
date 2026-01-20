@@ -227,10 +227,8 @@ const GamePage = () => {
             userBell={currentPlayer?.bell || 0}
             userLoan={currentPlayer?.loan || 0}
             timeoutSeconds={gameState.timeoutSeconds || 0}
-            isBankTile={true} // TODO: 서버에서 BankTile 여부 받아와야 함
             onExit={handleEventComplete}
-            stompClient={stompClient}
-            roomId={roomId}
+            onAction={handleAction}
           />
         )}
 
@@ -244,8 +242,7 @@ const GamePage = () => {
             onReward={(reward) => console.log(`Reward: ${reward}`)}
             onStampClick={() => handleAction("STAMP_ACTION", {})}
             onExit={handleEventComplete}
-            stompClient={stompClient}
-            roomId={roomId}
+            onAction={handleAction}
           />
         )}
 
