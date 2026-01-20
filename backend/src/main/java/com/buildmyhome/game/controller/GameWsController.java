@@ -7,6 +7,7 @@ import com.buildmyhome.game.dto.GamePlayerState;
 import com.buildmyhome.game.dto.GameState;
 import com.buildmyhome.game.dto.GameStatus;
 import com.buildmyhome.game.service.GameStateService;
+import com.buildmyhome.kk.KKService;
 import com.buildmyhome.loan.service.LoanService;
 import com.buildmyhome.room.dto.RoomPlayerState;
 import com.buildmyhome.room.dto.RoomState;
@@ -35,6 +36,7 @@ public class GameWsController {
     private final GameStateService gameStateService;
     private final LoanService loanService;
     private final StampService stampService;
+    private final KKService kkService;
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     // 서버메모리 -> 프론트로 전달하는 공통 응답 DTO 생성하는 메서드
@@ -276,15 +278,8 @@ public class GameWsController {
                         // 아이템 구매 로직 처리
                         break;
                     case "KK_ACTION":
-                        int fee = KK_ENTRY_FEE;
-                        int userBell = player.getBell();
-                        if (userBell > fee) {
-                            player.setBell(player.getBell() - KK_ENTRY_FEE);
-                        } else {
-                            int shortage = fee - userBell;
-                            player.setBell(0);
-                            player.setLoan(player.getLoan() + shortage);
-                        }
+                        kkService.payEntryFee(player);
+                        response.setType("KK_FEE_PAID");
                         break;
                 }
 
