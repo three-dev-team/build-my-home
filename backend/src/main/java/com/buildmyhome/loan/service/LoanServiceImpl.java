@@ -3,7 +3,6 @@ package com.buildmyhome.loan.service;
 import com.buildmyhome.game.dto.GamePlayerState;
 import com.buildmyhome.game.dto.GameState;
 import com.buildmyhome.game.service.GameStateService;
-import com.buildmyhome.loan.dto.LoanMessage;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -14,11 +13,7 @@ public class LoanServiceImpl implements LoanService {
     private final GameStateService gameStateService;
 
     @Override
-    public void borrow(LoanMessage message) {
-        Long roomId = message.getRoomId();
-        Long memberId = message.getMemberId();
-        int amount = message.getAmount();
-
+    public void borrow(Long roomId, Long memberId, int amount, boolean isBankTile) {
         GameState gameState = gameStateService.getGame(roomId);
         // 동시성 문제 방지를 위해 각 방의 상태 객체를 동기화
         synchronized (gameState) {
@@ -32,7 +27,7 @@ public class LoanServiceImpl implements LoanService {
              // 은행 칸(isBankTile=true)이면 수수료 없음 (무이자 대출)
              // ATM 등 다른 곳(isBankTile=false)에서는 수수료 10% 추가 부채 (상시 대출) -- 추후 구현 예정
              int debtAmount = amount;
-             if (!message.isBankTile()) {
+             if (!isBankTile) {
                  debtAmount = (int) (amount * 1.1); // 수수료 유지
              } else {
                  debtAmount = amount; // 은행에서는 원금만 갚으면 됨
@@ -45,11 +40,7 @@ public class LoanServiceImpl implements LoanService {
     }
 
     @Override
-    public void repay(LoanMessage message) {
-        Long roomId = message.getRoomId();
-        Long memberId = message.getMemberId();
-        int amount = message.getAmount();
-
+    public void repay(Long roomId, Long memberId, int amount) {
         GameState gameState = gameStateService.getGame(roomId);
         synchronized (gameState) {
             GamePlayerState playerState = gameState.getPlayers().get(memberId);

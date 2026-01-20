@@ -51,8 +51,9 @@ const Loan = ({
 
         // WebSocket 전송
         stompClient.publish({
-          destination: "/app/loan/borrow",
+          destination: "/app/games/action",
           body: JSON.stringify({
+            type: "LOAN_BORROW",
             roomId: Number(roomId),
             amount: amount,
             isBankTile: isBankTile,
@@ -63,8 +64,9 @@ const Loan = ({
       } else {
         // 상환
         stompClient.publish({
-          destination: "/app/loan/repay",
+          destination: "/app/games/action",
           body: JSON.stringify({
+            type: "LOAN_REPAY",
             roomId: Number(roomId),
             amount: userLoan, // 전액 상환
             isBankTile: isBankTile,

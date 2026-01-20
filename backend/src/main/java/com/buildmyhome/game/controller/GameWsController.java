@@ -7,9 +7,11 @@ import com.buildmyhome.game.dto.GamePlayerState;
 import com.buildmyhome.game.dto.GameState;
 import com.buildmyhome.game.dto.GameStatus;
 import com.buildmyhome.game.service.GameStateService;
+import com.buildmyhome.loan.service.LoanService;
 import com.buildmyhome.room.dto.RoomPlayerState;
 import com.buildmyhome.room.dto.RoomState;
 import com.buildmyhome.room.service.RoomStateService;
+import com.buildmyhome.stamp.service.StampService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -18,9 +20,7 @@ import org.springframework.stereotype.Controller;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Comparator;
-
 import java.util.List;
-
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -33,6 +33,8 @@ public class GameWsController {
     private final SimpMessagingTemplate simpMessagingTemplate;
     private final RoomStateService roomStateService;
     private final GameStateService gameStateService;
+    private final LoanService loanService;
+    private final StampService stampService;
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     // 서버메모리 -> 프론트로 전달하는 공통 응답 DTO 생성하는 메서드
@@ -252,34 +254,49 @@ public class GameWsController {
 
             GamePlayerState player = gameState.getPlayers().get(memberId);
 
-            // 2. 타입에 따라 분기 처리
-            switch (actionType) {
-                case "LOAN_ACTION":
-                    // 대출 서비스 호출 혹은 로직 처리
-                    // 예: player.setBell(player.getBell() + message.getAmount());
-                    break;
-                case "STAMP_ACTION":
-                    // 스탬프 획득 로직 처리
-                    break;
-                case "BUY_ITEM":
-                    // 아이템 구매 로직 처리
-                    break;
-                case "KK_ACTION":
-                    int fee = KK_ENTRY_FEE;
-                    int userBell = player.getBell();
-                    if (userBell > fee) {
-                        player.setBell(player.getBell() - KK_ENTRY_FEE);
-                    }else{
-                        int shortage = fee - userBell;
-                        player.setBell(0);
-                        player.setLoan(player.getLoan() + shortage);
-                    }
-                    break;
-            }
+            try {
+                GameMessage response = defaultGameResponse("ACTION_PROCESSED", gameState);
 
-            // 3. 결과 전송
-            GameMessage response = defaultGameResponse("ACTION_PROCESSED", gameState);
-            simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
+                // 2. 타입에 따라 분기 처리
+                switch (actionType) {
+                    case "LOAN_BORROW":
+                        loanService.borrow(roomId, memberId, message.getAmount(), message.isBankTile());
+                        response.setType("LOAN_BORROWED");
+                        break;
+                    case "LOAN_REPAY":
+                        loanService.repay(roomId, memberId, message.getAmount());
+                        response.setType("LOAN_REPAID");
+                        break;
+                    case "STAMP_ACQUIRE":
+                        // stampType은 현재 로직상 null이어도 내부에서 count 기반으로 결정됨
+                        stampService.acquireStamp(roomId, memberId, message.getStampType());
+                        response.setType("STAMP_ACQUIRED");
+                        break;
+                    case "BUY_ITEM":
+                        // 아이템 구매 로직 처리
+                        break;
+                    case "KK_ACTION":
+                        int fee = KK_ENTRY_FEE;
+                        int userBell = player.getBell();
+                        if (userBell > fee) {
+                            player.setBell(player.getBell() - KK_ENTRY_FEE);
+                        } else {
+                            int shortage = fee - userBell;
+                            player.setBell(0);
+                            player.setLoan(player.getLoan() + shortage);
+                        }
+                        break;
+                }
+
+                // 3. 성공 결과 전송
+                simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
+
+            } catch (Exception e) {
+                // 에러 발생 시 에러 메시지 전송
+                GameMessage errorResponse = defaultGameResponse("ACTION_ERROR", gameState);
+                errorResponse.setErrorMessage(e.getMessage());
+                simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, errorResponse);
+            }
         }
     }
 
@@ -340,7 +357,7 @@ public class GameWsController {
                         System.out.println(">>> ⏰ " + timeout + "초 경과: 타임아웃으로 복귀");
                     }
                 }
-            }, timeout, TimeUnit.SECONDS); // 20 대신 Enum의 값을 사용!
+            }, timeout, TimeUnit.SECONDS); 
         } else {
             System.out.println(">>> ℹ️ " + targetStatus + " 상태는 제한 시간이 없으므로 스케줄러를 실행하지 않습니다.");
         }
