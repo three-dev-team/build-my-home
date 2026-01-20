@@ -2,16 +2,6 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useGameTimer } from "../../hooks/useGameTimer.js";
 
-/**
- * @param {number} userStampsCount - 현재 유저 스탬프 수
- * @param {boolean} isMyTurn - 현재 조작 권한이 있는 유저인지
- * @param {string} currentPlayerName - 현재 스탬프 찍는 유저의 이름
- * @param {number} timeoutSeconds - 타이머 제한 시간 (초 단위)
- * @param {function} onReward - 보상 콜백
- * @param {function} onExit - 닫기 함수
- * @param {function} onStampClick - 스탬프 클릭 시 서버 전송 함수
- */
-
 const Stamp = ({
   userStampsCount = 0,
   isMyTurn = false, // 현재 8번 칸에 도착한 주인공인지 여부

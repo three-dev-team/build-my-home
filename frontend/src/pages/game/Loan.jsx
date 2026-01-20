@@ -2,17 +2,6 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useGameTimer } from "../../hooks/useGameTimer.js";
 
-/**
- * @param {number} userBell - 현재 유저 잔액
- * @param {number} userLoan - 현재 유저 대출금
- * @param {boolean} isMyTurn - 현재 조작 권한이 있는 유저인지
- * @param {string} currentPlayerName - 현재 은행을 이용 중인 유저의 이름
- * @param {boolean} isBankTile - 현재 위치가 '대출 칸'인지 여부 (false면 수수료 10% 추가)
- * @param {number} timeoutSeconds - 타이머 제한 시간 (초 단위)
- * @param {function} onAction - 서버 전송 함수
- * @param {function} onExit - 닫기 함수
- *
- */
 const Loan = ({
   userBell = 0,
   userLoan = 0,
