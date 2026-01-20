@@ -36,9 +36,18 @@ public class GameState {
     // 상점 세션
     private com.buildmyhome.shop.dto.ShopSession shopSession;
 
+    // 상태 변경 시간 (서버 시간 동기화용)
+    private java.time.LocalDateTime statusUpdatedAt;
+
     public GameState(Long roomId) {
         this.roomId = roomId;
         this.status = GameStatus.INTRO;
+        this.statusUpdatedAt = java.time.LocalDateTime.now();
+    }
+
+    public void setStatus(GameStatus status) {
+        this.status = status;
+        this.statusUpdatedAt = java.time.LocalDateTime.now();
     }
 
     // 다음 턴으로 넘기는 메서드
