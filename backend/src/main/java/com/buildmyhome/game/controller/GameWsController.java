@@ -16,7 +16,8 @@ import com.buildmyhome.loan.service.LoanService;
 import com.buildmyhome.room.dto.RoomPlayerState;
 import com.buildmyhome.room.dto.RoomState;
 import com.buildmyhome.room.service.RoomStateService;
-import com.buildmyhome.stamp.service.StampService;
+import com.buildmyhome.shop.dto.ShopType;
+import com.buildmyhome.shop.service.ShopService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -38,6 +39,7 @@ public class GameWsController {
     private final SimpMessagingTemplate simpMessagingTemplate;
     private final RoomStateService roomStateService;
     private final GameStateService gameStateService;
+    private final ShopService shopService;
     private final LoanService loanService;
     private final StampService stampService;
     private final KKService kkService;
@@ -221,9 +223,17 @@ public class GameWsController {
             GamePlayerState player = gameState.getPlayers().get(memberId);
             if (player == null) return;
 
-            // 플레이어가 도착한 칸에 맞는 상태로 전환 (예: KK 칸이면 WAITING_KK)
+            // 플레이어가 도착한 칸에 맞는 상태로 전환 (예: KK 칸이면 WAITING_KK)git
             GameStatus nextStatus = BoardData.getNextStatus(player.getPosition());
             gameState.setStatus(nextStatus);
+
+            if (nextStatus == GameStatus.WAITING_SHOP_ITEM) {
+                shopService.startShopSession(roomId, memberId, ShopType.ITEM_SHOP);
+                System.out.println("🏪 아이템 상점 세션 생성: memberId=" + memberId);
+            } else if (nextStatus == GameStatus.WAITING_SHOP_RESOURCE) {
+                shopService.startShopSession(roomId, memberId, ShopType.HARVEST_SHOP);
+                System.out.println("🏪 재화 상점 세션 생성: memberId=" + memberId);
+            }
 
             // 타임아웃이 설정된 상태라면 스케줄러로 타임아웃 처리 등록
             if (nextStatus.isAutoProceed()) {

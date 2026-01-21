@@ -1,5 +1,6 @@
 package com.buildmyhome.game.dto;
 
+import com.buildmyhome.shop.dto.ShopType;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -23,6 +24,11 @@ public class GameMessage {
     private int totalRounds;
     private int timeoutSeconds;
 
+    private ShopType shopType;        // 어떤 상점인지
+    private ItemType itemType;        // 구매/판매할 아이템
+    private ResourceType resourceType; // 구매/판매할 재화
+    private HarvestType harvestType;  // 판매할 작물
+    private int quantity;             // 수량
     // 대출/스탬프/에러 처리를 위한 추가 필드
     private int amount;
     
