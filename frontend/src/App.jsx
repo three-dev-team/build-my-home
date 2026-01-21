@@ -18,6 +18,7 @@ import OAuth2RedirectHandler from "./pages/auth/OAuth2RedirectHandler.jsx";
 import AdminPage from "./pages/AdminPage.jsx";
 import UserInquiry from "./pages/UserInquiry.jsx";
 import GamePage from "./pages/game/GamePage.jsx";
+import NotFound from "./pages/NotFound.jsx";
 import Loading from "./components/common/Loading.jsx";
 
 function App() {
@@ -35,23 +36,6 @@ function App() {
     return children;
   };
 
-  useEffect(() => {
-    // 초기 로드 시 즉시 복구 (useEffect 안에서 가장 먼저 실행)
-    const backupToken = localStorage.getItem("token");
-    if (backupToken && !sessionStorage.getItem("token")) {
-      sessionStorage.setItem("token", backupToken);
-      sessionStorage.setItem(
-        "nickname",
-        localStorage.getItem("nickname") || ""
-      );
-      sessionStorage.setItem("bell", localStorage.getItem("bell") || "0");
-      sessionStorage.setItem("level", localStorage.getItem("level") || "1");
-    }
-
-    // 복구가 끝났음을 알림
-    setIsInitialized(true);
-  }, []);
-
   // 사용자가 사이트 어디든 처음 클릭하면 재생 시작 (브라우저 정책 대응)
   useEffect(() => {
     const handleFirstInteraction = () => {
@@ -67,27 +51,15 @@ function App() {
     return () => window.removeEventListener("click", handleFirstInteraction);
   }, []);
 
+  // 초기화 완료 처리 (백업 로직 삭제로 인해 바로 true)
   useEffect(() => {
-    // 1. 페이지 로드 시: localStorage에 백업된 정보가 있다면 sessionStorage로 복구
-    // (Login.js가 sessionStorage를 사용하므로 호환성을 위해 복구해줌)
-    const backupToken = localStorage.getItem("token");
-    if (backupToken && !sessionStorage.getItem("token")) {
-      sessionStorage.setItem("token", backupToken);
-      sessionStorage.setItem("nickname", localStorage.getItem("nickname"));
-      sessionStorage.setItem("level", localStorage.getItem("level"));
-    }
+    // [Session Only Policy] 로컬 스토리지에 남아있는 토큰 정보 삭제 (보안 강화)
+    localStorage.removeItem("token");
+    localStorage.removeItem("nickname");
+    localStorage.removeItem("bell");
+    localStorage.removeItem("level");
 
-    // 2. 데이터 동기화: sessionStorage에 값이 생기면 즉시 localStorage에도 복사 (백업)
-    const syncStorage = setInterval(() => {
-      const token = sessionStorage.getItem("token");
-      if (token) {
-        localStorage.setItem("token", token);
-        localStorage.setItem("nickname", sessionStorage.getItem("nickname"));
-        localStorage.setItem("level", sessionStorage.getItem("level"));
-      }
-    }, 1000);
-
-    return () => clearInterval(syncStorage);
+    setIsInitialized(true);
   }, []);
 
   // 초기화가 완료되기 전에는 렌더링을 잠시 멈춤 (에러 방지)
@@ -119,6 +91,7 @@ function App() {
         />
         <Route path="/games/:roomId" element={<GamePage />} />
         <Route path="/user-inquiry" element={<UserInquiry />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
   );
