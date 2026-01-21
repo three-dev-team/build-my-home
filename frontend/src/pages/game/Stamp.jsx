@@ -19,12 +19,31 @@ const Stamp = ({
 
   const { timeLeft, isUrgent, hasTimeOutPanel } = useGameTimer(timeoutSeconds);
 
+  // 중복 체크용 타이머 Ref
+  const fallbackTimerRef = React.useRef(null);
+
   // props로 들어오는 실시간 스탬프 개수 반영
   useEffect(() => {
+    // 1. 정상 획득: 개수가 늘어났을 때 연출 후 퇴장
     if (userStampsCount > displayStamps) {
+      // 개수가 늘어났으므로 중복 체크 타이머 취소
+      if (fallbackTimerRef.current) {
+        clearTimeout(fallbackTimerRef.current);
+        fallbackTimerRef.current = null;
+      }
       handleStampAction(userStampsCount);
     }
-  }, [userStampsCount]);
+    // 2. 이미 만렙(4개): 진입하자마자 잠시 안내 후 자동 퇴장
+    else if (userStampsCount >= 4 && isMyTurn && !isExiting) {
+      console.log("이미 모든 스탬프 획득함. 3초 후 자동 퇴장");
+      const timer = setTimeout(() => {
+        triggerExit();
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+    // 3. 중복/변화 없음 (버그 방지용): 액션 버튼 눌렀는데 개수 안 늘어나면
+    // 이 부분은 handleButtonClick에서 처리하거나, 사용자가 수동으로 나가야 함을 인지시켜야 함.
+  }, [userStampsCount, isMyTurn]);
 
   const stampConfig = [
     {
@@ -86,6 +105,20 @@ const Stamp = ({
     if (onAction) {
       onAction("STAMP_ACQUIRE", {});
     }
+
+    // [수정] 버튼을 눌렀는데도 스탬프 개수가 안 늘어나면 (중복/오류 등)
+    // 1.5초 뒤에 "이미 획득함" 메시지 띄우고 자동 퇴장
+    if (fallbackTimerRef.current) clearTimeout(fallbackTimerRef.current);
+
+    fallbackTimerRef.current = setTimeout(() => {
+      // 1.5초가 지나도 이 코드가 취소되지 않았다면 = 개수 변화가 없었다는 뜻
+      if (userStampsCount < 4) {
+        setRewardMsg("🤔 이미 획득한 스탬프라구리!");
+        setTimeout(() => {
+          if (onExit) onExit();
+        }, 2000);
+      }
+    }, 1500);
   };
 
   // 나가기 트리거 함수 (애니메이션 후 실제 종료)

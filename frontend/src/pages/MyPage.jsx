@@ -1,6 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import {
+  getMemberInfo,
+  updateNickname,
+  withdraw,
+  unlinkSocialAccount,
+} from "../api/memberApi";
 
 // --- 소셜 아이콘 컴포넌트 ---
 const GoogleIcon = ({ width = "56", height = "56" }) => (
@@ -103,7 +108,6 @@ const NaverIcon = ({ width = "56", height = "56" }) => (
 
 export default function MyPage() {
   const navigate = useNavigate();
-  const API_BASE_URL = "/api/member";
   const nicknameInputRef = useRef(null);
 
   const [activeTab, setActiveTab] = useState("account");
@@ -139,10 +143,9 @@ export default function MyPage() {
     const fetchData = async () => {
       const token = sessionStorage.getItem("token");
       if (!token) return navigate("/");
+
       try {
-        const res = await axios.get(`${API_BASE_URL}/me`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await getMemberInfo();
         console.log("FETCHED USER DATA:", res.data);
         setUserData(res.data);
         setEditNickname(res.data.nickname);
@@ -151,7 +154,7 @@ export default function MyPage() {
       } catch (e) {
         console.error(e);
         setIsLoading(false);
-        if (e.response?.status === 401) navigate("/");
+        // 401 처리는 interceptor가 하므로 여기서는 별도 처리 안 함
       }
     };
     fetchData();
@@ -178,10 +181,7 @@ export default function MyPage() {
   // 회원 탈퇴 처리
   const handleWithdraw = async () => {
     try {
-      const token = sessionStorage.getItem("token");
-      await axios.delete(`${API_BASE_URL}/withdraw`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await withdraw();
       alert("그동안 마이홈과 함께해주셔서 감사합니다. 🕊️");
       sessionStorage.clear();
       navigate("/");
@@ -221,10 +221,7 @@ export default function MyPage() {
 
   const confirmUnlink = async () => {
     try {
-      const token = sessionStorage.getItem("token");
-      await axios.delete(`${API_BASE_URL}/social/${unlinkProvider}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      await unlinkSocialAccount(unlinkProvider);
       alert("연동이 해제되었습니다.");
       window.location.reload();
     } catch (e) {
@@ -243,12 +240,7 @@ export default function MyPage() {
   // --- 닉네임 변경 성공 시 로그아웃 처리 ---
   const handleSaveNickname = async () => {
     try {
-      const token = sessionStorage.getItem("token");
-      await axios.put(
-        `${API_BASE_URL}/nickname`,
-        { nickname: editNickname },
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
+      await updateNickname({ nickname: editNickname });
 
       // 1. 사용자에게 알림
       alert(
@@ -281,6 +273,12 @@ export default function MyPage() {
   const closeWithdrawModal = () => {
     setIsWithdrawModalOpen(false);
     setIsWithdrawConfirmStep(false);
+  };
+
+  const handleInquirySubmit = () => {
+    alert("문의가 접수되었습니다. (기능 구현 예정)");
+    setInquiryTitle("");
+    setInquiryContent("");
   };
 
   if (isLoading)

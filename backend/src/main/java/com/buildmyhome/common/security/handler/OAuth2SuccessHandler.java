@@ -24,6 +24,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
     private final JwtTokenProvider tokenProvider;
     private final MemberRepository memberRepository;
+    private final com.buildmyhome.common.jwt.UserSessionStore userSessionStore;
     
     @Value("${app.frontBaseUrl}")
     private String frontBaseUrl;
@@ -73,6 +74,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
                 
                 // 기존 토큰 재발급 (연동 후 유지)
                 String token = tokenProvider.createToken(member.getEmail(), member.getRole().name(), member.getId());
+                userSessionStore.registerToken(member.getId(), token);
 
                 // 마이페이지로 이동
                 String targetUrl = UriComponentsBuilder.fromUriString(frontBaseUrl + "/mypage")
@@ -125,6 +127,7 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
 
         // 3. JWT 토큰 생성
         String token = tokenProvider.createToken(member.getEmail(), member.getRole().name(), member.getId());
+        userSessionStore.registerToken(member.getId(), token);
 
         // 4. 프론트엔드로 리다이렉트할 URL 생성
         String nickname = member.getNickname();

@@ -27,6 +27,7 @@ public class MemberServiceImpl implements MemberService {
     private final PasswordEncoder passwordEncoder;
     private final VerificationStorage verificationStorage;
     private final JavaMailSender mailSender;
+    private final com.buildmyhome.common.jwt.UserSessionStore userSessionStore;
 
     @Override
     @Transactional
@@ -54,6 +55,7 @@ public class MemberServiceImpl implements MemberService {
         }
 
         String token = jwtTokenProvider.createToken(member.getEmail(), "USER", member.getId());
+        userSessionStore.registerToken(member.getId(), token);
 
         return MemberResponse.builder()
                 .id(member.getId())
