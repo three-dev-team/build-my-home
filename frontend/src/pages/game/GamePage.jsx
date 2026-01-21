@@ -369,6 +369,7 @@ const GamePage = () => {
             timeoutSeconds={gameState.timeoutSeconds || 0}
             onAction={(type, payload) => handleAction(type, payload)}
             onExit={handleEventComplete}
+            player={currentPlayer}
           />
         )}
         {/* ------------------------------------- 개별 이벤트 추가 ------------------------------------- */}
