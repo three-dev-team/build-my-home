@@ -310,10 +310,10 @@ const GamePage = () => {
                 {gameState.status === "WAITING_SHOP_ITEM" && (
                     <ShopPage
                         gameState={gameState}
-                        stompClient={stompClient}
                         myId={myId}
-                        roomId={roomId}
                         shopType="ITEM_SHOP"
+                        handleAction={handleAction}
+                        onExit={handleEventComplete}
                     />
                 )}
 
@@ -321,10 +321,10 @@ const GamePage = () => {
                 {gameState.status === "WAITING_SHOP_RESOURCE" && (
                     <ShopPage
                         gameState={gameState}
-                        stompClient={stompClient}
                         myId={myId}
-                        roomId={roomId}
                         shopType="HARVEST_SHOP"
+                        handleAction={handleAction}
+                        onExit={handleEventComplete}
                     />
                 )}
 
