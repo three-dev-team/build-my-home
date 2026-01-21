@@ -353,6 +353,7 @@ const GamePage = () => {
                 {gameState.status === "WAITING_KK" && (
                     <KK
                         isMyTurn={isMyTurn}
+                        player={currentPlayer}
                         currentPlayerName={currentPlayer?.nickname}
                         userBell={currentPlayer?.bell || 0}
                         timeoutSeconds={gameState.timeoutSeconds || 0}

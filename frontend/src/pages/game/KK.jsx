@@ -5,13 +5,23 @@ import {useGameTimer} from "../../hooks/useGameTimer.js";
 
 const KK = ({
                 isMyTurn = false,
+                player,
                 currentPlayerName = "익명의 주민",
                 userBell = 0,
                 timeoutSeconds,
                 onAction,
                 onExit,
             }) => {
-    const [mode, setMode] = useState("select");  // "select" | "loan" | "playing"
+    const MODE = {
+        SELECT: 0,
+        LOAN: 1,
+        PLAYING: 2,
+    };
+    const step = player?.uiStep || 0;
+    const setStep = (newStep) => {
+        if (!isMyTurn) return;
+        onAction("SET_STEP", {uiStep: newStep});
+    };
     const [selectedSong, setSelectedSong] = useState(null);
     const [pendingSong, setPendingSong] = useState(null);
     const audioRef = useRef(null);
@@ -32,7 +42,7 @@ const KK = ({
     };
 
     const {timeLeft, isUrgent, hasTimeOutPanel} = useGameTimer(
-        mode === "select" || mode === "loan" ? timeoutSeconds : 0
+        step === MODE.SELECT || step === MODE.LOAN ? timeoutSeconds : 0
     );
 
     // 노래 선택 클릭
@@ -42,7 +52,7 @@ const KK = ({
         if (userBell < ENTRY_FEE) {
             // 벨 부족 → 대출 확인 화면으로
             setPendingSong(song);
-            setMode("loan");
+            setStep(MODE.LOAN);
         } else {
             // 벨 충분 → 바로 재생
             confirmSelectSong(song);
@@ -52,7 +62,6 @@ const KK = ({
     // 대출 확인 후 진행
     const confirmSelectSong = (song) => {
         setSelectedSong(song);
-        setMode("playing");
         onAction("KK_ACTION", {songId: song.id});
     };
 
@@ -73,7 +82,7 @@ const KK = ({
             animate={{opacity: 1}}
             className="fixed inset-0 w-screen h-screen flex items-end justify-center z-[100] overflow-hidden"
             style={{
-                backgroundImage: mode === "playing" && currentMood
+                backgroundImage: step === MODE.PLAYING && currentMood
                     ? `url(${currentMood.image})`
                     : "url('/images/kk-select-background.jpeg')",
                 backgroundSize: "cover",
@@ -81,7 +90,7 @@ const KK = ({
             }}
         >
             {/* 타이머 - 상단 중앙 */}
-            {hasTimeOutPanel && (mode === "select" || mode === "loan") && (
+            {hasTimeOutPanel && (step === MODE.SELECT || step === MODE.LOAN) && (
                 <div className="absolute top-8 left-1/2 -translate-x-1/2 bg-white/80 px-6 py-2 rounded-full">
                 <span className={`text-3xl font-bold ${isUrgent ? "text-red-500" : "text-gray-800"}`}>
                     {timeLeft}s
@@ -90,7 +99,7 @@ const KK = ({
             )}
 
             {/* 노래 선택 모드 */}
-            {mode === "select" && (
+            {step === MODE.SELECT && (
                 <div
                     className="relative w-full max-w-[1400px] aspect-[2.5/1] transform scale-[1.3] origin-bottom mb-[-120px]"
                     style={{
@@ -133,7 +142,7 @@ const KK = ({
             )}
 
             {/* 대출 확인 모드 */}
-            {mode === "loan" && (
+            {step === MODE.LOAN && (
                 <div
                     className="relative w-full max-w-[1400px] aspect-[2.5/1] transform scale-[1.3] origin-bottom mb-[-120px]"
                     style={{
@@ -158,12 +167,14 @@ const KK = ({
                         <div className="flex flex-col gap-2">
                             <button
                                 onClick={() => confirmSelectSong(pendingSong)}
+                                disabled={!isMyTurn}
                                 className="px-6 py-2 rounded-full text-lg font-bold bg-[#FFF8DC] hover:bg-[#FFE4B5] border-2 border-[#DEB887]"
                             >
                                 좋아! 알았어!
                             </button>
                             <button
                                 onClick={() => confirmSelectSong(pendingSong)}
+                                disabled={!isMyTurn}
                                 className="px-6 py-2 rounded-full text-lg font-bold bg-[#FFF8DC] hover:bg-[#FFE4B5] border-2 border-[#DEB887]"
                             >
                                 어쩔수 없지...
@@ -174,7 +185,7 @@ const KK = ({
             )}
 
             {/* 재생 모드 */}
-            {mode === "playing" && selectedSong && (
+            {step === MODE.PLAYING && selectedSong && (
                 <div className="relative w-full h-full flex flex-col items-center justify-center">
                     <div className="bg-black/50 px-8 py-4 rounded-full text-white text-3xl font-bold">
                         🎵 {selectedSong.title}

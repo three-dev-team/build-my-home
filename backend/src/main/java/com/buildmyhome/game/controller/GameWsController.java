@@ -224,7 +224,7 @@ public class GameWsController {
             GamePlayerState player = gameState.getPlayers().get(memberId);
             if (player == null) return;
 
-            // 플레이어가 도착한 칸에 맞는 상태로 전환 (예: KK 칸이면 WAITING_KK)git
+            // 플레이어가 도착한 칸에 맞는 상태로 전환 (예: KK 칸이면 WAITING_KK)
             GameStatus nextStatus = BoardData.getNextStatus(player.getPosition());
             gameState.setStatus(nextStatus);
 
@@ -306,8 +306,8 @@ public class GameWsController {
                         shopService.sellHarvest(roomId, memberId, message.getHarvestType(), message.getQuantity());
                         break;
                     case "KK_ACTION":
-                        player.setUiStep(0);
                         kkService.payEntryFee(player);
+                        player.setUiStep(2);
                         response.setType("KK_FEE_PAID");
                         break;
                     case "BUILD_HOUSE":
@@ -353,13 +353,14 @@ public class GameWsController {
         Long roomId = message.getRoomId();
         Long memberId = Long.parseLong(principal.getName());
         GameState gameState = gameStateService.getGame(roomId);
-
         if (gameState == null) return;
+        GamePlayerState player = gameState.getPlayers().get(memberId);
 
         synchronized (gameState) {
             if (!memberId.equals(gameState.getCurrentPlayerId())) {
                 return;
             }
+            player.setUiStep(0);
 
             // TODO: 최대 라운드 도달 시 게임 종료 처리  - Tiffany
             gameState.nextTurn();
