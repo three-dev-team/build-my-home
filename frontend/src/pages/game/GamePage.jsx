@@ -20,7 +20,6 @@ import ShopPage from "./ShopPage.jsx";
 import TurnCounter from "./TurnCounter.jsx";
 import House from "./House.jsx";
 import Fishing from "./Fishing.jsx";
-import FixedPlayerButtons from "./FixedPlayerButtons.jsx";
 
 const GamePage = () => {
     const {roomId} = useParams();
@@ -169,10 +168,12 @@ const GamePage = () => {
     };
 
     // 사용자 액션 패널 닫기 핸들러 (WAITING_PLAYER_ACTION)
-    const handleCloseAction = (type) => {
+    const handleCloseAction = () => {
+        if (!stompClient || !isMyTurn) return; // 내 턴 확인 추가
+
         stompClient.publish({
             destination: "/app/games/action",
-            body: JSON.stringify({roomId, type}),
+            body: JSON.stringify({roomId, type: "CLOSE_ACTION"}),
         });
     };
 
@@ -293,6 +294,7 @@ const GamePage = () => {
                         timeoutSeconds={gameState.timeoutSeconds || 0}
                         onExit={handleEventComplete}
                         onAction={handleAction}
+                        isBankTile={true}
                     />
                 )}
 
@@ -408,11 +410,11 @@ const GamePage = () => {
                         player={currentPlayer}
                         isMyTurn={isMyTurn}
                         onAction={handleAction}
-                        onClose={() => handleCloseAction()}
+                        onClose={handleCloseAction}
                     />
                 )}
 
-                {/* ATM  */}
+                {/* ATM 컴포넌트 */}
                 {gameState.status === "WAITING_ATM" && (
                     <Loan
                         isMyTurn={isMyTurn}
@@ -420,7 +422,7 @@ const GamePage = () => {
                         userBell={currentPlayer?.bell || 0}
                         userLoan={currentPlayer?.loan || 0}
                         timeoutSeconds={60} // ATM은 넉넉하게
-                        onExit={handleEventComplete}
+                        onClose={handleCloseAction}
                         onAction={handleAction}
                         isBankTile={false}
                     />
