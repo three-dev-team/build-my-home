@@ -10,6 +10,8 @@ import com.buildmyhome.game.service.GameStateService;
 import com.buildmyhome.room.dto.RoomPlayerState;
 import com.buildmyhome.room.dto.RoomState;
 import com.buildmyhome.room.service.RoomStateService;
+import com.buildmyhome.shop.dto.ShopType;
+import com.buildmyhome.shop.service.ShopService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -33,6 +35,7 @@ public class GameWsController {
     private final SimpMessagingTemplate simpMessagingTemplate;
     private final RoomStateService roomStateService;
     private final GameStateService gameStateService;
+    private final ShopService shopService;
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     // 서버메모리 -> 프론트로 전달하는 공통 응답 DTO 생성하는 메서드
@@ -211,9 +214,17 @@ public class GameWsController {
             GamePlayerState player = gameState.getPlayers().get(memberId);
             if (player == null) return;
 
-            // 플레이어가 도착한 칸에 맞는 상태로 전환 (예: KK 칸이면 WAITING_KK)
+            // 플레이어가 도착한 칸에 맞는 상태로 전환 (예: KK 칸이면 WAITING_KK)git
             GameStatus nextStatus = BoardData.getNextStatus(player.getPosition());
             gameState.setStatus(nextStatus);
+
+            if (nextStatus == GameStatus.WAITING_SHOP_ITEM) {
+                shopService.startShopSession(roomId, memberId, ShopType.ITEM_SHOP);
+                System.out.println("🏪 아이템 상점 세션 생성: memberId=" + memberId);
+            } else if (nextStatus == GameStatus.WAITING_SHOP_RESOURCE) {
+                shopService.startShopSession(roomId, memberId, ShopType.HARVEST_SHOP);
+                System.out.println("🏪 재화 상점 세션 생성: memberId=" + memberId);
+            }
 
             // 타임아웃이 설정된 상태라면 스케줄러로 타임아웃 처리 등록
             if (nextStatus.isAutoProceed()) {
@@ -261,8 +272,18 @@ public class GameWsController {
                 case "STAMP_ACTION":
                     // 스탬프 획득 로직 처리
                     break;
-                case "BUY_ITEM":
+                case "SHOP_BUY_ITEM":
                     // 아이템 구매 로직 처리
+                    shopService.buyItem(roomId, memberId, message.getItemType());
+                    break;
+                case "SHOP_BUY_RESOURCE":
+                    shopService.buyResource(roomId, memberId, message.getResourceType(), message.getQuantity());
+                    break;
+                case "SHOP_SELL_RESOURCE":
+                    shopService.sellResource(roomId, memberId, message.getResourceType(), message.getQuantity());
+                    break;
+                case "SHOP_SELL_HARVEST":
+                    shopService.sellHarvest(roomId, memberId, message.getHarvestType(), message.getQuantity());
                     break;
                 case "KK_ACTION":
                     int fee = KK_ENTRY_FEE;
