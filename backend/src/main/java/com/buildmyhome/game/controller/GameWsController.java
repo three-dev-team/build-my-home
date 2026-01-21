@@ -18,6 +18,7 @@ import com.buildmyhome.room.dto.RoomState;
 import com.buildmyhome.room.service.RoomStateService;
 import com.buildmyhome.shop.dto.ShopType;
 import com.buildmyhome.shop.service.ShopService;
+import com.buildmyhome.stamp.service.StampService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -290,9 +291,18 @@ public class GameWsController {
                         stampService.acquireStamp(roomId, memberId, message.getStampType());
                         response.setType("STAMP_ACQUIRED");
                         break;
-                    case "BUY_ITEM":
-
+                    case "SHOP_BUY_ITEM":
                         // 아이템 구매 로직 처리
+                        shopService.buyItem(roomId, memberId, message.getItemType());
+                        break;
+                    case "SHOP_BUY_RESOURCE":
+                        shopService.buyResource(roomId, memberId, message.getResourceType(), message.getQuantity());
+                        break;
+                    case "SHOP_SELL_RESOURCE":
+                        shopService.sellResource(roomId, memberId, message.getResourceType(), message.getQuantity());
+                        break;
+                    case "SHOP_SELL_HARVEST":
+                        shopService.sellHarvest(roomId, memberId, message.getHarvestType(), message.getQuantity());
                         break;
                     case "KK_ACTION":
                         kkService.payEntryFee(player);
