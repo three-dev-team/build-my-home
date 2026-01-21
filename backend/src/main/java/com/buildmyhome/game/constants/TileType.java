@@ -1,9 +1,13 @@
 package com.buildmyhome.game.constants;
 
 import com.buildmyhome.game.dto.GameStatus;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 // 타입 → nextStatus 매핑 → 로직용
 
+@Getter
+@RequiredArgsConstructor
 public enum TileType {
     START(GameStatus.WAITING_PLAYER_ACTION),
     RESOURCE(GameStatus.WAITING_RESOURCES),
@@ -19,12 +23,4 @@ public enum TileType {
     KK(GameStatus.WAITING_KK);
 
     private final GameStatus nextStatus;
-
-    TileType(GameStatus nextStatus) {
-        this.nextStatus = nextStatus;
-    }
-
-    public GameStatus getNextStatus() {
-        return nextStatus;
-    }
 }

@@ -1,6 +1,6 @@
 import './css/PlayerActionPanel.css';
 
-const PlayerActionPanel = ({ onSelectDice, onSelectItem, onSelectMap, items, isMyTurn }) => {
+const PlayerActionPanel = ({ onSelectDice, onSelectItem, onSelectMap, onBuildHouse, items, isMyTurn }) => {
     if (!isMyTurn) return null;
 
     return (
@@ -20,6 +20,10 @@ const PlayerActionPanel = ({ onSelectDice, onSelectItem, onSelectMap, items, isM
             <button className="action-btn map" onClick={onSelectMap} disabled={!isMyTurn}>
                 <span className="icon">🗺️</span>
                 <span className="label">맵</span>
+            </button>
+            <button className="action-btn map" onClick={onBuildHouse} disabled={!isMyTurn}>
+                <span className="icon">🏠️</span>
+                <span className="label">마을회관</span>
             </button>
         </div>
     );

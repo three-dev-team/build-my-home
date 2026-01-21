@@ -17,9 +17,7 @@ import PlayerActionPanel from "./PlayerActionPanel.jsx";
 import RollDicePage from "./RollDicePage.jsx";
 import KK from "./KK.jsx";
 import ShopPage from "./ShopPage.jsx";
-import FixedPlayerButtons from "./FixedPlayerButtons.jsx";
 import TurnCounter from "./TurnCounter.jsx";
-import Fishing from "./Fishing.jsx";
 import House from "./House.jsx";
 
 const GamePage = () => {
@@ -46,10 +44,6 @@ const GamePage = () => {
 
     // 공통 UI(채팅, 메뉴버튼 등)를 보여줄지 말지 결정하는 변수
     const showCommonUI = gameState && !["DETERMINING_ORDER", "FINISHED"].includes(gameState.status);
-
-    // 나의 로직 (집짓기, atm 대출 등)
-    const myPlayer = gameState?.players?.find((p) => p.memberId === myId) || null;
-    const [showHousePage, setShowHousePage] = useState(false);
 
     // --------------------------------- useEffect --------------------------------- //
     useEffect(() => {
@@ -359,9 +353,17 @@ const GamePage = () => {
                         }}
                         onSelectItem={() => console.log("아이템 선택")}
                         onSelectMap={() => console.log("맵 선택")}
+                        onATM={() => console.log("ATM 선택")}
+                        onBuildHouse={() => {
+                            stompClient.publish({
+                                destination: "/app/games/action",
+                                body: JSON.stringify({roomId, type: "BUILD_HOUSE"}),
+                            });
+                        }}
                     />
                 )}
 
+                {/* -------------------------------- 사용자 액션 패널 관련 컴포넌트 -------------------------------- */}
                 {/* 주사위 굴리는 페이지 */}
                 {gameState.status === "WAITING_DICE" && (
                     <RollDicePage
@@ -376,28 +378,22 @@ const GamePage = () => {
                     />
                 )}
 
-                {/* 메인 보드 */}
-                {["WAITING_PLAYER_ACTION", "MOVING"].includes(gameState.status) && (
-                    <>
-                        <MainBoardPage players={gameState.players}/>
-                        <FixedPlayerButtons
-                            isMyTurn={isMyTurn}
-                            onATMClick={() => console.log("ATM 클릭")}
-                            onBuildClick={() => setShowHousePage(true)}
-                        />
-                    </>
-                )}
-
-                {/* ------------------------------------- 상시 버튼 페이지 ------------------------------------- */}
-                {/* 마을회관(집짓기) 페이지 */}
-                {showHousePage && (
+                {gameState.status === "WAITING_HOUSE" && (
                     <House
-                        player={myPlayer}
-                        onClose={() => setShowHousePage(false)}
-                        onUpgrade={() => handleAction("UPGRADE_HOUSE", {})}
+                        player={currentPlayer}
+                        isMyTurn={isMyTurn}
+                        onAction={handleAction}
+                        onClose={() => handleEventComplete()}
                     />
                 )}
-                {/* ------------------------------------- 상시 버튼 페이지 ------------------------------------- */}
+
+
+                {/* -------------------------------- 사용자 액션 패널 관련 컴포넌트 -------------------------------- */}
+
+                {/* 메인 보드 */}
+                {["WAITING_PLAYER_ACTION", "MOVING"].includes(gameState.status) && (
+                    <MainBoardPage players={gameState.players}/>
+                )}
 
             </main>
 
