@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useGameTimer } from "../../hooks/useGameTimer.js";
 import "./css/ShopPage.css";
 
 const ShopPage = ({ gameState, myId, shopType, handleAction, onExit }) => {
@@ -7,10 +8,13 @@ const ShopPage = ({ gameState, myId, shopType, handleAction, onExit }) => {
   const [quantity, setQuantity] = useState(1);
   const [errorMsg, setErrorMsg] = useState("");
 
+  const timeoutSeconds = gameState.timeoutSeconds
+  const { timeLeft, isUrgent } = useGameTimer(timeoutSeconds);
+
   const myPlayer = gameState.players.find((p) => p.memberId === myId);
   const shopSession = gameState.shopSession;
 
-// 상점 타입 결정 (프롭스로 받은 것 우선, 없으면 세션 정보)
+  // 상점 타입 결정 (프롭스로 받은 것 우선, 없으면 세션 정보)
   const currentShopType = shopType || shopSession?.shopType;
   const isItemShop = currentShopType === "ITEM_SHOP";
 
@@ -118,6 +122,23 @@ const ShopPage = ({ gameState, myId, shopType, handleAction, onExit }) => {
     setQuantity(1);
   };
 
+  // handleConfirm 위에 총 금액 계산 함수 추가
+  const calculateTotalPrice = () => {
+    if (!selectedItem) return 0;
+
+    if (activeTab === "buy") {
+      const unitPrice = selectedItem.buyPrice || selectedItem.price || 0;
+      return unitPrice * quantity;
+    }
+    else {
+      const unitPrice = selectedItem.sellPrice || selectedItem.price || 0;
+      return unitPrice * quantity;
+    }
+  };
+
+  const totalPrice = calculateTotalPrice();
+  const canAfford = (currentShopUser?.bell || 0) >= totalPrice; // 구매 가능 여부 체크
+
   const handleExitClick = () => {
     if (!isMyTurn) return;
     onExit();  // handleEventComplete 호출
@@ -147,6 +168,17 @@ const ShopPage = ({ gameState, myId, shopType, handleAction, onExit }) => {
 
         <div className="shop-header">
           <h2>{isItemShop ? "🎁 아이템 상점" : "🏪 재화 상점"}</h2>
+          <div className="header-center-group">
+            <div className={`shop-header-timer ${isUrgent ? "urgent" : ""}`}>
+              <span className="timer-label">TIME LEFT</span>
+              <span className="timer-value">{timeLeft}s</span>
+            </div>
+
+            <div className="current-user-badge">
+              <span className="user-icon">🎮</span>
+              <span className="user-name"> {currentShopUser?.nickname || "플레이어"}님이 쇼핑 중 </span>
+            </div>
+          </div>
           <div className="bell-display">💰 {currentShopUser?.bell ?? 0} Bell</div>
         </div>
 
@@ -199,6 +231,14 @@ const ShopPage = ({ gameState, myId, shopType, handleAction, onExit }) => {
                       <button onClick={() => setQuantity(Math.min(selectedItem.owned || 99, quantity + 1))} disabled={!isMyTurn || (activeTab === "sell" && quantity >= selectedItem.owned)}>+</button>
                     </div>
                 )}
+
+                <div className={`total-price-display ${activeTab === 'buy' && !canAfford ? 'insufficient' : ''}`}>
+                  <span className="label">{activeTab === 'buy' ? '결제 예정' : '예상 수입'}</span>
+                  <span className="amount">🔔 {totalPrice.toLocaleString()} Bell</span>
+                  {activeTab === 'buy' && !canAfford && (
+                      <div className="shortage-msg">잔액이 부족합니다!</div>
+                  )}
+                </div>
 
                 {activeTab === "buy" && isItemShop && shopSession?.hasItemPurchased && (
                     <div className="warning-text">⚠️ 이미 아이템을 구매했습니다</div>

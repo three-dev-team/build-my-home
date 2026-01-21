@@ -322,7 +322,7 @@ const GamePage = () => {
           />
         )}
 
-        {/* 아이템 상점 이벤트 (WAITING_SHOP_ITEM) - Develop 버전 적용 */}
+        {/* 아이템 상점 이벤트 (WAITING_SHOP_ITEM) */}
         {gameState.status === "WAITING_SHOP_ITEM" && (
           <ShopPage
             gameState={gameState}
@@ -330,10 +330,11 @@ const GamePage = () => {
             shopType="ITEM_SHOP"
             handleAction={handleAction}
             onExit={handleEventComplete}
+            timeoutSeconds={gameState.timeoutSeconds || 0}
           />
         )}
 
-        {/* 재화 상점 이벤트 (WAITING_SHOP_RESOURCE) - Develop 버전 적용 */}
+        {/* 재화 상점 이벤트 (WAITING_SHOP_RESOURCE) */}
         {gameState.status === "WAITING_SHOP_RESOURCE" && (
           <ShopPage
             gameState={gameState}
@@ -341,6 +342,7 @@ const GamePage = () => {
             shopType="HARVEST_SHOP"
             handleAction={handleAction}
             onExit={handleEventComplete}
+            timeoutSeconds={gameState.timeoutSeconds || 0}
           />
         )}
 
