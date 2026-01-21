@@ -10,8 +10,9 @@
 
 .bmhFishingStage {
     position: relative;
-    width: min(980px, 92vw);
-    aspect-ratio: 4 / 3;
+    aspect-ratio: 1024 / 572;
+    width: min(1100px, 92vw, calc(86vh * (1024 / 572)));
+
     border-radius: 18px;
     overflow: hidden;
     box-shadow: 0 18px 60px rgba(0, 0, 0, 0.45);
@@ -23,7 +24,8 @@
     inset: 0;
     background-size: cover;
     background-position: center;
-    transform: scale(1.01);
+    background-repeat: no-repeat;
+    transform: none;
 }
 
 .bmhFishingTimerWrap {
@@ -263,7 +265,6 @@
     height: 100%;
     width: 0%;
     border-radius: 8px;
-    /* rAF 보간으로 이미 부드럽게 움직이므로 transition 제거(끊김/지연감 방지) */
     transition: none;
 }
 
