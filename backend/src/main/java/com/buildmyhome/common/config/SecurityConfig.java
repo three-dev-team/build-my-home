@@ -29,6 +29,7 @@ import org.springframework.beans.factory.annotation.Value;
 public class SecurityConfig {
 
     private final JwtTokenProvider jwtTokenProvider;
+    private final com.buildmyhome.common.jwt.UserSessionStore userSessionStore;
 
     private final CustomOAuth2UserService customOAuth2UserService;
     private final OAuth2SuccessHandler oAuth2SuccessHandler;
@@ -44,7 +45,7 @@ public class SecurityConfig {
     // JWT 필터는 여기서 생성
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter() {
-        return new JwtAuthenticationFilter(jwtTokenProvider);
+        return new JwtAuthenticationFilter(jwtTokenProvider, userSessionStore);
     }
 
      // JwtAuthenticationFilter가 "서블릿 필터로 자동 등록"되는 걸 막기
@@ -63,8 +64,13 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
 
                 // 세션을 사용하지 않으므로 STATELESS 설정
+                // 세션을 사용하지 않으므로 STATELESS 설정
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+                // [CORS Fix] 401 에러 시 /login으로 리다이렉트되지 않고 그냥 401 반환하도록 설정
+                .exceptionHandling(e -> 
+                        e.authenticationEntryPoint(new org.springframework.security.web.authentication.HttpStatusEntryPoint(org.springframework.http.HttpStatus.UNAUTHORIZED)))
 
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
