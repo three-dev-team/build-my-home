@@ -10,11 +10,14 @@ import com.buildmyhome.game.dto.GamePlayerState;
 import com.buildmyhome.game.dto.GameState;
 import com.buildmyhome.game.dto.GameStatus;
 import com.buildmyhome.game.service.GameStateService;
+import com.buildmyhome.house.service.HouseService;
 import com.buildmyhome.kk.KKService;
 import com.buildmyhome.loan.service.LoanService;
 import com.buildmyhome.room.dto.RoomPlayerState;
 import com.buildmyhome.room.dto.RoomState;
 import com.buildmyhome.room.service.RoomStateService;
+import com.buildmyhome.shop.dto.ShopType;
+import com.buildmyhome.shop.service.ShopService;
 import com.buildmyhome.stamp.service.StampService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -37,9 +40,11 @@ public class GameWsController {
     private final SimpMessagingTemplate simpMessagingTemplate;
     private final RoomStateService roomStateService;
     private final GameStateService gameStateService;
+    private final ShopService shopService;
     private final LoanService loanService;
     private final StampService stampService;
     private final KKService kkService;
+    private final HouseService houseService;
     private final FishingService fishingService;
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
@@ -47,8 +52,8 @@ public class GameWsController {
     private GameMessage defaultGameResponse(String type, GameState gameState) {
         GameMessage response = new GameMessage();
         response.setType(type);
-        response.setStatus(gameState.getStatus().name());
         response.setCurrentPlayerId(gameState.getCurrentPlayerId());
+        response.setStatus(gameState.getStatus().name());
         response.setPlayers(new ArrayList<>(gameState.getPlayers().values()));
         response.setTurnOrder(gameState.getTurnOrder());
         response.setCurrentRound(gameState.getCurrentRound());
@@ -219,9 +224,17 @@ public class GameWsController {
             GamePlayerState player = gameState.getPlayers().get(memberId);
             if (player == null) return;
 
-            // 플레이어가 도착한 칸에 맞는 상태로 전환 (예: KK 칸이면 WAITING_KK)
+            // 플레이어가 도착한 칸에 맞는 상태로 전환 (예: KK 칸이면 WAITING_KK)git
             GameStatus nextStatus = BoardData.getNextStatus(player.getPosition());
             gameState.setStatus(nextStatus);
+
+            if (nextStatus == GameStatus.WAITING_SHOP_ITEM) {
+                shopService.startShopSession(roomId, memberId, ShopType.ITEM_SHOP);
+                System.out.println("🏪 아이템 상점 세션 생성: memberId=" + memberId);
+            } else if (nextStatus == GameStatus.WAITING_SHOP_RESOURCE) {
+                shopService.startShopSession(roomId, memberId, ShopType.HARVEST_SHOP);
+                System.out.println("🏪 재화 상점 세션 생성: memberId=" + memberId);
+            }
 
             // 타임아웃이 설정된 상태라면 스케줄러로 타임아웃 처리 등록
             if (nextStatus.isAutoProceed()) {
@@ -278,16 +291,35 @@ public class GameWsController {
                         stampService.acquireStamp(roomId, memberId, message.getStampType());
                         response.setType("STAMP_ACQUIRED");
                         break;
-                    case "BUY_ITEM":
+                    case "SHOP_BUY_ITEM":
                         // 아이템 구매 로직 처리
+                        shopService.buyItem(roomId, memberId, message.getItemType());
+                        break;
+                    case "SHOP_BUY_RESOURCE":
+                        shopService.buyResource(roomId, memberId, message.getResourceType(), message.getQuantity());
+                        break;
+                    case "SHOP_SELL_RESOURCE":
+                        shopService.sellResource(roomId, memberId, message.getResourceType(), message.getQuantity());
+                        break;
+                    case "SHOP_SELL_HARVEST":
+                        shopService.sellHarvest(roomId, memberId, message.getHarvestType(), message.getQuantity());
                         break;
                     case "KK_ACTION":
                         kkService.payEntryFee(player);
                         response.setType("KK_FEE_PAID");
                         break;
+                    case "BUILD_HOUSE":
+                        houseService.updateHouseInfo(player);
+                        gameState.setStatus(GameStatus.WAITING_HOUSE);
+                        response.setType("BUILD_HOUSE_START");
+                        break;
+                    case "UPGRADE_HOUSE":
+                        houseService.upgradeHouse(player);
+                        response.setType("HOUSE_UPGRADED");
+                        break;
                 }
 
-                // 3. 성공 결과 전송
+                response.setStatus(gameState.getStatus().name());
                 simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
 
             } catch (Exception e) {

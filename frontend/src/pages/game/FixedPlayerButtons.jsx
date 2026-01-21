@@ -1,31 +1,35 @@
-// FixedPlayerButtons.jsx
-const FixedPlayerButtons = ({ onATMClick, onBuildClick, isMyTurn }) => {
-    return (
-        <div className="absolute right-4 top-1/2 -translate-y-1/2 flex flex-col gap-3">
-            <button
-                onClick={onATMClick}
-                disabled={!isMyTurn}
-                className={`px-4 py-3 rounded-lg font-bold ${
-                    isMyTurn
-                        ? "bg-green-500 hover:bg-green-600 text-white"
-                        : "bg-gray-400 cursor-not-allowed"
-                }`}
-            >
-                🏧 ATM 대출
-            </button>
-            <button
-                onClick={onBuildClick}
-                disabled={!isMyTurn}
-                className={`px-4 py-3 rounded-lg font-bold ${
-                    isMyTurn
-                        ? "bg-blue-500 hover:bg-blue-600 text-white"
-                        : "bg-gray-400 cursor-not-allowed"
-                }`}
-            >
-                🏠 집짓기
-            </button>
-        </div>
-    );
+import React from "react";
+import { motion } from "framer-motion";
+
+const FixedPlayerButtons = ({ isMyTurn, onATMClick, onBuildClick }) => {
+  return (
+    <div className="fixed bottom-28 right-8 flex flex-col gap-4 z-50">
+      {/* ATM 버튼 - 내 턴에만 활성화(표시는 항상) */}
+      <motion.button
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+        onClick={onATMClick}
+        className={`w-20 h-20 rounded-full shadow-lg border-4 flex items-center justify-center text-3xl
+          ${
+            isMyTurn
+              ? "bg-[#2ecc71] border-white cursor-pointer"
+              : "bg-gray-400 border-gray-300 cursor-not-allowed grayscale"
+          }`}
+      >
+        💳
+      </motion.button>
+
+      {/* 집짓기(마을회관) 버튼 - 상시 활성화 */}
+      <motion.button
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+        onClick={onBuildClick}
+        className="w-20 h-20 bg-[#f1c40f] rounded-full shadow-lg border-4 border-white flex items-center justify-center text-3xl cursor-pointer"
+      >
+        🏠
+      </motion.button>
+    </div>
+  );
 };
 
 export default FixedPlayerButtons;

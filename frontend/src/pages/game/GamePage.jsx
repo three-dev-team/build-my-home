@@ -17,17 +17,16 @@ import PlayerActionPanel from "./PlayerActionPanel.jsx";
 import RollDicePage from "./RollDicePage.jsx";
 import KK from "./KK.jsx";
 import ShopPage from "./ShopPage.jsx";
-import FixedPlayerButtons from "./FixedPlayerButtons.jsx";
 import TurnCounter from "./TurnCounter.jsx";
-import Fishing from "./Fishing.jsx";
 import House from "./House.jsx";
+import Fishing from "./Fishing.jsx";
+import FixedPlayerButtons from "./FixedPlayerButtons.jsx";
 
 const GamePage = () => {
   const { roomId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const token = sessionStorage.getItem("token");
-  // const myId = getMyIdFromToken(); // myId -> 로그인한 유저 아이디
   const myTokenId = getMyIdFromToken();
   const [devMyId, setDevMyId] = useState(null); // [DEV] 테스트용 강제 ID
   const myId = devMyId || myTokenId; // 실전엔 토큰 ID, 테스트엔 Dev ID 사용
@@ -50,7 +49,7 @@ const GamePage = () => {
   const showCommonUI =
     gameState && !["DETERMINING_ORDER", "FINISHED"].includes(gameState.status);
 
-  // 나의 로직 (집짓기, atm 대출 등)
+  // 나의 로직 (집짓기, atm 대출 등) - Feature Branch Logic
   const myPlayer = gameState?.players?.find((p) => p.memberId === myId) || null;
   const [showHousePage, setShowHousePage] = useState(false);
   const [showAtmModal, setShowAtmModal] = useState(false);
@@ -323,25 +322,25 @@ const GamePage = () => {
           />
         )}
 
-        {/* 아이템 상점 이벤트 (WAITING_SHOP_ITEM) */}
+        {/* 아이템 상점 이벤트 (WAITING_SHOP_ITEM) - Develop 버전 적용 */}
         {gameState.status === "WAITING_SHOP_ITEM" && (
           <ShopPage
             gameState={gameState}
-            stompClient={stompClient}
             myId={myId}
-            roomId={roomId}
             shopType="ITEM_SHOP"
+            handleAction={handleAction}
+            onExit={handleEventComplete}
           />
         )}
 
-        {/* 재화 상점 이벤트 (WAITING_SHOP_RESOURCE) */}
+        {/* 재화 상점 이벤트 (WAITING_SHOP_RESOURCE) - Develop 버전 적용 */}
         {gameState.status === "WAITING_SHOP_RESOURCE" && (
           <ShopPage
             gameState={gameState}
-            stompClient={stompClient}
             myId={myId}
-            roomId={roomId}
             shopType="HARVEST_SHOP"
+            handleAction={handleAction}
+            onExit={handleEventComplete}
           />
         )}
 
@@ -357,7 +356,7 @@ const GamePage = () => {
         )}
         {/* ------------------------------------- 개별 이벤트 추가 ------------------------------------- */}
 
-        {/* 사용자 액션 패널 */}
+        {/* 사용자 액션 패널 - Develop 버전 적용 (항목 추가됨) */}
         {gameState.status === "WAITING_PLAYER_ACTION" && (
           <PlayerActionPanel
             isMyTurn={isMyTurn}
@@ -370,9 +369,17 @@ const GamePage = () => {
             }}
             onSelectItem={() => console.log("아이템 선택")}
             onSelectMap={() => console.log("맵 선택")}
+            onATM={() => console.log("ATM 선택")}
+            onBuildHouse={() => {
+              stompClient.publish({
+                destination: "/app/games/action",
+                body: JSON.stringify({ roomId, type: "BUILD_HOUSE" }),
+              });
+            }}
           />
         )}
 
+        {/* -------------------------------- 사용자 액션 패널 관련 컴포넌트 -------------------------------- */}
         {/* 주사위 굴리는 페이지 */}
         {gameState.status === "WAITING_DICE" && (
           <RollDicePage
@@ -387,7 +394,17 @@ const GamePage = () => {
           />
         )}
 
-        {/* 메인 보드 */}
+        {/* House 컴포넌트 (Develop에 추가된 WAITING_HOUSE용) */}
+        {gameState.status === "WAITING_HOUSE" && (
+          <House
+            player={currentPlayer}
+            isMyTurn={isMyTurn}
+            onAction={handleAction}
+            onClose={() => handleEventComplete()}
+          />
+        )}
+
+        {/* 메인 보드 & 상시 버튼 (HEAD 버전 유지 - FixedPlayerButtons) */}
         {["WAITING_PLAYER_ACTION", "MOVING"].includes(gameState.status) && (
           <>
             <MainBoardPage players={gameState.players} />
@@ -409,7 +426,7 @@ const GamePage = () => {
           />
         )}
 
-        {/* ATM 모달 (상시) */}
+        {/* ATM 모달 (상시) - HEAD 버전 유지 */}
         {showAtmModal && (
           <Loan
             isMyTurn={isMyTurn}
