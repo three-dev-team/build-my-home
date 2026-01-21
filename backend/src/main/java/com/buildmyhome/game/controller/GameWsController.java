@@ -1,5 +1,8 @@
 package com.buildmyhome.game.controller;
 
+import com.buildmyhome.fishing.dto.FishingActionRequest;
+import com.buildmyhome.fishing.dto.StartFishingRequest;
+import com.buildmyhome.fishing.service.FishingService;
 import com.buildmyhome.game.constants.BoardData;
 import com.buildmyhome.game.constants.GameConstants;
 import com.buildmyhome.game.dto.GameMessage;
@@ -7,6 +10,9 @@ import com.buildmyhome.game.dto.GamePlayerState;
 import com.buildmyhome.game.dto.GameState;
 import com.buildmyhome.game.dto.GameStatus;
 import com.buildmyhome.game.service.GameStateService;
+import com.buildmyhome.house.service.HouseService;
+import com.buildmyhome.kk.KKService;
+import com.buildmyhome.loan.service.LoanService;
 import com.buildmyhome.room.dto.RoomPlayerState;
 import com.buildmyhome.room.dto.RoomState;
 import com.buildmyhome.room.service.RoomStateService;
@@ -20,9 +26,7 @@ import org.springframework.stereotype.Controller;
 import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Comparator;
-
 import java.util.List;
-
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -36,14 +40,19 @@ public class GameWsController {
     private final RoomStateService roomStateService;
     private final GameStateService gameStateService;
     private final ShopService shopService;
+    private final LoanService loanService;
+    private final StampService stampService;
+    private final KKService kkService;
+    private final HouseService houseService;
+    private final FishingService fishingService;
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     // 서버메모리 -> 프론트로 전달하는 공통 응답 DTO 생성하는 메서드
     private GameMessage defaultGameResponse(String type, GameState gameState) {
         GameMessage response = new GameMessage();
         response.setType(type);
-        response.setStatus(gameState.getStatus().name());
         response.setCurrentPlayerId(gameState.getCurrentPlayerId());
+        response.setStatus(gameState.getStatus().name());
         response.setPlayers(new ArrayList<>(gameState.getPlayers().values()));
         response.setTurnOrder(gameState.getTurnOrder());
         response.setCurrentRound(gameState.getCurrentRound());
@@ -263,44 +272,52 @@ public class GameWsController {
 
             GamePlayerState player = gameState.getPlayers().get(memberId);
 
-            // 2. 타입에 따라 분기 처리
-            switch (actionType) {
-                case "LOAN_ACTION":
-                    // 대출 서비스 호출 혹은 로직 처리
-                    // 예: player.setBell(player.getBell() + message.getAmount());
-                    break;
-                case "STAMP_ACTION":
-                    // 스탬프 획득 로직 처리
-                    break;
-                case "SHOP_BUY_ITEM":
-                    // 아이템 구매 로직 처리
-                    shopService.buyItem(roomId, memberId, message.getItemType());
-                    break;
-                case "SHOP_BUY_RESOURCE":
-                    shopService.buyResource(roomId, memberId, message.getResourceType(), message.getQuantity());
-                    break;
-                case "SHOP_SELL_RESOURCE":
-                    shopService.sellResource(roomId, memberId, message.getResourceType(), message.getQuantity());
-                    break;
-                case "SHOP_SELL_HARVEST":
-                    shopService.sellHarvest(roomId, memberId, message.getHarvestType(), message.getQuantity());
-                    break;
-                case "KK_ACTION":
-                    int fee = KK_ENTRY_FEE;
-                    int userBell = player.getBell();
-                    if (userBell > fee) {
-                        player.setBell(player.getBell() - KK_ENTRY_FEE);
-                    }else{
-                        int shortage = fee - userBell;
-                        player.setBell(0);
-                        player.setLoan(player.getLoan() + shortage);
-                    }
-                    break;
-            }
+            try {
+                GameMessage response = defaultGameResponse("ACTION_PROCESSED", gameState);
 
-            // 3. 결과 전송
-            GameMessage response = defaultGameResponse("ACTION_PROCESSED", gameState);
-            simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
+                // 2. 타입에 따라 분기 처리
+                switch (actionType) {
+                    case "LOAN_BORROW":
+                        loanService.borrow(roomId, memberId, message.getAmount(), message.isBankTile());
+                        response.setType("LOAN_BORROWED");
+                        break;
+                    case "LOAN_REPAY":
+                        loanService.repay(roomId, memberId, message.getAmount());
+                        response.setType("LOAN_REPAID");
+                        break;
+                    case "STAMP_ACQUIRE":
+                        // stampType은 현재 로직상 null이어도 내부에서 count 기반으로 결정됨
+                        stampService.acquireStamp(roomId, memberId, message.getStampType());
+                        response.setType("STAMP_ACQUIRED");
+                        break;
+                    case "BUY_ITEM":
+
+                        // 아이템 구매 로직 처리
+                        break;
+                    case "KK_ACTION":
+                        kkService.payEntryFee(player);
+                        response.setType("KK_FEE_PAID");
+                        break;
+                    case "BUILD_HOUSE":
+                        houseService.updateHouseInfo(player);
+                        gameState.setStatus(GameStatus.WAITING_HOUSE);
+                        response.setType("BUILD_HOUSE_START");
+                        break;
+                    case "UPGRADE_HOUSE":
+                        houseService.upgradeHouse(player);
+                        response.setType("HOUSE_UPGRADED");
+                        break;
+                }
+
+                response.setStatus(gameState.getStatus().name());
+                simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
+
+            } catch (Exception e) {
+                // 에러 발생 시 에러 메시지 전송
+                GameMessage errorResponse = defaultGameResponse("ACTION_ERROR", gameState);
+                errorResponse.setErrorMessage(e.getMessage());
+                simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, errorResponse);
+            }
         }
     }
 
@@ -322,6 +339,42 @@ public class GameWsController {
 
             GameMessage response = defaultGameResponse("TURN_COMPLETED", gameState);
             simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
+        }
+    }
+
+    // fishing : /app/games/fishing/start
+    @MessageMapping("/games/fishing/start")
+    public void startFishing(StartFishingRequest req, Principal principal) {
+        Long actorId = parseActorIdSafely(principal);
+        if (actorId == null) return;
+        if (req == null || req.getRoomId() == null) return;
+
+        String ht = req.getHarvestType();
+        if (ht == null || ht.isBlank()) {
+            fishingService.startFishing(req.getRoomId(), actorId);
+            return;
+        }
+
+        fishingService.startFishing(req.getRoomId(), actorId, ht);
+    }
+
+    // fishing : /app/games/fishing/action
+    @MessageMapping("/games/fishing/action")
+    public void fishingAction(FishingActionRequest req, Principal principal) {
+        Long actorId = parseActorIdSafely(principal);
+        if (actorId == null) return;
+        if (req == null || req.getRoomId() == null || req.getAction() == null) return;
+
+        fishingService.handleAction(req.getRoomId(), actorId, req.getAction());
+    }
+
+    // fishing : actorId 안전 파싱
+    private Long parseActorIdSafely(Principal principal) {
+        if (principal == null || principal.getName() == null) return null;
+        try {
+            return Long.parseLong(principal.getName());
+        } catch (NumberFormatException e) {
+            return null;
         }
     }
 
@@ -361,7 +414,7 @@ public class GameWsController {
                         System.out.println(">>> ⏰ " + timeout + "초 경과: 타임아웃으로 복귀");
                     }
                 }
-            }, timeout, TimeUnit.SECONDS); // 20 대신 Enum의 값을 사용!
+            }, timeout, TimeUnit.SECONDS); 
         } else {
             System.out.println(">>> ℹ️ " + targetStatus + " 상태는 제한 시간이 없으므로 스케줄러를 실행하지 않습니다.");
         }

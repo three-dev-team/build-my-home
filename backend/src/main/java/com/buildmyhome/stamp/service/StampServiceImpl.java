@@ -4,7 +4,7 @@ import com.buildmyhome.game.dto.GamePlayerState;
 import com.buildmyhome.game.dto.GameState;
 import com.buildmyhome.game.dto.StampType;
 import com.buildmyhome.game.service.GameStateService;
-import com.buildmyhome.stamp.dto.StampMessage;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -17,10 +17,7 @@ public class StampServiceImpl implements StampService {
     private final GameStateService gameStateService;
 
     @Override
-    public void acquireStamp(StampMessage message) {
-        Long roomId = message.getRoomId();
-        Long memberId = message.getMemberId();
-
+    public void acquireStamp(Long roomId, Long memberId, String stampType) {
         GameState gameState = gameStateService.getGame(roomId);
         synchronized (gameState) {
             GamePlayerState player = gameState.getPlayers().get(memberId);
@@ -63,8 +60,8 @@ public class StampServiceImpl implements StampService {
                 collectedStamps.add(nextStamp);
                 player.setBell(player.getBell() + reward);
                 
-                // 메시지에 어떤 스탬프를 받았는지 정보 추가 (Controller에서 쓸 수 있게)
-                message.setStampType(nextStamp.name());
+                // 서비스에서는 상태만 변경하고 리턴.
+                // 필요한 경우 리턴 타입을 StampType으로 변경하여 컨트롤러에 전달할 수 있음.
             }
         }
     }

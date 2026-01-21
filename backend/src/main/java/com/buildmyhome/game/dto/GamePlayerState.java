@@ -1,6 +1,6 @@
 package com.buildmyhome.game.dto;
 
-import com.buildmyhome.game.constants.HouseLevel;
+import com.buildmyhome.house.constants.HouseLevel;
 import lombok.*;
 
 import java.util.*;
@@ -19,13 +19,18 @@ public class GamePlayerState {
     private int position = 0;                             // 현재 칸 위치
     private int bell = 10;                                // 시작 벨 10
     private int loan = 0;                                 // 대출금
-    private HouseLevel houseLevel = HouseLevel.NONE;      // 집 레벨
 
     // 재화 정보
     private Map<ResourceType, Integer> resources = new EnumMap<>(ResourceType.class);
     private Map<HarvestType, Integer> harvests = new EnumMap<>(HarvestType.class);
     private Set<StampType> collectedStamps = EnumSet.noneOf(StampType.class);
     private List<ItemType> items = new ArrayList<>();
+
+    // 집 정보
+    private HouseLevel houseLevel = HouseLevel.NONE;      // 집 레벨
+    private boolean canUpgradeHouse;
+    private HouseLevel nextHouseLevel;
+    private Map<ResourceType, Integer> requiredResourcesForNextHouse = new EnumMap<>(ResourceType.class);
 
     public GamePlayerState(Long memberId, String nickname, Long characterId) {
         this.memberId = memberId;

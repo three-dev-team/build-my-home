@@ -1,5 +1,10 @@
 package com.buildmyhome.game.dto;
 
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
+@Getter
+@RequiredArgsConstructor
 public enum ItemType {
     CUSTOM_DICE(100),      // 내맘대로 주사위
     PIPE(60),             // 토관
@@ -10,10 +15,4 @@ public enum ItemType {
     GOLD_MIRROR(120);      // 금거울
 
     private final int price;
-
-    ItemType(int price) {
-        this.price = price;
-    }
-
-    public int getPrice(){return price;}
 }

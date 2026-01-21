@@ -29,4 +29,12 @@ public class GameMessage {
     private ResourceType resourceType; // 구매/판매할 재화
     private HarvestType harvestType;  // 판매할 작물
     private int quantity;             // 수량
+    // 대출/스탬프/에러 처리를 위한 추가 필드
+    private int amount;
+    
+    @com.fasterxml.jackson.annotation.JsonProperty("isBankTile")
+    private boolean isBankTile;
+    
+    private String stampType;
+    private String errorMessage;
 }
