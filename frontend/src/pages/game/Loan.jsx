@@ -2,6 +2,22 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useGameTimer } from "../../hooks/useGameTimer.js";
 
+import {
+  MAX_LOAN_AMOUNT,
+  MIN_LOAN_AMOUNT,
+} from "../../constants/gameConstants.js";
+
+/**
+ * @param {number} userBell - 현재 유저 잔액
+ * @param {number} userLoan - 현재 유저 대출금
+ * @param {boolean} isMyTurn - 현재 조작 권한이 있는 유저인지
+ * @param {string} currentPlayerName - 현재 은행을 이용 중인 유저의 이름
+ * @param {boolean} isBankTile - 현재 위치가 '대출 칸'인지 여부 (false면 수수료 10% 추가)
+ * @param {number} timeoutSeconds - 타이머 제한 시간 (초 단위)
+ * @param {function} onAction - 서버 전송 함수
+ * @param {function} onExit - 닫기 함수
+ *
+ */
 const Loan = ({
   userBell = 0,
   userLoan = 0,
@@ -11,15 +27,26 @@ const Loan = ({
   timeoutSeconds,
   onExit,
 
+  isBankTile = true, // 기본값 true (은행), false면 ATM
+
   // WebSocket Client
   onAction, // WebSocket 직접 사용 대신 핸들러 사용
 }) => {
-  const [amount, setAmount] = useState(10);
+  // 은행용 기본값: 50 (최소 단위)
+  const [amount, setAmount] = useState(50);
+  const [keypadAmount, setKeypadAmount] = useState("0"); // ATM용 (키패드 입력)
   const [mode, setMode] = useState("menu");
   const [feedbackMsg, setFeedbackMsg] = useState("");
 
   // 타이머 훅 사용 (보여주기용, 실제 타임아웃 액션 처리 X)
   const { timeLeft, isUrgent, hasTimeOutPanel } = useGameTimer(timeoutSeconds);
+
+  // 타임아웃 시 자동 종료 (새로 추가된 로직)
+  useEffect(() => {
+    if (timeLeft === 0 && onExit) {
+      onExit();
+    }
+  }, [timeLeft, onExit]);
 
   if (timeoutSeconds === undefined) {
     console.log("데이터 기다리는 중...");
@@ -28,34 +55,103 @@ const Loan = ({
 
   if (!hasTimeOutPanel) return null;
 
+  // ---------------- ATM 키패드 핸들러 ----------------
+  const handleKeypadPress = (num) => {
+    let nextValStr;
+
+    if (keypadAmount === "0") {
+      nextValStr = String(num);
+    } else {
+      nextValStr = keypadAmount + String(num);
+    }
+
+    // 최대 금액 제한 체크
+    if (Number(nextValStr) > MAX_LOAN_AMOUNT) {
+      // 입력하려는 값이 최대값보다 크면 최대값으로 고정 (선택 사항)
+      // 또는 입력을 막을 수도 있음. 여기서는 최대값으로 고정.
+      nextValStr = String(MAX_LOAN_AMOUNT);
+    }
+
+    // 길이 제한도 유지 (혹시 모를 오버플로우 방지)
+    if (nextValStr.length <= 9) {
+      setKeypadAmount(nextValStr);
+    }
+  };
+
+  const handleKeypadBackspace = () => {
+    if (keypadAmount.length <= 1) {
+      setKeypadAmount("0");
+    } else {
+      setKeypadAmount(keypadAmount.slice(0, -1));
+    }
+  };
+
+  const handleKeypadClear = () => {
+    setKeypadAmount("0");
+  };
+
   const handleConfirm = (type) => {
-    // onAction이 없거나 내 턴이 아니면 중단
-    if (!isMyTurn || !onAction) return;
+    console.log(
+      `>>> handleConfirm [${type}] Triggered. isMyTurn: ${isMyTurn}, isBankTile: ${isBankTile}`,
+    );
+
+    // 은행/ATM 불문하고 내 턴이 아니면 동작 중단
+    if (!isMyTurn) {
+      console.warn("내 턴이 아니므로 동작 중단");
+      return;
+    }
+
+    if (!onAction) {
+      console.error("onAction 함수가 전달되지 않음!");
+      return;
+    }
+
+    // 대출/상환 금액 결정 (ATM이면 키패드 값, 은행이면 +/- 값)
+    const finalAmount = !isBankTile ? Number(keypadAmount) : amount;
+    console.log(
+      `>>> Requested Amount: ${finalAmount}, MIN_LIMIT: ${MIN_LOAN_AMOUNT}`,
+    );
+
+    if (finalAmount < MIN_LOAN_AMOUNT) {
+      alert(`${MIN_LOAN_AMOUNT}벨 부터 거래 가능하다구리!`);
+      return;
+    }
+
+    // 50벨 단위 체크
+    if (finalAmount % 50 !== 0) {
+      alert("50벨 단위로만 거래 가능하다구리!");
+      return;
+    }
 
     setMode("processing");
     setTimeout(() => {
       if (type === "LOAN") {
         // 대출 요청
         onAction("LOAN_BORROW", {
-          amount: amount,
-          isBankTile: true, // Loan.jsx는 항상 은행(Bank)이므로 true 고정
+          amount: finalAmount,
+          isBankTile: isBankTile,
         });
 
-        setFeedbackMsg(`${amount}벨 대출 완료! 빚도 실력이다구리!`);
+        // 결과 메시지
+        const feeMsg = !isBankTile ? " (수수료 10% 포함)" : "";
+        setFeedbackMsg(`${finalAmount}벨 대출 완료!${feeMsg}`);
       } else {
         // 상환 요청
+        const repayAmount = !isBankTile ? finalAmount : userLoan;
+
         onAction("LOAN_REPAY", {
-          amount: userLoan, // 전액 상환
-          isBankTile: true,
+          amount: repayAmount,
+          isBankTile: isBankTile,
         });
 
-        setFeedbackMsg(`정직하게 빚을 갚다니 대견하다구리!`);
+        setFeedbackMsg(`${repayAmount}벨 상환 완료!`);
       }
       setMode("success");
       setTimeout(onExit, 2500);
     }, 1500);
   };
 
+  // ---------------- UI 렌더링 (통합됨) ----------------
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -64,7 +160,7 @@ const Loan = ({
     >
       <div className="absolute top-8 w-full flex flex-col items-center gap-3">
         {/* -------- 타이머 -------- */}
-        {(mode === "menu" || mode === "apply") && (
+        {(mode === "menu" || mode === "apply" || mode.startsWith("atm_")) && (
           <div className="flex items-center gap-4 bg-white px-8 py-2 rounded-full border-4 border-[#82ccdd] shadow-xl">
             <span className="text-xl text-gray-400 font-bold uppercase tracking-widest">
               Time Left
@@ -86,7 +182,7 @@ const Loan = ({
       >
         {/* 유저 라벨 */}
         <div className="absolute -top-6 left-12 bg-[#5eb347] px-8 py-2 rounded-2xl text-white text-2xl font-bold shadow-lg z-10">
-          🏦 {currentPlayerName} 님 이용 중
+          {isBankTile ? "🏦 은행 창구" : "🏧 ATM 기기"} - {currentPlayerName} 님
         </div>
 
         <div className="absolute top-6 right-12 flex flex-col items-end">
@@ -101,7 +197,9 @@ const Loan = ({
         </div>
 
         <div className="text-center mt-6 mb-10">
-          <h1 className="text-7xl font-bold text-[#5eb347]">너굴 은행</h1>
+          <h1 className="text-7xl font-bold text-[#5eb347]">
+            {isBankTile ? "너굴 은행" : "너굴 ATM"}
+          </h1>
           {!isMyTurn && (
             <p className="text-2xl text-[#82ccdd] mt-4 font-bold">
               {currentPlayerName} 님이 신중하게 고민 중입니다...
@@ -111,31 +209,57 @@ const Loan = ({
 
         <div className="w-full flex flex-col items-center min-h-[320px] justify-center">
           <AnimatePresence mode="wait">
+            {/* 1. 메인 메뉴 (은행/ATM 공통 구조 사용) */}
             {mode === "menu" && (
               <motion.div
                 key="menu"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
                 className="flex flex-col items-center gap-10"
               >
-                <div className="grid grid-cols-2 gap-12">
-                  <BankButton
-                    onClick={() => setMode("apply")}
-                    color="#7ed321"
-                    icon="💰"
-                    label="대출 신청"
-                    disabled={!isMyTurn}
-                    subLabel="수수료 없음"
-                  />
-                  <BankButton
-                    onClick={() => handleConfirm("REPAY")}
-                    color="#5eb347"
-                    icon="💵"
-                    label="빚 갚기"
-                    disabled={!isMyTurn || userLoan <= 0}
-                    subLabel="즉시 상환"
-                  />
-                </div>
+                {/* 은행 모드 메뉴 */}
+                {isBankTile ? (
+                  <div className="grid grid-cols-2 gap-12">
+                    <BankButton
+                      onClick={() => setMode("apply")}
+                      color="#7ed321"
+                      icon="💰"
+                      label="대출 신청"
+                      disabled={!isMyTurn}
+                      subLabel="수수료 없음"
+                    />
+                    <BankButton
+                      onClick={() => handleConfirm("REPAY")}
+                      color="#5eb347"
+                      icon="💵"
+                      label="빚 갚기"
+                      disabled={!isMyTurn || userLoan <= 0}
+                      subLabel="즉시 상환"
+                    />
+                  </div>
+                ) : (
+                  // ATM 모드 메뉴
+                  <div className="grid grid-cols-2 gap-12">
+                    <BankButton
+                      onClick={() => setMode("atm_input_loan")}
+                      color="#7ed321"
+                      icon="💳" // 아이콘 변경
+                      label="ATM 대출"
+                      disabled={!isMyTurn} // 내 턴일 때만 가능
+                      subLabel="수수료 10%"
+                    />
+                    <BankButton
+                      onClick={() => setMode("atm_input_repay")}
+                      color="#5eb347"
+                      icon="💸"
+                      label="ATM 상환"
+                      disabled={!isMyTurn || userLoan <= 0} // 내 턴이면서 빚이 있어야 가능
+                      subLabel="금액 직접 입력"
+                    />
+                  </div>
+                )}
+
                 <button
                   onClick={onExit}
                   className="text-[#8b5a2b] text-3xl hover:scale-110 transition-transform font-bold relative z-20"
@@ -144,11 +268,14 @@ const Loan = ({
                 </button>
               </motion.div>
             )}
-            {mode === "apply" && (
+
+            {/* 2. 은행 전용 대출 화면 (+/-) */}
+            {mode === "apply" && isBankTile && (
               <motion.div
                 key="apply"
                 initial={{ x: 50, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
+                exit={{ x: -50, opacity: 0 }}
                 className="flex flex-col items-center gap-8"
               >
                 <div className="text-3xl text-gray-500">
@@ -157,7 +284,7 @@ const Loan = ({
                 <div className="flex items-center gap-12 bg-[#f9f9f9] p-12 rounded-[50px] border-4 border-[#7ed321] shadow-inner">
                   <motion.button
                     whileTap={{ scale: 0.8 }}
-                    onClick={() => setAmount(Math.max(10, amount - 10))}
+                    onClick={() => setAmount(Math.max(50, amount - 50))}
                     className="text-8xl text-[#7ed321] font-black"
                   >
                     －
@@ -172,7 +299,7 @@ const Loan = ({
                   </div>
                   <motion.button
                     whileTap={{ scale: 0.8 }}
-                    onClick={() => setAmount(Math.min(100, amount + 10))}
+                    onClick={() => setAmount(Math.min(500, amount + 50))}
                     className="text-8xl text-[#7ed321] font-black"
                   >
                     ＋
@@ -194,6 +321,114 @@ const Loan = ({
                 </div>
               </motion.div>
             )}
+
+            {/* 3. ATM 전용 키패드 화면 */}
+            {(mode === "atm_input_loan" || mode === "atm_input_repay") &&
+              !isBankTile && (
+                <motion.div
+                  key="atm-input"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  className="flex flex-col items-center w-full"
+                >
+                  {/* 상단: 입력된 금액 표시 */}
+                  <div className="flex flex-col items-center mb-8 w-full">
+                    <h3 className="text-3xl text-[#5a4a42] font-bold mb-4">
+                      {mode === "atm_input_loan"
+                        ? "빌릴 금액을 입력하라구리"
+                        : "갚을 금액을 입력하라구리"}
+                    </h3>
+                    <div className="bg-[#f9f9f9] w-3/4 py-4 px-8 rounded-[30px] border-4 border-[#7ed321] flex justify-end items-center shadow-inner mb-2">
+                      <span className="text-6xl text-[#5a4a42] font-black tracking-widest">
+                        {Number(keypadAmount).toLocaleString()}
+                      </span>
+                      <span className="text-3xl text-[#5a4a42] ml-3 font-bold">
+                        벨
+                      </span>
+                    </div>
+
+                    {/* 수수료 및 정보 표시 (너굴 스타일) */}
+                    <div className="h-8">
+                      {mode === "atm_input_loan" &&
+                        Number(keypadAmount) > 0 && (
+                          <p className="text-red-500 font-bold text-xl animate-bounce">
+                            ⚠️ 수수료{" "}
+                            {Math.floor(
+                              Number(keypadAmount) * 0.1,
+                            ).toLocaleString()}
+                            벨 발생! (총 빚:{" "}
+                            {(Number(keypadAmount) * 1.1).toLocaleString()}벨)
+                          </p>
+                        )}
+                      {mode === "atm_input_repay" && (
+                        <p className="text-[#82ccdd] font-bold text-xl">
+                          현재 빚: {userLoan.toLocaleString()}벨
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* 하단: 키패드 & 버튼 (너굴 스타일) */}
+                  <div className="flex gap-6 w-full px-8 h-64">
+                    {/* 키패드 그리드 */}
+                    <div className="grid grid-cols-3 gap-3 flex-1">
+                      {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => (
+                        <button
+                          key={n}
+                          onClick={() => handleKeypadPress(n)}
+                          className="bg-white text-[#5a4a42] text-3xl font-black rounded-2xl shadow-[0_4px_0_#ddd] hover:bg-[#f1f1f1] active:translate-y-1 active:shadow-none transition-all border-2 border-[#eee]"
+                        >
+                          {n}
+                        </button>
+                      ))}
+                      <button
+                        onClick={handleKeypadClear}
+                        className="bg-[#ffadad] text-white text-3xl font-black rounded-2xl shadow-[0_4px_0_#ff6b6b] hover:bg-[#ff8e8e] active:translate-y-1 active:shadow-none"
+                      >
+                        C
+                      </button>
+                      <button
+                        onClick={() => handleKeypadPress(0)}
+                        className="bg-white text-[#5a4a42] text-3xl font-black rounded-2xl shadow-[0_4px_0_#ddd] hover:bg-[#f1f1f1] active:translate-y-1 active:shadow-none border-2 border-[#eee]"
+                      >
+                        0
+                      </button>
+                      <button
+                        onClick={handleKeypadBackspace}
+                        className="bg-[#ffeaa7] text-[#d35400] text-3xl font-black rounded-2xl shadow-[0_4px_0_#fdcb6e] hover:bg-[#ffe082] active:translate-y-1 active:shadow-none"
+                      >
+                        ←
+                      </button>
+                    </div>
+
+                    {/* 확인/취소 버튼 */}
+                    <div className="flex flex-col gap-4 w-1/4">
+                      <button
+                        onClick={() =>
+                          handleConfirm(
+                            mode === "atm_input_loan" ? "LOAN" : "REPAY",
+                          )
+                        }
+                        className="flex-1 bg-[#7ed321] text-white text-3xl font-black rounded-3xl shadow-[0_6px_0_#5a9a18] hover:brightness-105 active:translate-y-1 active:shadow-none transition-all flex items-center justify-center"
+                      >
+                        확인
+                      </button>
+                      <button
+                        onClick={() => {
+                          setMode("menu");
+                          setKeypadAmount("0");
+                        }}
+                        className="h-20 bg-[#95a5a6] text-white text-2xl font-black rounded-3xl shadow-[0_6px_0_#7f8c8d] hover:bg-[#7f8c8d] active:translate-y-1 active:shadow-none flex items-center justify-center"
+                      >
+                        취소
+                      </button>
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+
+            {/* 4. 처리 중 / 완료 공통 화면 */}
             {(mode === "processing" || mode === "success") && (
               <motion.div
                 initial={{ scale: 0.5 }}
@@ -227,15 +462,17 @@ const Loan = ({
           className="mb-2 bg-white p-6 rounded-[40px] border-4 border-[#5eb347] shadow-2xl relative max-w-sm z-40"
         >
           <p className="text-2xl font-bold text-[#5a4a42] leading-relaxed text-center">
-            {isMyTurn
-              ? "은행 칸에 잘 왔다구리!\n여긴 수수료가 없다구리~"
-              : `${currentPlayerName} 님이\n대출 상담 중이라구리. 기다려라구리!`}
+            {!isMyTurn
+              ? `${currentPlayerName} 님이\n용무를 보고 있다구리.`
+              : isBankTile
+                ? "은행 창구는 수수료 무료!\n맘껏 빌려라구리!"
+                : "ATM은 편리한 만큼\n수수료 10%가 든다구리!"}
           </p>
           {/* 말풍선 꼬리 (중앙 아래로) */}
           <div className="absolute bottom-[-18px] left-1/2 -translate-x-1/2 w-0 h-0 border-l-[18px] border-l-transparent border-r-[18px] border-r-transparent border-t-[18px] border-t-[#5eb347]" />
         </motion.div>
 
-        {/* 2. 너굴 이미지 */}
+        {/* 너굴 이미지 (기존 유지) */}
         <img
           src="/images/tom-nook.png"
           alt="너굴"
