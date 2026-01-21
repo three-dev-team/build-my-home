@@ -25,7 +25,7 @@ const Loan = ({
   isMyTurn = false,
 
   timeoutSeconds,
-  onExit,
+  onClose,
 
   isBankTile = true, // 기본값 true (은행), false면 ATM
 
@@ -43,10 +43,10 @@ const Loan = ({
 
   // 타임아웃 시 자동 종료 (새로 추가된 로직)
   useEffect(() => {
-    if (timeLeft === 0 && onExit) {
-      onExit();
+    if (timeLeft === 0 && onClose) {
+        onClose();
     }
-  }, [timeLeft, onExit]);
+  }, [timeLeft, onClose]);
 
   if (timeoutSeconds === undefined) {
     console.log("데이터 기다리는 중...");
