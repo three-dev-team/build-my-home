@@ -63,13 +63,6 @@ const House = ({player, isMyTurn, onClose, onAction}) => {
                         >
                             집을 업그레이드 하고 싶어
                         </button>
-                        <button
-                            onClick={onClose}
-                            disabled={!isMyTurn}
-                            className="px-8 py-4 bg-gray-300 hover:bg-gray-400 rounded-full font-bold text-lg"
-                        >
-                            나가기
-                        </button>
                     </div>
                 </div>
             )}
@@ -152,18 +145,11 @@ const House = ({player, isMyTurn, onClose, onAction}) => {
                                     응! 건설해줘
                                 </button>
                                 <button
-                                    onClick={onClose}
+                                    onClick={() => setStep(0)}
                                     disabled={!isMyTurn}
                                     className="px-8 py-4 bg-gray-300 hover:bg-gray-400 rounded-full font-bold text-lg"
                                 >
                                     아니 다음에 할게
-                                </button>
-                                <button
-                                    onClick={() => setStep(0)}
-                                    disabled={!isMyTurn}
-                                    className="mt-6 px-8 py-4 bg-gray-300 hover:bg-gray-400 rounded-full font-bold text-lg"
-                                >
-                                    돌아가기
                                 </button>
                             </div>
                         </>
@@ -258,18 +244,11 @@ const House = ({player, isMyTurn, onClose, onAction}) => {
                             응!
                         </button>
                         <button
-                            onClick={onClose}
+                            onClick={() => setStep(2)}
                             disabled={!isMyTurn}
                             className="px-8 py-4 bg-gray-300 hover:bg-gray-400 rounded-full font-bold text-lg"
                         >
                             아니
-                        </button>
-                        <button
-                            onClick={() => setStep(2)}
-                            disabled={!isMyTurn}
-                            className="mt-6 px-8 py-4 bg-gray-300 hover:bg-gray-400 rounded-full font-bold text-lg"
-                        >
-                            돌아가기
                         </button>
                     </div>
                 </div>
