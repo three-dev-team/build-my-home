@@ -1,8 +1,10 @@
 package com.buildmyhome.game.dto;
 
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 @Getter
+@RequiredArgsConstructor
 public enum GameStatus {
 
     // 타이머가 필요없는 status는 0으로 설정
@@ -13,6 +15,7 @@ public enum GameStatus {
     WAITING_PLAYER_ACTION(0),  // 유저 액션 (주사위, 아이템, 맵) 선택 대기 중
     WAITING_DICE(20),           // 주사위 굴리기 대기
     MOVING(0),                 // 캐릭터 이동 중 (애니메이션 연출 시간 확보용)
+    WAITING_HOUSE(0),           // 집짓기
 
     // --- 칸 이벤트별 유저 입력을 기다리는 상태 ---
     WAITING_STAMP(15),         // 스탬프칸 이용 중
@@ -31,10 +34,6 @@ public enum GameStatus {
     FINISHED(0);               // 결과 페이지
 
     private final int timeoutSeconds;
-
-    GameStatus(int timeoutSeconds) {
-        this.timeoutSeconds = timeoutSeconds;
-    }
 
     // 이 상태는 시간이 지나면 자동으로 다음으로 넘어가야 하는가
     public boolean isAutoProceed() {

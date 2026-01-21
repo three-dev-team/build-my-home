@@ -7,6 +7,7 @@ import com.buildmyhome.game.dto.GamePlayerState;
 import com.buildmyhome.game.dto.GameState;
 import com.buildmyhome.game.dto.GameStatus;
 import com.buildmyhome.game.service.GameStateService;
+import com.buildmyhome.house.service.HouseService;
 import com.buildmyhome.kk.KKService;
 import com.buildmyhome.loan.service.LoanService;
 import com.buildmyhome.room.dto.RoomPlayerState;
@@ -37,14 +38,15 @@ public class GameWsController {
     private final LoanService loanService;
     private final StampService stampService;
     private final KKService kkService;
+    private final HouseService houseService;
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     // 서버메모리 -> 프론트로 전달하는 공통 응답 DTO 생성하는 메서드
     private GameMessage defaultGameResponse(String type, GameState gameState) {
         GameMessage response = new GameMessage();
         response.setType(type);
-        response.setStatus(gameState.getStatus().name());
         response.setCurrentPlayerId(gameState.getCurrentPlayerId());
+        response.setStatus(gameState.getStatus().name());
         response.setPlayers(new ArrayList<>(gameState.getPlayers().values()));
         response.setTurnOrder(gameState.getTurnOrder());
         response.setCurrentRound(gameState.getCurrentRound());
@@ -275,15 +277,25 @@ public class GameWsController {
                         response.setType("STAMP_ACQUIRED");
                         break;
                     case "BUY_ITEM":
+
                         // 아이템 구매 로직 처리
                         break;
                     case "KK_ACTION":
                         kkService.payEntryFee(player);
                         response.setType("KK_FEE_PAID");
                         break;
+                    case "BUILD_HOUSE":
+                        houseService.updateHouseInfo(player);
+                        gameState.setStatus(GameStatus.WAITING_HOUSE);
+                        response.setType("BUILD_HOUSE_START");
+                        break;
+                    case "UPGRADE_HOUSE":
+                        houseService.upgradeHouse(player);
+                        response.setType("HOUSE_UPGRADED");
+                        break;
                 }
 
-                // 3. 성공 결과 전송
+                response.setStatus(gameState.getStatus().name());
                 simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
 
             } catch (Exception e) {
