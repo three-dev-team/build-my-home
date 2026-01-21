@@ -317,6 +317,14 @@ public class GameWsController {
                         houseService.upgradeHouse(player);
                         response.setType("HOUSE_UPGRADED");
                         break;
+                    case "OPEN_ATM":
+                        gameState.setStatus(GameStatus.WAITING_ATM);
+                        response.setType("ATM_OPENED");
+                        break;
+                    case "CLOSE_ACTION":
+                        gameState.setStatus(GameStatus.WAITING_PLAYER_ACTION);
+                        response.setType("ACTION_CLOSED");
+                        break;
                 }
 
                 response.setStatus(gameState.getStatus().name());
