@@ -23,6 +23,7 @@ public class GameMessage {
     private int currentRound;
     private int totalRounds;
     private int timeoutSeconds;
+    private int uiStep;
 
     private ShopType shopType;        // 어떤 상점인지
     private ItemType itemType;        // 구매/판매할 아이템

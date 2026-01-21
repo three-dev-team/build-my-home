@@ -5,17 +5,14 @@ import {HOUSE_LEVEL_MAP, RESOURCE_MAP, HOUSE_DETAILS} from "../../constants/hous
 
 // TODO: 내 차례가 아닐때 버튼 비활성화 유지보수를 위한 공통처리 방법 고민
 const House = ({player, isMyTurn, onClose, onAction}) => {
-    const [step, setStep] = useState(0);
-    const [initLevel] = useState(player.houseLevel);
     const {houseLevel, canUpgradeHouse, nextHouseLevel, requiredResourcesForNextHouse} = player;
 
-    // 서버 데이터(houseLevel)가 변경되었는지 감시
-    useEffect(() => {
-        // 처음 들어왔을 때의 레벨보다 현재 레벨이 높아졌다면 -> 업그레이드 성공
-        if (houseLevel !== initLevel && initLevel !== undefined) {
-            setStep(4);
-        }
-    }, [houseLevel, initLevel]);
+    // setStep 함수로 UI 스텝 변경
+    const step = player?.uiStep || 0;  // 서버에서 받아옴
+    const setStep = (newStep) => {
+        if (!isMyTurn) return;
+        onAction("SET_STEP", { uiStep: newStep });
+    };
 
     // 서버 문자열("LAND")로 해당 레벨 상수 정보(벨,  프론트에서 가져오기
     const nextLevelData = HOUSE_DETAILS[nextHouseLevel];
