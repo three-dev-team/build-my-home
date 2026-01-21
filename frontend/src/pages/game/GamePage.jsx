@@ -332,6 +332,7 @@ const GamePage = () => {
                         shopType="ITEM_SHOP"
                         handleAction={handleAction}
                         onExit={handleEventComplete}
+                        timeoutSeconds={gameState.timeoutSeconds || 0}
                     />
                 )}
 
@@ -343,6 +344,7 @@ const GamePage = () => {
                         shopType="HARVEST_SHOP"
                         handleAction={handleAction}
                         onExit={handleEventComplete}
+                        timeoutSeconds={gameState.timeoutSeconds || 0}
                     />
                 )}
 
