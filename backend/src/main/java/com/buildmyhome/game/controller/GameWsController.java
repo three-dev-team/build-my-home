@@ -1,5 +1,8 @@
 package com.buildmyhome.game.controller;
 
+import com.buildmyhome.fishing.dto.FishingActionRequest;
+import com.buildmyhome.fishing.dto.StartFishingRequest;
+import com.buildmyhome.fishing.service.FishingService;
 import com.buildmyhome.game.constants.BoardData;
 import com.buildmyhome.game.constants.GameConstants;
 import com.buildmyhome.game.dto.GameMessage;
@@ -37,6 +40,7 @@ public class GameWsController {
     private final LoanService loanService;
     private final StampService stampService;
     private final KKService kkService;
+    private final FishingService fishingService;
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     // 서버메모리 -> 프론트로 전달하는 공통 응답 DTO 생성하는 메서드
@@ -313,6 +317,42 @@ public class GameWsController {
 
             GameMessage response = defaultGameResponse("TURN_COMPLETED", gameState);
             simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
+        }
+    }
+
+    // fishing : /app/games/fishing/start
+    @MessageMapping("/games/fishing/start")
+    public void startFishing(StartFishingRequest req, Principal principal) {
+        Long actorId = parseActorIdSafely(principal);
+        if (actorId == null) return;
+        if (req == null || req.getRoomId() == null) return;
+
+        String ht = req.getHarvestType();
+        if (ht == null || ht.isBlank()) {
+            fishingService.startFishing(req.getRoomId(), actorId);
+            return;
+        }
+
+        fishingService.startFishing(req.getRoomId(), actorId, ht);
+    }
+
+    // fishing : /app/games/fishing/action
+    @MessageMapping("/games/fishing/action")
+    public void fishingAction(FishingActionRequest req, Principal principal) {
+        Long actorId = parseActorIdSafely(principal);
+        if (actorId == null) return;
+        if (req == null || req.getRoomId() == null || req.getAction() == null) return;
+
+        fishingService.handleAction(req.getRoomId(), actorId, req.getAction());
+    }
+
+    // fishing : actorId 안전 파싱
+    private Long parseActorIdSafely(Principal principal) {
+        if (principal == null || principal.getName() == null) return null;
+        try {
+            return Long.parseLong(principal.getName());
+        } catch (NumberFormatException e) {
+            return null;
         }
     }
 
