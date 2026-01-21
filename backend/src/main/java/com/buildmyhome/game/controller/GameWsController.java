@@ -266,6 +266,7 @@ public class GameWsController {
         GameState gameState = gameStateService.getGame(roomId);
         if (gameState == null) return;
 
+        // TODO: 서비스 로직 분리 고려 GameActionService 등  - Tiffany
         synchronized (gameState) {
             // 1. 공통 검증 (현재 턴인지 등)
             Long memberId = Long.parseLong(principal.getName());
@@ -305,16 +306,19 @@ public class GameWsController {
                         shopService.sellHarvest(roomId, memberId, message.getHarvestType(), message.getQuantity());
                         break;
                     case "KK_ACTION":
+                        player.setUiStep(0);
                         kkService.payEntryFee(player);
                         response.setType("KK_FEE_PAID");
                         break;
                     case "BUILD_HOUSE":
+                        player.setUiStep(0);
                         houseService.updateHouseInfo(player);
                         gameState.setStatus(GameStatus.WAITING_HOUSE);
                         response.setType("BUILD_HOUSE_START");
                         break;
                     case "UPGRADE_HOUSE":
                         houseService.upgradeHouse(player);
+                        player.setUiStep(4);
                         response.setType("HOUSE_UPGRADED");
                         break;
                     case "OPEN_ATM":
@@ -322,8 +326,13 @@ public class GameWsController {
                         response.setType("ATM_OPENED");
                         break;
                     case "CLOSE_ACTION":
+                        player.setUiStep(0); // UI 스텝 초기화
                         gameState.setStatus(GameStatus.WAITING_PLAYER_ACTION);
                         response.setType("ACTION_CLOSED");
+                        break;
+                    case "SET_STEP":
+                        player.setUiStep(message.getUiStep());  // 특정 값으로 설정
+                        response.setType("STEP_CHANGED");
                         break;
                 }
 
@@ -352,7 +361,7 @@ public class GameWsController {
                 return;
             }
 
-            // TODO: 최대 라운드 도달 시 게임 종료 처리
+            // TODO: 최대 라운드 도달 시 게임 종료 처리  - Tiffany
             gameState.nextTurn();
 
             GameMessage response = defaultGameResponse("TURN_COMPLETED", gameState);
