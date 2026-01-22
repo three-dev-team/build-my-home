@@ -38,4 +38,5 @@ public class GameMessage {
     
     private String stampType;
     private String errorMessage;
+    private Integer actionData; // player state의 actionData 처럼 사용됨(휘발성 데이터 필드)
 }
