@@ -1,5 +1,7 @@
 package com.buildmyhome.game.dto;
 
 public enum StampType {
-    BLUE, YELLOW, RED, GREEN
+    GAPDOL,   // 갑돌섬
+    MUSEUM,   // 박물관
+    AIRPORT   // 비행장
 }

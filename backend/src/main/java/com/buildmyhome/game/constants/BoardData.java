@@ -10,17 +10,17 @@ public class BoardData {
             TileType.RESOURCE,          // 1
             TileType.HARVEST,           // 2
             TileType.SHOP_RESOURCE,     // 3
-            TileType.STAMP_BLUE,        // 4
+            TileType.STAMP_GAPDOL,      // 4
             TileType.RESOURCE,          // 5
             TileType.LOAN,              // 6
             TileType.HARVEST,           // 7
             TileType.SHOP_ITEM,         // 8
-            TileType.STAMP_YELLOW,      // 9
+            TileType.STAMP_MUSEUM,      // 9
             TileType.RESOURCE,          // 10
             TileType.FISHING,           // 11
             TileType.KK,                // 12
             TileType.HARVEST,           // 13
-            TileType.STAMP_RED,         // 14
+            TileType.STAMP_AIRPORT,     // 14
             TileType.SHOP_RESOURCE,     // 15
             TileType.RESOURCE,          // 16
             TileType.HARVEST,           // 17

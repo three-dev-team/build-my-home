@@ -1,68 +1,49 @@
 package com.buildmyhome.stamp.service;
 
+import com.buildmyhome.game.constants.BoardData;
+import com.buildmyhome.game.constants.TileType;
 import com.buildmyhome.game.dto.GamePlayerState;
-import com.buildmyhome.game.dto.GameState;
 import com.buildmyhome.game.dto.StampType;
-import com.buildmyhome.game.service.GameStateService;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.util.Set;
 
+import static com.buildmyhome.game.constants.GameConstants.STAMP_DUPLICATE_REWARD;
+
 @Service
 @RequiredArgsConstructor
 public class StampServiceImpl implements StampService {
 
-    private final GameStateService gameStateService;
-
     @Override
-    public void acquireStamp(Long roomId, Long memberId, String stampType) {
-        GameState gameState = gameStateService.getGame(roomId);
-        synchronized (gameState) {
-            GamePlayerState player = gameState.getPlayers().get(memberId);
-            if (player == null) {
-                throw new IllegalArgumentException("Player not found");
-            }
+    public boolean collectStamp(GamePlayerState player, String frontStampType) {
+        TileType tile = BoardData.getTileType(player.getPosition());
 
-            Set<StampType> collectedStamps = player.getCollectedStamps();
-            int currentCount = collectedStamps.size();
-
-            // 이미 4개를 다 모았다면 더 이상 획득 불가
-            if (currentCount >= 4) {
-                return;
-            }
-
-            // 순서대로 스탬프 지급 및 보상
-            StampType nextStamp = null;
-            int reward = 0;
-
-            switch (currentCount) {
-                case 0:
-                    nextStamp = StampType.BLUE;
-                    reward = 20;
-                    break;
-                case 1:
-                    nextStamp = StampType.YELLOW;
-                    reward = 40;
-                    break;
-                case 2:
-                    nextStamp = StampType.RED;
-                    reward = 60;
-                    break;
-                case 3:
-                    nextStamp = StampType.GREEN;
-                    reward = 100;
-                    break;
-            }
-
-            if (nextStamp != null) {
-                collectedStamps.add(nextStamp);
-                player.setBell(player.getBell() + reward);
-                
-                // 서비스에서는 상태만 변경하고 리턴.
-                // 필요한 경우 리턴 타입을 StampType으로 변경하여 컨트롤러에 전달할 수 있음.
-            }
+        if (tile == null || !tile.name().startsWith("STAMP_")) {
+            System.out.println(">>> [ERROR] 스탬프 칸이 아닌 곳에서 요청됨: " + player.getPosition());
+            return false;
         }
+
+        String serverStampType = tile.name().replace("STAMP_", "");
+        if (!serverStampType.equalsIgnoreCase(frontStampType)) {
+            System.out.println(">>> [WARN] 타입 불일치! 서버 계산: " + serverStampType + ", 프론트 전송: " + frontStampType);
+        }
+
+
+        StampType stampType = StampType.valueOf(serverStampType);
+        Set<StampType> collectedStamps = player.getCollectedStamps();
+
+        // 이미 가진 스탬프면 중복 보상
+        if (collectedStamps.contains(stampType)) {
+            player.setBell(player.getBell() + STAMP_DUPLICATE_REWARD);
+            player.setActionData(0); // 중복
+            return false;
+        }
+
+        // 새 스탬프 획득
+        collectedStamps.add(stampType);
+        player.setActionData(1); // 신규
+        return true;
     }
 }

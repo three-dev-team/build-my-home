@@ -33,14 +33,14 @@ public class GameMessage {
     private int quantity;             // 수량
     // 대출/스탬프/에러 처리를 위한 추가 필드
     private int amount;
-    
+
     @com.fasterxml.jackson.annotation.JsonProperty("isBankTile")
     private boolean isBankTile;
     
-    private String stampType;
     private String errorMessage;
 
     private Map<ResourceType, Integer> gainedResources; // 재화칸 보상
     private Map<HarvestType, Integer> gainedHarvests;   // 과일칸 보상
-    private Integer actionData; // player state의 actionData 처럼 사용됨(휘발성 데이터 필드)
+    private Integer actionData;                         // player state의 actionData 처럼 사용됨(휘발성 데이터 필드)
+    private String actionDataStr;                       // 문자열용 휘발성 데이터
 }

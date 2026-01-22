@@ -1,5 +1,7 @@
 package com.buildmyhome.stamp.service;
 
+import com.buildmyhome.game.dto.GamePlayerState;
+
 public interface StampService {
-    void acquireStamp(Long roomId, Long memberId, String stampType);
+    boolean collectStamp(GamePlayerState player, String actionDataStr);
 }
