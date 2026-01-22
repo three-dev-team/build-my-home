@@ -16,6 +16,7 @@ import com.buildmyhome.room.service.RoomStateService;
 import com.buildmyhome.shop.dto.ShopType;
 import com.buildmyhome.shop.service.ShopService;
 import com.buildmyhome.stamp.service.StampService;
+import com.buildmyhome.start.StartService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -368,6 +369,17 @@ public class GameWsController {
                         player.setUiStep(message.getUiStep());  // 특정 값으로 설정
                         response.setType("STEP_CHANGED");
                         break;
+                    case "START_STAMP_EXCHANGE":
+                        int reward = stampService.exchangeStamps(player);
+                        player.setUiStep(1);
+                        player.setActionData(reward);
+                        response.setType("START_STAMP_EXCHANGED");
+                        break;
+                    case "START_STAMP_SKIP":
+                        player.setUiStep(2);
+                        response.setType("START_STAMP_SKIPPED");
+                        break;
+
                 }
 
                 response.setStatus(gameState.getStatus().name());

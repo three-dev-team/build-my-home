@@ -9,7 +9,7 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum TileType {
-    START(GameStatus.WAITING_PLAYER_ACTION),
+    START(GameStatus.WAITING_START),
     RESOURCE(GameStatus.WAITING_RESOURCES),
     HARVEST(GameStatus.WAITING_HARVEST),
     SHOP_RESOURCE(GameStatus.WAITING_SHOP_RESOURCE),

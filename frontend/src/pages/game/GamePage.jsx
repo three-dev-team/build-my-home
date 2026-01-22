@@ -22,6 +22,7 @@ import House from "./House.jsx";
 import Fishing from "./Fishing.jsx";
 import Inventory from "./Inventory.jsx";
 import RewardDrop from "./RewardDrop.jsx";
+import Start from "./Start.jsx";
 
 const GamePage = () => {
     const {roomId} = useParams();
@@ -477,6 +478,16 @@ const GamePage = () => {
                             }}
                         />
                     )}
+                {/* 시작칸 (스탬프 정산칸) */}
+                {gameState.status === "WAITING_START" && (
+                    <Start
+                        isMyTurn={isMyTurn}
+                        player={currentPlayer}
+                        currentPlayerName={currentPlayer?.nickname}
+                        onAction={handleAction}
+                        onExit={handleEventComplete}
+                    />
+                )}
 
                 {/* ------------------------------------- 개별 이벤트 추가 ------------------------------------- */}
 
