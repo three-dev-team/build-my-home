@@ -2,6 +2,37 @@ import { useState, useEffect } from "react";
 import { useGameTimer } from "../../hooks/useGameTimer.js";
 import "./css/ShopPage.css";
 
+const items = [
+  { type: "CUSTOM_DICE", name: "내맘대로 주사위", price: 100 },
+  { type: "PIPE", name: "토관", price: 60 },
+  { type: "GOLD_PIPE", name: "금토관", price: 150 },
+  { type: "GOLD_DICE", name: "금주사위", price: 100 },
+  { type: "DOUBLE_DICE", name: "더블주사위", price: 80 },
+  { type: "MIRROR", name: "거울", price: 70 },
+  { type: "GOLD_MIRROR", name: "금거울", price: 120 },
+];
+
+const resources = [
+  { type: "WOOD", name: "목재", buyPrice: 120, sellPrice: 60 },
+  { type: "IRON", name: "철광석", buyPrice: 80, sellPrice: 40 },
+  { type: "CLOTH", name: "천", buyPrice: 60, sellPrice: 30 },
+  { type: "BRICK", name: "벽돌", buyPrice: 140, sellPrice: 70 },
+  { type: "WALLPAPER", name: "벽지", buyPrice: 200, sellPrice: 100 },
+  { type: "CLAY", name: "점토", buyPrice: 100, sellPrice: 50 },
+  { type: "FLOOR", name: "바닥", buyPrice: 160, sellPrice: 80 },
+];
+
+const harvests = [
+  { type: "APPLE", name: "사과", price: 80 },
+  { type: "ORANGE", name: "오렌지", price: 100 },
+  { type: "PEAR", name: "배", price: 120 },
+  { type: "PEACH", name: "복숭아", price: 150 },
+  { type: "CHERRY", name: "체리", price: 200 },
+  { type: "FISH_SMALL", name: "작은 물고기", price: 50 },
+  { type: "FISH_MEDIUM", name: "중간 물고기", price: 150 },
+  { type: "FISH_LARGE", name: "큰 물고기", price: 300 },
+];
+
 const ShopPage = ({ gameState, myId, currentPlayer, shopType, handleAction, onExit }) => {
   const [activeTab, setActiveTab] = useState("buy");
   const [selectedItem, setSelectedItem] = useState(null);
@@ -21,6 +52,14 @@ const ShopPage = ({ gameState, myId, currentPlayer, shopType, handleAction, onEx
   const isMyTurn = gameState.currentPlayerId === myId;
 
   useEffect(() => {
+    if (currentPlayer?.uiStep === 0) {
+      setActiveTab("buy");
+    } else if (currentPlayer?.uiStep === 1) {
+      setActiveTab("sell");
+    }
+  }, [currentPlayer?.uiStep]);
+
+  useEffect(() => {
     if (errorMsg) {
       const timer = setTimeout(() => setErrorMsg(""), 3000);
       return () => clearTimeout(timer);
@@ -29,42 +68,24 @@ const ShopPage = ({ gameState, myId, currentPlayer, shopType, handleAction, onEx
 
   useEffect(() => {
     if (gameState?.errorMessage) {
+      console.error(gameState.errorMessage); //
       setErrorMsg(gameState.errorMessage);
     }
   }, [gameState?.errorMessage]);
 
-  const items = [
-    { type: "CUSTOM_DICE", name: "내맘대로 주사위", price: 100 },
-    { type: "PIPE", name: "토관", price: 60 },
-    { type: "GOLD_PIPE", name: "금토관", price: 150 },
-    { type: "GOLD_DICE", name: "금주사위", price: 100 },
-    { type: "DOUBLE_DICE", name: "더블주사위", price: 80 },
-    { type: "MIRROR", name: "거울", price: 70 },
-    { type: "GOLD_MIRROR", name: "금거울", price: 120 },
-  ];
-
-  const resources = [
-    { type: "WOOD", name: "목재", buyPrice: 120, sellPrice: 60 },
-    { type: "IRON", name: "철광석", buyPrice: 80, sellPrice: 40 },
-    { type: "CLOTH", name: "천", buyPrice: 60, sellPrice: 30 },
-    { type: "BRICK", name: "벽돌", buyPrice: 140, sellPrice: 70 },
-    { type: "WALLPAPER", name: "벽지", buyPrice: 200, sellPrice: 100 },
-    { type: "CLAY", name: "점토", buyPrice: 100, sellPrice: 50 },
-    { type: "FLOOR", name: "바닥", buyPrice: 160, sellPrice: 80 },
-  ];
-
-  const harvests = [
-    { type: "APPLE", name: "사과", price: 80 },
-    { type: "ORANGE", name: "오렌지", price: 100 },
-    { type: "PEAR", name: "배", price: 120 },
-    { type: "PEACH", name: "복숭아", price: 150 },
-    { type: "CHERRY", name: "체리", price: 200 },
-    { type: "FISH_SMALL", name: "작은 물고기", price: 50 },
-    { type: "FISH_MEDIUM", name: "중간 물고기", price: 150 },
-    { type: "FISH_LARGE", name: "큰 물고기", price: 300 },
-  ];
-
   // ========== 액션 핸들러 ========== //
+  const handleTabChange = (newTab) => {
+    if (!isMyTurn) return;
+
+    const newStep = newTab === "buy" ? 0 : 1;
+
+    // 기존 SET_STEP 액션 사용
+    handleAction("SET_STEP", { uiStep: newStep });
+
+    setActiveTab(newTab);
+    setSelectedItem(null);
+  };
+
   const handleConfirm = () => {
     console.log('🔘 구매/판매 버튼 클릭!');
 
@@ -185,13 +206,13 @@ const ShopPage = ({ gameState, myId, currentPlayer, shopType, handleAction, onEx
         <div className="shop-tabs">
           <button
               className={activeTab === "buy" ? "active" : ""}
-              onClick={() => { setActiveTab("buy"); setSelectedItem(null); }}
+              onClick={() => handleTabChange("buy")}
               disabled={!isMyTurn}
           >구매
           </button>
           <button
               className={activeTab === "sell" ? "active" : ""}
-              onClick={() => { setActiveTab("sell"); setSelectedItem(null); }}
+              onClick={() => handleTabChange("sell")}
               disabled={!isMyTurn}
           >판매
           </button>
@@ -213,7 +234,6 @@ const ShopPage = ({ gameState, myId, currentPlayer, shopType, handleAction, onEx
                     : (item.sellPrice || item.price)
                 }
                 </div>
-
                 {item.owned && <div className="item-owned">보유: {item.owned}</div>}
               </div>
           ))}
