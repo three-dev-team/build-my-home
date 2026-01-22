@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useGameTimer } from "../../hooks/useGameTimer.js";
 import "./css/ShopPage.css";
 
-const ShopPage = ({ gameState, myId, shopType, handleAction, onExit }) => {
+const ShopPage = ({ gameState, myId, currentPlayer, shopType, handleAction, onExit }) => {
   const [activeTab, setActiveTab] = useState("buy");
   const [selectedItem, setSelectedItem] = useState(null);
   const [quantity, setQuantity] = useState(1);
@@ -11,7 +11,6 @@ const ShopPage = ({ gameState, myId, shopType, handleAction, onExit }) => {
   const timeoutSeconds = gameState.timeoutSeconds
   const { timeLeft, isUrgent } = useGameTimer(timeoutSeconds);
 
-  const myPlayer = gameState.players.find((p) => p.memberId === myId);
   const shopSession = gameState.shopSession;
 
   // 상점 타입 결정 (프롭스로 받은 것 우선, 없으면 세션 정보)
@@ -21,16 +20,18 @@ const ShopPage = ({ gameState, myId, shopType, handleAction, onExit }) => {
   // 현재 턴인 사람(currentPlayerId)과 내 아이디(myId)가 일치해야 버튼이 활성화
   const isMyTurn = gameState.currentPlayerId === myId;
 
-  const currentShopUser = gameState.players.find(
-      (p) => p.memberId === (shopSession?.memberId || gameState.currentPlayerId)
-  );
-
   useEffect(() => {
     if (errorMsg) {
       const timer = setTimeout(() => setErrorMsg(""), 3000);
       return () => clearTimeout(timer);
     }
   }, [errorMsg]);
+
+  useEffect(() => {
+    if (gameState?.errorMessage) {
+      setErrorMsg(gameState.errorMessage);
+    }
+  }, [gameState?.errorMessage]);
 
   const items = [
     { type: "CUSTOM_DICE", name: "내맘대로 주사위", price: 100 },
@@ -75,7 +76,7 @@ const ShopPage = ({ gameState, myId, shopType, handleAction, onExit }) => {
     // ✅ 아이템 상점에서 이미 구매했는지 체크
     if (activeTab === "buy" && isItemShop && shopSession?.hasItemPurchased) {
       setErrorMsg("⚠️ 이미 아이템을 구매했습니다!");
-      return;  // 서버 요청 안 보냄!
+      return;
     }
 
     // ✅ 벨 부족 체크
@@ -84,9 +85,9 @@ const ShopPage = ({ gameState, myId, shopType, handleAction, onExit }) => {
           ? selectedItem.price
           : selectedItem.buyPrice * quantity;
 
-      if ((currentShopUser?.bell || myPlayer.bell) < price) {
+      if (currentPlayer?.bell < price) {
         setErrorMsg("⚠️ 벨이 부족합니다!");
-        return;  // 서버 요청 안 보냄!
+        return;
       }
     }
 
@@ -94,7 +95,7 @@ const ShopPage = ({ gameState, myId, shopType, handleAction, onExit }) => {
     if (activeTab === "sell") {
       if ((selectedItem.owned || 0) < quantity) {
         setErrorMsg("⚠️ 보유한 수량이 부족합니다!");
-        return;  // 서버 요청 안 보냄!
+        return;
       }
     }
 
@@ -137,7 +138,7 @@ const ShopPage = ({ gameState, myId, shopType, handleAction, onExit }) => {
   };
 
   const totalPrice = calculateTotalPrice();
-  const canAfford = (currentShopUser?.bell || 0) >= totalPrice; // 구매 가능 여부 체크
+  const canAfford = currentPlayer.bell >= totalPrice;
 
   const handleExitClick = () => {
     if (!isMyTurn) return;
@@ -145,14 +146,13 @@ const ShopPage = ({ gameState, myId, shopType, handleAction, onExit }) => {
   };
 
   const getOwnedItems = () => {
-    const target = currentShopUser || myPlayer;
     const owned = [];
     resources.forEach((r) => {
-      const count = target.resources?.[r.type] || 0;
+      const count = currentPlayer.resources?.[r.type] || 0;
       if (count > 0) owned.push({ ...r, owned: count, category: "resource" });
     });
     harvests.forEach((h) => {
-      const count = target.harvests?.[h.type] || 0;
+      const count = currentPlayer.harvests?.[h.type] || 0;
       if (count > 0) owned.push({ ...h, owned: count, category: "harvest" });
     });
     return owned;
@@ -176,10 +176,10 @@ const ShopPage = ({ gameState, myId, shopType, handleAction, onExit }) => {
 
             <div className="current-user-badge">
               <span className="user-icon">🎮</span>
-              <span className="user-name"> {currentShopUser?.nickname || "플레이어"}님이 쇼핑 중 </span>
+              <span className="user-name"> {currentPlayer?.nickname || "플레이어"}님이 쇼핑 중 </span>
             </div>
           </div>
-          <div className="bell-display">💰 {currentShopUser?.bell ?? 0} Bell</div>
+          <div className="bell-display">💰 {currentPlayer?.bell ?? 0} Bell</div>
         </div>
 
         <div className="shop-tabs">
