@@ -8,6 +8,7 @@
   position: relative;
   display: flex;
   flex-direction: column;
+  padding-bottom: 150px;
 }
 
 .shop-page::before {
@@ -125,7 +126,7 @@
   overflow-y: auto;
   box-shadow: inset 0 0 20px rgba(0,0,0,0.02);
   min-height: 0;
-  max-height: 400px;
+  max-height: 500px;
 }
 
 .item-card {
@@ -157,14 +158,11 @@
 }
 
 .item-card.readonly {
-  opacity: 0.6;
   cursor: default;
-  filter: grayscale(30%);
 }
 
 .item-card.readonly:hover {
   transform: none;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .item-image {
@@ -209,35 +207,36 @@
   background: #fffaec;
   height: auto;
   border-top: 8px solid #f0e6d2;
-  padding: 15px 40px;
+  padding: 10px 40px;
   margin-top: 10px;
-  min-height: 220px;
-  max-height: 320px;
+  min-height: 180px;
+  max-height: 250px;
   display: flex;
   justify-content: center;
   align-items: center;
   flex-shrink: 0;
   overflow-y: auto;
+  margin-bottom: 20px;
 }
 
 .transaction-panel {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   align-items: center;
   width: 100%;
   max-width: 600px;
 }
 
 .selected-info {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: bold;
   color: #7a6652;
   background: linear-gradient(135deg, #f1fcef 0%, #e8f5e9 100%);
-  padding: 8px 25px;
+  padding: 6px 20px;
   border-radius: 30px;
   border: 3px solid #88d498;
-  box-shadow: 0 3px 0 #69b078;
+  box-shadow: 0 2px 0 #69b078;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -245,24 +244,24 @@
 
 .selected-info::before {
   content: "✨";
-  font-size: 16px;
+  font-size: 14px;
 }
 
 .quantity-selector {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   background: linear-gradient(135deg, #FFF9E6 0%, #FFFAE0 100%);
-  padding: 12px 35px;
+  padding: 8px 25px;
   border-radius: 35px;
   border: 3px solid #EBCB52;
-  box-shadow: 0 3px 0 #D9B63E;
+  box-shadow: 0 2px 0 #D9B63E;
 }
 
 .quantity-selector button {
-  width: 40px;
-  height: 40px;
-  font-size: 24px;
+  width: 35px;
+  height: 35px;
+  font-size: 20px;
   font-weight: bold;
   border: 3px solid #F0A020;
   background: linear-gradient(135deg, #FFD154 0%, #FFC107 100%);
@@ -270,7 +269,7 @@
   border-radius: 50%;
   cursor: pointer;
   transition: all 0.2s;
-  box-shadow: 0 3px 0 #D9A020;
+  box-shadow: 0 2px 0 #D9A020;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
 }
 
@@ -285,42 +284,34 @@
   box-shadow: 0 2px 0 #D9A020;
 }
 
-.quantity-selector button:disabled {
-  background: linear-gradient(135deg, #BDBDBD 0%, #9E9E9E 100%);
-  border-color: #757575;
-  cursor: not-allowed;
-  opacity: 0.4;
-  box-shadow: 0 2px 0 #757575;
-}
-
 .quantity-selector span {
-  font-size: 24px;
+  font-size: 20px;
   font-weight: bold;
   color: #8B7355;
-  min-width: 80px;
+  min-width: 70px;
   text-align: center;
   background: white;
-  border-radius: 15px;
-  padding: 5px 15px;
+  border-radius: 12px;
+  padding: 4px 12px;
   border: 2px solid #F5E6A8;
   box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
 .quantity-selector span small {
-  font-size: 16px;
+  font-size: 14px;
   color: #A39382;
   margin-left: 8px;
 }
 
 .button-group {
   display: flex;
-  gap: 15px;
-  margin-top: 5px;
+  gap: 12px;
+  margin-top: 3px;
 }
 
 .confirm-btn, .exit-btn {
-  padding: 10px 35px;
-  font-size: 16px;
+  padding: 8px 30px;
+  font-size: 15px;
   border-radius: 35px;
   font-weight: bold;
   cursor: pointer;
@@ -331,13 +322,13 @@
   background: linear-gradient(135deg, #FFD154 0%, #FFC107 100%);
   color: #8B7355;
   border: 3px solid #EBCB52;
-  box-shadow: 0 5px 0 #D9B63E;
+  box-shadow: 0 4px 0 #D9B63E;
 }
 
 .confirm-btn:hover:not(:disabled) {
   background: linear-gradient(135deg, #FFE082 0%, #FFD154 100%);
   transform: translateY(-2px);
-  box-shadow: 0 7px 0 #D9B63E;
+  box-shadow: 0 6px 0 #D9B63E;
 }
 
 .confirm-btn:active:not(:disabled) {
@@ -345,26 +336,17 @@
   box-shadow: 0 2px 0 #D9B63E;
 }
 
-.confirm-btn:disabled {
-  background: linear-gradient(135deg, #E0E0E0 0%, #BDBDBD 100%);
-  color: #9E9E9E;
-  border-color: #BDBDBD;
-  cursor: not-allowed;
-  opacity: 0.5;
-  box-shadow: 0 3px 0 #9E9E9E;
-}
-
 .exit-btn {
   background: linear-gradient(135deg, #F28D8D 0%, #E57373 100%);
   color: white;
   border: 3px solid #E57373;
-  box-shadow: 0 5px 0 #D84545;
+  box-shadow: 0 4px 0 #D84545;
 }
 
 .exit-btn:hover:not(:disabled) {
   background: linear-gradient(135deg, #FF9E9E 0%, #F28D8D 100%);
   transform: translateY(-2px);
-  box-shadow: 0 7px 0 #D84545;
+  box-shadow: 0 6px 0 #D84545;
 }
 
 .exit-btn:active:not(:disabled) {
@@ -372,24 +354,15 @@
   box-shadow: 0 2px 0 #D84545;
 }
 
-.exit-btn:disabled {
-  background: linear-gradient(135deg, #E0E0E0 0%, #BDBDBD 100%);
-  border-color: #9E9E9E;
-  color: #757575;
-  cursor: not-allowed;
-  opacity: 0.5;
-  box-shadow: 0 3px 0 #9E9E9E;
-}
-
 .no-selection {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
   align-items: center;
 }
 
 .no-selection p {
-  font-size: 20px;
+  font-size: 18px;
   color: #A39382;
   margin: 0;
   font-weight: bold;
@@ -403,11 +376,11 @@
 
 .warning-text {
   background: linear-gradient(135deg, #FFF9E6 0%, #FFE082 100%);
-  border: 3px solid #FFA726;
-  border-radius: 15px;
-  padding: 8px 20px;
-  font-size: 14px;
-  margin-bottom: 5px;
+  border: 2px solid #FFA726;
+  border-radius: 12px;
+  padding: 6px 15px;
+  font-size: 13px;
+  margin-bottom: 3px;
   font-weight: bold;
   color: #E65100;
   text-align: center;
@@ -472,11 +445,7 @@
 
 /* 비활성화 버튼 스타일 */
 button:disabled {
-  filter: grayscale(0.8);
-  opacity: 0.6;
-  cursor: not-allowed !important;
-  transform: none !important;
-  box-shadow: none !important;
+  cursor: default;
 }
 
 .observer-tag {
@@ -490,24 +459,24 @@ button:disabled {
 .total-price-display {
   background: #fff;
   border: 2px dashed #f0e6d2;
-  border-radius: 15px;
-  padding: 10px 20px;
-  margin: 5px 0;
+  border-radius: 12px;
+  padding: 8px 15px;
+  margin: 3px 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   width: 100%;
-  max-width: 300px;
+  max-width: 280px;
 }
 
 .total-price-display .label {
-  font-size: 13px;
+  font-size: 12px;
   color: #8b7355;
-  margin-bottom: 3px;
+  margin-bottom: 2px;
 }
 
 .total-price-display .amount {
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 800;
   color: #5d4037;
 }
@@ -523,10 +492,10 @@ button:disabled {
 }
 
 .shortage-msg {
-  font-size: 11px;
+  font-size: 10px;
   color: #e53935;
   font-weight: bold;
-  margin-top: 3px;
+  margin-top: 2px;
 }
 
 .shop-header {

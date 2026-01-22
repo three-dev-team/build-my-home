@@ -34,9 +34,6 @@ public class FishingService {
 
     private static final long TURN_END_AUTO_ADVANCE_MS = 5000L; // event-complete 미수신 대비 자동 턴 진행 지연(ms)
 
-    // ✅DEV ONLY: 개발 테스트용 턴 우회 플래그 키
-    private static final String DEV_FORCE_MY_TURN_FLAG = "DEV_FORCE_MY_TURN";
-
     private final SimpMessagingTemplate messagingTemplate;
     private final GameStateService gameStateService;
     private final FishingHandler fishingHandler;
@@ -51,15 +48,6 @@ public class FishingService {
     @PreDestroy
     public void shutdown() {
         scheduler.shutdownNow();
-    }
-
-    // ✅DEV ONLY: 개발 테스트용 턴 우회 플래그 확인 메소드
-    // System property 우선, 없으면 env 사용
-    private boolean isDevForceMyTurnEnabled() {
-        String v = System.getProperty(DEV_FORCE_MY_TURN_FLAG);
-        if (v == null || v.isBlank()) v = System.getenv(DEV_FORCE_MY_TURN_FLAG);
-        if (v == null) return false;
-        return "1".equals(v) || "true".equalsIgnoreCase(v);
     }
 
     // 낚시 시작 메소드
@@ -278,14 +266,10 @@ public class FishingService {
     // - 개발: DEV_FORCE_MY_TURN 활성화 시에만 단독 테스트 허용
     private boolean canActorStartFishing(Long roomId, Long actorId) {
         GameState game = gameStateService.getGame(roomId);
-        if (game == null) return isDevForceMyTurnEnabled();
 
         synchronized (game) {
             if (game.getCurrentPlayerId() == null) return false;
             if (game.getStatus() != GameStatus.WAITING_FISHING) return false;
-            // ✅ DEV ONLY: 턴 유저 체크 우회
-            if (isDevForceMyTurnEnabled()) return true;
-
             return actorId.equals(game.getCurrentPlayerId());
         }
     }
@@ -295,7 +279,6 @@ public class FishingService {
     // - 개발: DEV_FORCE_MY_TURN 활성화 시에만 단독 테스트 허용
     private boolean isCurrentTurnActorIfGameExists(Long roomId, Long actorId) {
         GameState game = gameStateService.getGame(roomId);
-        if (game == null) return isDevForceMyTurnEnabled();
 
         synchronized (game) {
             if (game.getCurrentPlayerId() == null) return false;
@@ -305,8 +288,6 @@ public class FishingService {
                     && game.getStatus() != GameStatus.FISHING_IN_PROGRESS) {
                 return false;
             }
-            // ✅ DEV ONLY: 턴 유저 체크 우회
-            if (isDevForceMyTurnEnabled()) return true;
 
             return actorId.equals(game.getCurrentPlayerId());
         }

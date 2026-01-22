@@ -407,6 +407,8 @@ const GamePage = () => {
                 {/* 낚시 이벤트 (WAITING_FISHING / FISHING_IN_PROGRESS) */}
                 {isFishingPhase && (
                     <Fishing
+                        // 이전 결과(resultMsg)가 Fishing 컴포넌트 state에 남아있지 않게 확실하게 제거
+                        key={`${roomId}-${gameState.currentRound}-${gameState.currentPlayerId}`} //
                         roomId={roomId}
                         isMyTurn={isMyTurn}
                         currentPlayerName={currentPlayer?.nickname}
@@ -423,6 +425,7 @@ const GamePage = () => {
                     <ShopPage
                         gameState={gameState}
                         myId={myId}
+                        currentPlayer={currentPlayer}
                         shopType="ITEM_SHOP"
                         handleAction={handleAction}
                         onExit={handleEventComplete}
@@ -435,6 +438,7 @@ const GamePage = () => {
                     <ShopPage
                         gameState={gameState}
                         myId={myId}
+                        currentPlayer={currentPlayer}
                         shopType="HARVEST_SHOP"
                         handleAction={handleAction}
                         onExit={handleEventComplete}
