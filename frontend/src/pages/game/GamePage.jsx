@@ -425,6 +425,7 @@ const GamePage = () => {
                     <ShopPage
                         gameState={gameState}
                         myId={myId}
+                        currentPlayer={currentPlayer}
                         shopType="ITEM_SHOP"
                         handleAction={handleAction}
                         onExit={handleEventComplete}
@@ -437,6 +438,7 @@ const GamePage = () => {
                     <ShopPage
                         gameState={gameState}
                         myId={myId}
+                        currentPlayer={currentPlayer}
                         shopType="HARVEST_SHOP"
                         handleAction={handleAction}
                         onExit={handleEventComplete}
