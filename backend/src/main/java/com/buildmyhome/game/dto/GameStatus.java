@@ -29,6 +29,7 @@ public enum GameStatus {
     FISHING_IN_PROGRESS(0),    // 실제 미니게임 진행(낚시 내부 타이머로 종료)
     SUPER_EVENT(0),           // 은행/스탬프 등 슈퍼 이벤트 진행 중
     WAITING_KK(20),            // KK칸 진행 중 (KK 노래 여러개)
+    WAITING_MUPANI(20),       // 무파니 진행 중
 
     // --- 다음 턴으로 넘어가기 전 ---
     TURN_END_PENDING(0),      // 턴 종료 전 확인 단계(공통)

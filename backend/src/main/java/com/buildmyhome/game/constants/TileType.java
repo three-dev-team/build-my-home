@@ -20,7 +20,8 @@ public enum TileType {
     STAMP_GREEN(GameStatus.WAITING_STAMP),
     LOAN(GameStatus.WAITING_LOAN),
     FISHING(GameStatus.WAITING_FISHING),
-    KK(GameStatus.WAITING_KK);
+    KK(GameStatus.WAITING_KK),
+    MUPANI(GameStatus.WAITING_MUPANI);
 
     private final GameStatus nextStatus;
 }
