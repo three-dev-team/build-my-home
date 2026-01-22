@@ -20,8 +20,8 @@ public enum GameStatus {
 
     // --- 칸 이벤트별 유저 입력을 기다리는 상태 ---
     WAITING_STAMP(15),         // 스탬프칸 이용 중
-    WAITING_RESOURCES(1),     // 재화칸 이용 중
-    WAITING_HARVEST(1),       // 수확물칸 이용 중
+    WAITING_RESOURCES(5),     // 재화칸 이용 중
+    WAITING_HARVEST(5),       // 수확물칸 이용 중
     WAITING_SHOP_ITEM(20),     // 아이템 상점 이용 중
     WAITING_SHOP_RESOURCE(20), // 재화 상점 이용 중
     WAITING_LOAN(30),          // 대출 여부 선택 중

@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import {Client} from "@stomp/stompjs";
 import {getBrokerURL} from "../../utils/ws.js";
 import {useLocation, useNavigate, useParams} from "react-router-dom";
@@ -20,6 +20,8 @@ import ShopPage from "./ShopPage.jsx";
 import TurnCounter from "./TurnCounter.jsx";
 import House from "./House.jsx";
 import Fishing from "./Fishing.jsx";
+import Inventory from "./Inventory.jsx";
+import RewardDrop from "./RewardDrop.jsx";
 
 const GamePage = () => {
     const {roomId} = useParams();
@@ -35,8 +37,15 @@ const GamePage = () => {
     );
     const [stompClient, setStompClient] = useState(null);
 
-    // fishing 추가: 낚시 룸 이벤트 메시지 분리 저장소
+    // fishing: 낚시 룸 이벤트 메시지 분리 저장소
     const [fishingEventMessage, setFishingEventMessage] = useState(null);
+
+    // 인벤토리 오버레이 (내 턴일 때만 열 수 있음)
+    const [showInventory, setShowInventory] = useState(false);
+
+    // 재화/과일 드롭 이펙트 트리거 데이터
+    const [rewardToast, setRewardToast] = useState(null);
+    const rewardCharacterRef = useRef(null);
 
     // 현재 턴 플레이어 정보
     const currentPlayer =
@@ -57,6 +66,14 @@ const GamePage = () => {
             return;
         }
     }, [token, navigate]);
+
+    // 내 턴이 끝나거나 상태가 바뀌면 인벤을 자동으로 닫아서 잔상 방지
+    useEffect(() => {
+        if (!isMyTurn) setShowInventory(false);
+        if (gameState && gameState.status !== "WAITING_PLAYER_ACTION") {
+            setShowInventory(false);
+        }
+    }, [isMyTurn, gameState?.status]);
 
     // 1. 소켓 연결 및 데이터 수신 로직은 여기서 한 번만!
     useEffect(() => {
@@ -86,6 +103,24 @@ const GamePage = () => {
                     if (isRoomEvent || isFishingError) {
                         setFishingEventMessage(data);
                         return;
+                    }
+
+                    //  보상 데이터는 (현재 구현상) MOVE_COMPLETE에 들어오는 것으로 가정
+                    // - 여기서 rewardFx를 세팅해두고
+                    // - 실제 렌더는 WAITING_RESOURCES/HARVEST 상태일 때만 한다(진행 멈춤 보장)
+                    if (data?.type === "MOVE_COMPLETE") {
+                        const hasRes =
+                            data?.gainedResources && Object.keys(data.gainedResources).length > 0;
+                        const hasHar =
+                            data?.gainedHarvests && Object.keys(data.gainedHarvests).length > 0;
+
+                        if (hasRes || hasHar) {
+                            setRewardToast({
+                                gainedResources: hasRes ? data.gainedResources : null,
+                                gainedHarvests: hasHar ? data.gainedHarvests : null,
+                                key: Date.now(),
+                            });
+                        }
                     }
 
                     setGameState(data);
@@ -217,6 +252,17 @@ const GamePage = () => {
         });
     };
 
+    // 인벤 열기: 내 턴에서만 허용
+    const handleOpenInventory = () => {
+        if (!isMyTurn) return;
+        if (!gameState || gameState.status !== "WAITING_PLAYER_ACTION") return;
+        setShowInventory(true);
+    };
+
+    const handleCloseInventory = () => {
+        setShowInventory(false);
+    };
+
     // ------------------- [DEV] 상태 강제 변경 핸들러 ------------------- //
     const handleDevStatusChange = (newStatus) => {
         console.log(`>>> [DEV] Status Change Request: ${newStatus}`);
@@ -275,6 +321,43 @@ const GamePage = () => {
                     totalRounds={gameState.totalRounds || 20}
                 />
             )}
+
+            {/* 인벤토리 오버레이: 내 턴 + WAITING_PLAYER_ACTION에서만 표시 */}
+            {showInventory && isMyTurn && gameState.status === "WAITING_PLAYER_ACTION" && (
+                <Inventory
+                    player={currentPlayer}
+                    onClose={handleCloseInventory}
+                />
+            )}
+
+            {/* 보상 연출용 캐릭터(보드 말판 말고, 화면에 따로 띄우는 용도) */}
+            {rewardToast &&
+                (gameState.status === "WAITING_RESOURCES" || gameState.status === "WAITING_HARVEST") && (
+                    <div
+                        ref={rewardCharacterRef}
+                        style={{
+                            position: "fixed",
+                            left: "50%",
+                            top: 220,
+                            transform: "translateX(-50%)",
+                            zIndex: 12000,
+                            pointerEvents: "none",
+                            userSelect: "none",
+                        }}
+                    >
+                        <img
+                            src="/images/RewardCharater.webp"
+                            alt="reward-character"
+                            draggable={false}
+                            style={{
+                                width: 220,
+                                height: 220,
+                                objectFit: "contain",
+                                filter: "drop-shadow(0 12px 18px rgba(0,0,0,0.25))",
+                            }}
+                        />
+                    </div>
+                )}
 
             {/* 2. 게임 콘텐츠 영역 */}
             <main>
@@ -372,6 +455,27 @@ const GamePage = () => {
                         player={currentPlayer}
                     />
                 )}
+
+                {/* 재화칸 && 과일칸 */}
+                {rewardToast &&
+                    (gameState.status === "WAITING_RESOURCES" || gameState.status === "WAITING_HARVEST") && (
+                        <RewardDrop
+                            key={rewardToast.key}
+                            anchorRef={rewardCharacterRef}
+                            gainedResources={rewardToast.gainedResources}
+                            gainedHarvests={rewardToast.gainedHarvests}
+                            durationMs={1200}
+                            onDone={() => {
+                                setRewardToast(null);
+
+                                // 이벤트 종료는 "내 턴"인 클라만 서버에 알림(중복 전송 방지)
+                                if (isMyTurn) {
+                                    handleEventComplete();
+                                }
+                            }}
+                        />
+                    )}
+
                 {/* ------------------------------------- 개별 이벤트 추가 ------------------------------------- */}
 
                 {/* 사용자 액션 패널 */}
@@ -399,7 +503,7 @@ const GamePage = () => {
                                 body: JSON.stringify({roomId, type: "BUILD_HOUSE"}),
                             });
                         }}
-                        onInventory={() => console.log("인벤토리 열기")}
+                        onInventory={handleOpenInventory}
                     />
                 )}
 

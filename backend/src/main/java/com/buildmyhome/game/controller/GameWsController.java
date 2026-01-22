@@ -5,10 +5,7 @@ import com.buildmyhome.fishing.dto.StartFishingRequest;
 import com.buildmyhome.fishing.service.FishingService;
 import com.buildmyhome.game.constants.BoardData;
 import com.buildmyhome.game.constants.GameConstants;
-import com.buildmyhome.game.dto.GameMessage;
-import com.buildmyhome.game.dto.GamePlayerState;
-import com.buildmyhome.game.dto.GameState;
-import com.buildmyhome.game.dto.GameStatus;
+import com.buildmyhome.game.dto.*;
 import com.buildmyhome.game.service.GameStateService;
 import com.buildmyhome.house.service.HouseService;
 import com.buildmyhome.kk.KKService;
@@ -25,11 +22,10 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
 import java.security.Principal;
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 
 import static com.buildmyhome.game.constants.GameConstants.*;
@@ -257,6 +253,19 @@ public class GameWsController {
             GameStatus nextStatus = BoardData.getNextStatus(player.getPosition());
             gameState.setStatus(nextStatus);
 
+            // 이번 moveComplete로 얻은 보상(있을 때만 채움)
+            Map<ResourceType, Integer> gainedResources = null;
+            Map<HarvestType, Integer> gainedHarvests = null;
+
+            // 칸 종류에 따라 보상 지급
+            if (nextStatus == GameStatus.WAITING_RESOURCES) {
+                // 재화칸: ResourceType 중 랜덤 2종(중복 없음) 각각 +1
+                gainedResources = grantRandomResources(player);
+            } else if (nextStatus == GameStatus.WAITING_HARVEST) {
+                // 과일칸: 지정 과일 5종 중 랜덤 2종(중복 없음) 각각 +1
+                gainedHarvests = grantRandomFruits(player);
+            }
+
             if (nextStatus == GameStatus.WAITING_SHOP_ITEM) {
                 shopService.startShopSession(roomId, memberId, ShopType.ITEM_SHOP);
                 System.out.println("🏪 아이템 상점 세션 생성: memberId=" + memberId);
@@ -275,6 +284,9 @@ public class GameWsController {
             }
 
             GameMessage response = defaultGameResponse("MOVE_COMPLETE", gameState);
+            // 이번에 얻은 보상을 메시지에 실어 보냄(프론트에서 토스트/연출 가능)
+            response.setGainedResources(gainedResources);
+            response.setGainedHarvests(gainedHarvests);
             simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
         }
     }
@@ -458,5 +470,66 @@ public class GameWsController {
         } else {
             System.out.println(">>> ℹ️ " + targetStatus + " 상태는 제한 시간이 없으므로 스케줄러를 실행하지 않습니다.");
         }
+    }
+
+    // 과일 칸에서만 쓸 과일 목록
+    // - ResourceType은 values() 전체가 대상이라 별도 배열이 필요 없음
+    private static final HarvestType[] FRUIT_TYPES = {
+            HarvestType.APPLE,
+            HarvestType.ORANGE,
+            HarvestType.PEAR,
+            HarvestType.PEACH,
+            HarvestType.CHERRY
+    };
+
+    // 재화칸 보상: ResourceType 전체 중 중복 없이 2종을 뽑아서 각 +1 지급
+    // 중복 없이 2개를 뽑기 위해 인덱스 2개를 겹치지 않게 생성
+    // player.resources에 실제 지급 반영 + 이번에 얻은 목록을 Map으로 반환
+    private Map<ResourceType, Integer> grantRandomResources(GamePlayerState player) {
+        ResourceType[] all = ResourceType.values();
+        if (all.length < 2) return Map.of(); // 방어(종류가 2개 미만이면 지급 불가)
+
+        int n = all.length;
+        int i1 = ThreadLocalRandom.current().nextInt(n);
+        int i2 = ThreadLocalRandom.current().nextInt(n - 1);
+        if (i2 >= i1) i2++; // i1과 겹치지 않게 보정
+
+        ResourceType a = all[i1];
+        ResourceType b = all[i2];
+
+        // EnumMap: enum 키에 최적화(가볍고 빠름)
+        Map<ResourceType, Integer> gained = new EnumMap<>(ResourceType.class);
+
+        // 실제 지급(각 1개씩)
+        player.getResources().put(a, player.getResources().get(a) + 1);
+        player.getResources().put(b, player.getResources().get(b) + 1);
+
+        // 이번에 얻은 것만 별도로 반환(프론트 표시용)
+        gained.put(a, 1);
+        gained.put(b, 1);
+        return gained;
+    }
+
+
+    // 과일칸 보상: FRUIT_TYPES(5종) 중 중복 없이 2종을 뽑아서 각 +1 지급
+    private Map<HarvestType, Integer> grantRandomFruits(GamePlayerState player) {
+        if (FRUIT_TYPES.length < 2) return Map.of();
+
+        int n = FRUIT_TYPES.length;
+        int i1 = ThreadLocalRandom.current().nextInt(n);
+        int i2 = ThreadLocalRandom.current().nextInt(n - 1);
+        if (i2 >= i1) i2++;
+
+        HarvestType a = FRUIT_TYPES[i1];
+        HarvestType b = FRUIT_TYPES[i2];
+
+        Map<HarvestType, Integer> gained = new EnumMap<>(HarvestType.class);
+
+        player.getHarvests().put(a, player.getHarvests().get(a) + 1);
+        player.getHarvests().put(b, player.getHarvests().get(b) + 1);
+
+        gained.put(a, 1);
+        gained.put(b, 1);
+        return gained;
     }
 }

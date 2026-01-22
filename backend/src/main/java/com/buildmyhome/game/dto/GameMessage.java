@@ -5,6 +5,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 import java.util.List;
+import java.util.Map;
 
 @Getter
 @Setter
@@ -38,5 +39,8 @@ public class GameMessage {
     
     private String stampType;
     private String errorMessage;
+
+    private Map<ResourceType, Integer> gainedResources; // 재화칸 보상
+    private Map<HarvestType, Integer> gainedHarvests;   // 과일칸 보상
     private Integer actionData; // player state의 actionData 처럼 사용됨(휘발성 데이터 필드)
 }
