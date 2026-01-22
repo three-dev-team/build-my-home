@@ -27,7 +27,7 @@ public class BoardData {
             TileType.LOAN,              // 18
             TileType.RESOURCE,          // 19
             TileType.SHOP_ITEM,         // 20
-            TileType.STAMP_GREEN,       // 21
+            TileType.MUPANI,            // 21
             TileType.HARVEST,           // 22
             TileType.FISHING            // 23
     };
