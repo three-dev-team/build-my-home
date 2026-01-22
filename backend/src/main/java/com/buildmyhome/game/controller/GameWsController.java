@@ -48,6 +48,35 @@ public class GameWsController {
     private final FishingService fishingService;
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
+    // TODO: 추후 GameEventService로 분리 - Tiffany
+    // 타임아웃 됐을 때 자동으로 턴이 넘어가는 칸이 아닐 경우 여기서 처리
+    // ex) 타임아웃 됐을 경우 KK는 입장료를 반드시 납부하고, 공연을 관람하게 해야함
+    private void handleEventTimeout(GameState gameState, GameStatus status, Long roomId) {
+        if (gameState.getStatus() != status) return;
+        GamePlayerState player = gameState.getPlayers().get(gameState.getCurrentPlayerId());
+        GameMessage response;
+
+        switch (status) {
+            case WAITING_KK:
+                if (player.getUiStep() >= 2) return;  // 유저가 이미 액션을 취함 -> timeout 무시 (방어 코드)
+                kkService.payEntryFee(player, 0); // 타임아웃 됐을 경우 랜덤 선택
+
+                player.setUiStep(2); // 화면 전환
+
+                response = defaultGameResponse("KK_AUTO_START", gameState);
+                response.setActionData(player.getActionData());
+                break;
+
+            // 기본은 다음 턴으로 넘어감
+            default:
+                gameState.nextTurn();
+                response = defaultGameResponse("EVENT_TIMEOUT", gameState);
+                break;
+        }
+
+        simpMessagingTemplate.convertAndSend("/topic/games/"+ roomId, response);
+    }
+
     // 서버메모리 -> 프론트로 전달하는 공통 응답 DTO 생성하는 메서드
     private GameMessage defaultGameResponse(String type, GameState gameState) {
         GameMessage response = new GameMessage();
@@ -240,15 +269,7 @@ public class GameWsController {
             if (nextStatus.isAutoProceed()) {
                 scheduler.schedule(() -> {
                     synchronized (gameState) {
-                        if (gameState.getStatus() == nextStatus) {
-
-                            // 시간 초과한 경우 다음 플레이어로 넘김
-                            gameState.nextTurn();
-
-                            GameMessage timeoutResponse = defaultGameResponse("EVENT_TIMEOUT", gameState);
-                            simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, timeoutResponse);
-                            System.out.println(">>> ⏰ " + nextStatus.getTimeoutSeconds() + "초 경과: 타임아웃으로 복귀");
-                        }
+                        handleEventTimeout(gameState, nextStatus, roomId);
                     }
                 }, nextStatus.getTimeoutSeconds(), TimeUnit.SECONDS);
             }
@@ -306,7 +327,8 @@ public class GameWsController {
                         shopService.sellHarvest(roomId, memberId, message.getHarvestType(), message.getQuantity());
                         break;
                     case "KK_ACTION":
-                        kkService.payEntryFee(player);
+                        int songId = (message.getActionData() != null) ? message.getActionData() : 0;
+                        kkService.payEntryFee(player, songId);
                         player.setUiStep(2);
                         response.setType("KK_FEE_PAID");
                         break;
@@ -360,8 +382,6 @@ public class GameWsController {
             if (!memberId.equals(gameState.getCurrentPlayerId())) {
                 return;
             }
-            player.setUiStep(0);
-
             // TODO: 최대 라운드 도달 시 게임 종료 처리  - Tiffany
             gameState.nextTurn();
 
@@ -433,16 +453,8 @@ public class GameWsController {
         // 3. 타임아웃 설정이 있는 상태(0보다 큰 경우)일 때만 스케줄러 실행
         if (timeout > 0) {
             scheduler.schedule(() -> {
-                synchronized (gameState) {
-                    // 시간이 다 됐을 때 여전히 그 상태일 때만 메인보드 복귀
-                    if (gameState.getStatus() == targetStatus) {
-                        gameState.setStatus(GameStatus.WAITING_PLAYER_ACTION);
-                        GameMessage endResponse = defaultGameResponse("EVENT_END", gameState);
-                        simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, endResponse);
-                        System.out.println(">>> ⏰ " + timeout + "초 경과: 타임아웃으로 복귀");
-                    }
-                }
-            }, timeout, TimeUnit.SECONDS); 
+                handleEventTimeout(gameState, targetStatus, roomId);
+            }, timeout, TimeUnit.SECONDS);
         } else {
             System.out.println(">>> ℹ️ " + targetStatus + " 상태는 제한 시간이 없으므로 스케줄러를 실행하지 않습니다.");
         }
