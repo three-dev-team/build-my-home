@@ -19,6 +19,8 @@ public class GamePlayerState {
     private int position = 0;                             // 현재 칸 위치
     private int bell = 10;                                // 시작 벨 10
     private int loan = 0;                                 // 대출금
+    private int uiStep = 0;                               // 행동 단계 (특정 상태에서 페이지 이동 로직 시 사용)
+    private Integer actionData;                           // 행동 관련 추가 데이터 (특정 정보가 휘발성으로 필요할 때 사용)
 
     // 재화 정보
     private Map<ResourceType, Integer> resources = new EnumMap<>(ResourceType.class);

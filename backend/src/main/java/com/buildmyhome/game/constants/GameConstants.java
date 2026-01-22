@@ -10,4 +10,5 @@ public class GameConstants {
 
     // KK 공연장
     public static final int KK_ENTRY_FEE = 100;
+    public static final int KK_SONG_COUNT = 2;
 }

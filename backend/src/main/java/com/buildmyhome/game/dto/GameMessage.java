@@ -24,6 +24,7 @@ public class GameMessage {
     private int currentRound;
     private int totalRounds;
     private int timeoutSeconds;
+    private int uiStep;
 
     private ShopType shopType;        // 어떤 상점인지
     private ItemType itemType;        // 구매/판매할 아이템
@@ -41,4 +42,5 @@ public class GameMessage {
 
     private Map<ResourceType, Integer> gainedResources; // 재화칸 보상
     private Map<HarvestType, Integer> gainedHarvests;   // 과일칸 보상
+    private Integer actionData; // player state의 actionData 처럼 사용됨(휘발성 데이터 필드)
 }

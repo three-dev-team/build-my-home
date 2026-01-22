@@ -21,6 +21,7 @@ public class WebSocketAuthChannelInterceptor implements ChannelInterceptor {
 
     private final JwtTokenProvider jwtTokenProvider;
     private final MemberRepository memberRepository;
+    private final com.buildmyhome.common.jwt.UserSessionStore userSessionStore;
 
     @Override
     public Message<?> preSend(Message<?> message, MessageChannel channel) {
@@ -46,6 +47,12 @@ public class WebSocketAuthChannelInterceptor implements ChannelInterceptor {
                 throw new IllegalArgumentException("인증 토큰이 없거나 유효하지 않습니다.");
             }
 
+            // [중복 로그인 체크]
+            Long memberId = jwtTokenProvider.getMemberId(token);
+            if (!userSessionStore.isLatestToken(memberId, token)) {
+                throw new IllegalArgumentException("다른 기기에서 접속하여 연결이 거부되었습니다.");
+            }
+
             // 토큰에서 멤버 이메일 추출(memberId 가져오기 위해서)
             String email = jwtTokenProvider.getEmail(token);
 
@@ -55,6 +62,16 @@ public class WebSocketAuthChannelInterceptor implements ChannelInterceptor {
 
             // 멤버 ID를 Principal로 설정
             Principal principal = () -> String.valueOf(member.getId());
+
+            // [1인 1소켓 강제] 이미 접속중인 세션이 있는지 확인
+            // sessionId는 헤더에서 가져오거나 시스템이 부여함 (STOMP에서는 session 속성 활용)
+            String sessionId = accessor.getSessionId();
+            if (userSessionStore.isDuplicateConnection(member.getId(), sessionId)) {
+                throw new IllegalArgumentException("이미 다른 창에서 게임이 실행 중입니다.");
+            }
+            
+            // 접속 허용 시 세션 등록
+            userSessionStore.addSession(member.getId(), sessionId);
 
             // 이 웹소켓 연결(헤더)에 유저 정보 저장
             accessor.setUser(principal);

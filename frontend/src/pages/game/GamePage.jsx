@@ -48,7 +48,9 @@ const GamePage = () => {
     const rewardCharacterRef = useRef(null);
 
     // 현재 턴 플레이어 정보
-    const currentPlayer = gameState?.players?.find((p) => p.memberId === gameState.currentPlayerId) || null;
+    const currentPlayer =
+        gameState?.players?.find((p) => p.memberId === gameState.currentPlayerId) ||
+        null;
     const isMyTurn = gameState ? myId === gameState.currentPlayerId : false;
 
     // 공통 UI(채팅, 메뉴버튼 등)를 보여줄지 말지 결정하는 변수
@@ -122,6 +124,15 @@ const GamePage = () => {
                     }
 
                     setGameState(data);
+                });
+
+                // [중복 로그인 실시간 감지]
+                client.subscribe("/user/queue/kick", (message) => {
+                    console.log(">>> 🚫 중복 로그인 감지: 강제 로그아웃");
+                    alert("다른 기기에서 접속하여 로그아웃 되었습니다.");
+                    sessionStorage.clear();
+                    localStorage.clear();
+                    navigate("/");
                 });
 
                 // 웹소켓 연결 시 현재 게임 상태 요청 - 에러, 새로고침 방지용
@@ -441,6 +452,7 @@ const GamePage = () => {
                         timeoutSeconds={gameState.timeoutSeconds || 0}
                         onAction={(type, payload) => handleAction(type, payload)}
                         onExit={handleEventComplete}
+                        player={currentPlayer}
                     />
                 )}
 
@@ -538,7 +550,6 @@ const GamePage = () => {
                 {["WAITING_PLAYER_ACTION", "MOVING"].includes(gameState.status) && (
                     <MainBoardPage players={gameState.players}/>
                 )}
-
             </main>
 
             {/* 사용자 상태 패널 표시(하단) */}

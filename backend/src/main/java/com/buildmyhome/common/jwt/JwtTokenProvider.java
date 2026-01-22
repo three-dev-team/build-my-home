@@ -55,6 +55,16 @@ public class JwtTokenProvider {
                 .getSubject();
     }
 
+    // 토큰에서 멤버 아이디 추출
+    public Long getMemberId(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .get("memberId", Long.class);
+    }
+
     // 토큰 유효성 검증
     public boolean validateToken(String token) {
         try {
