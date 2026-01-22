@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 import java.util.Set;
 
 import static com.buildmyhome.game.constants.GameConstants.STAMP_DUPLICATE_REWARD;
+import static com.buildmyhome.game.constants.GameConstants.STAMP_REWARDS;
 
 @Service
 @RequiredArgsConstructor
@@ -45,5 +46,19 @@ public class StampServiceImpl implements StampService {
         collectedStamps.add(stampType);
         player.setActionData(1); // 신규
         return true;
+    }
+
+    @Override
+    public int exchangeStamps(GamePlayerState player) {
+        int stampCount = player.getCollectedStamps().size();
+        int reward = STAMP_REWARDS[Math.min(stampCount, 3)];
+
+        // 벨 지급
+        player.setBell(player.getBell() + reward);
+
+        // 스탬프 초기화
+        player.getCollectedStamps().clear();
+
+        return reward;
     }
 }
