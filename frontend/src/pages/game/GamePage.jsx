@@ -396,13 +396,11 @@ const GamePage = () => {
                 {gameState.status === "WAITING_STAMP" && (
                     <Stamp
                         isMyTurn={isMyTurn}
+                        player={currentPlayer}
                         currentPlayerName={currentPlayer?.nickname}
-                        userStampsCount={currentPlayer?.collectedStamps?.length || 0}
                         timeoutSeconds={gameState.timeoutSeconds || 0}
-                        onReward={(reward) => console.log(`Reward: ${reward}`)}
-                        onStampClick={() => handleAction("STAMP_ACTION", {})}
-                        onExit={handleEventComplete}
                         onAction={handleAction}
+                        onExit={handleEventComplete}
                     />
                 )}
 

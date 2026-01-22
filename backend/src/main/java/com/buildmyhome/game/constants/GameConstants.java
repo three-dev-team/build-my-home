@@ -11,4 +11,9 @@ public class GameConstants {
     // KK 공연장
     public static final int KK_ENTRY_FEE = 100;
     public static final int KK_SONG_COUNT = 2;
+
+    // 스탬프 보상
+    public static final int[] STAMP_REWARDS = {0, 50, 200, 100};
+    // 중복 스탬프 보상
+    public static final int STAMP_DUPLICATE_REWARD = 20;
 }

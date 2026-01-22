@@ -1,12 +1,14 @@
 // hooks/useGameTimer.js
+// UI 표시용 카운트다운 타이머 훅
 import { useState, useEffect } from 'react';
 
 /**
  * @param {number} timeOutSeconds - 각 칸(이벤트)마다 설정하고 싶은 제한 시간
+ * @param {function} onTimeOut - 시간이 다 되었을 때 자동으로 실행할 함수
  */
 
 // 단순히 카운트다운만 함 (액션 처리 X)
-export const useGameTimer = (timeOutSeconds) => {
+export const useGameTimer = (timeOutSeconds, onTimeOut) => {
     // 넘겨받은 seconds로 초기화
     const [timeLeft, setTimeLeft] = useState(timeOutSeconds);
 
@@ -22,6 +24,7 @@ export const useGameTimer = (timeOutSeconds) => {
             setTimeLeft((prev) => {
                 if (prev <= 1) {
                     clearInterval(timer);
+                    if (onTimeOut) onTimeOut();  // 시간이 다 되었을 때 실행할 함수
                     return 0;
                 }
                 return prev - 1;

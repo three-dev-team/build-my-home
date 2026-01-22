@@ -12,9 +12,9 @@ public enum GameStatus {
     DETERMINING_ORDER(30),  // 순서 정하기 페이지
 
     // --- PLAYING 영역 ---
-    WAITING_PLAYER_ACTION(0),  // 유저 액션 (주사위, 아이템, 맵) 선택 대기 중
+    WAITING_PLAYER_ACTION(0),   // 유저 액션 (주사위, 아이템, 맵) 선택 대기 중
     WAITING_DICE(20),           // 주사위 굴리기 대기
-    MOVING(0),                 // 캐릭터 이동 중 (애니메이션 연출 시간 확보용)
+    MOVING(0),                  // 캐릭터 이동 중 (애니메이션 연출 시간 확보용)
     WAITING_HOUSE(0),           // 집짓기
     WAITING_ATM(60),            // ATM
 
@@ -32,9 +32,9 @@ public enum GameStatus {
     WAITING_MUPANI(20),       // 무파니 진행 중
 
     // --- 다음 턴으로 넘어가기 전 ---
-    TURN_END_PENDING(0),      // 턴 종료 전 확인 단계(공통)
+    TURN_END_PENDING(0),        // 턴 종료 전 확인 단계(공통)
 
-    FINISHED(0);               // 결과 페이지
+    FINISHED(0);                // 결과 페이지
 
     private final int timeoutSeconds;
 

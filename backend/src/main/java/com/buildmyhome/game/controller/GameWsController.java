@@ -4,7 +4,7 @@ import com.buildmyhome.fishing.dto.FishingActionRequest;
 import com.buildmyhome.fishing.dto.StartFishingRequest;
 import com.buildmyhome.fishing.service.FishingService;
 import com.buildmyhome.game.constants.BoardData;
-import com.buildmyhome.game.constants.GameConstants;
+import com.buildmyhome.game.constants.TileType;
 import com.buildmyhome.game.dto.*;
 import com.buildmyhome.game.service.GameStateService;
 import com.buildmyhome.house.service.HouseService;
@@ -320,10 +320,10 @@ public class GameWsController {
                         loanService.repay(roomId, memberId, message.getAmount());
                         response.setType("LOAN_REPAID");
                         break;
-                    case "STAMP_ACQUIRE":
-                        // stampType은 현재 로직상 null이어도 내부에서 count 기반으로 결정됨
-                        stampService.acquireStamp(roomId, memberId, message.getStampType());
-                        response.setType("STAMP_ACQUIRED");
+                    case "STAMP_COLLECT":
+                        boolean canCollectStamp = stampService.collectStamp(player, message.getActionDataStr());
+                        player.setUiStep(2);
+                        response.setType(canCollectStamp ? "STAMP_ADDED" : "STAMP_DUPLICATE");
                         break;
                     case "SHOP_BUY_ITEM":
                         // 아이템 구매 로직 처리
@@ -472,6 +472,7 @@ public class GameWsController {
         }
     }
 
+    // TODO: 추후 GameRewardService로 분리(BMH:31) - Tiffany
     // 과일 칸에서만 쓸 과일 목록
     // - ResourceType은 values() 전체가 대상이라 별도 배열이 필요 없음
     private static final HarvestType[] FRUIT_TYPES = {
