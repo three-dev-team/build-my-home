@@ -16,6 +16,7 @@ export const TILE_TYPES = {
     LOAN: 'LOAN',
     FISHING: 'FISHING',
     KK: 'KK',
+    MUPANI : 'MUPANI',
 };
 
 const rawTiles = [
@@ -40,7 +41,7 @@ const rawTiles = [
     { id: 18, type: 'LOAN', name: '대출칸' },
     { id: 19, type: 'RESOURCE', name: '재화칸' },
     { id: 20, type: 'SHOP_ITEM', name: '아이템상점' },
-    { id: 21, type: 'STAMP_GREEN', name: '초록 스탬프' },
+    { id: 21, type: 'MUPANI', name: '무 주식' },
     { id: 22, type: 'HARVEST', name: '과일칸' },
     { id: 23, type: 'FISHING', name: '낚시칸' },
 ];
