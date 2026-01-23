@@ -36,7 +36,8 @@ public class RoomStateServiceImpl implements RoomStateService {
         RoomState room = roomStates.get(roomId);
         synchronized (room) {
             RoomPlayerState removingPlayer = room.getPlayer(memberId);
-            if (removingPlayer == null) return;
+            if (removingPlayer == null)
+                return;
 
             boolean wasHost = removingPlayer.isHost();
             room.removePlayer(memberId);
@@ -77,13 +78,15 @@ public class RoomStateServiceImpl implements RoomStateService {
     @Override
     public void delegateHost(Long roomId, Long currentHostId, Long newHostId) {
         RoomState room = roomStates.get(roomId);
-        if (room == null) return;
+        if (room == null)
+            return;
 
         synchronized (room) {
             RoomPlayerState currentHost = room.getPlayer(currentHostId);
             RoomPlayerState newHost = room.getPlayer(newHostId);
 
-            if (currentHost == null || newHost == null) return;
+            if (currentHost == null || newHost == null)
+                return;
 
             // 권한 검증: 요청자가 진짜 방장인지 확인
             if (!currentHost.isHost()) {
@@ -98,4 +101,5 @@ public class RoomStateServiceImpl implements RoomStateService {
             System.out.println(">>> 👑 Host Delegated: " + currentHost.getNickname() + " -> " + newHost.getNickname());
         }
     }
+
 }

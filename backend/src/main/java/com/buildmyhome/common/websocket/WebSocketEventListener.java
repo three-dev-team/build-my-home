@@ -17,7 +17,7 @@ public class WebSocketEventListener {
     @EventListener
     public void handleWebSocketDisconnectListener(SessionDisconnectEvent event) {
         Principal user = event.getUser();
-        
+
         // 인증된 사용자라면 세션 스토어에서 제거
         if (user != null) {
             try {

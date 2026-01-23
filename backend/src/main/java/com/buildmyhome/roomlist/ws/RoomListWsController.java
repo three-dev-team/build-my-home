@@ -37,8 +37,7 @@ public class RoomListWsController {
                 memberId,
                 req.getTitle(),
                 req.getMaxPlayers(),
-                req.getTotalRounds()
-        );
+                req.getTotalRounds());
 
         RoomCreatedEvent event = RoomCreatedEvent.builder()
                 .type("ROOM_CREATED")
@@ -56,7 +55,13 @@ public class RoomListWsController {
         roomListService.joinRoom(memberId, req.getRoomId());
     }
 
-    @MessageExceptionHandler({IllegalArgumentException.class, IllegalStateException.class})
+    @MessageMapping("/roomlist/rooms/leave")
+    public void leave(LeaveRoomRequest req, Principal principal) {
+        Long memberId = memberIdFromPrincipal(principal);
+        roomListService.leaveRoom(memberId, req.getRoomId());
+    }
+
+    @MessageExceptionHandler({ IllegalArgumentException.class, IllegalStateException.class })
     public void handleWsException(Exception e) {
         messagingTemplate.convertAndSend("/topic/roomlist/rooms", new Object() {
             public final String type = "ERROR";

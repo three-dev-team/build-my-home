@@ -32,9 +32,12 @@ public class RoomListService {
 
     // 방 검사 메소드
     private void validateRoomSettings(String title, Integer maxPlayers, Integer totalRounds) {
-        if (title == null || title.isBlank()) throw new IllegalArgumentException("방 제목은 필수입니다.");
-        if (!List.of(2, 3, 4).contains(maxPlayers)) throw new IllegalArgumentException("인원 설정이 잘못되었습니다.");
-        if (!List.of(5, 10, 15, 20).contains(totalRounds)) throw new IllegalArgumentException("라운드 설정이 잘못되었습니다.");
+        if (title == null || title.isBlank())
+            throw new IllegalArgumentException("방 제목은 필수입니다.");
+        if (!List.of(2, 3, 4).contains(maxPlayers))
+            throw new IllegalArgumentException("인원 설정이 잘못되었습니다.");
+        if (!List.of(10, 20, 30, 40).contains(totalRounds))
+            throw new IllegalArgumentException("라운드 설정이 잘못되었습니다.");
     }
 
     private RoomListResponse toRoomListResponse(Room room) {
@@ -89,9 +92,7 @@ public class RoomListService {
                 roomRepository.findByStatusAndIdGreaterThanEqualOrderByIdAsc(
                         Status.WAITING,
                         startId,
-                        PageRequest.of(0, pageSize)
-                )
-        );
+                        PageRequest.of(0, pageSize)));
 
         // 2) 부족하면 startId 미만 구간에서 이어서 채우기(랩어라운드)
         if (picked.size() < pageSize) {
@@ -100,9 +101,7 @@ public class RoomListService {
                     roomRepository.findByStatusAndIdLessThanOrderByIdAsc(
                             Status.WAITING,
                             startId,
-                            PageRequest.of(0, remain)
-                    )
-            );
+                            PageRequest.of(0, remain)));
         }
 
         // 같은 구간에서 뽑히면 id 순서가 비슷해 보여서, 최종 출력은 한번 섞어주기(메모리에서만)
@@ -119,7 +118,7 @@ public class RoomListService {
         return getRandomWaitingRooms(DEFAULT_RANDOM_SIZE);
     }
 
-    //    TODO: 예외 처리 구체화 RoomValidationException, MemberNotFoundException 등
+    // TODO: 예외 처리 구체화 RoomValidationException, MemberNotFoundException 등
     @Transactional
     public Long createRoom(Long hostMemberId, String title, Integer maxPlayers, Integer totalRounds) {
 
@@ -171,7 +170,7 @@ public class RoomListService {
         synchronized (roomState) {
             // roomState에서 이미 해당 멤버가 있는지 확인
             if (roomState.getPlayer(memberId) != null) {
-                return;  // null이 아니면 이미 입장함
+                return; // null이 아니면 이미 입장함
             }
 
             int cur = roomState.getPlayers().size();

@@ -766,7 +766,7 @@ function CreateIslandModal({ onClose, onCreate }) {
                     <div className="mt-5 flex items-center gap-4">
                         <div className="w-24 text-sm font-black text-[#7a5c44]">판수</div>
                         <div className="flex items-center gap-3 flex-wrap">
-                            {[5, 10, 15, 20].map((v) => (
+                            {[10, 20, 30, 40].map((v) => (
                                 <Chip key={v} active={totalRounds === v} onClick={() => setTotalRounds(v)}>
                                     {v}판
                                 </Chip>

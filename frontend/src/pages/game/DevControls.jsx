@@ -1,5 +1,5 @@
 // 테스트 위한 임시 컴포넌트
-const DevControls = ({ onStatusChange }) => {
+const DevControls = ({ onStatusChange, onSetLastRound }) => {
   // 개발 환경에서만 렌더링
   if (import.meta.env.PROD) return null;
 
@@ -51,6 +51,12 @@ const DevControls = ({ onStatusChange }) => {
                     onClick={() => onStatusChange("WAITING_FISHING")}
                     className="px-3 py-1 bg-cyan-500 hover:bg-cyan-600 text-white text-xs rounded shadow">
                     🎣 낚시 (Fishing)
+                </button>
+                <button
+                    onClick={onSetLastRound}
+                    className="col-span-2 px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-xs rounded shadow font-bold border-2 border-red-700"
+                >
+                    ⏩ 막판 가기 (Jump to Last Round)
                 </button>
             </div>
         </div>

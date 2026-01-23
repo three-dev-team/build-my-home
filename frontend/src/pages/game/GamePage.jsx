@@ -23,6 +23,7 @@ import Fishing from "./Fishing.jsx";
 import Inventory from "./Inventory.jsx";
 import RewardDrop from "./RewardDrop.jsx";
 import Start from "./Start.jsx";
+import Result from "./Result.jsx";
 
 const GamePage = () => {
     const {roomId} = useParams();
@@ -295,6 +296,29 @@ const GamePage = () => {
             setFishingEventMessage(null);
         }
     };
+    
+    // [DEV] 현재 라운드를 강제로 마지막 라운드로 변경
+    const handleSetLastRound = () => {
+        if (!stompClient || !gameState) return;
+        
+        console.log(">>> [DEV] Force setting to Last Round");
+        stompClient.publish({
+            destination: "/app/games/set-round",
+            body: JSON.stringify({
+                roomId: Number(roomId),
+                currentRound: gameState.totalRounds // 마지막 라운드로 설정
+            }),
+        });
+    };
+
+    const handleLeaveRoom = () => {
+        if (!stompClient) return;
+        console.log(">>> 🚪 Explicit Leave Room Triggered");
+        stompClient.publish({
+            destination: "/app/roomlist/rooms/leave",
+            body: JSON.stringify({ roomId: Number(roomId) }),
+        });
+    };
     // ------------------- [DEV] 상태 강제 변경 핸들러 ------------------- //
 
     if (!gameState) return <Loading/>;
@@ -362,7 +386,10 @@ const GamePage = () => {
 
             {/* 2. 게임 콘텐츠 영역 */}
             <main>
-                <DevControls onStatusChange={handleDevStatusChange}/>
+                <DevControls 
+                    onStatusChange={handleDevStatusChange}
+                    onSetLastRound={handleSetLastRound}
+                />
 
                 {/* INTRO */}
                 {gameState.status === "INTRO" && stompClient && (
@@ -487,6 +514,15 @@ const GamePage = () => {
                         currentPlayerName={currentPlayer?.nickname}
                         onAction={handleAction}
                         onExit={handleEventComplete}
+                    />
+                )}
+                
+                {/* 결과 페이지 */}
+                {gameState.status === "FINISHED" && (
+                    <Result 
+                        gameState={gameState}
+                        myId={myId}
+                        onLeave={handleLeaveRoom}
                     />
                 )}
 
