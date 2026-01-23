@@ -15,7 +15,11 @@ const Start = ({
     const step = player?.uiStep || 0;
     const collectedStamps = player?.collectedStamps || [];
     const stampCount = collectedStamps.length;
-    const reward = player?.actionData || 0;
+    // uiStep 0: 프론트에서 미리보기 계산
+    // uiStep 1: 서버에서 받은 실제 값
+    const reward = step === 0
+        ? STAMP_REWARDS[Math.min(stampCount, 3)]
+        : (player?.actionData || 0);
 
     // 자동 나가기 처리 (중복 방지)
     const hasExited = useRef(false);

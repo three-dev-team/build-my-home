@@ -16,6 +16,7 @@ public class GamePlayerState {
     // 게임 진행 정보
     private Integer orderDiceValue;                       // 순서 정하기용 주사위 값
     private Integer diceValue;                            // 주사위 값
+    private int remainingMoves = 0;                       // 남은 이동 칸 수 (지나가기 로직 시 사용)
     private int position = 0;                             // 현재 칸 위치
     private int bell = 10;                                // 시작 벨 10
     private int loan = 0;                                 // 대출금
