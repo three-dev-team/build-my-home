@@ -2,14 +2,13 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useGameTimer } from '../../hooks/useGameTimer.js';
 import './css/Fishing.css';
 
-const INTRO_IMAGE_1 = '/images/fishing/justin_intro.webp'; // 1번째 화면(터치해서 다음)
-const INTRO_IMAGE_2 = '/images/fishing/justin_start.webp'; // 2번째 화면(터치/시작하기로 시작)
+const INTRO_IMAGE_1 = '/images/fishing/justin_intro.webp'; // 인트로 1 이미지
+const INTRO_IMAGE_2 = '/images/fishing/justin_start.webp'; // 인트로 2 이미지
 
-// 결과 이미지
-const RESULT_SUCCESS_IMAGE = '/images/fishing/success_fishing.webp';
-const RESULT_FAIL_IMAGE = '/images/fishing/fail_fishing.webp';
+const RESULT_SUCCESS_IMAGE = '/images/fishing/success_fishing.webp'; // 성공 결과 이미지
+const RESULT_FAIL_IMAGE = '/images/fishing/fail_fishing.webp'; // 실패 결과 이미지
 
-const clamp0to100 = (v) => Math.max(0, Math.min(100, v));
+const clamp0to100 = (v) => Math.max(0, Math.min(100, v)); // 0~100 범위
 
 function computePingPongMarkerPct(startAtEpochMs, nowEpochMs, cycleMs) {
   if (!cycleMs || cycleMs <= 0) return 0;
@@ -34,22 +33,26 @@ export default function Fishing({
   // 공통 타이머 UI
   const { timeLeft, isUrgent, hasTimeOutPanel } = useGameTimer(timeoutSeconds);
 
-  const isSpectator = !isMyTurn;
+  const isSpectator = !isMyTurn; // 관전 여부
 
-  // === 타이머/종료 안전장치 ===
+  // 타이머 ref
   const onExitRef = useRef(onExit);
   useEffect(() => {
     onExitRef.current = onExit;
   }, [onExit]);
 
+  // 종료 1회 가드
   const exitOnceRef = useRef(false);
+
+  // 시작 잠금 해제 타이머 ref
   const startUnlockTimerRef = useRef(null);
+
+  // 결과 자동 종료 타이머 ref
   const resultAutoExitTimerRef = useRef(null);
 
-  // ✅ 핵심: event-complete(onExit)는 "내 턴"만 호출
+  // event-complete는 내 턴만 호출
   const doExit = () => {
-    // 관전자는 어떤 경우에도 event-complete를 보내지 않음
-    if (!isMyTurn) return;
+    if (!isMyTurn) return; // 관전자는 종료 신호 금지
 
     if (exitOnceRef.current) return;
     exitOnceRef.current = true;
@@ -66,25 +69,23 @@ export default function Fishing({
     if (onExitRef.current) onExitRef.current();
   };
 
-  /**
-   * ✅ uiStep은 "화면 전환(연출)"에만 사용
-   * - INTRO_1: 첫 화면(터치하면 INTRO_2)
-   * - INTRO_2: 시작 화면(내 턴이면 터치/버튼으로 시작)
-   * - INGAME: 실제 게임 UI (STARTED/UPDATE/RESULT는 이벤트 메시지로 제어)
-   */
-  const [uiStep, setUiStep] = useState('INTRO_1');
+  // 화면 단계 상태
+  const [uiStep, setUiStep] = useState('INTRO_1'); // INTRO_1 INTRO_2 INGAME
 
-  // "시작" 중복 요청 방지(서버 STARTED 오기 전까지 잠금)
+  // 시작 중복 방지 상태
   const [startPending, setStartPending] = useState(false);
+
+  // 시작 요청 1회 가드
   const startRequestedRef = useRef(false);
 
   useEffect(() => {
-    // 방이 바뀌면 인트로부터 다시
+    // 방 변경 시 초기화
     setUiStep('INTRO_1');
     setStartPending(false);
     startRequestedRef.current = false;
 
     exitOnceRef.current = false;
+
     if (startUnlockTimerRef.current) {
       clearTimeout(startUnlockTimerRef.current);
       startUnlockTimerRef.current = null;
@@ -95,8 +96,8 @@ export default function Fishing({
     }
   }, [roomId]);
 
-  // 언마운트 시 타임아웃 정리
   useEffect(() => {
+    // 언마운트 정리
     return () => {
       if (startUnlockTimerRef.current) {
         clearTimeout(startUnlockTimerRef.current);
@@ -110,7 +111,7 @@ export default function Fishing({
   }, []);
 
   const requestStart = () => {
-    if (!isMyTurn) return; // ✅ 시작은 '내 턴'만
+    if (!isMyTurn) return; // 시작은 내 턴만
     if (!roomId) return;
     if (startPending) return;
     if (!onStartFishing) return;
@@ -121,7 +122,7 @@ export default function Fishing({
     setStartPending(true);
     onStartFishing();
 
-    // 서버 STARTED가 안 오면 3초 뒤 잠금 해제
+    // STARTED 미수신 시 잠금 해제
     if (startUnlockTimerRef.current) {
       clearTimeout(startUnlockTimerRef.current);
       startUnlockTimerRef.current = null;
@@ -136,10 +137,7 @@ export default function Fishing({
   };
 
   const handleIntroTap = () => {
-    // ✅ 관전자는 인트로 화면 터치/전환도 완전 차단
-    if (isSpectator) return;
-
-    // 이미 시작/결과 상태면 무시
+    if (isSpectator) return; // 관전자는 인트로도 차단
     if (started || result) return;
 
     if (uiStep === 'INTRO_1') {
@@ -152,25 +150,21 @@ export default function Fishing({
     }
   };
 
-  /**
-   * 시간 기준(애니메이션/진행도 계산용)
-   * - 서버 startAt(eventStartTimeMs)은 epoch(ms) 기준
-   * - rAF는 performance.now() 기준 → offset으로 epoch로 환산
-   */
+  // 시간 기준 값
   const [nowPerf, setNowPerf] = useState(() => performance.now());
   const [epochOffsetMs] = useState(() => Date.now() - performance.now());
   const nowEpoch = useMemo(() => nowPerf + epochOffsetMs, [nowPerf, epochOffsetMs]);
 
-  // ✅ 서버/클라 epoch 시간 오차 보정(serverTimeMs - clientNow)
+  // 서버 시간 오차 보정 값
   const [serverSkewMs, setServerSkewMs] = useState(0);
   const serverSkewRef = useRef(0);
 
-  // STARTED/UPDATE/RESULT 분리 저장
+  // 메시지 스냅샷 상태
   const [startedMsg, setStartedMsg] = useState(null);
   const [updateMsg, setUpdateMsg] = useState(null);
   const [resultMsg, setResultMsg] = useState(null);
 
-  // LARGE(대형) 보간(smoothing)
+  // LARGE 보간 상태
   const [smoothProgress, setSmoothProgress] = useState(0);
   const [smoothTension, setSmoothTension] = useState(0);
 
@@ -182,24 +176,23 @@ export default function Fishing({
 
   const rafRef = useRef(0);
 
-  // ✅ serverTimeMs가 오면 skew를 부드럽게 갱신
   useEffect(() => {
+    // serverTimeMs 기반 스큐 갱신
     const st = Number(eventMessage?.serverTimeMs ?? 0);
     if (!st) return;
 
     const clientNow = Date.now();
     const measured = st - clientNow;
 
-    // 네트워크 노이즈 완화(EMA)
     serverSkewRef.current = serverSkewRef.current === 0 ? measured : serverSkewRef.current * 0.9 + measured * 0.1;
 
     setServerSkewMs(serverSkewRef.current);
   }, [eventMessage?.serverTimeMs]);
 
-  const syncedNowEpoch = nowEpoch + serverSkewMs; // ✅ 서버 epoch 기준으로 맞춘 현재 시각
+  const syncedNowEpoch = nowEpoch + serverSkewMs; // 서버 기준 now
 
-  // 60fps 루프: started 상태에서만
   useEffect(() => {
+    // started 동안만 rAF 루프
     const shouldTick = !!startedMsg && !resultMsg;
     if (!shouldTick) {
       if (rafRef.current) {
@@ -217,7 +210,6 @@ export default function Fishing({
       const ht = startedMsg?.harvestType ?? startedMsg?.params?.harvestType;
       const activeLarge = ht === 'FISH_LARGE';
 
-      // ✅ LARGE 보간은 관전 포함해서도 부드럽게 보여야 함(조작만 막고, 표시만 보간)
       if (activeLarge) {
         const last = lastPerfRef.current ?? t;
         const dt = Math.max(0, t - last);
@@ -253,8 +245,8 @@ export default function Fishing({
     };
   }, [startedMsg, resultMsg]);
 
-  // eventMessage → started/update/result로 분기 저장
   useEffect(() => {
+    // eventMessage 분기 저장
     if (!eventMessage?.type) return;
 
     if (eventMessage.type === 'ROOM_EVENT_STARTED') {
@@ -262,7 +254,6 @@ export default function Fishing({
       setUpdateMsg(null);
       setResultMsg(null);
 
-      // ✅ 이벤트 시작되면 인트로 종료(관전 포함 모두 동일 UI)
       setUiStep('INGAME');
 
       setStartPending(false);
@@ -272,7 +263,6 @@ export default function Fishing({
         startUnlockTimerRef.current = null;
       }
 
-      // 보간 초기화
       smoothProgressRef.current = 0;
       smoothTensionRef.current = 0;
       setSmoothProgress(0);
@@ -320,11 +310,11 @@ export default function Fishing({
     }
   }, [eventMessage]);
 
-  const started = !!startedMsg;
-  const result = !!resultMsg;
+  const started = !!startedMsg; // 시작 여부
+  const result = !!resultMsg; // 결과 여부
 
-  // ✅ 결과 자동 종료는 "내 턴"만 (관전자는 서버 상태 바뀌면 자동으로 화면 내려감)
   useEffect(() => {
+    // 결과 자동 종료는 내 턴만
     if (!result) return;
 
     if (resultAutoExitTimerRef.current) {
@@ -346,8 +336,8 @@ export default function Fishing({
     };
   }, [result, resultMsg, isMyTurn]);
 
-  // harvestType: FISH_SMALL | FISH_MEDIUM | FISH_LARGE
   const harvestType = useMemo(() => {
+    // FISH_SMALL FISH_MEDIUM FISH_LARGE
     const ht = startedMsg?.harvestType ?? startedMsg?.params?.harvestType;
     return typeof ht === 'string' ? ht : '';
   }, [startedMsg]);
@@ -356,24 +346,21 @@ export default function Fishing({
   const isMedium = harvestType === 'FISH_MEDIUM';
   const isLarge = harvestType === 'FISH_LARGE';
 
-  // STARTED 정보 기반 진행 시간 계산(전체 제한 시간 표시용)
   const startAt = started ? Number(startedMsg?.eventStartTimeMs ?? 0) : 0;
   const durationMs = started ? Number(startedMsg?.durationMs ?? 0) : 0;
 
-  // ✅ 서버시간 보정된 now 사용
   const elapsed = started ? syncedNowEpoch - startAt : 0;
   const clampedElapsed = started && durationMs > 0 ? Math.max(0, Math.min(durationMs, elapsed)) : 0;
 
   const isPendingStart = started && elapsed < 0;
   const isExpired = started && durationMs > 0 && elapsed > durationMs;
 
-  // SMALL/MEDIUM: stage
   const stage = useMemo(() => {
+    // 중형 단계 값
     const st = updateMsg?.stage ?? startedMsg?.params?.stage ?? 1;
     return Number(st || 1);
   }, [updateMsg, startedMsg]);
 
-  // ===== 핑퐁 게이지 파라미터(STARTED params 기반) =====
   const gaugeCycleMs = useMemo(() => {
     const v = startedMsg?.params?.gaugeCycleMs;
     const n = Number(v);
@@ -396,14 +383,13 @@ export default function Fishing({
     return stage === 2 ? Number(p.secondWindowWidthPct ?? 0) || 0 : Number(p.firstWindowWidthPct ?? 0) || 0;
   }, [started, startedMsg, isMedium, stage]);
 
-  // 핑퐁 마커 %
   const pingPongMarkerPct = useMemo(() => {
     if (!usePingPongGauge) return 0;
     return computePingPongMarkerPct(startAt, syncedNowEpoch, gaugeCycleMs);
   }, [usePingPongGauge, startAt, syncedNowEpoch, gaugeCycleMs]);
 
-  // 레거시(단방향) 계산도 남겨둠
   const biteDelay = useMemo(() => {
+    // 단방향 계산 값
     if (!started) return 0;
     if (isSmall) return Number(startedMsg?.params?.firstBiteDelayMs ?? 0);
     if (isMedium) {
@@ -415,6 +401,7 @@ export default function Fishing({
   }, [started, startedMsg, isSmall, isMedium, stage]);
 
   const successDuration = useMemo(() => {
+    // 단방향 계산 값
     if (!started) return 0;
     if (isSmall) return Number(startedMsg?.params?.firstSuccessDurationMs ?? 0);
     if (isMedium) {
@@ -425,14 +412,12 @@ export default function Fishing({
     return 0;
   }, [started, startedMsg, isSmall, isMedium, stage]);
 
-  // gauge marker %
   const markerPct = useMemo(() => {
     if (!started) return 0;
     if (usePingPongGauge) return pingPongMarkerPct;
     return durationMs > 0 ? (clampedElapsed / durationMs) * 100 : 0;
   }, [started, usePingPongGauge, pingPongMarkerPct, durationMs, clampedElapsed]);
 
-  // window start/end %
   const winStartPct = useMemo(() => {
     if (!started) return 0;
     if (usePingPongGauge) return clamp0to100(windowCenterPct - windowWidthPct / 2);
@@ -457,10 +442,8 @@ export default function Fishing({
     return clampedElapsed >= biteDelay && clampedElapsed <= biteDelay + successDuration;
   }, [started, usePingPongGauge, winStartPct, winEndPct, markerPct, clampedElapsed, biteDelay, successDuration]);
 
-  // ✅ 조작은 내 턴 + 게임 유효 상태에서만
-  const canControl = isMyTurn && started && !isPendingStart && !isExpired && !result;
+  const canControl = isMyTurn && started && !isPendingStart && !isExpired && !result; // 조작 가능 여부
 
-  // LARGE: progress/tension/reeling
   const largeProgress = useMemo(() => {
     const v = updateMsg?.progress ?? startedMsg?.params?.progress ?? 0;
     const n = Number(v);
@@ -478,15 +461,14 @@ export default function Fishing({
     return !!v;
   }, [updateMsg, startedMsg]);
 
-  // ✅ 서버 tick 없이 장력 "자연 감소"를 클라에서 계산(관전 포함)
   const tensionCooldownPerMs = useMemo(() => {
+    // 서버 tick 없이 클라 계산 값
     const v = startedMsg?.params?.tensionCooldownPerMs ?? 0;
     const n = Number(v);
     return Number.isFinite(n) ? n : 0;
   }, [startedMsg]);
 
   const lastServerTimeMs = useMemo(() => {
-    // updateMsg에 serverTimeMs가 있으면 그걸 우선 사용, 없으면 startedMsg의 serverTimeMs
     const v = updateMsg?.serverTimeMs ?? startedMsg?.serverTimeMs ?? 0;
     const n = Number(v);
     return Number.isFinite(n) ? n : 0;
@@ -503,8 +485,8 @@ export default function Fishing({
     return clamp0to100(largeTension - delta * tensionCooldownPerMs);
   }, [started, isLarge, largeTension, largeReeling, tensionCooldownPerMs, lastServerTimeMs, syncedNowEpoch]);
 
-  // 보간 목표 갱신(관전도 부드럽게 보이게)
   useEffect(() => {
+    // 보간 목표 갱신
     targetProgressRef.current = clamp0to100(largeProgress);
     targetTensionRef.current = clamp0to100(liveLargeTension);
 
@@ -526,13 +508,11 @@ export default function Fishing({
     onFishingAction(action);
   };
 
-  // SMALL/MEDIUM HIT
   const onHit = () => {
     if (!canControl) return;
     publishAction('HIT');
   };
 
-  // ===== LARGE: 홀드 금지 / 펌프 클릭만(실제 조작은 Space로만) =====
   const pumpTimerRef = useRef(null);
   const pumpPendingRef = useRef(false);
   const lastPumpClientEpochRef = useRef(0);
@@ -556,11 +536,8 @@ export default function Fishing({
     if (!canControl) return;
     if (!isLarge) return;
 
-    // 클라에서도 최소 간격 잠금(서버 패널티와 체감 맞추기)
     const now = Date.now();
-    if (minPumpIntervalMs > 0 && now - lastPumpClientEpochRef.current < minPumpIntervalMs) {
-      return;
-    }
+    if (minPumpIntervalMs > 0 && now - lastPumpClientEpochRef.current < minPumpIntervalMs) return;
     if (pumpPendingRef.current) return;
 
     pumpPendingRef.current = true;
@@ -568,7 +545,6 @@ export default function Fishing({
 
     publishAction('REEL_START');
 
-    // 짧은 시간 뒤 자동 STOP (홀드로 이득 못 보게)
     if (pumpTimerRef.current) clearTimeout(pumpTimerRef.current);
     pumpTimerRef.current = setTimeout(() => {
       publishAction('REEL_STOP');
@@ -578,19 +554,16 @@ export default function Fishing({
   };
 
   const handleOkClick = () => {
-    doExit(); // ✅ 내 턴만 event-complete
+    doExit();
   };
 
   const resultTitle = result ? (resultMsg?.success ? '성공!' : '실패') : '';
   const resultText = result ? resultMsg?.message : '';
 
-  // SMALL/MEDIUM: 서버가 준 UPDATE message(미스/2단계 등)를 잠깐 힌트로 보여주기
   const [flashHint, setFlashHint] = useState('');
   useEffect(() => {
     const msg = updateMsg?.message;
     if (!msg) return;
-
-    // LARGE는 버튼 상태 텍스트가 더 중요해서 flash는 SMALL/MEDIUM만
     if (isLarge) return;
 
     setFlashHint(String(msg));
@@ -598,7 +571,6 @@ export default function Fishing({
     return () => clearTimeout(t);
   }, [updateMsg?.message, isLarge]);
 
-  // ✅ "아무 입력 없을 때 Space"를 항상 노출되게 문구 정리
   const hintText = useMemo(() => {
     if (flashHint) return flashHint;
 
@@ -606,7 +578,6 @@ export default function Fishing({
     if (isPendingStart) return '낚싯줄 던지는 중…';
     if (isExpired) return '시간 끝!';
 
-    // 관전 문구도 Space 안내는 유지(조작은 막지만, '무슨 일이 벌어지는지' 안내)
     if (isSpectator) {
       if (isLarge) return largeReeling ? '펌프 중! (SPACE)' : '펌프 타이밍! (SPACE)';
       if (inWindow) return '지금 HIT 타이밍! (SPACE)';
@@ -614,7 +585,6 @@ export default function Fishing({
       return '타이밍 기다렸다가 (SPACE)';
     }
 
-    // 내 턴(조작 가능)
     if (isLarge) return largeReeling ? 'SPACE로 펌프!' : 'SPACE를 눌러 펌프!';
     if (inWindow) return '지금 SPACE!';
     if (isMedium) return stage === 2 ? '2단계! 기다렸다가 SPACE!' : '1단계! 기다렸다가 SPACE!';
@@ -628,28 +598,30 @@ export default function Fishing({
     return '';
   }, [isSmall, isMedium, isLarge, stage]);
 
-  // ✅ 표시용은 보간값(관전 포함)
   const displayProgress = isLarge ? smoothProgress : largeProgress;
   const displayTension = isLarge ? smoothTension : largeTension;
 
-  // 인트로 화면 표시 여부(시작/결과 전까지만)
   const showIntro = !started && !result && (uiStep === 'INTRO_1' || uiStep === 'INTRO_2');
   const introBg = uiStep === 'INTRO_1' ? INTRO_IMAGE_1 : INTRO_IMAGE_2;
 
-  // ✅ Space 키 입력: "게임 진행 중"에만 동작(인트로에서는 무시)
+  const spaceDownRef = useRef(false);
+
   const keyHandlerRef = useRef(null);
   useEffect(() => {
     keyHandlerRef.current = (e) => {
-      if (e.code !== 'Space') return;
-      if (e.repeat) return;
-      e.preventDefault();
+      const isSpace = e.code === 'Space' || e.key === ' ' || e.key === 'Spacebar';
+      if (!isSpace) return;
 
-      // ✅ 인트로에서는 Space로 화면 넘기지 않음(요구사항)
+      if (e.repeat) return;
+
       if (showIntro) return;
       if (result) return;
-
-      // ✅ 조작은 내 턴만
       if (!canControl) return;
+
+      if (spaceDownRef.current) return;
+      spaceDownRef.current = true;
+
+      e.preventDefault();
 
       if (isLarge) pumpOnce();
       else onHit();
@@ -658,8 +630,26 @@ export default function Fishing({
 
   useEffect(() => {
     const onKeyDown = (e) => keyHandlerRef.current?.(e);
-    window.addEventListener('keydown', onKeyDown, { passive: false });
-    return () => window.removeEventListener('keydown', onKeyDown);
+
+    const onKeyUp = (e) => {
+      const isSpace = e.code === 'Space' || e.key === ' ' || e.key === 'Spacebar';
+      if (!isSpace) return;
+      spaceDownRef.current = false;
+    };
+
+    const onBlur = () => {
+      spaceDownRef.current = false;
+    };
+
+    window.addEventListener('keydown', onKeyDown, { passive: false, capture: true });
+    window.addEventListener('keyup', onKeyUp, { capture: true });
+    window.addEventListener('blur', onBlur);
+
+    return () => {
+      window.removeEventListener('keydown', onKeyDown, { capture: true });
+      window.removeEventListener('keyup', onKeyUp, { capture: true });
+      window.removeEventListener('blur', onBlur);
+    };
   }, []);
 
   const resultImageSrc = useMemo(() => {
@@ -670,7 +660,6 @@ export default function Fishing({
   return (
     <div className="bmhFishingOverlay">
       <div className="bmhFishingStage">
-        {/* ✅ 관전 입력 완전 차단 레이어(인트로 포함) */}
         {isSpectator && (
           <div
             className="bmhFishingSpectatorBlock"
@@ -693,20 +682,17 @@ export default function Fishing({
           />
         )}
 
-        {/* 인트로(클릭 2번) */}
         {showIntro && (
           <div
             style={{ position: 'absolute', inset: 0 }}
             onClick={handleIntroTap}
             onTouchStart={(e) => {
-              // 모바일도 “터치”로 클릭 동작하게
               e.preventDefault();
               handleIntroTap();
             }}
           >
             <div className="bmhFishingBg" style={{ backgroundImage: `url(${introBg})` }} />
 
-            {/* ✅ 안내 멘트 */}
             <div className="bmhFishingTapHint">화면을 터치해주세요</div>
 
             {hasTimeOutPanel && (
@@ -718,7 +704,6 @@ export default function Fishing({
               </div>
             )}
 
-            {/* 2번째 화면: 버튼도 제공(터치해도 시작됨) */}
             {uiStep === 'INTRO_2' && (
               <div
                 style={{
@@ -758,7 +743,6 @@ export default function Fishing({
           </div>
         )}
 
-        {/* 실제 낚시 UI */}
         {!showIntro && (
           <>
             <div className="bmhFishingBg" style={{ backgroundImage: 'url(/images/fishing/bg.webp)' }} />
@@ -809,7 +793,6 @@ export default function Fishing({
                 </div>
               </div>
 
-              {/* SMALL/MEDIUM */}
               {!isLarge && (
                 <div className="bmhFishingGaugeWrap">
                   <div className="bmhFishingGaugeTrack">
@@ -834,7 +817,6 @@ export default function Fishing({
                       {hintText}
                     </div>
 
-                    {/* ✅ 조작은 Space: 버튼은 안내용으로만 */}
                     {isMyTurn ? (
                       <button
                         className="bmhFishingHitBtn"
@@ -848,7 +830,7 @@ export default function Fishing({
                           e.preventDefault();
                         }}
                         disabled
-                        title="Space로 HIT!"
+                        title="Space로 HIT"
                       >
                         SPACE
                       </button>
@@ -859,7 +841,6 @@ export default function Fishing({
                 </div>
               )}
 
-              {/* LARGE */}
               {isLarge && (
                 <div className="bmhFishingGaugeWrap">
                   <div className="bmhFishingBarsRow">
@@ -889,7 +870,6 @@ export default function Fishing({
                       {hintText}
                     </div>
 
-                    {/* ✅ 조작은 Space: 버튼은 안내용 */}
                     {isMyTurn ? (
                       <button
                         className="bmhFishingHitBtn"
@@ -903,7 +883,7 @@ export default function Fishing({
                           e.preventDefault();
                         }}
                         disabled
-                        title="Space로 펌프!"
+                        title="Space로 펌프"
                       >
                         SPACE
                       </button>
