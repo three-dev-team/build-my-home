@@ -51,15 +51,13 @@ public class GameWsController {
     // 타임아웃 됐을 때 자동으로 턴이 넘어가는 칸이 아닐 경우 여기서 처리
     // ex) 타임아웃 됐을 경우 KK는 입장료를 반드시 납부하고, 공연을 관람하게 해야함
     private void handleEventTimeout(GameState gameState, GameStatus status, Long roomId) {
-        if (gameState.getStatus() != status)
-            return;
+        if (gameState.getStatus() != status) return;
         GamePlayerState player = gameState.getPlayers().get(gameState.getCurrentPlayerId());
         GameMessage response;
 
         switch (status) {
             case WAITING_KK:
-                if (player.getUiStep() >= 2)
-                    return; // 유저가 이미 액션을 취함 -> timeout 무시 (방어 코드)
+                if (player.getUiStep() >= 2) return; // 유저가 이미 액션을 취함 -> timeout 무시 (방어 코드)
                 kkService.payEntryFee(player, 0); // 타임아웃 됐을 경우 랜덤 선택
 
                 player.setUiStep(2); // 화면 전환
@@ -105,8 +103,7 @@ public class GameWsController {
         // 타임아웃 계산 로직 (경과 시간 반영)
         int definitionTimeout = gameState.getStatus().getTimeoutSeconds();
         if (definitionTimeout > 0 && gameState.getStatusUpdatedAt() != null) {
-            long elapsedSeconds = java.time.Duration
-                    .between(gameState.getStatusUpdatedAt(), java.time.LocalDateTime.now()).toSeconds();
+            long elapsedSeconds = java.time.Duration.between(gameState.getStatusUpdatedAt(), java.time.LocalDateTime.now()).toSeconds();
             int remainingSeconds = Math.max(0, definitionTimeout - (int) elapsedSeconds);
             response.setTimeoutSeconds(remainingSeconds);
         } else {
@@ -119,8 +116,7 @@ public class GameWsController {
     public void getGameState(GameMessage message) {
         Long roomId = message.getRoomId();
         GameState gameState = gameStateService.getGame(roomId);
-        if (gameState == null)
-            return;
+        if (gameState == null) return;
 
         GameMessage response = defaultGameResponse("CURRENT_GAME_STATE", gameState);
         simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
@@ -136,10 +132,7 @@ public class GameWsController {
         gameState.setTotalRounds(room.getTotalRounds());
 
         for (RoomPlayerState player : room.getPlayers().values()) {
-            gameState.addPlayer(new GamePlayerState(
-                    player.getMemberId(),
-                    player.getNickname(),
-                    player.getCharacterId()));
+            gameState.addPlayer(new GamePlayerState(player.getMemberId(), player.getNickname(), player.getCharacterId()));
         }
         gameStateService.saveGame(roomId, gameState);
 
@@ -151,8 +144,7 @@ public class GameWsController {
     public void introComplete(GameMessage message) {
         Long roomId = message.getRoomId();
         GameState gameState = gameStateService.getGame(roomId);
-        if (gameState == null)
-            return;
+        if (gameState == null) return;
         gameState.setStatus(GameStatus.DETERMINING_ORDER);
 
         GameMessage response = defaultGameResponse("INTRO_COMPLETE", gameState);
@@ -168,8 +160,7 @@ public class GameWsController {
         synchronized (gameState) {
             GamePlayerState player = gameState.getPlayers().get(memberId);
             // 플레이어가 없거나 이미 주사위 굴렸으면 종료
-            if (player == null || player.getOrderDiceValue() != null)
-                return;
+            if (player == null || player.getOrderDiceValue() != null) return;
 
             // 남은 숫자 중에서 랜덤으로 하나 뽑기 (뽑고 available에서 제거)
             List<Integer> available = gameState.getAvailableDiceNumbers();
@@ -177,15 +168,11 @@ public class GameWsController {
             player.setOrderDiceValue(diceValue); // 플레이어 순서용 주사위 값 설정
 
             // 모든 인원이 다 뽑았는지 체크
-            boolean allDone = gameState.getPlayers().values().stream()
-                    .allMatch(p -> p.getOrderDiceValue() != null);
+            boolean allDone = gameState.getPlayers().values().stream().allMatch(p -> p.getOrderDiceValue() != null);
 
             if (allDone) {
                 // 높은 숫자 순으로 정렬해서 turnOrder 생성
-                List<Long> sortedTurnOrder = gameState.getPlayers().values().stream()
-                        .sorted(Comparator.comparing(GamePlayerState::getOrderDiceValue).reversed())
-                        .map(GamePlayerState::getMemberId)
-                        .toList();
+                List<Long> sortedTurnOrder = gameState.getPlayers().values().stream().sorted(Comparator.comparing(GamePlayerState::getOrderDiceValue).reversed()).map(GamePlayerState::getMemberId).toList();
 
                 gameState.setTurnOrder(sortedTurnOrder);
                 gameState.setCurrentPlayerId(sortedTurnOrder.get(0));
@@ -204,19 +191,16 @@ public class GameWsController {
         Long memberId = Long.parseLong(principal.getName());
         GameState gameState = gameStateService.getGame(roomId);
 
-        if (gameState == null)
-            return;
+        if (gameState == null) return;
 
         synchronized (gameState) {
-            if (!memberId.equals(gameState.getCurrentPlayerId()) ||
-                    gameState.getStatus() != GameStatus.WAITING_PLAYER_ACTION) {
+            if (!memberId.equals(gameState.getCurrentPlayerId()) || gameState.getStatus() != GameStatus.WAITING_PLAYER_ACTION) {
                 // 잘못된 턴이거나 상태일 경우 에러 메시지 전송 로직 추가 가능
                 return;
             }
 
             gameState.setStatus(GameStatus.WAITING_DICE);
-            simpMessagingTemplate.convertAndSend("/topic/games/" + roomId,
-                    defaultGameResponse("DICE_SELECTED", gameState));
+            simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, defaultGameResponse("DICE_SELECTED", gameState));
         }
     }
 
@@ -226,19 +210,16 @@ public class GameWsController {
         Long memberId = Long.parseLong(principal.getName());
         GameState gameState = gameStateService.getGame(roomId);
 
-        if (gameState == null)
-            return;
+        if (gameState == null) return;
 
         synchronized (gameState) {
-            if (!memberId.equals(gameState.getCurrentPlayerId()) ||
-                    gameState.getStatus() != GameStatus.WAITING_DICE) {
+            if (!memberId.equals(gameState.getCurrentPlayerId()) || gameState.getStatus() != GameStatus.WAITING_DICE) {
                 // 잘못된 턴이거나 상태일 경우 에러 메시지 전송 로직 추가 가능
                 return;
             }
 
             GamePlayerState player = gameState.getPlayers().get(memberId);
-            if (player == null)
-                return;
+            if (player == null) return;
 
             // 서버에서 주사위 값 생성
             int diceValue = (int) (Math.random() * DICE_MAX) + DICE_MIN;
@@ -260,18 +241,15 @@ public class GameWsController {
         Long memberId = Long.parseLong(principal.getName());
         GameState gameState = gameStateService.getGame(roomId);
 
-        if (gameState == null)
-            return;
+        if (gameState == null) return;
 
         synchronized (gameState) {
-            if (!memberId.equals(gameState.getCurrentPlayerId()) ||
-                    gameState.getStatus() != GameStatus.MOVING) {
+            if (!memberId.equals(gameState.getCurrentPlayerId()) || gameState.getStatus() != GameStatus.MOVING) {
                 return;
             }
 
             GamePlayerState player = gameState.getPlayers().get(memberId);
-            if (player == null)
-                return;
+            if (player == null) return;
 
             // 플레이어가 도착한 칸에 맞는 상태로 전환 (예: KK 칸이면 WAITING_KK)
             GameStatus nextStatus = BoardData.getNextStatus(player.getPosition());
@@ -321,15 +299,13 @@ public class GameWsController {
         String actionType = message.getType(); // 프론트에서 보낸 "LOAN_ACTION", "STAMP_ACTION" 등
 
         GameState gameState = gameStateService.getGame(roomId);
-        if (gameState == null)
-            return;
+        if (gameState == null) return;
 
         // TODO: 서비스 로직 분리 고려 GameActionService 등 - Tiffany
         synchronized (gameState) {
             // 1. 공통 검증 (현재 턴인지 등)
             Long memberId = Long.parseLong(principal.getName());
-            if (!memberId.equals(gameState.getCurrentPlayerId()))
-                return;
+            if (!memberId.equals(gameState.getCurrentPlayerId())) return;
 
             GamePlayerState player = gameState.getPlayers().get(memberId);
 
@@ -424,8 +400,7 @@ public class GameWsController {
         Long roomId = message.getRoomId();
         Long memberId = Long.parseLong(principal.getName());
         GameState gameState = gameStateService.getGame(roomId);
-        if (gameState == null)
-            return;
+        if (gameState == null) return;
 
         synchronized (gameState) {
             if (!memberId.equals(gameState.getCurrentPlayerId())) {
@@ -470,10 +445,8 @@ public class GameWsController {
     @MessageMapping("/games/fishing/start")
     public void startFishing(StartFishingRequest req, Principal principal) {
         Long actorId = parseActorIdSafely(principal);
-        if (actorId == null)
-            return;
-        if (req == null || req.getRoomId() == null)
-            return;
+        if (actorId == null) return;
+        if (req == null || req.getRoomId() == null) return;
 
         String ht = req.getHarvestType();
         if (ht == null || ht.isBlank()) {
@@ -488,18 +461,15 @@ public class GameWsController {
     @MessageMapping("/games/fishing/action")
     public void fishingAction(FishingActionRequest req, Principal principal) {
         Long actorId = parseActorIdSafely(principal);
-        if (actorId == null)
-            return;
-        if (req == null || req.getRoomId() == null || req.getAction() == null)
-            return;
+        if (actorId == null) return;
+        if (req == null || req.getRoomId() == null || req.getAction() == null) return;
 
         fishingService.handleAction(req.getRoomId(), actorId, req.getAction());
     }
 
     // fishing : actorId 안전 파싱
     private Long parseActorIdSafely(Principal principal) {
-        if (principal == null || principal.getName() == null)
-            return null;
+        if (principal == null || principal.getName() == null) return null;
         try {
             return Long.parseLong(principal.getName());
         } catch (NumberFormatException e) {
@@ -514,8 +484,7 @@ public class GameWsController {
         String requestedStatusStr = message.getStatus();
 
         GameState gameState = gameStateService.getGame(roomId);
-        if (gameState == null)
-            return;
+        if (gameState == null) return;
 
         GameStatus targetStatus;
         try {
@@ -549,8 +518,7 @@ public class GameWsController {
         int targetRound = message.getCurrentRound(); // 재활용
 
         GameState gameState = gameStateService.getGame(roomId);
-        if (gameState == null)
-            return;
+        if (gameState == null) return;
 
         // 라운드 변경
         gameState.setCurrentRound(targetRound);
@@ -563,27 +531,19 @@ public class GameWsController {
     // TODO: 추후 GameRewardService로 분리(BMH:31) - Tiffany
     // 과일 칸에서만 쓸 과일 목록
     // - ResourceType은 values() 전체가 대상이라 별도 배열이 필요 없음
-    private static final HarvestType[] FRUIT_TYPES = {
-            HarvestType.APPLE,
-            HarvestType.ORANGE,
-            HarvestType.PEAR,
-            HarvestType.PEACH,
-            HarvestType.CHERRY
-    };
+    private static final HarvestType[] FRUIT_TYPES = {HarvestType.APPLE, HarvestType.ORANGE, HarvestType.PEAR, HarvestType.PEACH, HarvestType.CHERRY};
 
     // 재화칸 보상: ResourceType 전체 중 중복 없이 2종을 뽑아서 각 +1 지급
     // 중복 없이 2개를 뽑기 위해 인덱스 2개를 겹치지 않게 생성
     // player.resources에 실제 지급 반영 + 이번에 얻은 목록을 Map으로 반환
     private Map<ResourceType, Integer> grantRandomResources(GamePlayerState player) {
         ResourceType[] all = ResourceType.values();
-        if (all.length < 2)
-            return Map.of(); // 방어(종류가 2개 미만이면 지급 불가)
+        if (all.length < 2) return Map.of(); // 방어(종류가 2개 미만이면 지급 불가)
 
         int n = all.length;
         int i1 = ThreadLocalRandom.current().nextInt(n);
         int i2 = ThreadLocalRandom.current().nextInt(n - 1);
-        if (i2 >= i1)
-            i2++; // i1과 겹치지 않게 보정
+        if (i2 >= i1) i2++; // i1과 겹치지 않게 보정
 
         ResourceType a = all[i1];
         ResourceType b = all[i2];
@@ -603,14 +563,12 @@ public class GameWsController {
 
     // 과일칸 보상: FRUIT_TYPES(5종) 중 중복 없이 2종을 뽑아서 각 +1 지급
     private Map<HarvestType, Integer> grantRandomFruits(GamePlayerState player) {
-        if (FRUIT_TYPES.length < 2)
-            return Map.of();
+        if (FRUIT_TYPES.length < 2) return Map.of();
 
         int n = FRUIT_TYPES.length;
         int i1 = ThreadLocalRandom.current().nextInt(n);
         int i2 = ThreadLocalRandom.current().nextInt(n - 1);
-        if (i2 >= i1)
-            i2++;
+        if (i2 >= i1) i2++;
 
         HarvestType a = FRUIT_TYPES[i1];
         HarvestType b = FRUIT_TYPES[i2];
