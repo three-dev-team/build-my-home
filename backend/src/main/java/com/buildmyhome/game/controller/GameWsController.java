@@ -234,15 +234,40 @@ public class GameWsController {
             if (player == null) return;
 
             // 서버에서 주사위 값 생성
-            int diceValue = (int) (Math.random() * DICE_MAX) + DICE_MIN;
+            // TODO : 애니메이션 테스트 위해 임시값 6으로 설정 추후 업데이트
+            int diceValue = 6;
+//            int diceValue = (int) (Math.random() * DICE_MAX) + DICE_MIN;
             player.setDiceValue(diceValue);
 
-            // 플레이어 이동 처리
-            moveService.movePlayer(player, diceValue);
+            // 플레이어 이동 처리 (위치 계산만, 아직 이동 X)
+            List<Integer> movePath = moveService.movePlayer(player, diceValue);
+            gameState.setStatus(GameStatus.ROLLING_DICE);
+
+            GameMessage response = defaultGameResponse("DICE_ROLLING", gameState);
+            response.setDiceValue(diceValue);
+            response.setMovePath(movePath);
+            simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
+        }
+    }
+
+    @MessageMapping("/games/dice-roll-complete")
+    public void diceComplete(GameMessage message, Principal principal) {
+        Long roomId = message.getRoomId();
+        Long memberId = Long.parseLong(principal.getName());
+        GameState gameState = gameStateService.getGame(roomId);
+
+        if (gameState == null) return;
+
+        synchronized (gameState) {
+            if (!memberId.equals(gameState.getCurrentPlayerId()) ||
+                    gameState.getStatus() != GameStatus.ROLLING_DICE) {
+                return;
+            }
+
+            // MOVING 상태로 변경
             gameState.setStatus(GameStatus.MOVING);
 
             GameMessage response = defaultGameResponse("DICE_ROLLED", gameState);
-            response.setDiceValue(diceValue);
             simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
         }
     }

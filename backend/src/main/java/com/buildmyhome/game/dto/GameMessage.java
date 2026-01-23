@@ -25,12 +25,13 @@ public class GameMessage {
     private int totalRounds;
     private int timeoutSeconds;
     private int uiStep;
+    private List<Integer> movePath;     // 플레이어 이동 경로 (칸 인덱스 리스트) -> 프론트 이동 애니메이션용
 
-    private ShopType shopType;        // 어떤 상점인지
-    private ItemType itemType;        // 구매/판매할 아이템
-    private ResourceType resourceType; // 구매/판매할 재화
-    private HarvestType harvestType;  // 판매할 작물
-    private int quantity;             // 수량
+    private ShopType shopType;          // 어떤 상점인지
+    private ItemType itemType;          // 구매/판매할 아이템
+    private ResourceType resourceType;  // 구매/판매할 재화
+    private HarvestType harvestType;    // 판매할 작물
+    private int quantity;               // 수량
     // 대출/스탬프/에러 처리를 위한 추가 필드
     private int amount;
 
