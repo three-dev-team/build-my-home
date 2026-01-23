@@ -1,11 +1,11 @@
 // House.jsx
-import React, {useEffect, useState} from "react";
-import {motion} from "framer-motion";
-import {HOUSE_LEVEL_MAP, RESOURCE_MAP, HOUSE_DETAILS} from "../../constants/houseLevel.js";
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import { HOUSE_LEVEL_MAP, RESOURCE_MAP, HOUSE_DETAILS } from "../../constants/houseLevel.js";
 
 // TODO: 내 차례가 아닐때 버튼 비활성화 유지보수를 위한 공통처리 방법 고민
-const House = ({player, isMyTurn, onClose, onAction}) => {
-    const {houseLevel, canUpgradeHouse, nextHouseLevel, requiredResourcesForNextHouse} = player;
+const House = ({player, isMyTurn, onClose, onAction, radishPrice = 0}) => {
+    const {houseLevel, canUpgradeHouse, nextHouseLevel, requiredResourcesForNextHouse, radishQty = 0,} = player;
 
     // setStep 함수로 UI 스텝 변경
     const step = player?.uiStep || 0;  // 서버에서 받아옴
@@ -19,8 +19,19 @@ const House = ({player, isMyTurn, onClose, onAction}) => {
     const diffBell = nextLevelData?.bell - player.bell; // 부족한 벨
     const isBellEnough = diffBell <= 0;                 // 벨이 충분한지 여부
 
+    // 무 판매 UI
+    const [sellQty, setSellQty] = useState(1);
+    const canSell = isMyTurn && radishQty > 0;
+
     const handleUpgrade = () => {
+        if (!isMyTurn) return;
         onAction("UPGRADE_HOUSE", {});
+    };
+
+    const handleSell = () => {
+        if (!canSell) return;
+        const qty = Math.max(1, Math.min(radishQty, sellQty));
+        onAction("RADISH_SELL", { quantity: qty });
     };
 
     return (
@@ -60,6 +71,25 @@ const House = ({player, isMyTurn, onClose, onAction}) => {
                         >
                             집을 업그레이드 하고 싶어
                         </button>
+
+                        {/* 무 판매하기 추가 */}
+                        <button
+                            onClick={() => {
+                                setSellQty(1);
+                                setStep(11);
+                            }}
+                            disabled={!isMyTurn || radishQty <= 0}
+                            className="px-8 py-4 bg-lime-400 hover:bg-lime-500 rounded-full font-bold text-lg disabled:opacity-50"
+                            title={radishQty <= 0 ? "보유한 무가 없어구리" : ""}
+                        >
+                            무 판매하기
+                        </button>
+
+                        {radishQty <= 0 && (
+                            <p className="text-sm text-gray-600 text-center">
+                                지금은 보유한 무가 없어서 판매할 수 없어구리.
+                            </p>
+                        )}
                     </div>
                 </div>
             )}
@@ -247,6 +277,82 @@ const House = ({player, isMyTurn, onClose, onAction}) => {
                         >
                             아니
                         </button>
+                    </div>
+                </div>
+            )}
+
+            {/* Step 11: 무 판매 */}
+            {step === 11 && (
+                <div className="w-full h-full flex flex-col items-center justify-center p-8">
+                    <h2 className="text-3xl font-bold mb-6 text-black">🥬 무 판매</h2>
+
+                    <div className="bg-white/90 rounded-xl p-6 shadow-md w-full max-w-[420px]">
+                        <div className="flex justify-between items-center mb-3">
+                            <span className="font-bold text-gray-700">보유 무</span>
+                            <span className="font-extrabold text-black">{radishQty}개</span>
+                        </div>
+
+                        <div className="flex justify-between items-center mb-3">
+                            <span className="font-bold text-gray-700">현재 시세</span>
+                            <span className="font-extrabold text-black">
+                {typeof radishPrice === "number" ? `${radishPrice}벨` : "-"}
+              </span>
+                        </div>
+
+                        <div className="flex justify-between items-center mb-5">
+                            <span className="font-bold text-gray-700">예상 판매액</span>
+                            <span className="font-extrabold text-black">
+                {typeof radishPrice === "number"
+                    ? `${(Math.max(1, Math.min(radishQty, sellQty)) * radishPrice).toLocaleString()}벨`
+                    : "-"}
+              </span>
+                        </div>
+
+                        <div className="flex items-center justify-center gap-3 mb-5">
+                            <button
+                                onClick={() => setSellQty((q) => Math.max(1, q - 1))}
+                                disabled={!canSell}
+                                className="w-12 h-12 rounded-full bg-gray-200 hover:bg-gray-300 font-black text-xl disabled:opacity-50"
+                            >
+                                -
+                            </button>
+
+                            <div className="min-w-[80px] text-center text-2xl font-extrabold">
+                                {Math.max(1, Math.min(radishQty || 1, sellQty))}
+                            </div>
+
+                            <button
+                                onClick={() => setSellQty((q) => Math.min(radishQty || 1, q + 1))}
+                                disabled={!canSell}
+                                className="w-12 h-12 rounded-full bg-gray-200 hover:bg-gray-300 font-black text-xl disabled:opacity-50"
+                            >
+                                +
+                            </button>
+                        </div>
+
+                        <div className="flex gap-3">
+                            <button
+                                onClick={handleSell}
+                                disabled={!canSell}
+                                className="flex-1 px-6 py-4 bg-black text-white rounded-full font-extrabold text-lg disabled:opacity-50"
+                            >
+                                판매하기
+                            </button>
+
+                            <button
+                                onClick={() => setStep(0)}
+                                disabled={!isMyTurn}
+                                className="flex-1 px-6 py-4 bg-gray-300 hover:bg-gray-400 rounded-full font-extrabold text-lg disabled:opacity-50"
+                            >
+                                돌아가기
+                            </button>
+                        </div>
+
+                        {!isMyTurn && (
+                            <p className="text-sm text-gray-600 mt-4 text-center">
+                                지금은 내 차례가 아니라 판매할 수 없어.
+                            </p>
+                        )}
                     </div>
                 </div>
             )}

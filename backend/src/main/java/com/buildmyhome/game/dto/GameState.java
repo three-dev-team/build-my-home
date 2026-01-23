@@ -3,9 +3,9 @@ package com.buildmyhome.game.dto;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-
 
 @Getter
 @Setter
@@ -36,6 +36,11 @@ public class GameState {
     // 상점 세션
     private com.buildmyhome.shop.dto.ShopSession shopSession;
 
+    // radish(무) 공용 시세: 라운드 시작마다 1회 변경(10~150)
+    private static final int RADISH_PRICE_MIN = 10;
+    private static final int RADISH_PRICE_MAX = 150;
+    private int radishPrice;
+
     // 상태 변경 시간 (서버 시간 동기화용)
     private java.time.LocalDateTime statusUpdatedAt;
 
@@ -43,6 +48,8 @@ public class GameState {
         this.roomId = roomId;
         this.status = GameStatus.INTRO;
         this.statusUpdatedAt = java.time.LocalDateTime.now();
+        this.radishPrice = java.util.concurrent.ThreadLocalRandom.current()
+                .nextInt(RADISH_PRICE_MIN, RADISH_PRICE_MAX + 1); // 무 초기값 세팅
     }
 
     public void setStatus(GameStatus status) {
@@ -62,6 +69,19 @@ public class GameState {
         // 한 바퀴 다 돌면 라운드 증가
         if (currentTurnIndex == 0) {
             this.currentRound++;
+
+            // 라운드 시작 순간: 시세 1회 변경(방 공용)
+            this.radishPrice = java.util.concurrent.ThreadLocalRandom.current()
+                    .nextInt(RADISH_PRICE_MIN, RADISH_PRICE_MAX + 1);
+
+            // 라운드 시작 순간: 무 썩음 처리(일괄 제거)
+            for (GamePlayerState p : players.values()) {
+                Integer removeRound = p.getRadishRemoveRound();
+                if (removeRound != null && removeRound <= this.currentRound && p.getRadishQty() > 0) {
+                    p.setRadishQty(0);
+                    p.setRadishRemoveRound(null);
+                }
+            }
         }
 
         GamePlayerState currentPlayer = players.get(currentPlayerId);
@@ -71,6 +91,7 @@ public class GameState {
         }
 
         this.status = GameStatus.WAITING_PLAYER_ACTION;
+        this.statusUpdatedAt = LocalDateTime.now();
     }
 
     public void addPlayer(GamePlayerState player) {
