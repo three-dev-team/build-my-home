@@ -7,6 +7,7 @@ import com.buildmyhome.game.constants.BoardData;
 import com.buildmyhome.game.constants.TileType;
 import com.buildmyhome.game.dto.*;
 import com.buildmyhome.game.service.GameStateService;
+import com.buildmyhome.game.service.MoveService;
 import com.buildmyhome.house.service.HouseService;
 import com.buildmyhome.kk.KKService;
 import com.buildmyhome.loan.service.LoanService;
@@ -45,6 +46,7 @@ public class GameWsController {
     private final HouseService houseService;
     private final FishingService fishingService;
     private final MupaniService mupaniService;
+    private final MoveService moveService;
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     // TODO: 추후 GameEventService로 분리 - Tiffany
@@ -68,6 +70,20 @@ public class GameWsController {
             case WAITING_MUPANI:
                 mupaniService.onTimeout(roomId, gameState);
                 return;
+            case WAITING_START:
+                if (player.getRemainingMoves() > 0) {
+                    int remaining = player.getRemainingMoves();
+                    moveService.movePlayer(player, remaining);
+                    gameState.setStatus(GameStatus.MOVING);
+
+                    response = defaultGameResponse("CONTINUE_MOVING", gameState);
+                } else {
+                    // 남은 거리가 없다면
+                    gameState.nextTurn();
+                    response = defaultGameResponse("EVENT_TIMEOUT", gameState);
+                }
+                break;
+
             // 기본은 다음 턴으로 넘어감
             default:
                 gameState.nextTurn();
@@ -75,7 +91,7 @@ public class GameWsController {
                 break;
         }
 
-        simpMessagingTemplate.convertAndSend("/topic/games/"+ roomId, response);
+        simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
     }
 
     // 서버메모리 -> 프론트로 전달하는 공통 응답 DTO 생성하는 메서드
@@ -236,9 +252,8 @@ public class GameWsController {
             int diceValue = (int) (Math.random() * DICE_MAX) + DICE_MIN;
             player.setDiceValue(diceValue);
 
-            int newPosition = (player.getPosition() + diceValue) % BOARD_SIZE;
-            player.setPosition(newPosition);
-
+            // 플레이어 이동 처리
+            moveService.movePlayer(player, diceValue);
             gameState.setStatus(GameStatus.MOVING);
 
             GameMessage response = defaultGameResponse("DICE_ROLLED", gameState);
@@ -462,17 +477,29 @@ public class GameWsController {
         Long memberId = Long.parseLong(principal.getName());
         GameState gameState = gameStateService.getGame(roomId);
         if (gameState == null) return;
-        GamePlayerState player = gameState.getPlayers().get(memberId);
 
         synchronized (gameState) {
             if (!memberId.equals(gameState.getCurrentPlayerId())) {
                 return;
             }
-            // TODO: 최대 라운드 도달 시 게임 종료 처리  - Tiffany
-            gameState.nextTurn();
+            GamePlayerState player = gameState.getPlayers().get(memberId);
 
-            GameMessage response = defaultGameResponse("TURN_COMPLETED", gameState);
-            simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
+            if (player.getRemainingMoves() > 0) {
+                int remainingMoves = player.getRemainingMoves();
+                // 남은 이동 칸이 있으면 MOVING 상태로 복귀
+                moveService.movePlayer(player, remainingMoves);
+                gameState.setStatus(GameStatus.MOVING);
+                GameMessage response = defaultGameResponse("CONTINUE_MOVING", gameState);
+                // 프론트 애니메이션 작업 위해 남은 거리를 보내야할 경우
+                // response.setActionData(remainingMoves);
+                simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
+                return;
+            } else {
+                // TODO: 최대 라운드 도달 시 게임 종료 처리  - Tiffany
+                gameState.nextTurn();
+                GameMessage response = defaultGameResponse("TURN_COMPLETED", gameState);
+                simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
+            }
         }
     }
 
