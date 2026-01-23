@@ -13,10 +13,10 @@ import lombok.Setter;
 @AllArgsConstructor
 public class FishingActionRequest {
 
-    public static final String ACTION_HIT = "HIT";
-    public static final String ACTION_REEL_START = "REEL_START";
-    public static final String ACTION_REEL_STOP = "REEL_STOP";
+  public static final String ACTION_HIT = "HIT";
+  public static final String ACTION_REEL_START = "REEL_START";
+  public static final String ACTION_REEL_STOP = "REEL_STOP";
 
-    private Long roomId;
-    private String action;
+  private Long roomId;
+  private String action;
 }

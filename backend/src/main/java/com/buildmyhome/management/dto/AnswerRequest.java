@@ -9,5 +9,6 @@ import lombok.*;
 @NoArgsConstructor
 @Builder
 public class AnswerRequest {
-    private String content; // 답변 내용
+
+  private String content; // 답변 내용
 }

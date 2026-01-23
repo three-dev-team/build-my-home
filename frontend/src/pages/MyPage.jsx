@@ -1,21 +1,10 @@
-import React, { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
-import {
-  getMemberInfo,
-  updateNickname,
-  withdraw,
-  unlinkSocialAccount,
-} from "../api/memberApi";
+import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { getMemberInfo, updateNickname, withdraw, unlinkSocialAccount } from '../api/memberApi';
 
 // --- 소셜 아이콘 컴포넌트 ---
-const GoogleIcon = ({ width = "56", height = "56" }) => (
-  <svg
-    width={width}
-    height={height}
-    viewBox="0 0 56 56"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
+const GoogleIcon = ({ width = '56', height = '56' }) => (
+  <svg width={width} height={height} viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
     <g filter="url(#filter0_d_1_2)">
       <path
         d="M28 50C40.1503 50 50 40.1503 50 28C50 15.8497 40.1503 6 28 6C15.8497 6 6 15.8497 6 28C6 40.1503 15.8497 50 28 50Z"
@@ -48,14 +37,8 @@ const GoogleIcon = ({ width = "56", height = "56" }) => (
   </svg>
 );
 
-const KakaoIcon = ({ width = "56", height = "56" }) => (
-  <svg
-    width={width}
-    height={height}
-    viewBox="0 0 56 56"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
+const KakaoIcon = ({ width = '56', height = '56' }) => (
+  <svg width={width} height={height} viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
     <g filter="url(#filter0_d_1_3)">
       <path
         d="M28 50C40.1503 50 50 40.1503 50 28C50 15.8497 40.1503 6 28 6C15.8497 6 6 15.8497 6 28C6 40.1503 15.8497 50 28 50Z"
@@ -78,14 +61,8 @@ const KakaoIcon = ({ width = "56", height = "56" }) => (
   </svg>
 );
 
-const NaverIcon = ({ width = "56", height = "56" }) => (
-  <svg
-    width={width}
-    height={height}
-    viewBox="0 0 56 56"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
+const NaverIcon = ({ width = '56', height = '56' }) => (
+  <svg width={width} height={height} viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
     <g filter="url(#filter0_d_1_4)">
       <path
         d="M28 50C40.1503 50 50 40.1503 50 28C50 15.8497 40.1503 6 28 6C15.8497 6 6 15.8497 6 28C6 40.1503 15.8497 50 28 50Z"
@@ -93,10 +70,7 @@ const NaverIcon = ({ width = "56", height = "56" }) => (
         stroke="#02A449"
         strokeWidth="3"
       />
-      <path
-        d="M16.4 16H24.8L33.2 28.5V16H39.6V40H31.2L22.8 27.5V40H16.4V16Z"
-        fill="white"
-      />
+      <path d="M16.4 16H24.8L33.2 28.5V16H39.6V40H31.2L22.8 27.5V40H16.4V16Z" fill="white" />
       <path
         d="M28 4C14.7452 4 4 14.7452 4 28C4 41.2548 14.7452 52 28 52C41.2548 52 52 41.2548 52 28C52 14.7452 41.2548 4 28 4ZM28 49.3333C16.2176 49.3333 6.66667 39.7824 6.66667 28C6.66667 16.2176 16.2176 6.66667 28 6.66667C39.7824 6.66667 49.3333 16.2176 49.3333 28C49.3333 39.7824 39.7824 49.3333 28 49.3333Z"
         fill="#02A449"
@@ -110,29 +84,25 @@ export default function MyPage() {
   const navigate = useNavigate();
   const nicknameInputRef = useRef(null);
 
-  const [activeTab, setActiveTab] = useState("account");
+  const [activeTab, setActiveTab] = useState('account');
   const [userData, setUserData] = useState({
-    nickname: "",
-    email: "",
+    nickname: '',
+    email: '',
     bell: 0,
     level: 1,
-    role: "MEMBER",
+    role: 'MEMBER',
   });
   const [isLoading, setIsLoading] = useState(true);
 
   // 설정 및 문의 상태 관리
-  const [bgmVolume, setBgmVolume] = useState(
-    Number(localStorage.getItem("bgmVolume")) || 50,
-  );
-  const [sfxVolume, setSfxVolume] = useState(
-    Number(localStorage.getItem("sfxVolume")) || 50,
-  );
-  const [inquiryTitle, setInquiryTitle] = useState("");
-  const [inquiryContent, setInquiryContent] = useState("");
+  const [bgmVolume, setBgmVolume] = useState(Number(localStorage.getItem('bgmVolume')) || 50);
+  const [sfxVolume, setSfxVolume] = useState(Number(localStorage.getItem('sfxVolume')) || 50);
+  const [inquiryTitle, setInquiryTitle] = useState('');
+  const [inquiryContent, setInquiryContent] = useState('');
 
   // 닉네임 모달 상태
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editNickname, setEditNickname] = useState("");
+  const [editNickname, setEditNickname] = useState('');
   const [isConfirmStep, setIsConfirmStep] = useState(false);
 
   // 회원 탈퇴 모달 상태
@@ -141,15 +111,15 @@ export default function MyPage() {
 
   useEffect(() => {
     const fetchData = async () => {
-      const token = sessionStorage.getItem("token");
-      if (!token) return navigate("/");
+      const token = sessionStorage.getItem('token');
+      if (!token) return navigate('/');
 
       try {
         const res = await getMemberInfo();
-        console.log("FETCHED USER DATA:", res.data);
+        console.log('FETCHED USER DATA:', res.data);
         setUserData(res.data);
         setEditNickname(res.data.nickname);
-        sessionStorage.setItem("role", res.data.role);
+        sessionStorage.setItem('role', res.data.role);
         setIsLoading(false);
       } catch (e) {
         console.error(e);
@@ -162,19 +132,19 @@ export default function MyPage() {
 
   // 설정 변경 핸들러
   const handleVolumeChange = (type, value) => {
-    if (type === "BGM") {
+    if (type === 'BGM') {
       setBgmVolume(value);
-      localStorage.setItem("bgmVolume", value);
+      localStorage.setItem('bgmVolume', value);
     } else {
       setSfxVolume(value);
-      localStorage.setItem("sfxVolume", value);
+      localStorage.setItem('sfxVolume', value);
     }
   };
 
   const handleLogout = () => {
-    if (window.confirm("로그아웃 하시겠습니까? 🍃")) {
+    if (window.confirm('로그아웃 하시겠습니까? 🍃')) {
       sessionStorage.clear();
-      navigate("/");
+      navigate('/');
     }
   };
 
@@ -182,12 +152,12 @@ export default function MyPage() {
   const handleWithdraw = async () => {
     try {
       await withdraw();
-      alert("그동안 마이홈과 함께해주셔서 감사합니다. 🕊️");
+      alert('그동안 마이홈과 함께해주셔서 감사합니다. 🕊️');
       sessionStorage.clear();
-      navigate("/");
+      navigate('/');
     } catch (e) {
       console.error(e);
-      alert("탈퇴 처리 중 오류가 발생했습니다.");
+      alert('탈퇴 처리 중 오류가 발생했습니다.');
       setIsWithdrawModalOpen(false);
     }
   };
@@ -196,10 +166,8 @@ export default function MyPage() {
   const handleLinkAccount = (provider) => {
     // 1. 유저 ID 확인 (필수)
     if (!userData.id) {
-      console.error("Link Account Failed: userData.id is missing", userData);
-      alert(
-        "계정 식별 정보를 불러오지 못했습니다.\n잠시 후 다시 시도하거나 페이지를 새로고침해주세요.",
-      );
+      console.error('Link Account Failed: userData.id is missing', userData);
+      alert('계정 식별 정보를 불러오지 못했습니다.\n잠시 후 다시 시도하거나 페이지를 새로고침해주세요.');
       return;
     }
 
@@ -212,7 +180,7 @@ export default function MyPage() {
 
   // 연동 해제 모달 상태
   const [isUnlinkModalOpen, setIsUnlinkModalOpen] = useState(false);
-  const [unlinkProvider, setUnlinkProvider] = useState("");
+  const [unlinkProvider, setUnlinkProvider] = useState('');
 
   const handleUnlinkClick = (provider) => {
     setUnlinkProvider(provider);
@@ -222,15 +190,11 @@ export default function MyPage() {
   const confirmUnlink = async () => {
     try {
       await unlinkSocialAccount(unlinkProvider);
-      alert("연동이 해제되었습니다.");
+      alert('연동이 해제되었습니다.');
       window.location.reload();
     } catch (e) {
       console.error(e);
-      const errorMsg =
-        e.response?.data?.message ||
-        e.response?.data ||
-        e.message ||
-        "Unknown Error";
+      const errorMsg = e.response?.data?.message || e.response?.data || e.message || 'Unknown Error';
       alert(`연동 해제 실패: ${errorMsg}`);
     } finally {
       setIsUnlinkModalOpen(false);
@@ -243,23 +207,21 @@ export default function MyPage() {
       await updateNickname({ nickname: editNickname });
 
       // 1. 사용자에게 알림
-      alert(
-        "닉네임이 성공적으로 변경되었습니다! ✨\n보안을 위해 다시 로그인해 주세요.",
-      );
+      alert('닉네임이 성공적으로 변경되었습니다! ✨\n보안을 위해 다시 로그인해 주세요.');
 
       // 2. 세션 정보 삭제 (로그아웃)
       sessionStorage.clear();
 
       // 3. 메인 또는 로그인 페이지로 이동
-      navigate("/");
+      navigate('/');
     } catch (e) {
       if (e.response && e.response.status === 409) {
-        alert("이미 사용 중인 닉네임입니다. 다른 이름을 입력해주세요! 😢");
-        setEditNickname("");
+        alert('이미 사용 중인 닉네임입니다. 다른 이름을 입력해주세요! 😢');
+        setEditNickname('');
         setIsConfirmStep(false);
         setTimeout(() => nicknameInputRef.current?.focus(), 100);
       } else {
-        alert("변경에 실패했습니다. 다시 시도해주세요.");
+        alert('변경에 실패했습니다. 다시 시도해주세요.');
       }
     }
   };
@@ -276,9 +238,9 @@ export default function MyPage() {
   };
 
   const handleInquirySubmit = () => {
-    alert("문의가 접수되었습니다. (기능 구현 예정)");
-    setInquiryTitle("");
-    setInquiryContent("");
+    alert('문의가 접수되었습니다. (기능 구현 예정)');
+    setInquiryTitle('');
+    setInquiryContent('');
   };
 
   if (isLoading)
@@ -286,9 +248,7 @@ export default function MyPage() {
       <div className="h-screen flex items-center justify-center bg-[#FFFCEF]">
         <div className="text-center">
           <div className="text-4xl animate-bounce mb-4">🍃</div>
-          <div className="text-xl font-black text-[#8b5a2b]">
-            주민 정보를 불러오는 중...
-          </div>
+          <div className="text-xl font-black text-[#8b5a2b]">주민 정보를 불러오는 중...</div>
         </div>
       </div>
     );
@@ -306,9 +266,7 @@ export default function MyPage() {
           <div className="bg-[#FFFCEF] w-[380px] p-8 rounded-[40px] border-[6px] border-[#8b5a2b] shadow-2xl">
             {!isConfirmStep ? (
               <div className="space-y-6 text-center">
-                <h3 className="text-2xl font-black text-[#8b5a2b]">
-                  이름 변경하기 🍃
-                </h3>
+                <h3 className="text-2xl font-black text-[#8b5a2b]">이름 변경하기 🍃</h3>
                 <input
                   ref={nicknameInputRef}
                   type="text"
@@ -334,17 +292,13 @@ export default function MyPage() {
               </div>
             ) : (
               <div className="space-y-6 text-center">
-                <h3 className="text-2xl font-black text-[#8b5a2b]">
-                  정말 바꿀까요?
-                </h3>
+                <h3 className="text-2xl font-black text-[#8b5a2b]">정말 바꿀까요?</h3>
                 <p className="text-[#5d4037] font-bold text-lg">
                   <span className="text-[#bc8a5f]">"{editNickname}"</span>(으)로
                   <br />
                   결정하시겠습니까?
                 </p>
-                <p className="text-xs text-[#8b5a2b] font-bold">
-                  * 변경 시 다시 로그인해야 합니다.
-                </p>
+                <p className="text-xs text-[#8b5a2b] font-bold">* 변경 시 다시 로그인해야 합니다.</p>
                 <div className="flex gap-3">
                   <button
                     onClick={() => setIsConfirmStep(false)}
@@ -371,19 +325,14 @@ export default function MyPage() {
           <div className="bg-[#FFFCEF] w-[380px] p-8 rounded-[40px] border-[6px] border-[#D32F2F] shadow-2xl animate-in zoom-in-95">
             {!isWithdrawConfirmStep ? (
               <div className="space-y-6 text-center">
-                <h3 className="text-2xl font-black text-[#D32F2F]">
-                  마이홈을 떠나시나요? 😢
-                </h3>
+                <h3 className="text-2xl font-black text-[#D32F2F]">마이홈을 떠나시나요? 😢</h3>
                 <p className="text-[#5d4037] font-bold">
                   탈퇴 시 모든 게임 데이터와
                   <br />
                   벨(Bell)이 영구 삭제됩니다.
                 </p>
                 <div className="flex gap-3">
-                  <button
-                    onClick={closeWithdrawModal}
-                    className="flex-1 py-3 bg-gray-200 rounded-2xl font-bold"
-                  >
+                  <button onClick={closeWithdrawModal} className="flex-1 py-3 bg-gray-200 rounded-2xl font-bold">
                     취소
                   </button>
                   <button
@@ -396,9 +345,7 @@ export default function MyPage() {
               </div>
             ) : (
               <div className="space-y-6 text-center">
-                <h3 className="text-2xl font-black text-[#D32F2F]">
-                  마지막 확인!
-                </h3>
+                <h3 className="text-2xl font-black text-[#D32F2F]">마지막 확인!</h3>
                 <p className="text-[#5d4037] font-bold text-lg">
                   정말로 모든 정보를 삭제하고
                   <br />
@@ -429,9 +376,7 @@ export default function MyPage() {
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-sm">
           <div className="bg-[#FFFCEF] w-[380px] p-8 rounded-[40px] border-[6px] border-[#8b5a2b] shadow-2xl animate-in zoom-in-95">
             <div className="space-y-6 text-center">
-              <h3 className="text-2xl font-black text-[#8b5a2b]">
-                {unlinkProvider} 연동 해제 🔗
-              </h3>
+              <h3 className="text-2xl font-black text-[#8b5a2b]">{unlinkProvider} 연동 해제 🔗</h3>
               <p className="text-[#5d4037] font-bold">
                 연동을 해제하면 이메일로만
                 <br />
@@ -444,10 +389,7 @@ export default function MyPage() {
                 >
                   취소
                 </button>
-                <button
-                  onClick={confirmUnlink}
-                  className="flex-1 py-3 bg-[#8b5a2b] text-white rounded-2xl font-bold"
-                >
+                <button onClick={confirmUnlink} className="flex-1 py-3 bg-[#8b5a2b] text-white rounded-2xl font-bold">
                   해제하기
                 </button>
               </div>
@@ -460,28 +402,26 @@ export default function MyPage() {
         <div className="flex flex-row gap-6">
           <div className="flex flex-col gap-3 min-w-[150px]">
             {[
-              { id: "account", label: "계정 정보" },
-              { id: "settings", label: "설정" },
-              { id: "inquiry", label: "문의하기" },
-              ...(userData.role?.includes("ADMIN")
-                ? [{ id: "admin", label: "관리자" }]
-                : []),
+              { id: 'account', label: '계정 정보' },
+              { id: 'settings', label: '설정' },
+              { id: 'inquiry', label: '문의하기' },
+              ...(userData.role?.includes('ADMIN') ? [{ id: 'admin', label: '관리자' }] : []),
             ].map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => {
-                  if (tab.id === "admin") {
-                    navigate("/admin");
-                  } else if (tab.id === "inquiry") {
-                    navigate("/user-inquiry");
+                  if (tab.id === 'admin') {
+                    navigate('/admin');
+                  } else if (tab.id === 'inquiry') {
+                    navigate('/user-inquiry');
                   } else {
                     setActiveTab(tab.id);
                   }
                 }}
                 className={`py-4 px-6 rounded-[25px] font-black text-lg transition-all shadow-sm ${
                   activeTab === tab.id
-                    ? "bg-[#e2f0a1] text-[#8b5a2b] border-[4px] border-[#8b5a2b] translate-x-2"
-                    : "bg-white text-[#8b5a2b] hover:bg-[#FFFCEF]"
+                    ? 'bg-[#e2f0a1] text-[#8b5a2b] border-[4px] border-[#8b5a2b] translate-x-2'
+                    : 'bg-white text-[#8b5a2b] hover:bg-[#FFFCEF]'
                 }`}
               >
                 {tab.label}
@@ -490,16 +430,12 @@ export default function MyPage() {
           </div>
 
           <div className="flex-1 bg-[#FFFCEF] rounded-[40px] p-8 border-4 border-[#8b5a2b]/20 shadow-inner h-[450px] overflow-y-auto">
-            {activeTab === "account" && (
+            {activeTab === 'account' && (
               <div className="space-y-6">
                 <div className="flex justify-between items-center bg-white p-6 rounded-[30px] border-2 border-[#DED0A6]">
                   <div className="space-y-1">
-                    <p className="text-3xl font-black text-[#8b5a2b]">
-                      Lv. {userData.level}
-                    </p>
-                    <p className="font-bold text-[#5d4037] text-lg">
-                      {userData.bell.toLocaleString()} Bell 💰
-                    </p>
+                    <p className="text-3xl font-black text-[#8b5a2b]">Lv. {userData.level}</p>
+                    <p className="font-bold text-[#5d4037] text-lg">{userData.bell.toLocaleString()} Bell 💰</p>
                   </div>
                   <span className="px-4 py-1 bg-[#8b5a2b] text-white rounded-full text-xs font-bold uppercase">
                     {userData.role}
@@ -507,9 +443,7 @@ export default function MyPage() {
                 </div>
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <label className="text-sm font-black text-[#8b5a2b] ml-2">
-                      주민 이름
-                    </label>
+                    <label className="text-sm font-black text-[#8b5a2b] ml-2">주민 이름</label>
                     <div className="flex gap-3">
                       <input
                         type="text"
@@ -526,12 +460,10 @@ export default function MyPage() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <label className="text-sm font-black text-[#8b5a2b] ml-2">
-                      연결된 이메일
-                    </label>
+                    <label className="text-sm font-black text-[#8b5a2b] ml-2">연결된 이메일</label>
                     <input
                       type="text"
-                      value={userData.email || "정보 없음"}
+                      value={userData.email || '정보 없음'}
                       readOnly
                       className="w-full bg-[#F4F0D7] rounded-2xl p-4 font-bold text-[#8d7b6d] outline-none cursor-default"
                     />
@@ -540,9 +472,7 @@ export default function MyPage() {
                   {/* 소셜 계정 연동 섹션 */}
                   <div className="space-y-4 pt-6 border-t-2 border-[#DED0A6]">
                     <div className="flex items-center justify-between">
-                      <label className="text-sm font-black text-[#8b5a2b] ml-2">
-                        소셜 계정 연동
-                      </label>
+                      <label className="text-sm font-black text-[#8b5a2b] ml-2">소셜 계정 연동</label>
                       <span className="text-xs font-bold text-[#a67c52]">
                         * 아이콘을 눌러 연동하세요 (재클릭 시 해제)
                       </span>
@@ -550,12 +480,11 @@ export default function MyPage() {
 
                     <div className="flex justify-center gap-6 py-2">
                       {/* 1. Google */}
-                      {(userData.googleId ||
-                        (!userData.kakaoId && !userData.naverId)) && (
+                      {(userData.googleId || (!userData.kakaoId && !userData.naverId)) && (
                         <div className="flex flex-col items-center gap-2">
                           {userData.googleId ? (
                             <button
-                              onClick={() => handleUnlinkClick("google")}
+                              onClick={() => handleUnlinkClick('google')}
                               className="relative group cursor-pointer transition-transform active:scale-95"
                               title="연동 해제하기"
                             >
@@ -568,7 +497,7 @@ export default function MyPage() {
                             </button>
                           ) : (
                             <button
-                              onClick={() => handleLinkAccount("google")}
+                              onClick={() => handleLinkAccount('google')}
                               className="hover:scale-110 transition-transform active:translate-y-1"
                               title="구글 계정 연동하기"
                             >
@@ -579,12 +508,11 @@ export default function MyPage() {
                       )}
 
                       {/* 2. Kakao */}
-                      {(userData.kakaoId ||
-                        (!userData.googleId && !userData.naverId)) && (
+                      {(userData.kakaoId || (!userData.googleId && !userData.naverId)) && (
                         <div className="flex flex-col items-center gap-2">
                           {userData.kakaoId ? (
                             <button
-                              onClick={() => handleUnlinkClick("kakao")}
+                              onClick={() => handleUnlinkClick('kakao')}
                               className="relative group cursor-pointer transition-transform active:scale-95"
                               title="연동 해제하기"
                             >
@@ -597,7 +525,7 @@ export default function MyPage() {
                             </button>
                           ) : (
                             <button
-                              onClick={() => handleLinkAccount("kakao")}
+                              onClick={() => handleLinkAccount('kakao')}
                               className="hover:scale-110 transition-transform active:translate-y-1"
                               title="카카오 계정 연동하기"
                             >
@@ -608,12 +536,11 @@ export default function MyPage() {
                       )}
 
                       {/* 3. Naver */}
-                      {(userData.naverId ||
-                        (!userData.googleId && !userData.kakaoId)) && (
+                      {(userData.naverId || (!userData.googleId && !userData.kakaoId)) && (
                         <div className="flex flex-col items-center gap-2">
                           {userData.naverId ? (
                             <button
-                              onClick={() => handleUnlinkClick("naver")}
+                              onClick={() => handleUnlinkClick('naver')}
                               className="relative group cursor-pointer transition-transform active:scale-95"
                               title="연동 해제하기"
                             >
@@ -626,7 +553,7 @@ export default function MyPage() {
                             </button>
                           ) : (
                             <button
-                              onClick={() => handleLinkAccount("naver")}
+                              onClick={() => handleLinkAccount('naver')}
                               className="hover:scale-110 transition-transform active:translate-y-1"
                               title="네이버 계정 연동하기"
                             >
@@ -660,11 +587,9 @@ export default function MyPage() {
               </div>
             )}
 
-            {activeTab === "settings" && (
+            {activeTab === 'settings' && (
               <div className="space-y-10 py-4">
-                <h3 className="text-2xl font-black text-[#8b5a2b] border-b-2 border-[#DED0A6] pb-2">
-                  환경 설정 ⚙️
-                </h3>
+                <h3 className="text-2xl font-black text-[#8b5a2b] border-b-2 border-[#DED0A6] pb-2">환경 설정 ⚙️</h3>
                 <div className="space-y-8">
                   <div className="space-y-3">
                     <div className="flex justify-between font-black text-[#8b5a2b]">
@@ -676,9 +601,7 @@ export default function MyPage() {
                       min="0"
                       max="100"
                       value={bgmVolume}
-                      onChange={(e) =>
-                        handleVolumeChange("BGM", e.target.value)
-                      }
+                      onChange={(e) => handleVolumeChange('BGM', e.target.value)}
                       className="w-full h-4 bg-[#F4F0D7] rounded-lg appearance-none cursor-pointer accent-[#8b5a2b]"
                     />
                   </div>
@@ -692,9 +615,7 @@ export default function MyPage() {
                       min="0"
                       max="100"
                       value={sfxVolume}
-                      onChange={(e) =>
-                        handleVolumeChange("SFX", e.target.value)
-                      }
+                      onChange={(e) => handleVolumeChange('SFX', e.target.value)}
                       className="w-full h-4 bg-[#F4F0D7] rounded-lg appearance-none cursor-pointer accent-[#8b5a2b]"
                     />
                   </div>
@@ -702,11 +623,9 @@ export default function MyPage() {
               </div>
             )}
 
-            {activeTab === "inquiry" && (
+            {activeTab === 'inquiry' && (
               <div className="space-y-6 py-4 flex flex-col h-full">
-                <h3 className="text-2xl font-black text-[#8b5a2b] border-b-2 border-[#DED0A6] pb-2">
-                  도움센터 📮
-                </h3>
+                <h3 className="text-2xl font-black text-[#8b5a2b] border-b-2 border-[#DED0A6] pb-2">도움센터 📮</h3>
                 <div className="space-y-4 flex-1 flex flex-col">
                   <input
                     type="text"
@@ -734,7 +653,7 @@ export default function MyPage() {
         </div>
         <div className="mt-8 flex justify-center">
           <button
-            onClick={() => navigate("/home")}
+            onClick={() => navigate('/home')}
             className="bg-white/90 hover:bg-white text-[#5d4037] px-24 py-3 rounded-full font-black text-xl border-4 border-[#8b5a2b]/30 shadow-md transition-all active:scale-95"
           >
             마이홈으로 돌아가기

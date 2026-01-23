@@ -4,10 +4,9 @@ import com.buildmyhome.game.dto.*;
 import com.buildmyhome.game.service.GameStateService;
 import com.buildmyhome.shop.dto.ShopSession;
 import com.buildmyhome.shop.dto.ShopType;
+import java.util.UUID;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -40,7 +39,6 @@ public class ShopServiceImpl implements ShopService {
 
     System.out.println("🏪 상점 세션 생성: " + shopType + " (memberId: " + memberId + ")");
   }
-
 
   @Override
   public void buyItem(Long roomId, Long memberId, ItemType itemType) {
@@ -84,8 +82,7 @@ public class ShopServiceImpl implements ShopService {
     }
 
     player.setBell(player.getBell() - totalCost);
-    player.getResources().put(resourceType,
-        player.getResources().get(resourceType) + quantity);
+    player.getResources().put(resourceType, player.getResources().get(resourceType) + quantity);
   }
 
   @Override
@@ -179,4 +176,3 @@ public class ShopServiceImpl implements ShopService {
     return session; // 검증된 세션을 반환함
   }
 }
-

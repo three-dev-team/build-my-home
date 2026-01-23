@@ -1,10 +1,10 @@
-import "./css/PlayerStatusPanel.css";
+import './css/PlayerStatusPanel.css';
 
 const getRankText = (index) => {
   const rank = index + 1;
-  if (rank === 1) return "1st";
-  if (rank === 2) return "2nd";
-  if (rank === 3) return "3rd";
+  if (rank === 1) return '1st';
+  if (rank === 2) return '2nd';
+  if (rank === 3) return '3rd';
   return `${rank}th`;
 };
 
@@ -24,18 +24,14 @@ const PlayerStatusPanel = ({ players, currentPlayerId, myId }) => {
         return (
           <div
             key={player.memberId}
-            className={`player-card ${isCurrentTurn ? "current-turn" : ""} ${isMe ? "my-card" : ""}`}
+            className={`player-card ${isCurrentTurn ? 'current-turn' : ''} ${isMe ? 'my-card' : ''}`}
           >
             <div className="rank">{getRankText(index)}</div>
             <div className="player-info">
               <div className="nickname">{player.nickname}</div>
               <div className="stats">
                 <span>💰{player.bell}</span>
-                {player.loan > 0 && (
-                  <span style={{ color: "#ff6b6b", marginLeft: "8px" }}>
-                    📉{player.loan}
-                  </span>
-                )}
+                {player.loan > 0 && <span style={{ color: '#ff6b6b', marginLeft: '8px' }}>📉{player.loan}</span>}
                 <span>🏠 Lv.{player.houseLevel}</span>
               </div>
               <div className="items">

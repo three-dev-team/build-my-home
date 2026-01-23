@@ -1,13 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useGameTimer } from "../../hooks/useGameTimer.js";
-import "./css/Fishing.css";
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useGameTimer } from '../../hooks/useGameTimer.js';
+import './css/Fishing.css';
 
-const INTRO_IMAGE_1 = "/images/fishing/justin_intro.webp"; // 1번째 화면(터치해서 다음)
-const INTRO_IMAGE_2 = "/images/fishing/justin_start.webp"; // 2번째 화면(터치/시작하기로 시작)
+const INTRO_IMAGE_1 = '/images/fishing/justin_intro.webp'; // 1번째 화면(터치해서 다음)
+const INTRO_IMAGE_2 = '/images/fishing/justin_start.webp'; // 2번째 화면(터치/시작하기로 시작)
 
 // 결과 이미지
-const RESULT_SUCCESS_IMAGE = "/images/fishing/success_fishing.webp";
-const RESULT_FAIL_IMAGE = "/images/fishing/fail_fishing.webp";
+const RESULT_SUCCESS_IMAGE = '/images/fishing/success_fishing.webp';
+const RESULT_FAIL_IMAGE = '/images/fishing/fail_fishing.webp';
 
 const clamp0to100 = (v) => Math.max(0, Math.min(100, v));
 
@@ -22,15 +22,15 @@ function computePingPongMarkerPct(startAtEpochMs, nowEpochMs, cycleMs) {
 }
 
 export default function Fishing({
-                                  roomId,
-                                  isMyTurn,
-                                  currentPlayerName,
-                                  timeoutSeconds = 0,
-                                  eventMessage,
-                                  onExit,
-                                  onStartFishing,
-                                  onFishingAction,
-                                }) {
+  roomId,
+  isMyTurn,
+  currentPlayerName,
+  timeoutSeconds = 0,
+  eventMessage,
+  onExit,
+  onStartFishing,
+  onFishingAction,
+}) {
   // 공통 타이머 UI
   const { timeLeft, isUrgent, hasTimeOutPanel } = useGameTimer(timeoutSeconds);
 
@@ -72,7 +72,7 @@ export default function Fishing({
    * - INTRO_2: 시작 화면(내 턴이면 터치/버튼으로 시작)
    * - INGAME: 실제 게임 UI (STARTED/UPDATE/RESULT는 이벤트 메시지로 제어)
    */
-  const [uiStep, setUiStep] = useState("INTRO_1");
+  const [uiStep, setUiStep] = useState('INTRO_1');
 
   // "시작" 중복 요청 방지(서버 STARTED 오기 전까지 잠금)
   const [startPending, setStartPending] = useState(false);
@@ -80,7 +80,7 @@ export default function Fishing({
 
   useEffect(() => {
     // 방이 바뀌면 인트로부터 다시
-    setUiStep("INTRO_1");
+    setUiStep('INTRO_1');
     setStartPending(false);
     startRequestedRef.current = false;
 
@@ -142,12 +142,12 @@ export default function Fishing({
     // 이미 시작/결과 상태면 무시
     if (started || result) return;
 
-    if (uiStep === "INTRO_1") {
-      setUiStep("INTRO_2");
+    if (uiStep === 'INTRO_1') {
+      setUiStep('INTRO_2');
       return;
     }
 
-    if (uiStep === "INTRO_2") {
+    if (uiStep === 'INTRO_2') {
       requestStart();
     }
   };
@@ -191,8 +191,7 @@ export default function Fishing({
     const measured = st - clientNow;
 
     // 네트워크 노이즈 완화(EMA)
-    serverSkewRef.current =
-        serverSkewRef.current === 0 ? measured : serverSkewRef.current * 0.9 + measured * 0.1;
+    serverSkewRef.current = serverSkewRef.current === 0 ? measured : serverSkewRef.current * 0.9 + measured * 0.1;
 
     setServerSkewMs(serverSkewRef.current);
   }, [eventMessage?.serverTimeMs]);
@@ -216,7 +215,7 @@ export default function Fishing({
       setNowPerf(t);
 
       const ht = startedMsg?.harvestType ?? startedMsg?.params?.harvestType;
-      const activeLarge = ht === "FISH_LARGE";
+      const activeLarge = ht === 'FISH_LARGE';
 
       // ✅ LARGE 보간은 관전 포함해서도 부드럽게 보여야 함(조작만 막고, 표시만 보간)
       if (activeLarge) {
@@ -258,13 +257,13 @@ export default function Fishing({
   useEffect(() => {
     if (!eventMessage?.type) return;
 
-    if (eventMessage.type === "ROOM_EVENT_STARTED") {
+    if (eventMessage.type === 'ROOM_EVENT_STARTED') {
       setStartedMsg(eventMessage);
       setUpdateMsg(null);
       setResultMsg(null);
 
       // ✅ 이벤트 시작되면 인트로 종료(관전 포함 모두 동일 UI)
-      setUiStep("INGAME");
+      setUiStep('INGAME');
 
       setStartPending(false);
       startRequestedRef.current = false;
@@ -282,14 +281,14 @@ export default function Fishing({
       return;
     }
 
-    if (eventMessage.type === "ROOM_EVENT_UPDATE") {
+    if (eventMessage.type === 'ROOM_EVENT_UPDATE') {
       setUpdateMsg((prev) => ({ ...(prev ?? {}), ...(eventMessage ?? {}) }));
       return;
     }
 
-    if (eventMessage.type === "ROOM_EVENT_RESULT") {
+    if (eventMessage.type === 'ROOM_EVENT_RESULT') {
       setResultMsg(eventMessage);
-      setUiStep("INGAME");
+      setUiStep('INGAME');
 
       setStartPending(false);
       startRequestedRef.current = false;
@@ -300,17 +299,17 @@ export default function Fishing({
       return;
     }
 
-    if (eventMessage.type === "ERROR") {
+    if (eventMessage.type === 'ERROR') {
       setResultMsg({
-        type: "ROOM_EVENT_RESULT",
-        eventType: "FISHING",
+        type: 'ROOM_EVENT_RESULT',
+        eventType: 'FISHING',
         success: false,
-        message: eventMessage?.message ?? "낚시 진행 중 오류가 발생했어요.",
+        message: eventMessage?.message ?? '낚시 진행 중 오류가 발생했어요.',
         gainedQty: 0,
         price: 0,
       });
 
-      setUiStep("INGAME");
+      setUiStep('INGAME');
 
       setStartPending(false);
       startRequestedRef.current = false;
@@ -350,12 +349,12 @@ export default function Fishing({
   // harvestType: FISH_SMALL | FISH_MEDIUM | FISH_LARGE
   const harvestType = useMemo(() => {
     const ht = startedMsg?.harvestType ?? startedMsg?.params?.harvestType;
-    return typeof ht === "string" ? ht : "";
+    return typeof ht === 'string' ? ht : '';
   }, [startedMsg]);
 
-  const isSmall = harvestType === "FISH_SMALL";
-  const isMedium = harvestType === "FISH_MEDIUM";
-  const isLarge = harvestType === "FISH_LARGE";
+  const isSmall = harvestType === 'FISH_SMALL';
+  const isMedium = harvestType === 'FISH_MEDIUM';
+  const isLarge = harvestType === 'FISH_LARGE';
 
   // STARTED 정보 기반 진행 시간 계산(전체 제한 시간 표시용)
   const startAt = started ? Number(startedMsg?.eventStartTimeMs ?? 0) : 0;
@@ -387,18 +386,14 @@ export default function Fishing({
     if (!started) return 0;
     const p = startedMsg?.params ?? {};
     if (!isMedium) return Number(p.firstWindowCenterPct ?? 0) || 0;
-    return stage === 2
-        ? Number(p.secondWindowCenterPct ?? 0) || 0
-        : Number(p.firstWindowCenterPct ?? 0) || 0;
+    return stage === 2 ? Number(p.secondWindowCenterPct ?? 0) || 0 : Number(p.firstWindowCenterPct ?? 0) || 0;
   }, [started, startedMsg, isMedium, stage]);
 
   const windowWidthPct = useMemo(() => {
     if (!started) return 0;
     const p = startedMsg?.params ?? {};
     if (!isMedium) return Number(p.firstWindowWidthPct ?? 0) || 0;
-    return stage === 2
-        ? Number(p.secondWindowWidthPct ?? 0) || 0
-        : Number(p.firstWindowWidthPct ?? 0) || 0;
+    return stage === 2 ? Number(p.secondWindowWidthPct ?? 0) || 0 : Number(p.firstWindowWidthPct ?? 0) || 0;
   }, [started, startedMsg, isMedium, stage]);
 
   // 핑퐁 마커 %
@@ -413,8 +408,8 @@ export default function Fishing({
     if (isSmall) return Number(startedMsg?.params?.firstBiteDelayMs ?? 0);
     if (isMedium) {
       return stage === 2
-          ? Number(startedMsg?.params?.secondBiteDelayMs ?? 0)
-          : Number(startedMsg?.params?.firstBiteDelayMs ?? 0);
+        ? Number(startedMsg?.params?.secondBiteDelayMs ?? 0)
+        : Number(startedMsg?.params?.firstBiteDelayMs ?? 0);
     }
     return 0;
   }, [started, startedMsg, isSmall, isMedium, stage]);
@@ -424,8 +419,8 @@ export default function Fishing({
     if (isSmall) return Number(startedMsg?.params?.firstSuccessDurationMs ?? 0);
     if (isMedium) {
       return stage === 2
-          ? Number(startedMsg?.params?.secondSuccessDurationMs ?? 0)
-          : Number(startedMsg?.params?.firstSuccessDurationMs ?? 0);
+        ? Number(startedMsg?.params?.secondSuccessDurationMs ?? 0)
+        : Number(startedMsg?.params?.firstSuccessDurationMs ?? 0);
     }
     return 0;
   }, [started, startedMsg, isSmall, isMedium, stage]);
@@ -534,7 +529,7 @@ export default function Fishing({
   // SMALL/MEDIUM HIT
   const onHit = () => {
     if (!canControl) return;
-    publishAction("HIT");
+    publishAction('HIT');
   };
 
   // ===== LARGE: 홀드 금지 / 펌프 클릭만(실제 조작은 Space로만) =====
@@ -571,12 +566,12 @@ export default function Fishing({
     pumpPendingRef.current = true;
     lastPumpClientEpochRef.current = now;
 
-    publishAction("REEL_START");
+    publishAction('REEL_START');
 
     // 짧은 시간 뒤 자동 STOP (홀드로 이득 못 보게)
     if (pumpTimerRef.current) clearTimeout(pumpTimerRef.current);
     pumpTimerRef.current = setTimeout(() => {
-      publishAction("REEL_STOP");
+      publishAction('REEL_STOP');
       pumpPendingRef.current = false;
       pumpTimerRef.current = null;
     }, 120);
@@ -586,11 +581,11 @@ export default function Fishing({
     doExit(); // ✅ 내 턴만 event-complete
   };
 
-  const resultTitle = result ? (resultMsg?.success ? "성공!" : "실패") : "";
-  const resultText = result ? resultMsg?.message : "";
+  const resultTitle = result ? (resultMsg?.success ? '성공!' : '실패') : '';
+  const resultText = result ? resultMsg?.message : '';
 
   // SMALL/MEDIUM: 서버가 준 UPDATE message(미스/2단계 등)를 잠깐 힌트로 보여주기
-  const [flashHint, setFlashHint] = useState("");
+  const [flashHint, setFlashHint] = useState('');
   useEffect(() => {
     const msg = updateMsg?.message;
     if (!msg) return;
@@ -599,7 +594,7 @@ export default function Fishing({
     if (isLarge) return;
 
     setFlashHint(String(msg));
-    const t = setTimeout(() => setFlashHint(""), 450);
+    const t = setTimeout(() => setFlashHint(''), 450);
     return () => clearTimeout(t);
   }, [updateMsg?.message, isLarge]);
 
@@ -607,41 +602,30 @@ export default function Fishing({
   const hintText = useMemo(() => {
     if (flashHint) return flashHint;
 
-    if (!started) return "낚시 준비중…";
-    if (isPendingStart) return "낚싯줄 던지는 중…";
-    if (isExpired) return "시간 끝!";
+    if (!started) return '낚시 준비중…';
+    if (isPendingStart) return '낚싯줄 던지는 중…';
+    if (isExpired) return '시간 끝!';
 
     // 관전 문구도 Space 안내는 유지(조작은 막지만, '무슨 일이 벌어지는지' 안내)
     if (isSpectator) {
-      if (isLarge) return largeReeling ? "펌프 중! (SPACE)" : "펌프 타이밍! (SPACE)";
-      if (inWindow) return "지금 HIT 타이밍! (SPACE)";
-      if (isMedium) return stage === 2 ? "2단계 타이밍! (SPACE)" : "1단계 기다렸다가 (SPACE)";
-      return "타이밍 기다렸다가 (SPACE)";
+      if (isLarge) return largeReeling ? '펌프 중! (SPACE)' : '펌프 타이밍! (SPACE)';
+      if (inWindow) return '지금 HIT 타이밍! (SPACE)';
+      if (isMedium) return stage === 2 ? '2단계 타이밍! (SPACE)' : '1단계 기다렸다가 (SPACE)';
+      return '타이밍 기다렸다가 (SPACE)';
     }
 
     // 내 턴(조작 가능)
-    if (isLarge) return largeReeling ? "SPACE로 펌프!" : "SPACE를 눌러 펌프!";
-    if (inWindow) return "지금 SPACE!";
-    if (isMedium) return stage === 2 ? "2단계! 기다렸다가 SPACE!" : "1단계! 기다렸다가 SPACE!";
-    return "타이밍 기다렸다가 SPACE!";
-  }, [
-    flashHint,
-    started,
-    isPendingStart,
-    isExpired,
-    isSpectator,
-    isLarge,
-    largeReeling,
-    inWindow,
-    isMedium,
-    stage,
-  ]);
+    if (isLarge) return largeReeling ? 'SPACE로 펌프!' : 'SPACE를 눌러 펌프!';
+    if (inWindow) return '지금 SPACE!';
+    if (isMedium) return stage === 2 ? '2단계! 기다렸다가 SPACE!' : '1단계! 기다렸다가 SPACE!';
+    return '타이밍 기다렸다가 SPACE!';
+  }, [flashHint, started, isPendingStart, isExpired, isSpectator, isLarge, largeReeling, inWindow, isMedium, stage]);
 
   const titleRight = useMemo(() => {
-    if (isSmall) return "소형";
+    if (isSmall) return '소형';
     if (isMedium) return `중형 (단계 ${stage}/2)`;
-    if (isLarge) return "대형 (스페이스 펌프)";
-    return "";
+    if (isLarge) return '대형 (스페이스 펌프)';
+    return '';
   }, [isSmall, isMedium, isLarge, stage]);
 
   // ✅ 표시용은 보간값(관전 포함)
@@ -649,14 +633,14 @@ export default function Fishing({
   const displayTension = isLarge ? smoothTension : largeTension;
 
   // 인트로 화면 표시 여부(시작/결과 전까지만)
-  const showIntro = !started && !result && (uiStep === "INTRO_1" || uiStep === "INTRO_2");
-  const introBg = uiStep === "INTRO_1" ? INTRO_IMAGE_1 : INTRO_IMAGE_2;
+  const showIntro = !started && !result && (uiStep === 'INTRO_1' || uiStep === 'INTRO_2');
+  const introBg = uiStep === 'INTRO_1' ? INTRO_IMAGE_1 : INTRO_IMAGE_2;
 
   // ✅ Space 키 입력: "게임 진행 중"에만 동작(인트로에서는 무시)
   const keyHandlerRef = useRef(null);
   useEffect(() => {
     keyHandlerRef.current = (e) => {
-      if (e.code !== "Space") return;
+      if (e.code !== 'Space') return;
       if (e.repeat) return;
       e.preventDefault();
 
@@ -674,317 +658,302 @@ export default function Fishing({
 
   useEffect(() => {
     const onKeyDown = (e) => keyHandlerRef.current?.(e);
-    window.addEventListener("keydown", onKeyDown, { passive: false });
-    return () => window.removeEventListener("keydown", onKeyDown);
+    window.addEventListener('keydown', onKeyDown, { passive: false });
+    return () => window.removeEventListener('keydown', onKeyDown);
   }, []);
 
   const resultImageSrc = useMemo(() => {
-    if (!result) return "";
+    if (!result) return '';
     return resultMsg?.success ? RESULT_SUCCESS_IMAGE : RESULT_FAIL_IMAGE;
   }, [result, resultMsg]);
 
   return (
-      <div className="bmhFishingOverlay">
-        <div className="bmhFishingStage">
-          {/* ✅ 관전 입력 완전 차단 레이어(인트로 포함) */}
-          {isSpectator && (
-              <div
-                  className="bmhFishingSpectatorBlock"
-                  onPointerDown={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                  }}
-                  onPointerUp={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                  }}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                  }}
-                  onTouchStart={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                  }}
-              />
-          )}
+    <div className="bmhFishingOverlay">
+      <div className="bmhFishingStage">
+        {/* ✅ 관전 입력 완전 차단 레이어(인트로 포함) */}
+        {isSpectator && (
+          <div
+            className="bmhFishingSpectatorBlock"
+            onPointerDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            onPointerUp={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            onTouchStart={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+          />
+        )}
 
-          {/* 인트로(클릭 2번) */}
-          {showIntro && (
+        {/* 인트로(클릭 2번) */}
+        {showIntro && (
+          <div
+            style={{ position: 'absolute', inset: 0 }}
+            onClick={handleIntroTap}
+            onTouchStart={(e) => {
+              // 모바일도 “터치”로 클릭 동작하게
+              e.preventDefault();
+              handleIntroTap();
+            }}
+          >
+            <div className="bmhFishingBg" style={{ backgroundImage: `url(${introBg})` }} />
+
+            {/* ✅ 안내 멘트 */}
+            <div className="bmhFishingTapHint">화면을 터치해주세요</div>
+
+            {hasTimeOutPanel && (
+              <div className="bmhFishingTimerWrap">
+                <div className="bmhFishingTimerPill">
+                  <span className="bmhFishingTimerLabel">TIME</span>
+                  <span className={`bmhFishingTimerValue ${isUrgent ? 'bmhFishingTimerUrgent' : ''}`}>{timeLeft}s</span>
+                </div>
+              </div>
+            )}
+
+            {/* 2번째 화면: 버튼도 제공(터치해도 시작됨) */}
+            {uiStep === 'INTRO_2' && (
               <div
-                  style={{ position: "absolute", inset: 0 }}
-                  onClick={handleIntroTap}
-                  onTouchStart={(e) => {
-                    // 모바일도 “터치”로 클릭 동작하게
-                    e.preventDefault();
-                    handleIntroTap();
-                  }}
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  display: 'flex',
+                  alignItems: 'flex-end',
+                  justifyContent: 'flex-end',
+                  padding: 22,
+                }}
               >
-                <div className="bmhFishingBg" style={{ backgroundImage: `url(${introBg})` }} />
-
-                {/* ✅ 안내 멘트 */}
-                <div className="bmhFishingTapHint">화면을 터치해주세요</div>
-
-                {hasTimeOutPanel && (
-                    <div className="bmhFishingTimerWrap">
-                      <div className="bmhFishingTimerPill">
-                        <span className="bmhFishingTimerLabel">TIME</span>
-                        <span className={`bmhFishingTimerValue ${isUrgent ? "bmhFishingTimerUrgent" : ""}`}>
-                    {timeLeft}s
-                  </span>
-                      </div>
-                    </div>
-                )}
-
-                {/* 2번째 화면: 버튼도 제공(터치해도 시작됨) */}
-                {uiStep === "INTRO_2" && (
-                    <div
-                        style={{
-                          position: "absolute",
-                          inset: 0,
-                          display: "flex",
-                          alignItems: "flex-end",
-                          justifyContent: "flex-end",
-                          padding: 22,
-                        }}
-                    >
-                      {isMyTurn ? (
-                          <button
-                              className="bmhFishingHitBtn"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                requestStart();
-                              }}
-                              disabled={startPending}
-                              style={{
-                                opacity: startPending ? 0.6 : 1,
-                                cursor: startPending ? "not-allowed" : "pointer",
-                                padding: "12px 18px",
-                                borderRadius: 16,
-                                fontSize: 16,
-                              }}
-                          >
-                            {startPending ? "시작 중..." : "시작하기"}
-                          </button>
-                      ) : (
-                          <div className="bmhFishingSpectatorPill">
-                            {currentPlayerName ? `${currentPlayerName}님 시작 대기 중` : "시작 대기 중"}
-                          </div>
-                      )}
-                    </div>
+                {isMyTurn ? (
+                  <button
+                    className="bmhFishingHitBtn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      requestStart();
+                    }}
+                    disabled={startPending}
+                    style={{
+                      opacity: startPending ? 0.6 : 1,
+                      cursor: startPending ? 'not-allowed' : 'pointer',
+                      padding: '12px 18px',
+                      borderRadius: 16,
+                      fontSize: 16,
+                    }}
+                  >
+                    {startPending ? '시작 중...' : '시작하기'}
+                  </button>
+                ) : (
+                  <div className="bmhFishingSpectatorPill">
+                    {currentPlayerName ? `${currentPlayerName}님 시작 대기 중` : '시작 대기 중'}
+                  </div>
                 )}
               </div>
-          )}
+            )}
+          </div>
+        )}
 
-          {/* 실제 낚시 UI */}
-          {!showIntro && (
-              <>
-                <div className="bmhFishingBg" style={{ backgroundImage: "url(/images/fishing/bg.webp)" }} />
+        {/* 실제 낚시 UI */}
+        {!showIntro && (
+          <>
+            <div className="bmhFishingBg" style={{ backgroundImage: 'url(/images/fishing/bg.webp)' }} />
 
-                {hasTimeOutPanel && !result && (
-                    <div className="bmhFishingTimerWrap">
-                      <div className="bmhFishingTimerPill">
-                        <span className="bmhFishingTimerLabel">TIME</span>
-                        <span className={`bmhFishingTimerValue ${isUrgent ? "bmhFishingTimerUrgent" : ""}`}>
-                    {timeLeft}s
-                  </span>
+            {hasTimeOutPanel && !result && (
+              <div className="bmhFishingTimerWrap">
+                <div className="bmhFishingTimerPill">
+                  <span className="bmhFishingTimerLabel">TIME</span>
+                  <span className={`bmhFishingTimerValue ${isUrgent ? 'bmhFishingTimerUrgent' : ''}`}>{timeLeft}s</span>
+                </div>
+              </div>
+            )}
+
+            <img
+              src="/images/fishing/character.webp"
+              alt="character"
+              className="bmhFishingCharacter"
+              draggable={false}
+            />
+
+            <div className="bmhFishingBobberWrap">
+              <img
+                src="/images/fishing/bobber.webp"
+                alt="bobber"
+                className="bmhFishingBobber"
+                style={{ animationDuration: !isLarge && inWindow ? '0.55s' : '1.1s' }}
+                draggable={false}
+              />
+              <img
+                src="/images/fishing/ripple.webp"
+                alt="ripple"
+                className="bmhFishingRipple"
+                style={{ opacity: !isLarge && inWindow ? 0.95 : 0.55 }}
+                draggable={false}
+              />
+              {!isLarge && inWindow && (
+                <img src="/images/fishing/splash.webp" alt="splash" className="bmhFishingSplash" draggable={false} />
+              )}
+            </div>
+
+            <div className="bmhFishingHud">
+              <div className="bmhFishingTitleRow">
+                <div className="bmhFishingTitleText">낚시</div>
+                <div className="bmhFishingSubText">
+                  {currentPlayerName ? `${currentPlayerName} 차례` : ''}
+                  {titleRight ? ` · ${titleRight}` : ''}
+                  {!isMyTurn ? ' · 관전 중' : ''}
+                </div>
+              </div>
+
+              {/* SMALL/MEDIUM */}
+              {!isLarge && (
+                <div className="bmhFishingGaugeWrap">
+                  <div className="bmhFishingGaugeTrack">
+                    {started && (
+                      <div
+                        className="bmhFishingGaugeWindow"
+                        style={{
+                          left: `${clamp0to100(winStartPct)}%`,
+                          width: `${Math.max(0, clamp0to100(winEndPct) - clamp0to100(winStartPct))}%`,
+                          opacity: isPendingStart ? 0.2 : 0.85,
+                        }}
+                      />
+                    )}
+
+                    {started && (
+                      <div className="bmhFishingGaugeMarker" style={{ left: `${clamp0to100(markerPct)}%` }} />
+                    )}
+                  </div>
+
+                  <div className="bmhFishingHintRow">
+                    <div className="bmhFishingHint" style={{ opacity: started ? 1 : 0.85 }}>
+                      {hintText}
+                    </div>
+
+                    {/* ✅ 조작은 Space: 버튼은 안내용으로만 */}
+                    {isMyTurn ? (
+                      <button
+                        className="bmhFishingHitBtn"
+                        style={{
+                          opacity: canControl ? 1 : 0.55,
+                          cursor: 'not-allowed',
+                          transform: inWindow && canControl ? 'scale(1.05)' : 'scale(1)',
+                          filter: inWindow && canControl ? 'drop-shadow(0 0 10px rgba(255,255,255,0.6))' : 'none',
+                        }}
+                        onClick={(e) => {
+                          e.preventDefault();
+                        }}
+                        disabled
+                        title="Space로 HIT!"
+                      >
+                        SPACE
+                      </button>
+                    ) : (
+                      <div className="bmhFishingSpectatorPill">관전 중</div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* LARGE */}
+              {isLarge && (
+                <div className="bmhFishingGaugeWrap">
+                  <div className="bmhFishingBarsRow">
+                    <div className="bmhFishingBarCol">
+                      <div className="bmhFishingBarLabel">진행도</div>
+                      <div className="bmhFishingBarTrack">
+                        <div
+                          className="bmhFishingBarFill bmhFishingBarFillProgress"
+                          style={{ width: `${clamp0to100(displayProgress)}%` }}
+                        />
                       </div>
                     </div>
-                )}
 
-                <img
-                    src="/images/fishing/character.webp"
-                    alt="character"
-                    className="bmhFishingCharacter"
-                    draggable={false}
-                />
-
-                <div className="bmhFishingBobberWrap">
-                  <img
-                      src="/images/fishing/bobber.webp"
-                      alt="bobber"
-                      className="bmhFishingBobber"
-                      style={{ animationDuration: !isLarge && inWindow ? "0.55s" : "1.1s" }}
-                      draggable={false}
-                  />
-                  <img
-                      src="/images/fishing/ripple.webp"
-                      alt="ripple"
-                      className="bmhFishingRipple"
-                      style={{ opacity: !isLarge && inWindow ? 0.95 : 0.55 }}
-                      draggable={false}
-                  />
-                  {!isLarge && inWindow && (
-                      <img
-                          src="/images/fishing/splash.webp"
-                          alt="splash"
-                          className="bmhFishingSplash"
-                          draggable={false}
-                      />
-                  )}
-                </div>
-
-                <div className="bmhFishingHud">
-                  <div className="bmhFishingTitleRow">
-                    <div className="bmhFishingTitleText">낚시</div>
-                    <div className="bmhFishingSubText">
-                      {currentPlayerName ? `${currentPlayerName} 차례` : ""}
-                      {titleRight ? ` · ${titleRight}` : ""}
-                      {!isMyTurn ? " · 관전 중" : ""}
+                    <div className="bmhFishingBarCol">
+                      <div className="bmhFishingBarLabel">장력</div>
+                      <div className="bmhFishingBarTrack">
+                        <div
+                          className="bmhFishingBarFill bmhFishingBarFillTension"
+                          style={{ width: `${clamp0to100(displayTension)}%` }}
+                        />
+                      </div>
                     </div>
                   </div>
 
-                  {/* SMALL/MEDIUM */}
-                  {!isLarge && (
-                      <div className="bmhFishingGaugeWrap">
-                        <div className="bmhFishingGaugeTrack">
-                          {started && (
-                              <div
-                                  className="bmhFishingGaugeWindow"
-                                  style={{
-                                    left: `${clamp0to100(winStartPct)}%`,
-                                    width: `${Math.max(
-                                        0,
-                                        clamp0to100(winEndPct) - clamp0to100(winStartPct),
-                                    )}%`,
-                                    opacity: isPendingStart ? 0.2 : 0.85,
-                                  }}
-                              />
-                          )}
+                  <div className="bmhFishingHintRow" style={{ marginTop: 10 }}>
+                    <div className="bmhFishingHint" style={{ opacity: started ? 1 : 0.85 }}>
+                      {hintText}
+                    </div>
 
-                          {started && (
-                              <div className="bmhFishingGaugeMarker" style={{ left: `${clamp0to100(markerPct)}%` }} />
-                          )}
-                        </div>
+                    {/* ✅ 조작은 Space: 버튼은 안내용 */}
+                    {isMyTurn ? (
+                      <button
+                        className="bmhFishingHitBtn"
+                        style={{
+                          opacity: canControl ? 1 : 0.55,
+                          cursor: 'not-allowed',
+                          transform: canControl ? 'scale(1.02)' : 'scale(1)',
+                          filter: canControl ? 'drop-shadow(0 0 10px rgba(255,255,255,0.55))' : 'none',
+                        }}
+                        onClick={(e) => {
+                          e.preventDefault();
+                        }}
+                        disabled
+                        title="Space로 펌프!"
+                      >
+                        SPACE
+                      </button>
+                    ) : (
+                      <div className="bmhFishingSpectatorPill">관전 중</div>
+                    )}
+                  </div>
 
-                        <div className="bmhFishingHintRow">
-                          <div className="bmhFishingHint" style={{ opacity: started ? 1 : 0.85 }}>
-                            {hintText}
-                          </div>
-
-                          {/* ✅ 조작은 Space: 버튼은 안내용으로만 */}
-                          {isMyTurn ? (
-                              <button
-                                  className="bmhFishingHitBtn"
-                                  style={{
-                                    opacity: canControl ? 1 : 0.55,
-                                    cursor: "not-allowed",
-                                    transform: inWindow && canControl ? "scale(1.05)" : "scale(1)",
-                                    filter:
-                                        inWindow && canControl
-                                            ? "drop-shadow(0 0 10px rgba(255,255,255,0.6))"
-                                            : "none",
-                                  }}
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                  }}
-                                  disabled
-                                  title="Space로 HIT!"
-                              >
-                                SPACE
-                              </button>
-                          ) : (
-                              <div className="bmhFishingSpectatorPill">관전 중</div>
-                          )}
-                        </div>
-                      </div>
-                  )}
-
-                  {/* LARGE */}
-                  {isLarge && (
-                      <div className="bmhFishingGaugeWrap">
-                        <div className="bmhFishingBarsRow">
-                          <div className="bmhFishingBarCol">
-                            <div className="bmhFishingBarLabel">진행도</div>
-                            <div className="bmhFishingBarTrack">
-                              <div
-                                  className="bmhFishingBarFill bmhFishingBarFillProgress"
-                                  style={{ width: `${clamp0to100(displayProgress)}%` }}
-                              />
-                            </div>
-                          </div>
-
-                          <div className="bmhFishingBarCol">
-                            <div className="bmhFishingBarLabel">장력</div>
-                            <div className="bmhFishingBarTrack">
-                              <div
-                                  className="bmhFishingBarFill bmhFishingBarFillTension"
-                                  style={{ width: `${clamp0to100(displayTension)}%` }}
-                              />
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="bmhFishingHintRow" style={{ marginTop: 10 }}>
-                          <div className="bmhFishingHint" style={{ opacity: started ? 1 : 0.85 }}>
-                            {hintText}
-                          </div>
-
-                          {/* ✅ 조작은 Space: 버튼은 안내용 */}
-                          {isMyTurn ? (
-                              <button
-                                  className="bmhFishingHitBtn"
-                                  style={{
-                                    opacity: canControl ? 1 : 0.55,
-                                    cursor: "not-allowed",
-                                    transform: canControl ? "scale(1.02)" : "scale(1)",
-                                    filter: canControl ? "drop-shadow(0 0 10px rgba(255,255,255,0.55))" : "none",
-                                  }}
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                  }}
-                                  disabled
-                                  title="Space로 펌프!"
-                              >
-                                SPACE
-                              </button>
-                          ) : (
-                              <div className="bmhFishingSpectatorPill">관전 중</div>
-                          )}
-                        </div>
-
-                        {minPumpIntervalMs > 0 && isMyTurn && (
-                            <div style={{ marginTop: 8, opacity: 0.75, fontSize: 12 }}>
-                              너무 빠르면 패널티! (최소 간격: {minPumpIntervalMs}ms)
-                            </div>
-                        )}
-                      </div>
+                  {minPumpIntervalMs > 0 && isMyTurn && (
+                    <div style={{ marginTop: 8, opacity: 0.75, fontSize: 12 }}>
+                      너무 빠르면 패널티! (최소 간격: {minPumpIntervalMs}ms)
+                    </div>
                   )}
                 </div>
+              )}
+            </div>
 
-                {result && (
-                    <div className="bmhFishingResultOverlay">
-                      <div className="bmhFishingResultCard">
-                        <img
-                            src={resultImageSrc}
-                            alt={resultMsg?.success ? "success" : "fail"}
-                            draggable={false}
-                            style={{
-                              width: "100%",
-                              maxWidth: 420,
-                              height: "auto",
-                              display: "block",
-                              margin: "0 auto 12px",
-                              borderRadius: 14,
-                            }}
-                        />
+            {result && (
+              <div className="bmhFishingResultOverlay">
+                <div className="bmhFishingResultCard">
+                  <img
+                    src={resultImageSrc}
+                    alt={resultMsg?.success ? 'success' : 'fail'}
+                    draggable={false}
+                    style={{
+                      width: '100%',
+                      maxWidth: 420,
+                      height: 'auto',
+                      display: 'block',
+                      margin: '0 auto 12px',
+                      borderRadius: 14,
+                    }}
+                  />
 
-                        <div className="bmhFishingResultTitle">{resultTitle}</div>
-                        <div className="bmhFishingResultMsg">{resultText}</div>
+                  <div className="bmhFishingResultTitle">{resultTitle}</div>
+                  <div className="bmhFishingResultMsg">{resultText}</div>
 
-                        {isMyTurn ? (
-                            <button className="bmhFishingOkBtn" onClick={handleOkClick}>
-                              확인
-                            </button>
-                        ) : (
-                            <div className="bmhFishingSpectatorPill">턴 플레이어가 종료하면 자동으로 넘어가요</div>
-                        )}
-                      </div>
-                    </div>
-                )}
-              </>
-          )}
-        </div>
+                  {isMyTurn ? (
+                    <button className="bmhFishingOkBtn" onClick={handleOkClick}>
+                      확인
+                    </button>
+                  ) : (
+                    <div className="bmhFishingSpectatorPill">턴 플레이어가 종료하면 자동으로 넘어가요</div>
+                  )}
+                </div>
+              </div>
+            )}
+          </>
+        )}
       </div>
+    </div>
   );
 }

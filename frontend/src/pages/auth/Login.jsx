@@ -1,16 +1,10 @@
-import React, { useState, useMemo, useEffect } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import axios from "axios";
+import React, { useState, useMemo, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 // --- 소셜 아이콘 컴포넌트 ---
 const GoogleIcon = () => (
-  <svg
-    width="72"
-    height="72"
-    viewBox="0 0 56 56"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
+  <svg width="72" height="72" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
     <g filter="url(#filter0_d_1_2)">
       <path
         d="M28 50C40.1503 50 50 40.1503 50 28C50 15.8497 40.1503 6 28 6C15.8497 6 6 15.8497 6 28C6 40.1503 15.8497 50 28 50Z"
@@ -44,13 +38,7 @@ const GoogleIcon = () => (
 );
 
 const KakaoIcon = () => (
-  <svg
-    width="72"
-    height="72"
-    viewBox="0 0 56 56"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
+  <svg width="72" height="72" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
     <g filter="url(#filter0_d_1_3)">
       <path
         d="M28 50C40.1503 50 50 40.1503 50 28C50 15.8497 40.1503 6 28 6C15.8497 6 6 15.8497 6 28C6 40.1503 15.8497 50 28 50Z"
@@ -74,13 +62,7 @@ const KakaoIcon = () => (
 );
 
 const NaverIcon = () => (
-  <svg
-    width="72"
-    height="72"
-    viewBox="0 0 56 56"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
+  <svg width="72" height="72" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
     <g filter="url(#filter0_d_1_4)">
       <path
         d="M28 50C40.1503 50 50 40.1503 50 28C50 15.8497 40.1503 6 28 6C15.8497 6 6 15.8497 6 28C6 40.1503 15.8497 50 28 50Z"
@@ -88,10 +70,7 @@ const NaverIcon = () => (
         stroke="#02A449"
         strokeWidth="3"
       />
-      <path
-        d="M16.4 16H24.8L33.2 28.5V16H39.6V40H31.2L22.8 27.5V40H16.4V16Z"
-        fill="white"
-      />
+      <path d="M16.4 16H24.8L33.2 28.5V16H39.6V40H31.2L22.8 27.5V40H16.4V16Z" fill="white" />
       <path
         d="M28 4C14.7452 4 4 14.7452 4 28C4 41.2548 14.7452 52 28 52C41.2548 52 52 41.2548 52 28C52 14.7452 41.2548 4 28 4ZM28 49.3333C16.2176 49.3333 6.66667 39.7824 6.66667 28C6.66667 16.2176 16.2176 6.66667 28 6.66667C39.7824 6.66667 49.3333 16.2176 49.3333 28C49.3333 39.7824 39.7824 49.3333 28 49.3333Z"
         fill="#02A449"
@@ -115,11 +94,7 @@ const EyeIcon = ({ className }) => (
       strokeLinejoin="round"
       d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"
     />
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-    />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
   </svg>
 );
 
@@ -141,17 +116,17 @@ const EyeSlashIcon = ({ className }) => (
 );
 
 export default function Login() {
-  const [memberId, setMemberId] = useState("");
-  const [password, setPassword] = useState("");
+  const [memberId, setMemberId] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   const [showFindModal, setShowFindModal] = useState(false);
   const [findStep, setFindStep] = useState(1);
-  const [findEmail, setFindEmail] = useState("");
-  const [authCode, setAuthCode] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [findEmail, setFindEmail] = useState('');
+  const [authCode, setAuthCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
 
   // --- 아이디 기억하기 상태 ---
   const [rememberId, setRememberId] = useState(false);
@@ -160,21 +135,21 @@ export default function Login() {
   const [isSending, setIsSending] = useState(false); // 버튼 비활성화용
   const [timeLeft, setTimeLeft] = useState(0); // 타이머용(초)
 
-  const [modal, setModal] = useState({ isOpen: false, message: "" });
-  const alertSound = useMemo(() => new Audio("/sounds/alert_ding.mp3"), []);
-  const API_BASE_URL = "/api/member";
+  const [modal, setModal] = useState({ isOpen: false, message: '' });
+  const alertSound = useMemo(() => new Audio('/sounds/alert_ding.mp3'), []);
+  const API_BASE_URL = '/api/member';
 
   // 이미 토큰이 있다면 바로 홈으로 이동
   useEffect(() => {
-    const token = sessionStorage.getItem("token");
+    const token = sessionStorage.getItem('token');
     if (token) {
-      navigate("/home");
+      navigate('/home');
     }
   }, [navigate]);
 
   // --- 컴포넌트 로드 시 저장된 아이디 불러오기 ---
   useEffect(() => {
-    const savedId = localStorage.getItem("savedMemberId");
+    const savedId = localStorage.getItem('savedMemberId');
     if (savedId) {
       setMemberId(savedId);
       setRememberId(true);
@@ -194,7 +169,7 @@ export default function Login() {
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
-    return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   };
 
   const openAlert = (msg) => {
@@ -245,35 +220,35 @@ export default function Login() {
         const { token, nickname, bell, level, id } = response.data;
 
         if (rememberId) {
-          localStorage.setItem("savedMemberId", memberId);
+          localStorage.setItem('savedMemberId', memberId);
         } else {
-          localStorage.removeItem("savedMemberId");
+          localStorage.removeItem('savedMemberId');
         }
 
-        sessionStorage.setItem("token", token);
-        sessionStorage.setItem("nickname", nickname);
-        sessionStorage.setItem("bell", bell);
-        sessionStorage.setItem("level", level);
+        sessionStorage.setItem('token', token);
+        sessionStorage.setItem('nickname', nickname);
+        sessionStorage.setItem('bell', bell);
+        sessionStorage.setItem('level', level);
 
         openAlert(`${nickname}님 환영합니다! 🍃`);
-        setTimeout(() => navigate("/home"), 1500);
+        setTimeout(() => navigate('/home'), 1500);
       }
     } catch (error) {
-      openAlert("로그인 정보를 확인해주세요. 😢");
+      openAlert('로그인 정보를 확인해주세요. 😢');
     }
   };
 
   // 인증번호 발송 (중복 클릭 방지 추가)
   const handleSendCode = async () => {
-    if (!findEmail) return openAlert("이메일을 입력해주세요! 📧");
+    if (!findEmail) return openAlert('이메일을 입력해주세요! 📧');
     setIsSending(true); // 버튼 비활성화 시작
     try {
       await axios.post(`${API_BASE_URL}/send-code`, { email: findEmail });
-      openAlert("인증번호를 발송했습니다! \n메일함을 확인해주세요. 🕊️");
+      openAlert('인증번호를 발송했습니다! \n메일함을 확인해주세요. 🕊️');
       setFindStep(2);
       setTimeLeft(300); // 5분(300초) 설정
     } catch (error) {
-      openAlert("등록되지 않은 주민이거나 \n발송 중 오류가 발생했습니다.");
+      openAlert('등록되지 않은 주민이거나 \n발송 중 오류가 발생했습니다.');
     } finally {
       setIsSending(false); // 버튼 다시 활성화
     }
@@ -281,50 +256,43 @@ export default function Login() {
 
   // 인증번호 검증 (시간 만료 체크 추가)
   const handleVerifyCode = async () => {
-    if (!authCode) return openAlert("인증번호를 입력해주세요!");
-    if (timeLeft <= 0)
-      return openAlert("인증 시간이 만료되었습니다. \n다시 시도해주세요. ⏳");
+    if (!authCode) return openAlert('인증번호를 입력해주세요!');
+    if (timeLeft <= 0) return openAlert('인증 시간이 만료되었습니다. \n다시 시도해주세요. ⏳');
     try {
       const response = await axios.post(`${API_BASE_URL}/verify-code`, {
         email: findEmail,
         code: authCode,
       });
       if (response.data === true) {
-        openAlert("인증 성공! ✨ \n새로운 비밀번호를 설정해주세요.");
+        openAlert('인증 성공! ✨ \n새로운 비밀번호를 설정해주세요.');
         setFindStep(3);
         setTimeLeft(0); // 타이머 종료
       } else {
-        openAlert("인증번호가 일치하지 않습니다. ❌");
+        openAlert('인증번호가 일치하지 않습니다. ❌');
       }
     } catch (error) {
-      openAlert("검증 중 오류가 발생했습니다.");
+      openAlert('검증 중 오류가 발생했습니다.');
     }
   };
 
   const handleResetPassword = async () => {
-    const pwRegex =
-      /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,16}$/;
+    const pwRegex = /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,16}$/;
     if (!pwRegex.test(newPassword))
-      return openAlert(
-        "비밀번호 규칙을 확인해주세요! \n(8~16자, 영문/숫자/특수문자 포함) 🔒",
-      );
-    if (newPassword !== confirmNewPassword)
-      return openAlert("비밀번호가 일치하지 않습니다. ❌");
+      return openAlert('비밀번호 규칙을 확인해주세요! \n(8~16자, 영문/숫자/특수문자 포함) 🔒');
+    if (newPassword !== confirmNewPassword) return openAlert('비밀번호가 일치하지 않습니다. ❌');
 
     try {
       await axios.post(`${API_BASE_URL}/reset-password`, {
         email: findEmail,
         password: newPassword,
       });
-      openAlert(
-        "비밀번호가 변경되었습니다! \n새로운 비밀번호로 로그인하세요. 🎉",
-      );
+      openAlert('비밀번호가 변경되었습니다! \n새로운 비밀번호로 로그인하세요. 🎉');
       setShowFindModal(false);
       setFindStep(1);
-      setFindEmail("");
+      setFindEmail('');
       setTimeLeft(0);
     } catch (error) {
-      openAlert("재설정에 실패했습니다.");
+      openAlert('재설정에 실패했습니다.');
     }
   };
 
@@ -342,11 +310,9 @@ export default function Login() {
       {modal.isOpen && (
         <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/50 backdrop-blur-sm">
           <div className="relative w-[350px] bg-[#fdf6e3] rounded-[40px] border-[6px] border-[#8b5a2b] shadow-2xl p-8 flex flex-col items-center animate-in zoom-in-95 duration-200">
-            <p className="text-[#5d4037] font-bold text-center whitespace-pre-wrap mb-6">
-              {modal.message}
-            </p>
+            <p className="text-[#5d4037] font-bold text-center whitespace-pre-wrap mb-6">{modal.message}</p>
             <button
-              onClick={() => setModal({ isOpen: false, message: "" })}
+              onClick={() => setModal({ isOpen: false, message: '' })}
               className="bg-[#8b5a2b] text-white px-10 py-2 rounded-full font-black active:scale-95 transition-all"
             >
               확인
@@ -380,9 +346,9 @@ export default function Login() {
                 <button
                   onClick={handleSendCode}
                   disabled={isSending}
-                  className={`w-full py-4 rounded-3xl font-black text-xl shadow-lg active:scale-95 transition-all ${isSending ? "bg-gray-400 opacity-70" : "bg-[#8b5a2b] text-white"}`}
+                  className={`w-full py-4 rounded-3xl font-black text-xl shadow-lg active:scale-95 transition-all ${isSending ? 'bg-gray-400 opacity-70' : 'bg-[#8b5a2b] text-white'}`}
                 >
-                  {isSending ? "발송 중..." : "인증번호 발송"}
+                  {isSending ? '발송 중...' : '인증번호 발송'}
                 </button>
               </div>
             )}
@@ -395,9 +361,7 @@ export default function Login() {
                     <br />
                     6자리 번호를 입력해주세요.
                   </p>
-                  <span className="text-red-500 font-bold text-lg animate-pulse">
-                    {formatTime(timeLeft)}
-                  </span>
+                  <span className="text-red-500 font-bold text-lg animate-pulse">{formatTime(timeLeft)}</span>
                 </div>
                 <input
                   type="text"
@@ -470,18 +434,12 @@ export default function Login() {
       {/* --- 메인 로그인 박스 --- */}
       <div className="relative w-[450px] bg-[#fdf6e3] p-10 rounded-[50px] border-[8px] border-[#8b5a2b] shadow-[15px_15px_0px_rgba(139,90,43,0.15)] flex flex-col items-center">
         <div className="absolute -top-32">
-          <img
-            src="/images/logo.png"
-            alt="지어봐요 마이홈"
-            className="w-[300px] drop-shadow-xl"
-          />
+          <img src="/images/logo.png" alt="지어봐요 마이홈" className="w-[300px] drop-shadow-xl" />
         </div>
 
         <div className="mt-8 w-full space-y-6">
           <div className="relative group">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl">
-              🍃
-            </span>
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl">🍃</span>
             <input
               type="text"
               placeholder="아이디를 입력하세요."
@@ -492,15 +450,13 @@ export default function Login() {
           </div>
 
           <div className="relative group">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl">
-              🍃
-            </span>
+            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl">🍃</span>
             <input
-              type={showPassword ? "text" : "password"}
+              type={showPassword ? 'text' : 'password'}
               placeholder="비밀번호를 입력하세요."
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && handleLogin()}
+              onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
               className="w-full bg-[#efe7d1] border-none rounded-3xl py-4 pl-12 pr-12 text-[#5d4037] font-bold placeholder-[#a67c52] focus:ring-4 ring-[#8b5a2b]/20 outline-none transition-all"
             />
             <button
@@ -509,11 +465,7 @@ export default function Login() {
               className="absolute right-4 top-1/2 -translate-y-1/2 text-[#a67c52] hover:text-[#8b5a2b] transition-colors"
               tabIndex="-1"
             >
-              {showPassword ? (
-                <EyeSlashIcon className="w-5 h-5" />
-              ) : (
-                <EyeIcon className="w-5 h-5" />
-              )}
+              {showPassword ? <EyeSlashIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
             </button>
           </div>
 
@@ -543,10 +495,7 @@ export default function Login() {
             회원가입
           </Link>
           <span className="text-[#a67c52]">|</span>
-          <button
-            onClick={() => setShowFindModal(true)}
-            className="hover:underline"
-          >
+          <button onClick={() => setShowFindModal(true)} className="hover:underline">
             비밀번호 찾기
           </button>
         </div>
@@ -559,21 +508,21 @@ export default function Login() {
 
         <div className="flex gap-5">
           <button
-            onClick={() => handleSocialLogin("google")}
+            onClick={() => handleSocialLogin('google')}
             className="hover:scale-110 transition active:translate-y-1"
             aria-label="구글 로그인"
           >
             <GoogleIcon />
           </button>
           <button
-            onClick={() => handleSocialLogin("kakao")}
+            onClick={() => handleSocialLogin('kakao')}
             className="hover:scale-110 transition active:translate-y-1"
             aria-label="카카오 로그인"
           >
             <KakaoIcon />
           </button>
           <button
-            onClick={() => handleSocialLogin("naver")}
+            onClick={() => handleSocialLogin('naver')}
             className="hover:scale-110 transition active:translate-y-1"
             aria-label="네이버 로그인"
           >

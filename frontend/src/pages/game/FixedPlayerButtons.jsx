@@ -1,5 +1,5 @@
-import React from "react";
-import { motion } from "framer-motion";
+import React from 'react';
+import { motion } from 'framer-motion';
 
 const FixedPlayerButtons = ({ isMyTurn, onATMClick, onBuildClick }) => {
   return (
@@ -12,8 +12,8 @@ const FixedPlayerButtons = ({ isMyTurn, onATMClick, onBuildClick }) => {
         className={`w-20 h-20 rounded-full shadow-lg border-4 flex items-center justify-center text-3xl
           ${
             isMyTurn
-              ? "bg-[#2ecc71] border-white cursor-pointer"
-              : "bg-gray-400 border-gray-300 cursor-not-allowed grayscale"
+              ? 'bg-[#2ecc71] border-white cursor-pointer'
+              : 'bg-gray-400 border-gray-300 cursor-not-allowed grayscale'
           }`}
       >
         💳

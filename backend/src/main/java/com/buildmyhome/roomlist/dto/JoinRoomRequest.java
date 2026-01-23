@@ -6,5 +6,6 @@ import lombok.NoArgsConstructor;
 @Getter
 @NoArgsConstructor
 public class JoinRoomRequest {
-    private Long roomId;
+
+  private Long roomId;
 }
