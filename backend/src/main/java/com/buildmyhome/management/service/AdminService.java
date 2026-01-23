@@ -14,25 +14,25 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class AdminService {
 
-    private final MemberRepository memberRepository;
+  private final MemberRepository memberRepository;
 
-    // 전체 회원 목록 조회
-    public Page<MemberListResponse> getAllMembers(Pageable pageable) {
-        Page<Member> members = memberRepository.findAll(pageable);
-        return members.map(this::toListResponse);
-    }
+  // 전체 회원 목록 조회
+  public Page<MemberListResponse> getAllMembers(Pageable pageable) {
+    Page<Member> members = memberRepository.findAll(pageable);
+    return members.map(this::toListResponse);
+  }
 
-    // 변환 메서드
-    private MemberListResponse toListResponse(Member member) {
-        return MemberListResponse.builder()
-                .id(member.getId())
-                .email(member.getEmail())
-                .nickname(member.getNickname())
-                .role(member.getRole().name())
-                .level(member.getLevel())
-                .bell(member.getBell())
-                .playCount(member.getPlayCount())
-                .createdAt(member.getCreatedAt())
-                .build();
-    }
+  // 변환 메서드
+  private MemberListResponse toListResponse(Member member) {
+    return MemberListResponse.builder()
+      .id(member.getId())
+      .email(member.getEmail())
+      .nickname(member.getNickname())
+      .role(member.getRole().name())
+      .level(member.getLevel())
+      .bell(member.getBell())
+      .playCount(member.getPlayCount())
+      .createdAt(member.getCreatedAt())
+      .build();
+  }
 }

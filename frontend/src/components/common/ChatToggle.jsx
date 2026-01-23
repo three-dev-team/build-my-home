@@ -1,7 +1,5 @@
 const ChatToggle = () => {
-    return (
-        <button className="chat-toggle">💬</button>
-    );
+  return <button className="chat-toggle">💬</button>;
 };
 
 export default ChatToggle;

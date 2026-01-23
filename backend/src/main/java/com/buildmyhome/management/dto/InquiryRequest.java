@@ -10,7 +10,8 @@ import lombok.*;
 @NoArgsConstructor
 @Builder
 public class InquiryRequest {
-    private String title;       // 문의 제목
-    private String content;     // 문의 내용
-    private InquiryCategory category;
+
+  private String title; // 문의 제목
+  private String content; // 문의 내용
+  private InquiryCategory category;
 }

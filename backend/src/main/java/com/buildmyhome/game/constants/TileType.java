@@ -9,18 +9,18 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum TileType {
-    START(GameStatus.WAITING_START),
-    RESOURCE(GameStatus.WAITING_RESOURCES),
-    HARVEST(GameStatus.WAITING_HARVEST),
-    SHOP_RESOURCE(GameStatus.WAITING_SHOP_RESOURCE),
-    SHOP_ITEM(GameStatus.WAITING_SHOP_ITEM),
-    STAMP_GAPDOL(GameStatus.WAITING_STAMP),
-    STAMP_MUSEUM(GameStatus.WAITING_STAMP),
-    STAMP_AIRPORT(GameStatus.WAITING_STAMP),
-    LOAN(GameStatus.WAITING_LOAN),
-    FISHING(GameStatus.WAITING_FISHING),
-    KK(GameStatus.WAITING_KK),
-    MUPANI(GameStatus.WAITING_MUPANI);
+  START(GameStatus.WAITING_START),
+  RESOURCE(GameStatus.WAITING_RESOURCES),
+  HARVEST(GameStatus.WAITING_HARVEST),
+  SHOP_RESOURCE(GameStatus.WAITING_SHOP_RESOURCE),
+  SHOP_ITEM(GameStatus.WAITING_SHOP_ITEM),
+  STAMP_GAPDOL(GameStatus.WAITING_STAMP),
+  STAMP_MUSEUM(GameStatus.WAITING_STAMP),
+  STAMP_AIRPORT(GameStatus.WAITING_STAMP),
+  LOAN(GameStatus.WAITING_LOAN),
+  FISHING(GameStatus.WAITING_FISHING),
+  KK(GameStatus.WAITING_KK),
+  MUPANI(GameStatus.WAITING_MUPANI);
 
-    private final GameStatus nextStatus;
+  private final GameStatus nextStatus;
 }

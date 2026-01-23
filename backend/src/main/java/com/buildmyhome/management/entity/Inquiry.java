@@ -13,48 +13,48 @@ import lombok.*;
 @AllArgsConstructor
 @NoArgsConstructor
 public class Inquiry extends BaseTimeEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "member_id", nullable = false)
-    private Member member;  // 문의 작성한 회원
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-    @Column(nullable = false, length = 200)
-    private String title;  // 문의 제목
+  @ManyToOne(fetch = FetchType.LAZY)
+  @JoinColumn(name = "member_id", nullable = false)
+  private Member member; // 문의 작성한 회원
 
-    @Column(nullable = false, columnDefinition = "TEXT")
-    private String content;  // 문의 내용
+  @Column(nullable = false, length = 200)
+  private String title; // 문의 제목
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    private InquiryCategory category;   // 문의 카테고리 추가
+  @Column(nullable = false, columnDefinition = "TEXT")
+  private String content; // 문의 내용
 
-    @Column(length = 500)
-    private String imageUrl;  // 업로드된 이미지 경로
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
+  private InquiryCategory category; // 문의 카테고리 추가
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    @Builder.Default
-    private InquiryStatus status = InquiryStatus.OPEN;  // 문의 상태
+  @Column(length = 500)
+  private String imageUrl; // 업로드된 이미지 경로
 
-    @OneToOne(mappedBy = "inquiry", cascade = CascadeType.ALL, orphanRemoval = true)
-    private Answer answer;  // 답변 (1:1 관계)
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
+  @Builder.Default
+  private InquiryStatus status = InquiryStatus.OPEN; // 문의 상태
 
-    // 상태 변경 메서드
-    public void updateStatus(InquiryStatus status) {
-        this.status = status;
-    }
+  @OneToOne(mappedBy = "inquiry", cascade = CascadeType.ALL, orphanRemoval = true)
+  private Answer answer; // 답변 (1:1 관계)
 
-    // 답변 완료 여부
-    public boolean isAnswered() {
-        return this.status == InquiryStatus.ANSWERED;
-    }
+  // 상태 변경 메서드
+  public void updateStatus(InquiryStatus status) {
+    this.status = status;
+  }
 
-    // 작성자 확인 (본인 문의인지 체크)
-    public boolean isOwner(Long memberId) {
-        return this.member.getId().equals(memberId);
-    }
+  // 답변 완료 여부
+  public boolean isAnswered() {
+    return this.status == InquiryStatus.ANSWERED;
+  }
+
+  // 작성자 확인 (본인 문의인지 체크)
+  public boolean isOwner(Long memberId) {
+    return this.member.getId().equals(memberId);
+  }
 }
-
