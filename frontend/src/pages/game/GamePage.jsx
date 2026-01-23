@@ -382,6 +382,7 @@ const GamePage = () => {
                 {/* 은행 이벤트 (WAITING_LOAN) */}
                 {gameState.status === "WAITING_LOAN" && (
                     <Loan
+                        player={currentPlayer}
                         isMyTurn={isMyTurn}
                         currentPlayerName={currentPlayer?.nickname}
                         userBell={currentPlayer?.bell || 0}
@@ -425,8 +426,8 @@ const GamePage = () => {
                 {gameState.status === "WAITING_SHOP_ITEM" && (
                     <ShopPage
                         gameState={gameState}
-                        myId={myId}
                         currentPlayer={currentPlayer}
+                        myId={myId}
                         shopType="ITEM_SHOP"
                         handleAction={handleAction}
                         onExit={handleEventComplete}
@@ -438,8 +439,8 @@ const GamePage = () => {
                 {gameState.status === "WAITING_SHOP_RESOURCE" && (
                     <ShopPage
                         gameState={gameState}
-                        myId={myId}
                         currentPlayer={currentPlayer}
+                        myId={myId}
                         shopType="HARVEST_SHOP"
                         handleAction={handleAction}
                         onExit={handleEventComplete}
