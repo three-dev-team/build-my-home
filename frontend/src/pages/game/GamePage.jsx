@@ -54,6 +54,7 @@ const GamePage = () => {
         gameState?.players?.find((p) => p.memberId === gameState.currentPlayerId) ||
         null;
     const isMyTurn = gameState ? myId === gameState.currentPlayerId : false;
+    const [movePath, setMovePath] = useState([]); // 플레이어 이동 경로 저장소
 
     // 공통 UI(채팅, 메뉴버튼 등)를 보여줄지 말지 결정하는 변수
     const showCommonUI =
@@ -568,13 +569,23 @@ const GamePage = () => {
 
                 {/* -------------------------------- 사용자 액션 패널 관련 컴포넌트 -------------------------------- */}
                 {/* 주사위 굴리는 페이지 */}
-                {gameState.status === "WAITING_DICE" && (
+                {/*WAITING_DICE: 스페이스바 대기*/}
+                {/*ROLLING_DICE: 3D 애니메이션 + 결과 화면*/}
+                {(gameState.status === "WAITING_DICE" || gameState.status === "ROLLING_DICE") && (
                     <RollDicePage
                         currentPlayer={currentPlayer}
                         isMyTurn={isMyTurn}
+                        diceValue={currentPlayer?.diceValue}
+                        isRolling={gameState.status === "ROLLING_DICE"}
                         onRollComplete={() => {
                             stompClient.publish({
                                 destination: "/app/games/roll-dice",
+                                body: JSON.stringify({roomId}),
+                            });
+                        }}
+                        onAnimationEnd={() => {
+                            stompClient.publish({
+                                destination: "/app/games/dice-roll-complete",
                                 body: JSON.stringify({roomId}),
                             });
                         }}
@@ -605,9 +616,19 @@ const GamePage = () => {
                     />
                 )}
                 {/* -------------------------------- 사용자 액션 패널 관련 컴포넌트 -------------------------------- */}
-                {/* 메인 보드 & 상시 버튼 (HEAD 버전 유지 - FixedPlayerButtons) */}
+                {/* 메인 보드 */}
                 {["WAITING_PLAYER_ACTION", "MOVING"].includes(gameState.status) && (
-                    <MainBoardPage players={gameState.players}/>
+                    <MainBoardPage
+                        players={Object.values(gameState.players)}
+                        movePath={gameState.movePath}
+                        currentPlayerId={gameState.currentPlayerId}
+                        onMoveComplete={() => {
+                            stompClient.publish({
+                                destination: "/app/games/move-complete",
+                                body: JSON.stringify({roomId}),
+                            });
+                        }}
+                    />
                 )}
             </main>
 

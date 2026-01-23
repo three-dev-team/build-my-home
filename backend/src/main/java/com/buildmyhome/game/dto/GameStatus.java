@@ -14,6 +14,7 @@ public enum GameStatus {
     // --- PLAYING 영역 ---
     WAITING_PLAYER_ACTION(0),   // 유저 액션 (주사위, 아이템, 맵) 선택 대기 중
     WAITING_DICE(20),           // 주사위 굴리기 대기
+    ROLLING_DICE(10),           // 주사위 굴리는 중 (애니메이션 연출 시간 확보용)
     MOVING(0),                  // 캐릭터 이동 중 (애니메이션 연출 시간 확보용)
     WAITING_HOUSE(0),           // 집짓기
     WAITING_ATM(60),            // ATM
