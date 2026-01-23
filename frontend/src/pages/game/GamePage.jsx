@@ -1,12 +1,12 @@
-import { useEffect, useRef, useState } from "react";
-import { Client } from "@stomp/stompjs";
-import { getBrokerURL } from "../../utils/ws.js";
-import { useLocation, useNavigate, useParams } from "react-router-dom";
+import {useEffect, useRef, useState} from "react";
+import {Client} from "@stomp/stompjs";
+import {getBrokerURL} from "../../utils/ws.js";
+import {useLocation, useNavigate, useParams} from "react-router-dom";
 import Loading from "../../components/common/Loading.jsx";
 import MenuButton from "../../components/common/MenuButton.jsx";
 import ChatToggle from "../../components/common/ChatToggle.jsx";
 import RollForOrder from "./RollForOrder.jsx";
-import { getMyIdFromToken } from "../../utils/auth.js";
+import {getMyIdFromToken} from "../../utils/auth.js";
 import MainBoardPage from "./MainBoardPage.jsx";
 import GameIntro from "./GameIntro.jsx";
 import PlayerStatusPanel from "./PlayerStatusPanel.jsx";
@@ -24,7 +24,7 @@ import Inventory from "./Inventory.jsx";
 import RewardDrop from "./RewardDrop.jsx";
 
 const GamePage = () => {
-    const { roomId } = useParams();
+    const {roomId} = useParams();
     const navigate = useNavigate();
     const location = useLocation();
     const token = sessionStorage.getItem("token");
@@ -32,7 +32,9 @@ const GamePage = () => {
     const [devMyId, setDevMyId] = useState(null); // [DEV] 테스트용 강제 ID
     const myId = devMyId || myTokenId; // 실전엔 토큰 ID, 테스트엔 Dev ID 사용
 
-    const [gameState, setGameState] = useState(location.state?.initialGameData || null);
+    const [gameState, setGameState] = useState(
+        location.state?.initialGameData || null,
+    );
     const [stompClient, setStompClient] = useState(null);
 
     // fishing: 낚시 룸 이벤트 메시지 분리 저장소
@@ -46,11 +48,14 @@ const GamePage = () => {
     const rewardCharacterRef = useRef(null);
 
     // 현재 턴 플레이어 정보
-    const currentPlayer = gameState?.players?.find((p) => p.memberId === gameState.currentPlayerId) || null;
+    const currentPlayer =
+        gameState?.players?.find((p) => p.memberId === gameState.currentPlayerId) ||
+        null;
     const isMyTurn = gameState ? myId === gameState.currentPlayerId : false;
 
     // 공통 UI(채팅, 메뉴버튼 등)를 보여줄지 말지 결정하는 변수
-    const showCommonUI = gameState && !["DETERMINING_ORDER", "FINISHED"].includes(gameState.status);
+    const showCommonUI =
+        gameState && !["DETERMINING_ORDER", "FINISHED"].includes(gameState.status);
 
     // --------------------------------- useEffect --------------------------------- //
     useEffect(() => {
@@ -75,7 +80,7 @@ const GamePage = () => {
         // stomp 소켓 연결 및 구독 설정
         const client = new Client({
             brokerURL: getBrokerURL(),
-            connectHeaders: token ? { Authorization: `Bearer ${token}` } : {},
+            connectHeaders: token ? {Authorization: `Bearer ${token}`} : {},
             onConnect: () => {
                 console.log(">>> ✅ WebSocket 연결됨");
                 setStompClient(client);
@@ -87,10 +92,13 @@ const GamePage = () => {
                     // fishing: 룸 이벤트(ROOM_EVENT_*)는 gameState를 덮어쓰지 않게 분리
                     const t = data?.type;
 
-                    const isRoomEvent = typeof t === "string" && t.startsWith("ROOM_EVENT_");
+                    const isRoomEvent =
+                        typeof t === "string" && t.startsWith("ROOM_EVENT_");
                     // ERROR는 낚시 에러만 분리 (다른 ERROR까지 낚시가 먹어버리는 문제 방지)
                     const isFishingError =
-                        t === "ERROR" && typeof data?.eventType === "string" && data.eventType === "FISHING";
+                        t === "ERROR" &&
+                        typeof data?.eventType === "string" &&
+                        data.eventType === "FISHING";
 
                     if (isRoomEvent || isFishingError) {
                         setFishingEventMessage(data);
@@ -101,8 +109,10 @@ const GamePage = () => {
                     // - 여기서 rewardFx를 세팅해두고
                     // - 실제 렌더는 WAITING_RESOURCES/HARVEST 상태일 때만 한다(진행 멈춤 보장)
                     if (data?.type === "MOVE_COMPLETE") {
-                        const hasRes = data?.gainedResources && Object.keys(data.gainedResources).length > 0;
-                        const hasHar = data?.gainedHarvests && Object.keys(data.gainedHarvests).length > 0;
+                        const hasRes =
+                            data?.gainedResources && Object.keys(data.gainedResources).length > 0;
+                        const hasHar =
+                            data?.gainedHarvests && Object.keys(data.gainedHarvests).length > 0;
 
                         if (hasRes || hasHar) {
                             setRewardToast({
@@ -128,7 +138,7 @@ const GamePage = () => {
                 // 웹소켓 연결 시 현재 게임 상태 요청 - 에러, 새로고침 방지용
                 client.publish({
                     destination: "/app/games/get-state",
-                    body: JSON.stringify({ roomId: roomId }),
+                    body: JSON.stringify({roomId: roomId}),
                 });
             },
             onStompError: (frame) => {
@@ -159,7 +169,7 @@ const GamePage = () => {
             const timer = setTimeout(() => {
                 stompClient.publish({
                     destination: "/app/games/move-complete",
-                    body: JSON.stringify({ roomId }),
+                    body: JSON.stringify({roomId}),
                 });
             }, 2000);
             return () => clearTimeout(timer);
@@ -171,7 +181,7 @@ const GamePage = () => {
     const handleIntroComplete = () => {
         stompClient.publish({
             destination: "/app/games/intro-complete",
-            body: JSON.stringify({ roomId: roomId }),
+            body: JSON.stringify({roomId: roomId}),
         });
     };
 
@@ -179,7 +189,7 @@ const GamePage = () => {
         if (stompClient) {
             stompClient.publish({
                 destination: `/app/games/roll-order`,
-                body: JSON.stringify({ roomId: roomId }),
+                body: JSON.stringify({roomId: roomId}),
             });
         }
     };
@@ -209,7 +219,7 @@ const GamePage = () => {
 
         stompClient.publish({
             destination: "/app/games/action",
-            body: JSON.stringify({ roomId, type: "CLOSE_ACTION" }),
+            body: JSON.stringify({roomId, type: "CLOSE_ACTION"}),
         });
     };
 
@@ -217,7 +227,7 @@ const GamePage = () => {
     const handleEventComplete = () => {
         stompClient.publish({
             destination: "/app/games/event-complete",
-            body: JSON.stringify({ roomId }),
+            body: JSON.stringify({roomId}),
         });
         // 낚시 메시지 잔상 방지
         setFishingEventMessage(null);
@@ -229,7 +239,7 @@ const GamePage = () => {
 
         stompClient.publish({
             destination: "/app/games/fishing/start",
-            body: JSON.stringify({ roomId: Number(roomId) }),
+            body: JSON.stringify({roomId: Number(roomId)}),
         });
     };
 
@@ -238,7 +248,7 @@ const GamePage = () => {
 
         stompClient.publish({
             destination: "/app/games/fishing/action",
-            body: JSON.stringify({ roomId: Number(roomId), action }),
+            body: JSON.stringify({roomId: Number(roomId), action}),
         });
     };
 
@@ -262,7 +272,7 @@ const GamePage = () => {
             try {
                 stompClient.publish({
                     destination: "/app/games/trigger-event",
-                    body: JSON.stringify({ roomId: Number(roomId), status: newStatus }),
+                    body: JSON.stringify({roomId: Number(roomId), status: newStatus}),
                 });
                 console.log(">>> [DEV] Server publish sent");
             } catch (e) {
@@ -277,74 +287,94 @@ const GamePage = () => {
         }));
 
         // 낚시로 강제 진입/테스트 시 메시지 초기화
-        if (newStatus === "WAITING_FISHING" || newStatus === "FISHING_IN_PROGRESS") {
+        if (
+            newStatus === "WAITING_FISHING" ||
+            newStatus === "FISHING_IN_PROGRESS"
+        ) {
             setFishingEventMessage(null);
         }
     };
     // ------------------- [DEV] 상태 강제 변경 핸들러 ------------------- //
 
-    if (!gameState) return <Loading />;
+    if (!gameState) return <Loading/>;
 
     // 낚시 렌더링 상태 확장 (새로고침/재접속 대비)
-    const isFishingPhase = ["WAITING_FISHING", "FISHING_IN_PROGRESS"].includes(gameState.status) && stompClient;
+    const isFishingPhase =
+        ["WAITING_FISHING", "FISHING_IN_PROGRESS"].includes(gameState.status) &&
+        stompClient;
 
     return (
         <div className="game-container">
             {/* 1. 설정/채팅 버튼은 본 게임 중에만 표시 */}
             {showCommonUI && (
                 <div className="game-overlay">
-                    <MenuButton />
-                    <ChatToggle />
+                    <MenuButton/>
+                    <ChatToggle/>
                 </div>
             )}
             {/* 2. 턴 카운터 - INTRO, DETERMINING_ORDER 제외하고 표시 */}
-            {!["INTRO", "DETERMINING_ORDER", "FINISHED"].includes(gameState.status) && (
-                <TurnCounter currentRound={gameState.currentRound || 1} totalRounds={gameState.totalRounds || 20} />
+            {!["INTRO", "DETERMINING_ORDER", "FINISHED"].includes(
+                gameState.status,
+            ) && (
+                <TurnCounter
+                    currentRound={gameState.currentRound || 1}
+                    totalRounds={gameState.totalRounds || 20}
+                />
             )}
 
             {/* 인벤토리 오버레이: 내 턴 + WAITING_PLAYER_ACTION에서만 표시 */}
             {showInventory && isMyTurn && gameState.status === "WAITING_PLAYER_ACTION" && (
-                <Inventory player={currentPlayer} onClose={handleCloseInventory} />
+                <Inventory
+                    player={currentPlayer}
+                    onClose={handleCloseInventory}
+                />
             )}
 
             {/* 보상 연출용 캐릭터(보드 말판 말고, 화면에 따로 띄우는 용도) */}
-            {rewardToast && (gameState.status === "WAITING_RESOURCES" || gameState.status === "WAITING_HARVEST") && (
-                <div
-                    ref={rewardCharacterRef}
-                    style={{
-                        position: "fixed",
-                        left: "50%",
-                        top: 220,
-                        transform: "translateX(-50%)",
-                        zIndex: 12000,
-                        pointerEvents: "none",
-                        userSelect: "none",
-                    }}
-                >
-                    <img
-                        src="/images/RewardCharater.webp"
-                        alt="reward-character"
-                        draggable={false}
+            {rewardToast &&
+                (gameState.status === "WAITING_RESOURCES" || gameState.status === "WAITING_HARVEST") && (
+                    <div
+                        ref={rewardCharacterRef}
                         style={{
-                            width: 220,
-                            height: 220,
-                            objectFit: "contain",
-                            filter: "drop-shadow(0 12px 18px rgba(0,0,0,0.25))",
+                            position: "fixed",
+                            left: "50%",
+                            top: 220,
+                            transform: "translateX(-50%)",
+                            zIndex: 12000,
+                            pointerEvents: "none",
+                            userSelect: "none",
                         }}
-                    />
-                </div>
-            )}
+                    >
+                        <img
+                            src="/images/RewardCharater.webp"
+                            alt="reward-character"
+                            draggable={false}
+                            style={{
+                                width: 220,
+                                height: 220,
+                                objectFit: "contain",
+                                filter: "drop-shadow(0 12px 18px rgba(0,0,0,0.25))",
+                            }}
+                        />
+                    </div>
+                )}
 
             {/* 2. 게임 콘텐츠 영역 */}
             <main>
-                <DevControls onStatusChange={handleDevStatusChange} />
+                <DevControls onStatusChange={handleDevStatusChange}/>
 
                 {/* INTRO */}
-                {gameState.status === "INTRO" && stompClient && <GameIntro onSkip={handleIntroComplete} />}
+                {gameState.status === "INTRO" && stompClient && (
+                    <GameIntro onSkip={handleIntroComplete}/>
+                )}
 
                 {/* 주사위 던져서 순서 정하기 페이지 */}
                 {gameState.status === "DETERMINING_ORDER" && stompClient && (
-                    <RollForOrder players={gameState.players} myId={myId} onRoll={handleRollDiceForOrder} />
+                    <RollForOrder
+                        players={gameState.players}
+                        myId={myId}
+                        onRoll={handleRollDiceForOrder}
+                    />
                 )}
 
                 {/* ------------------------------------- 개별 이벤트 추가 ------------------------------------- */}
@@ -457,7 +487,7 @@ const GamePage = () => {
                         onSelectDice={() => {
                             stompClient.publish({
                                 destination: "/app/games/select-dice",
-                                body: JSON.stringify({ roomId }),
+                                body: JSON.stringify({roomId}),
                             });
                         }}
                         onSelectItem={() => console.log("아이템 선택")}
@@ -465,13 +495,13 @@ const GamePage = () => {
                         onATM={() => {
                             stompClient.publish({
                                 destination: "/app/games/action",
-                                body: JSON.stringify({ roomId, type: "OPEN_ATM" }),
+                                body: JSON.stringify({roomId, type: "OPEN_ATM"}),
                             });
                         }}
                         onBuildHouse={() => {
                             stompClient.publish({
                                 destination: "/app/games/action",
-                                body: JSON.stringify({ roomId, type: "BUILD_HOUSE" }),
+                                body: JSON.stringify({roomId, type: "BUILD_HOUSE"}),
                             });
                         }}
                         onInventory={handleOpenInventory}
@@ -487,7 +517,7 @@ const GamePage = () => {
                         onRollComplete={() => {
                             stompClient.publish({
                                 destination: "/app/games/roll-dice",
-                                body: JSON.stringify({ roomId }),
+                                body: JSON.stringify({roomId}),
                             });
                         }}
                     />
@@ -519,7 +549,7 @@ const GamePage = () => {
                 {/* -------------------------------- 사용자 액션 패널 관련 컴포넌트 -------------------------------- */}
                 {/* 메인 보드 & 상시 버튼 (HEAD 버전 유지 - FixedPlayerButtons) */}
                 {["WAITING_PLAYER_ACTION", "MOVING"].includes(gameState.status) && (
-                    <MainBoardPage players={gameState.players} />
+                    <MainBoardPage players={gameState.players}/>
                 )}
             </main>
 
