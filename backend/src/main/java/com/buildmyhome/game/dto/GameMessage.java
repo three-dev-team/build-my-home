@@ -33,6 +33,7 @@ public class GameMessage {
     private int quantity;             // 수량
     // 대출/스탬프/에러 처리를 위한 추가 필드
     private int amount;
+    private int radishPrice;  // 무(무파니) 공용 시세
 
     @com.fasterxml.jackson.annotation.JsonProperty("isBankTile")
     private boolean isBankTile;

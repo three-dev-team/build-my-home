@@ -23,6 +23,7 @@ import Fishing from "./Fishing.jsx";
 import Inventory from "./Inventory.jsx";
 import RewardDrop from "./RewardDrop.jsx";
 import Start from "./Start.jsx";
+import Mupani from "./Mupani.jsx";
 
 const GamePage = () => {
     const {roomId} = useParams();
@@ -198,8 +199,14 @@ const GamePage = () => {
     const handleAction = (actionType, payload) => {
         if (!stompClient) return;
 
-        // 내 턴이 아니거나 이동 중일 때는 액션 차단
-        if (!isMyTurn || gameState.status === "MOVING") {
+        // MUPANI: 무파니칸에서는 BUY/SKIP만 턴 무관 허용(전원 동시 결정)
+        const allowAnyPlayerAction =
+            gameState?.status === "WAITING_MUPANI" &&
+            ["RADISH_BUY", "RADISH_SKIP"].includes(actionType);
+
+        // 내 턴이 아니면 차단(단, 무파니 BUY/SKIP은 예외)
+        // + MOVING 중에는 항상 차단
+        if ((!isMyTurn && !allowAnyPlayerAction) || gameState.status === "MOVING") {
             console.warn("내 턴이 아니거나 캐릭터가 이동 중입니다.");
             return;
         }
@@ -252,6 +259,10 @@ const GamePage = () => {
             body: JSON.stringify({roomId: Number(roomId), action}),
         });
     };
+
+    // MUPANI: buy/skip 핸들러(기존 handleAction 재사용)
+    const handleMupaniBuy = (qty) => handleAction("RADISH_BUY", { quantity: qty });
+    const handleMupaniSkip = () => handleAction("RADISH_SKIP", {});
 
     // 인벤 열기: 내 턴에서만 허용
     const handleOpenInventory = () => {
@@ -306,6 +317,32 @@ const GamePage = () => {
 
     return (
         <div className="game-container">
+            {/* 무 시세: 플레이어 패널(보드판 시작)과 동일 타이밍부터만 상단 표시 */}
+            {!["INTRO", "DETERMINING_ORDER"].includes(gameState.status) && (
+                <div
+                    style={{
+                        position: "fixed",
+                        top: 16,
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        zIndex: 13000,
+                        background: "rgba(255,255,255,0.92)",
+                        borderRadius: 999,
+                        padding: "10px 16px",
+                        boxShadow: "0 8px 18px rgba(0,0,0,0.18)",
+                        pointerEvents: "none",
+                        userSelect: "none",
+                    }}
+                >
+                    <span style={{ fontWeight: 800, marginRight: 10 }}>🥬 무 시세</span>
+                    <span style={{ fontWeight: 900, fontSize: 18 }}>
+                        {typeof gameState.radishPrice === "number"
+                            ? `${gameState.radishPrice}벨`
+                            : "-"}
+                    </span>
+                </div>
+            )}
+
             {/* 1. 설정/채팅 버튼은 본 게임 중에만 표시 */}
             {showCommonUI && (
                 <div className="game-overlay">
@@ -322,6 +359,14 @@ const GamePage = () => {
                     totalRounds={gameState.totalRounds || 20}
                 />
             )}
+
+            {/* MUPANI: WAITING_MUPANI에서만 렌더 */}
+            <Mupani
+                gameState={gameState}
+                myId={myId}
+                onBuy={handleMupaniBuy}
+                onSkip={handleMupaniSkip}
+            />
 
             {/* 인벤토리 오버레이: 내 턴 + WAITING_PLAYER_ACTION에서만 표시 */}
             {showInventory && isMyTurn && gameState.status === "WAITING_PLAYER_ACTION" && (

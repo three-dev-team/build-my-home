@@ -28,6 +28,10 @@ public class GamePlayerState {
     private Set<StampType> collectedStamps = EnumSet.noneOf(StampType.class);
     private List<ItemType> items = new ArrayList<>();
 
+    // 무(무파니) 정보
+    private int radishQty = 0;             // 보유 무 개수
+    private Integer radishRemoveRound;     // 이 라운드 시작에 자동 제거(구매 라운드 + 3)
+
     // 집 정보
     private HouseLevel houseLevel = HouseLevel.NONE;      // 집 레벨
     private boolean canUpgradeHouse;

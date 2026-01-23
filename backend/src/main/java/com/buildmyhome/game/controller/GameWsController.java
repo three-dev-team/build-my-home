@@ -10,6 +10,7 @@ import com.buildmyhome.game.service.GameStateService;
 import com.buildmyhome.house.service.HouseService;
 import com.buildmyhome.kk.KKService;
 import com.buildmyhome.loan.service.LoanService;
+import com.buildmyhome.mupani.service.MupaniService;
 import com.buildmyhome.room.dto.RoomPlayerState;
 import com.buildmyhome.room.dto.RoomState;
 import com.buildmyhome.room.service.RoomStateService;
@@ -43,6 +44,7 @@ public class GameWsController {
     private final KKService kkService;
     private final HouseService houseService;
     private final FishingService fishingService;
+    private final MupaniService mupaniService;
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     // TODO: 추후 GameEventService로 분리 - Tiffany
@@ -63,7 +65,9 @@ public class GameWsController {
                 response = defaultGameResponse("KK_AUTO_START", gameState);
                 response.setActionData(player.getActionData());
                 break;
-
+            case WAITING_MUPANI:
+                mupaniService.onTimeout(roomId, gameState);
+                return;
             // 기본은 다음 턴으로 넘어감
             default:
                 gameState.nextTurn();
@@ -84,6 +88,7 @@ public class GameWsController {
         response.setTurnOrder(gameState.getTurnOrder());
         response.setCurrentRound(gameState.getCurrentRound());
         response.setTotalRounds(gameState.getTotalRounds());
+        response.setRadishPrice(gameState.getRadishPrice()); // 무 시세 항상 포함
 
         // 타임아웃 계산 로직 (경과 시간 반영)
         int definitionTimeout = gameState.getStatus().getTimeoutSeconds();
@@ -95,6 +100,15 @@ public class GameWsController {
             response.setTimeoutSeconds(definitionTimeout);
         }
         return response;
+    }
+
+    // 무파니/무판매 공통: TradeResult를 GameMessage 응답에 반영
+    private void applyTradeResult(GameMessage response, Long memberId, MupaniService.TradeResult tr) {
+        response.setType(tr.type());
+        response.setMemberId(memberId);
+        response.setQuantity(tr.quantity());
+        response.setAmount(tr.amount());
+        response.setRadishPrice(tr.price());
     }
 
     @MessageMapping("/games/get-state")
@@ -254,7 +268,11 @@ public class GameWsController {
             GameStatus nextStatus = BoardData.getNextStatus(player.getPosition());
             gameState.setStatus(nextStatus);
 
-            // 이번 moveComplete로 얻은 보상(있을 때만 채움)
+            // 무파니 세션 시작(방 전체 구매 이벤트)
+            if (nextStatus == GameStatus.WAITING_MUPANI) {
+                mupaniService.startSession(roomId, gameState);
+            }
+
             Map<ResourceType, Integer> gainedResources = null;
             Map<HarvestType, Integer> gainedHarvests = null;
 
@@ -304,12 +322,20 @@ public class GameWsController {
         synchronized (gameState) {
             // 1. 공통 검증 (현재 턴인지 등)
             Long memberId = Long.parseLong(principal.getName());
-            if (!memberId.equals(gameState.getCurrentPlayerId())) return;
+
+            // 무파니칸은 모두 액션 가능 (BUY/SKIP)
+            boolean allowAnyPlayerAction =
+                    gameState.getStatus() == GameStatus.WAITING_MUPANI &&
+                            ("RADISH_BUY".equals(actionType) ||
+                                    "RADISH_SKIP".equals(actionType));
+
+            if (!allowAnyPlayerAction && !memberId.equals(gameState.getCurrentPlayerId())) return;
 
             GamePlayerState player = gameState.getPlayers().get(memberId);
 
             try {
                 GameMessage response = defaultGameResponse("ACTION_PROCESSED", gameState);
+                boolean endMupaniAfterSend = false;
 
                 // 2. 타입에 따라 분기 처리
                 switch (actionType) {
@@ -356,6 +382,37 @@ public class GameWsController {
                         player.setUiStep(4);
                         response.setType("HOUSE_UPGRADED");
                         break;
+                    case "RADISH_SELL": {
+                        int qty = Math.max(1, message.getQuantity());
+                        MupaniService.TradeResult tr = mupaniService.sell(gameState, memberId, qty);
+                        applyTradeResult(response, memberId, tr);
+
+                        response.setPlayers(new ArrayList<>(gameState.getPlayers().values()));
+                        break;
+                    }
+                    case "RADISH_BUY": {
+                        int qty = Math.max(1, message.getQuantity());
+                        MupaniService.MupaniActionResult ar = mupaniService.buy(roomId, gameState, memberId, qty);
+                        applyTradeResult(response, memberId, ar.trade());
+
+                        if (ar.becameAllDecided()) {
+                            endMupaniAfterSend = true;
+                        }
+
+                        response.setPlayers(new ArrayList<>(gameState.getPlayers().values()));
+                        break;
+                    }
+                    case "RADISH_SKIP": {
+                        MupaniService.MupaniActionResult ar = mupaniService.skip(roomId, gameState, memberId);
+                        applyTradeResult(response, memberId, ar.trade());
+
+                        if (ar.becameAllDecided()) {
+                            endMupaniAfterSend = true;
+                        }
+
+                        response.setPlayers(new ArrayList<>(gameState.getPlayers().values()));
+                        break;
+                    }
                     case "OPEN_ATM":
                         gameState.setStatus(GameStatus.WAITING_ATM);
                         response.setType("ATM_OPENED");
@@ -384,6 +441,11 @@ public class GameWsController {
 
                 response.setStatus(gameState.getStatus().name());
                 simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
+                // 무파니 전원 결정 완료면 응답 전송 후 즉시 턴 종료(TURN_COMPLETED 브로드캐스트)
+                if (endMupaniAfterSend) {
+                    mupaniService.endTurnNow(roomId, gameState);
+                    return;
+                }
 
             } catch (Exception e) {
                 // 에러 발생 시 에러 메시지 전송
