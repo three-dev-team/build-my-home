@@ -425,6 +425,7 @@ const GamePage = () => {
                 {gameState.status === "WAITING_SHOP_ITEM" && (
                     <ShopPage
                         gameState={gameState}
+                        currentPlayer={currentPlayer}
                         myId={myId}
                         shopType="ITEM_SHOP"
                         handleAction={handleAction}
@@ -437,6 +438,7 @@ const GamePage = () => {
                 {gameState.status === "WAITING_SHOP_RESOURCE" && (
                     <ShopPage
                         gameState={gameState}
+                        currentPlayer={currentPlayer}
                         myId={myId}
                         shopType="HARVEST_SHOP"
                         handleAction={handleAction}
