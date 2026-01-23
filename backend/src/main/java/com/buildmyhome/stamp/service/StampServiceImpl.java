@@ -50,8 +50,13 @@ public class StampServiceImpl implements StampService {
 
     @Override
     public int exchangeStamps(GamePlayerState player) {
+        // [방어 코드] 스탬프가 없으면 정산 진행 안 함
+        if (player.getCollectedStamps() == null || player.getCollectedStamps().isEmpty()) {
+            return 0;
+        }
+
         int stampCount = player.getCollectedStamps().size();
-        int reward = STAMP_REWARDS[Math.min(stampCount, 3)];
+        int reward = STAMP_REWARDS[Math.min(stampCount, STAMP_REWARDS.length - 1)];
 
         // 벨 지급
         player.setBell(player.getBell() + reward);
