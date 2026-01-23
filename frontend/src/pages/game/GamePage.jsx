@@ -296,11 +296,11 @@ const GamePage = () => {
             setFishingEventMessage(null);
         }
     };
-    
+
     // [DEV] 현재 라운드를 강제로 마지막 라운드로 변경
     const handleSetLastRound = () => {
         if (!stompClient || !gameState) return;
-        
+
         console.log(">>> [DEV] Force setting to Last Round");
         stompClient.publish({
             destination: "/app/games/set-round",
@@ -316,7 +316,7 @@ const GamePage = () => {
         console.log(">>> 🚪 Explicit Leave Room Triggered");
         stompClient.publish({
             destination: "/app/roomlist/rooms/leave",
-            body: JSON.stringify({ roomId: Number(roomId) }),
+            body: JSON.stringify({roomId: Number(roomId)}),
         });
     };
     // ------------------- [DEV] 상태 강제 변경 핸들러 ------------------- //
@@ -386,7 +386,7 @@ const GamePage = () => {
 
             {/* 2. 게임 콘텐츠 영역 */}
             <main>
-                <DevControls 
+                <DevControls
                     onStatusChange={handleDevStatusChange}
                     onSetLastRound={handleSetLastRound}
                 />
@@ -516,10 +516,10 @@ const GamePage = () => {
                         onExit={handleEventComplete}
                     />
                 )}
-                
+
                 {/* 결과 페이지 */}
                 {gameState.status === "FINISHED" && (
-                    <Result 
+                    <Result
                         gameState={gameState}
                         myId={myId}
                         onLeave={handleLeaveRoom}

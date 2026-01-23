@@ -1,7 +1,7 @@
 // 테스트 위한 임시 컴포넌트
-const DevControls = ({ onStatusChange, onSetLastRound }) => {
-  // 개발 환경에서만 렌더링
-  if (import.meta.env.PROD) return null;
+const DevControls = ({onStatusChange, onSetLastRound}) => {
+    // 개발 환경에서만 렌더링
+    if (import.meta.env.PROD) return null;
 
     return (
         <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 bg-black/50 p-4 rounded-lg backdrop-blur-sm">
@@ -59,8 +59,7 @@ const DevControls = ({ onStatusChange, onSetLastRound }) => {
                     ⏩ 막판 가기 (Jump to Last Round)
                 </button>
             </div>
-        </div>
-    );
+        </div>);
 };
 
 export default DevControls;

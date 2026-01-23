@@ -1,9 +1,9 @@
 // frontend/src/pages/room/RoomList.jsx
-import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Client } from "@stomp/stompjs";
+import React, {useEffect, useMemo, useRef, useState} from "react";
+import {useNavigate} from "react-router-dom";
+import {Client} from "@stomp/stompjs";
 
-import { CHARACTERS } from "../../constants/characters.js";
+import {CHARACTERS} from "../../constants/characters.js";
 
 const API_BASE = ""; // Vite proxy 쓰면 "" 유지
 
@@ -107,7 +107,7 @@ export default function RoomList() {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${token}`,
             }
-            : { "Content-Type": "application/json" };
+            : {"Content-Type": "application/json"};
     };
 
     // ✅ REST: @RequestMapping("/api/roomlists") 고정이므로 여기 경로도 맞춤
@@ -169,7 +169,7 @@ export default function RoomList() {
             if (ac.signal.aborted) return;
 
             setRoomPlayersMap((prev) => {
-                const next = { ...prev };
+                const next = {...prev};
                 for (const r of results) {
                     if (r.status === "fulfilled") {
                         const [id, players] = r.value;
@@ -193,8 +193,9 @@ export default function RoomList() {
         const client = new Client({
             brokerURL,
             reconnectDelay: 3000,
-            debug: () => {},
-            connectHeaders: token ? { Authorization: `Bearer ${token}` } : {},
+            debug: () => {
+            },
+            connectHeaders: token ? {Authorization: `Bearer ${token}`} : {},
         });
 
         client.onConnect = () => {
@@ -305,7 +306,7 @@ export default function RoomList() {
 
         startTransition();
 
-        const ok = publish(`${WS_APP_PREFIX}/join`, { roomId: selectedRoom.id });
+        const ok = publish(`${WS_APP_PREFIX}/join`, {roomId: selectedRoom.id});
         if (!ok) {
             endTransition();
             return;
@@ -318,11 +319,14 @@ export default function RoomList() {
     return (
         <div className="relative w-full min-h-screen overflow-hidden">
             {/* 배경(동숲 느낌: 하늘 -> 잔디 + 구름 블랍) */}
-            <div className="absolute inset-0 bg-[linear-gradient(180deg,#bfe8ff_0%,#e8f7ff_24%,#dff6d8_55%,#bfe9b6_100%)]" />
-            <div className="absolute -top-24 -left-24 w-[520px] h-[320px] rounded-[999px] bg-white/55 blur-2xl" />
-            <div className="absolute top-10 right-[-140px] w-[560px] h-[340px] rounded-[999px] bg-white/50 blur-2xl" />
-            <div className="absolute bottom-[-120px] left-1/2 -translate-x-1/2 w-[820px] h-[420px] rounded-[999px] bg-white/20 blur-3xl" />
-            <div className="absolute bottom-[-140px] -right-28 w-[520px] h-[520px] rounded-full bg-[#7bb46b]/25 blur-3xl" />
+            <div
+                className="absolute inset-0 bg-[linear-gradient(180deg,#bfe8ff_0%,#e8f7ff_24%,#dff6d8_55%,#bfe9b6_100%)]"/>
+            <div className="absolute -top-24 -left-24 w-[520px] h-[320px] rounded-[999px] bg-white/55 blur-2xl"/>
+            <div className="absolute top-10 right-[-140px] w-[560px] h-[340px] rounded-[999px] bg-white/50 blur-2xl"/>
+            <div
+                className="absolute bottom-[-120px] left-1/2 -translate-x-1/2 w-[820px] h-[420px] rounded-[999px] bg-white/20 blur-3xl"/>
+            <div
+                className="absolute bottom-[-140px] -right-28 w-[520px] h-[520px] rounded-full bg-[#7bb46b]/25 blur-3xl"/>
 
             {/* ✅ 전환 로딩 오버레이 */}
             {transitioning && (
@@ -335,7 +339,8 @@ export default function RoomList() {
                             TONE.border,
                         ].join(" ")}
                     >
-                        <div className="w-5 h-5 rounded-full border-2 border-[#d6b98a] border-t-[#7bb46b] animate-spin" />
+                        <div
+                            className="w-5 h-5 rounded-full border-2 border-[#d6b98a] border-t-[#7bb46b] animate-spin"/>
                         <div className={`font-black ${TONE.brownText}`}>이동 중...</div>
                     </div>
                 </div>
@@ -477,7 +482,7 @@ export default function RoomList() {
                     >
                         {/* 제목 */}
                         <div className="flex items-center justify-between">
-                            <div className="w-12" />
+                            <div className="w-12"/>
                             <h1 className={`text-center text-[28px] sm:text-[32px] font-black tracking-tight ${TONE.brownText}`}>
                                 🍃 발견한 섬 리스트 🍃
                             </h1>
@@ -535,8 +540,10 @@ export default function RoomList() {
                                                 >
                                                     {/* 공개/비공개(아이콘만) */}
                                                     <div className="w-12 flex flex-col items-center justify-center">
-                                                        <div className={disabled ? "text-[#6a5342]/60" : "text-[#6a5342]"}>{lockIcon}</div>
-                                                        <div className={disabled ? "text-[10px] font-bold text-[#6a5342]/50" : "text-[10px] font-bold text-[#6a5342]/80"}>
+                                                        <div
+                                                            className={disabled ? "text-[#6a5342]/60" : "text-[#6a5342]"}>{lockIcon}</div>
+                                                        <div
+                                                            className={disabled ? "text-[10px] font-bold text-[#6a5342]/50" : "text-[10px] font-bold text-[#6a5342]/80"}>
                                                             공개
                                                         </div>
                                                     </div>
@@ -544,16 +551,19 @@ export default function RoomList() {
                                                     {/* 제목/정보 */}
                                                     <div className="flex-1 min-w-0">
                                                         <div className="flex items-center gap-3">
-                                                            <div className={disabled ? `font-black ${TONE.brownText} truncate opacity-70` : `font-black ${TONE.brownText} truncate`}>
+                                                            <div
+                                                                className={disabled ? `font-black ${TONE.brownText} truncate opacity-70` : `font-black ${TONE.brownText} truncate`}>
                                                                 {room.title || "이름 없는 섬"}
                                                             </div>
-                                                            <div className={`flex items-center gap-1 text-xs font-extrabold ${TONE.label}`}>
+                                                            <div
+                                                                className={`flex items-center gap-1 text-xs font-extrabold ${TONE.label}`}>
                                                                 <span>🎲</span>
                                                                 <span>{room.totalRounds ? `${room.totalRounds}판` : "-"}</span>
                                                             </div>
                                                         </div>
 
-                                                        <div className={`mt-1 flex items-center gap-3 text-xs font-extrabold ${TONE.brownText2}`}>
+                                                        <div
+                                                            className={`mt-1 flex items-center gap-3 text-xs font-extrabold ${TONE.brownText2}`}>
                                                             <span>{room.hostNickname ? `섬장 ${room.hostNickname}` : "섬장 -"}</span>
                                                             <span className="opacity-60">·</span>
                                                             <span>
@@ -660,17 +670,17 @@ export default function RoomList() {
 }
 
 /** ✅ 리스트에서 참여 주민 캐릭터(이모지) 미리보기 */
-function RoomCharacterPreview({ players, maxSlots, currentPlayers, disabled }) {
+function RoomCharacterPreview({players, maxSlots, currentPlayers, disabled}) {
     const list = Array.isArray(players) ? players : [];
     const slots = Math.max(0, maxSlots || 0);
     const filled = list.slice(0, slots);
 
-    if (slots <= 0) return <div className="w-[120px]" />;
+    if (slots <= 0) return <div className="w-[120px]"/>;
 
     return (
         <div className="w-[120px] flex items-center justify-end">
             <div className="flex -space-x-2">
-                {Array.from({ length: slots }).map((_, idx) => {
+                {Array.from({length: slots}).map((_, idx) => {
                     const p = filled[idx];
                     const emoji = p?.characterId ? EMOJI_BY_CHARACTER_ID[Number(p.characterId)] : null;
 
@@ -699,7 +709,8 @@ function RoomCharacterPreview({ players, maxSlots, currentPlayers, disabled }) {
                                         : "빈 자리"
                             }
                         >
-                            {hasPlayer ? <span className="text-lg">{emoji || "❔"}</span> : <span className="text-base opacity-50">·</span>}
+                            {hasPlayer ? <span className="text-lg">{emoji || "❔"}</span> :
+                                <span className="text-base opacity-50">·</span>}
                         </div>
                     );
                 })}
@@ -709,7 +720,7 @@ function RoomCharacterPreview({ players, maxSlots, currentPlayers, disabled }) {
 }
 
 /** 섬 만들기 모달 */
-function CreateIslandModal({ onClose, onCreate }) {
+function CreateIslandModal({onClose, onCreate}) {
     const [title, setTitle] = useState("");
     const [maxPlayers, setMaxPlayers] = useState(4);
     const [totalRounds, setTotalRounds] = useState(10);
@@ -730,7 +741,8 @@ function CreateIslandModal({ onClose, onCreate }) {
                 onMouseDown={(e) => e.stopPropagation()}
             >
                 <div className="text-center">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#efe2c8] border border-[#e2cfae]">
+                    <div
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#efe2c8] border border-[#e2cfae]">
                         <span className="text-lg">🪵</span>
                         <span className="text-[#5b4636] font-black">섬 만들기</span>
                         <span className="text-lg">🪵</span>
@@ -838,7 +850,7 @@ function CreateIslandModal({ onClose, onCreate }) {
     );
 }
 
-function Chip({ active, onClick, children }) {
+function Chip({active, onClick, children}) {
     return (
         <button
             type="button"
@@ -856,7 +868,7 @@ function Chip({ active, onClick, children }) {
 }
 
 /** 섬 입장 모달 */
-function JoinIslandModal({ room, initialPlayers, onClose, onConfirm, authHeaders }) {
+function JoinIslandModal({room, initialPlayers, onClose, onConfirm, authHeaders}) {
     const statusText = room.status === "PLAYING" ? "진행중" : "대기중";
 
     const [players, setPlayers] = useState(Array.isArray(initialPlayers) ? initialPlayers : []);
@@ -914,7 +926,8 @@ function JoinIslandModal({ room, initialPlayers, onClose, onConfirm, authHeaders
             >
                 {/* 헤더 */}
                 <div className="text-center">
-                    <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#efe2c8] border border-[#e2cfae]">
+                    <div
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#efe2c8] border border-[#e2cfae]">
                         <span className="text-lg">🍃</span>
                         <span className="text-[#5b4636] font-black">입장 확인</span>
                         <span className="text-lg">🍃</span>
@@ -939,7 +952,7 @@ function JoinIslandModal({ room, initialPlayers, onClose, onConfirm, authHeaders
 
                         <div className="text-sm font-black text-[#7a5c44]">참여 주민</div>
                         <div className="flex items-center gap-3">
-                            <CharacterSlots players={players} maxSlots={maxSlots} loading={playersLoading} />
+                            <CharacterSlots players={players} maxSlots={maxSlots} loading={playersLoading}/>
                             <div className="text-sm font-extrabold text-[#6a5342]">{countText}</div>
                         </div>
                     </div>
@@ -979,16 +992,16 @@ function JoinIslandModal({ room, initialPlayers, onClose, onConfirm, authHeaders
     );
 }
 
-function CharacterSlots({ players, maxSlots, loading }) {
+function CharacterSlots({players, maxSlots, loading}) {
     const list = Array.isArray(players) ? players : [];
     const slots = Math.max(0, maxSlots || 0);
     const filled = list.slice(0, slots);
 
-    if (slots <= 0) return <div className="w-[88px]" />;
+    if (slots <= 0) return <div className="w-[88px]"/>;
 
     return (
         <div className="flex items-center gap-2">
-            {Array.from({ length: slots }).map((_, idx) => {
+            {Array.from({length: slots}).map((_, idx) => {
                 const p = filled[idx];
                 const characterId = p?.characterId ? Number(p.characterId) : null;
                 const emoji = characterId ? EMOJI_BY_CHARACTER_ID[characterId] : null;
