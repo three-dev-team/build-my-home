@@ -254,8 +254,7 @@ public class GameWsController {
             if (player == null) return;
 
             // 서버에서 주사위 값 생성
-            int diceValue = 4;
-//            int diceValue = (int) (Math.random() * DICE_MAX) + DICE_MIN;
+            int diceValue = (int) (Math.random() * DICE_MAX) + DICE_MIN;
             player.setDiceValue(diceValue);
 
             // 플레이어 이동 처리 (위치 계산만, 아직 이동 X)
