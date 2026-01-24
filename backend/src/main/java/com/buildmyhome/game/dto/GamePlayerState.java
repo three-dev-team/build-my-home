@@ -25,7 +25,12 @@ public class GamePlayerState {
     private int loan = 0; // 대출금
     private int uiStep = 0; // 행동 단계 (특정 상태에서 페이지 이동 로직 시 사용)
     private Integer actionData; // 행동 관련 추가 데이터 (특정 정보가 휘발성으로 필요할 때 사용)
+    private String actionDataStr; // 행동 관련 추가 문자열 데이터
     private int rank = 0; // 게임 결과 순위 (1 ~ 4)
+
+    // 아이템 정보
+    private boolean skipNextTurn = false; // 건강운 하락: 다음 턴 스킵
+    private boolean extraDice = false; // 건강운 상승: 주사위 한 번 더
 
     // 재화 정보
     private Map<ResourceType, Integer> resources = new EnumMap<>(ResourceType.class);

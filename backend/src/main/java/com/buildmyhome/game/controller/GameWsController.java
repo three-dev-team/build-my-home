@@ -12,6 +12,7 @@ import com.buildmyhome.game.service.MoveService;
 import com.buildmyhome.house.service.HouseService;
 import com.buildmyhome.kk.KKService;
 import com.buildmyhome.loan.service.LoanService;
+import com.buildmyhome.machurilla.service.MachurillaService;
 import com.buildmyhome.mupani.service.MupaniService;
 import com.buildmyhome.reward.service.RewardService;
 import com.buildmyhome.room.dto.RoomPlayerState;
@@ -50,6 +51,7 @@ public class GameWsController {
     private final MupaniService mupaniService;
     private final MoveService moveService;
     private final RewardService rewardService;
+    private final MachurillaService machurillaService;
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     // TODO: 추후 GameEventService로 분리 - Tiffany
@@ -489,6 +491,12 @@ public class GameWsController {
                     case "START_STAMP_SKIP":
                         player.setUiStep(2);
                         response.setType("START_STAMP_SKIPPED");
+                        break;
+                    case "MACHURILLA_SELECT":
+                        String cardType = message.getActionDataStr();
+                        player.setUiStep(2);
+                        machurillaService.applyCardEffect(gameState, player, cardType);
+                        response.setType("MACHURILLA_SELECTED");
                         break;
                 }
 
