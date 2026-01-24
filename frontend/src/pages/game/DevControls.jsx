@@ -56,6 +56,12 @@ const DevControls = ({ onStatusChange, onSetLastRound }) => {
           🎣 낚시 (Fishing)
         </button>
         <button
+          onClick={() => onStatusChange('WAITING_MACHURILLA')}
+          className="px-3 py-1 bg-purple-500 hover:bg-purple-600 text-white text-xs rounded shadow"
+        >
+          🔮 마추릴라
+        </button>
+        <button
           onClick={onSetLastRound}
           className="col-span-2 px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-xs rounded shadow font-bold border-2 border-red-700"
         >
