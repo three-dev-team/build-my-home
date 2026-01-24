@@ -22,7 +22,7 @@ const rawTiles = [
   { id: 15, type: 'MACHURILLA', name: '마추릴라' },
   { id: 16, type: 'RESOURCE', name: '재화칸' },
   { id: 17, type: 'HARVEST', name: '과일칸' },
-  { id: 18, type: 'LOAN', name: '대출칸' },
+  { id: 18, type: 'SWAP', name: '몽셰르' },
   { id: 19, type: 'RESOURCE', name: '재화칸' },
   { id: 20, type: 'ITEM', name: '아이템칸' },
   { id: 21, type: 'MUPANI', name: '무 주식' },

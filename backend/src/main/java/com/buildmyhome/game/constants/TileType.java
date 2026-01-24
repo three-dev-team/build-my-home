@@ -22,7 +22,8 @@ public enum TileType {
     KK(GameStatus.WAITING_KK),
     MUPANI(GameStatus.WAITING_MUPANI),
     ITEM(GameStatus.WAITING_ITEMS),
-    MACHURILLA(GameStatus.WAITING_MACHURILLA);
+    MACHURILLA(GameStatus.WAITING_MACHURILLA),
+    SWAP(GameStatus.WAITING_SWAP);
 
     private final GameStatus nextStatus;
 }
