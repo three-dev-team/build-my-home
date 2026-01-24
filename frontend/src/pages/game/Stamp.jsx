@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { useGameTimer } from '../../hooks/useGameTimer.js';
 import { boardTiles } from '../../constants/boardData.js';
 import './css/Stamp.css';
+import { useExitHandler } from '../../hooks/useExitHandler.js';
 
 const STAMP_CONFIG = {
   GAPDOL: { name: '갑돌섬', npcName: '갑돌이', image: '/images/stamp-gapdol.png' },
@@ -26,15 +27,10 @@ const Stamp = ({ isMyTurn = false, player, currentPlayerName = '익명의 주민
 
   // 자동 나가기 처리 (중복 방지)
   // TODO: 프론트 타이머 대신 서버 타임아웃 방식으로 변경 필요 - Tiffany
-  const hasExited = useRef(false);
-  const handleExit = () => {
-    if (hasExited.current) return;
-    hasExited.current = true;
-    onExit();
-  };
-
+  // exit 핸들러 생성, isMyTurn일 때만 onExit(event-complete) 호출
+  const handleExit = useExitHandler(isMyTurn, onExit);
   // step 2에서 3초 후 자동 나가기
-  useGameTimer(step === 2 ? 3 : 0, handleExit);
+  useGameTimer(isMyTurn && step === 2 ? 3 : null, handleExit); // 타이머도 내 턴만
 
   const setStep = (newStep) => {
     if (!isMyTurn) return;

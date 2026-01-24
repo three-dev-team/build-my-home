@@ -6,7 +6,6 @@ import com.buildmyhome.fishing.dto.FishingActionRequest;
 import com.buildmyhome.fishing.dto.StartFishingRequest;
 import com.buildmyhome.fishing.service.FishingService;
 import com.buildmyhome.game.constants.BoardData;
-import com.buildmyhome.game.constants.TileType;
 import com.buildmyhome.game.dto.*;
 import com.buildmyhome.game.service.GameStateService;
 import com.buildmyhome.game.service.MoveService;
@@ -20,7 +19,6 @@ import com.buildmyhome.room.service.RoomStateService;
 import com.buildmyhome.shop.dto.ShopType;
 import com.buildmyhome.shop.service.ShopService;
 import com.buildmyhome.stamp.service.StampService;
-import com.buildmyhome.start.StartService;
 import java.security.Principal;
 import java.util.*;
 import java.util.concurrent.Executors;
@@ -250,18 +248,15 @@ public class GameWsController {
       if (player == null) return;
 
       // 서버에서 주사위 값 생성
-      // TODO : 애니메이션 테스트 위해 임시값 6으로 설정 추후 업데이트
-      int diceValue = 6;
-      //            int diceValue = (int) (Math.random() * DICE_MAX) + DICE_MIN;
+      int diceValue = (int) (Math.random() * DICE_MAX) + DICE_MIN;
       player.setDiceValue(diceValue);
 
       // 플레이어 이동 처리 (위치 계산만, 아직 이동 X)
-      List<Integer> movePath = moveService.movePlayer(player, diceValue);
+      moveService.movePlayer(player, diceValue);
       gameState.setStatus(GameStatus.ROLLING_DICE);
 
       GameMessage response = defaultGameResponse("DICE_ROLLING", gameState);
-      response.setDiceValue(diceValue);
-      response.setMovePath(movePath);
+      response.setDiceValue(diceValue); // 플레이어 주사위 값 전달
       simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
     }
   }
@@ -279,10 +274,13 @@ public class GameWsController {
         return;
       }
 
+        GamePlayerState player = gameState.getPlayers().get(memberId);
+        if (player == null) return;
       // MOVING 상태로 변경
       gameState.setStatus(GameStatus.MOVING);
 
       GameMessage response = defaultGameResponse("DICE_ROLLED", gameState);
+      response.setMovePath(player.getMovePath());
       simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
     }
   }
@@ -302,6 +300,12 @@ public class GameWsController {
 
       GamePlayerState player = gameState.getPlayers().get(memberId);
       if (player == null) return;
+
+      List<Integer> path = player.getMovePath();
+      if (path != null && !path.isEmpty()) {
+          player.setPosition(path.get(path.size() - 1));
+      }
+      player.setMovePath(null);
 
       // 플레이어가 도착한 칸에 맞는 상태로 전환 (예: KK 칸이면 WAITING_KK)
       GameStatus nextStatus = BoardData.getNextStatus(player.getPosition());

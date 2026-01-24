@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useGameTimer } from '../../hooks/useGameTimer.js';
 import { KK_CONFIG, KK_MOOD_CONFIG, KK_SONGS } from '../../constants/kkData.js';
+import { useExitHandler } from '../../hooks/useExitHandler.js';
 
 const KK = ({
   isMyTurn = false,
@@ -48,10 +49,10 @@ const KK = ({
     onAction('KK_ACTION', { actionData: song.id });
   };
 
-  const handleEnd = () => onExit();
+  const handleExit = useExitHandler(isMyTurn, onExit);
   const handleSkip = () => {
     if (audioRef.current) audioRef.current.pause();
-    onExit();
+    handleExit();
   };
 
   return (
@@ -175,7 +176,7 @@ const KK = ({
             🎵 {currentPlayingSong.title}
           </div>
 
-          <audio ref={audioRef} src={currentPlayingSong.audio} autoPlay onEnded={handleEnd} />
+          <audio ref={audioRef} src={currentPlayingSong.audio} autoPlay onEnded={handleExit} />
 
           <button
             onClick={handleSkip}

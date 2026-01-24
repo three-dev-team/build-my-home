@@ -51,7 +51,6 @@ const GamePage = () => {
   // 현재 턴 플레이어 정보
   const currentPlayer = gameState?.players?.find((p) => p.memberId === gameState.currentPlayerId) || null;
   const isMyTurn = gameState ? myId === gameState.currentPlayerId : false;
-  const [movePath, setMovePath] = useState([]); // 플레이어 이동 경로 저장소
 
   // 공통 UI(채팅, 메뉴버튼 등)를 보여줄지 말지 결정하는 변수
   const showCommonUI = gameState && !['DETERMINING_ORDER', 'FINISHED'].includes(gameState.status);
@@ -155,19 +154,6 @@ const GamePage = () => {
       }
     };
   }, [roomId, token]); // roomId, token이 바뀔 때마다 재실행
-
-  // 이동 후 2초 후에 다음 페이지로 이동
-  useEffect(() => {
-    if (gameState?.status === 'MOVING' && stompClient && isMyTurn) {
-      const timer = setTimeout(() => {
-        stompClient.publish({
-          destination: '/app/games/move-complete',
-          body: JSON.stringify({ roomId }),
-        });
-      }, 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [gameState?.status, stompClient, isMyTurn, roomId]);
 
   // --------------------------------- 핸들러 함수 --------------------------------- //
 
@@ -602,7 +588,7 @@ const GamePage = () => {
         {['WAITING_PLAYER_ACTION', 'MOVING'].includes(gameState.status) && (
           <MainBoardPage
             players={Object.values(gameState.players)}
-            movePath={gameState.movePath}
+            movePath={currentPlayer?.movePath}
             currentPlayerId={gameState.currentPlayerId}
             onMoveComplete={() => {
               stompClient.publish({

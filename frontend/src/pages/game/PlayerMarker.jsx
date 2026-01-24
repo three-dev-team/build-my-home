@@ -1,9 +1,10 @@
-// PlayerMarker.jsx
 import { boardTiles } from '../../constants/boardData';
 import './css/PlayerMarker.css';
 
-const PlayerMarker = ({ player }) => {
-  const tile = boardTiles.find((t) => t.id === player.position);
+const PlayerMarker = ({ player, animatingPosition }) => {
+  // animatingPosition이 있으면 그 위치, 없으면 player.position
+  const position = animatingPosition ?? player.position;
+  const tile = boardTiles.find((t) => t.id === position);
 
   if (!tile) return null;
 
@@ -13,7 +14,7 @@ const PlayerMarker = ({ player }) => {
       style={{
         left: tile.x,
         top: tile.y,
-        transition: 'all 0.5s ease-in-out', // 이동 애니메이션 추가 추천
+        transition: 'all 0.4s ease-in-out',
       }}
     >
       <div className="marker-wrapper">

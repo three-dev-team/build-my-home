@@ -37,9 +37,7 @@ const RollDicePage = ({ currentPlayer, isMyTurn, diceValue, isRolling, onRollCom
 
         <div className="pb-4 text-sm text-center">
           {isRolling ? (
-            <span>
-              🎲 {diceValue} 나왔다! {diceValue}칸 이동!
-            </span>
+            <span>{diceValue}칸 이동!</span>
           ) : isMyTurn ? (
             <span>스페이스바를 눌러 주사위를 굴리세요</span>
           ) : (

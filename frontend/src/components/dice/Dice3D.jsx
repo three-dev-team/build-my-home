@@ -4,7 +4,8 @@ import { useGLTF, useAnimations } from '@react-three/drei';
 
 const DiceModel = ({ value, onAnimationEnd }) => {
   const group = useRef();
-  const { scene, animations } = useGLTF(`/images/dice/dice-${value}.glb`);
+  // const { scene, animations } = useGLTF(`/images/dice/dice-${value}.glb`);
+  const { scene, animations } = useGLTF(`/images/dice/dice-6.glb`);
   const { actions } = useAnimations(animations, group);
 
   useEffect(() => {
