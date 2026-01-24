@@ -51,6 +51,30 @@ const GamePage = () => {
   // 현재 턴 플레이어 정보
   const currentPlayer = gameState?.players?.find((p) => p.memberId === gameState.currentPlayerId) || null;
   const isMyTurn = gameState ? myId === gameState.currentPlayerId : false;
+  const [movePath, setMovePath] = useState([]); // 플레이어 이동 경로 저장소
+  // 내 무 보유 개수/썩는 턴 안내용
+  const myPlayerState = gameState?.players?.find((p) => Number(p?.memberId) === Number(myId)) || null;
+
+  // 무 썩는 턴 안내 문구 (radishRemoveRound 기준)
+  const getRadishDecayGuide = (player, currentRound) => {
+    const qty = Number(player?.radishQty ?? 0);
+    const removeRound = player?.radishRemoveRound;
+
+    // 무를 보유 중이 아니면 안내 숨김
+    if (!qty || qty <= 0) return null;
+    if (typeof removeRound !== 'number') return null;
+    if (typeof currentRound !== 'number') return null;
+
+    const remain = removeRound - currentRound;
+
+    if (remain >= 2) return `${remain}턴 후에 무가 썩는다구리`;
+    if (remain === 1) return '다음턴에 무가 썩는다구리';
+    if (remain === 0) return '이번턴에 무가 썩는다구리';
+    return '무가 썩었다구리~';
+  };
+
+  // 렌더링용 텍스트
+  const radishGuideText = getRadishDecayGuide(myPlayerState, gameState?.currentRound);
 
   // 공통 UI(채팅, 메뉴버튼 등)를 보여줄지 말지 결정하는 변수
   const showCommonUI = gameState && !['DETERMINING_ORDER', 'FINISHED'].includes(gameState.status);
@@ -328,10 +352,17 @@ const GamePage = () => {
             userSelect: 'none',
           }}
         >
-          <span style={{ fontWeight: 800, marginRight: 10 }}>🥬 무 시세</span>
-          <span style={{ fontWeight: 900, fontSize: 18 }}>
+          <span style={{ fontWeight: 500, marginRight: 10, fontSize: 20 }}>🥬 무 시세</span>
+          <span style={{ fontWeight: 800, fontSize: 20 }}>
             {typeof gameState.radishPrice === 'number' ? `${gameState.radishPrice}벨` : '-'}
           </span>
+          {Number(myPlayerState?.radishQty ?? 0) > 0 && (
+            <span style={{ fontWeight: 800, marginLeft: 10, fontSize: 18 }}>· 보유 {myPlayerState.radishQty}개</span>
+          )}
+
+          {radishGuideText && (
+            <span style={{ fontWeight: 700, marginLeft: 10, fontSize: 16, opacity: 0.85 }}>({radishGuideText})</span>
+          )}
         </div>
       )}
 
