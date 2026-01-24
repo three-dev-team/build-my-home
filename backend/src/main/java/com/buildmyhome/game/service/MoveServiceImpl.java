@@ -19,9 +19,11 @@ public class MoveServiceImpl implements MoveService {
   private static final Set<TileType> STOP_POINTS = Set.of(TileType.START);
 
   @Override
-  public List<Integer> movePlayer(GamePlayerState player, int diceValue) {
+  public void movePlayer(GamePlayerState player, int diceValue) {
     int currentPosition = player.getPosition();
     List<Integer> movePath = new ArrayList<>();
+
+    movePath.add(currentPosition);
 
     // 1칸씩 전진하며 중간에 멈춰야 할 칸이 있는지 확인
     for (int i = 1; i <= diceValue; i++) {
@@ -31,15 +33,16 @@ public class MoveServiceImpl implements MoveService {
 
       // 중간에 멈춰야 할 칸(START 등)을 만난 경우
       if (STOP_POINTS.contains(tile) && i < diceValue) {
-        player.setPosition(checkPosition);
+//        player.setPosition(checkPosition);
         player.setRemainingMoves(diceValue - i);
-        return movePath; // 중간 지점에서 정지
+        player.setMovePath(movePath);
+        return; // 중간 지점에서 정지
       }
     }
 
     // 최종 위치 도착
-    player.setPosition((currentPosition + diceValue) % BOARD_SIZE);
+//    player.setPosition((currentPosition + diceValue) % BOARD_SIZE);
     player.setRemainingMoves(0);
-    return movePath;
+    player.setMovePath(movePath);
   }
 }

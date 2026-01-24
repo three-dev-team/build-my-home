@@ -89,6 +89,7 @@ public class GameState {
 
     GamePlayerState currentPlayer = players.get(currentPlayerId);
     if (currentPlayer != null) {
+        currentPlayer.setMovePath(null);
       currentPlayer.setUiStep(0);
       currentPlayer.setActionData(null); // 다음 사람에게 턴 넘기기 전 청소
     }

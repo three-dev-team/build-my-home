@@ -179,19 +179,6 @@ const GamePage = () => {
     };
   }, [roomId, token]); // roomId, token이 바뀔 때마다 재실행
 
-  // 이동 후 2초 후에 다음 페이지로 이동
-  useEffect(() => {
-    if (gameState?.status === 'MOVING' && stompClient && isMyTurn) {
-      const timer = setTimeout(() => {
-        stompClient.publish({
-          destination: '/app/games/move-complete',
-          body: JSON.stringify({ roomId }),
-        });
-      }, 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [gameState?.status, stompClient, isMyTurn, roomId]);
-
   // --------------------------------- 핸들러 함수 --------------------------------- //
 
   const handleIntroComplete = () => {
@@ -632,7 +619,7 @@ const GamePage = () => {
         {['WAITING_PLAYER_ACTION', 'MOVING'].includes(gameState.status) && (
           <MainBoardPage
             players={Object.values(gameState.players)}
-            movePath={gameState.movePath}
+            movePath={currentPlayer?.movePath}
             currentPlayerId={gameState.currentPlayerId}
             onMoveComplete={() => {
               stompClient.publish({
