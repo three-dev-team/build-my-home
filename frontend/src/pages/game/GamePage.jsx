@@ -25,6 +25,7 @@ import RewardDrop from './RewardDrop.jsx';
 import Start from './Start.jsx';
 import Result from './Result.jsx';
 import Mupani from './Mupani.jsx';
+import Machurilla from './Machurilla/Machurilla.jsx';
 
 const GamePage = () => {
   const { roomId } = useParams();
@@ -529,6 +530,17 @@ const GamePage = () => {
         {/* 시작칸 (스탬프 정산칸) */}
         {gameState.status === 'WAITING_START' && (
           <Start
+            isMyTurn={isMyTurn}
+            player={currentPlayer}
+            currentPlayerName={currentPlayer?.nickname}
+            onAction={handleAction}
+            onExit={handleEventComplete}
+          />
+        )}
+
+        {/* 마추릴라 이벤트 */}
+        {gameState.status === 'WAITING_MACHURILLA' && (
+          <Machurilla
             isMyTurn={isMyTurn}
             player={currentPlayer}
             currentPlayerName={currentPlayer?.nickname}
