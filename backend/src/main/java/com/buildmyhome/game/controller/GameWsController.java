@@ -20,11 +20,15 @@ import com.buildmyhome.room.service.RoomStateService;
 import com.buildmyhome.shop.dto.ShopType;
 import com.buildmyhome.shop.service.ShopService;
 import com.buildmyhome.stamp.service.StampService;
+
 import java.security.Principal;
 import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+
+import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -53,6 +57,7 @@ public class GameWsController {
     // ex) 타임아웃 됐을 경우 KK는 입장료를 반드시 납부하고, 공연을 관람하게 해야함
     private void handleEventTimeout(GameState gameState, GameStatus status, Long roomId) {
         if (gameState.getStatus() != status) return;
+        gameState.clearCurrentTimeout();
         GamePlayerState player = gameState.getPlayers().get(gameState.getCurrentPlayerId());
         GameMessage response;
 
@@ -119,29 +124,29 @@ public class GameWsController {
         return response;
     }
 
-  // 무파니/무판매 공통: TradeResult를 GameMessage 응답에 반영
-  private void applyTradeResult(GameMessage response, Long memberId, MupaniService.TradeResult tr) {
-    response.setType(tr.type());
-    response.setMemberId(memberId);
-    response.setQuantity(tr.quantity());
-    response.setAmount(tr.amount());
-    response.setRadishPrice(tr.price());
-  }
+    // 무파니/무판매 공통: TradeResult를 GameMessage 응답에 반영
+    private void applyTradeResult(GameMessage response, Long memberId, MupaniService.TradeResult tr) {
+        response.setType(tr.type());
+        response.setMemberId(memberId);
+        response.setQuantity(tr.quantity());
+        response.setAmount(tr.amount());
+        response.setRadishPrice(tr.price());
+    }
 
-  @MessageMapping("/games/get-state")
-  public void getGameState(GameMessage message) {
-    Long roomId = message.getRoomId();
-    GameState gameState = gameStateService.getGame(roomId);
-    if (gameState == null) return;
+    @MessageMapping("/games/get-state")
+    public void getGameState(GameMessage message) {
+        Long roomId = message.getRoomId();
+        GameState gameState = gameStateService.getGame(roomId);
+        if (gameState == null) return;
 
-    GameMessage response = defaultGameResponse("CURRENT_GAME_STATE", gameState);
-    simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
-  }
+        GameMessage response = defaultGameResponse("CURRENT_GAME_STATE", gameState);
+        simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
+    }
 
-  @MessageMapping("/games/start")
-  public void startGame(GameMessage message) {
-    Long roomId = message.getRoomId();
-    RoomState room = roomStateService.getRoom(roomId);
+    @MessageMapping("/games/start")
+    public void startGame(GameMessage message) {
+        Long roomId = message.getRoomId();
+        RoomState room = roomStateService.getRoom(roomId);
 
         GameState gameState = new GameState(roomId);
         gameState.setStatus(GameStatus.INTRO);
@@ -249,7 +254,8 @@ public class GameWsController {
             if (player == null) return;
 
             // 서버에서 주사위 값 생성
-            int diceValue = (int) (Math.random() * DICE_MAX) + DICE_MIN;
+            int diceValue = 4;
+//            int diceValue = (int) (Math.random() * DICE_MAX) + DICE_MIN;
             player.setDiceValue(diceValue);
 
             // 플레이어 이동 처리 (위치 계산만, 아직 이동 X)
@@ -329,18 +335,27 @@ public class GameWsController {
                 System.out.println("🏪 재화 상점 세션 생성: memberId=" + memberId);
             }
 
-            // 타임아웃이 설정된 상태라면 스케줄러로 타임아웃 처리 등록
+            // 도착한 칸이 타임아웃이 설정된 상태라면 스케줄러로 타임아웃 등록
             if (nextStatus.isAutoProceed()) {
-                scheduler.schedule(
+                // 방어 코드
+                gameState.clearCurrentTimeout();
+
+                // 스케줄러 등록
+                ScheduledFuture<?> future = scheduler.schedule(
                         () -> {
                             synchronized (gameState) {
-                                handleEventTimeout(gameState, nextStatus, roomId);
+                                if (gameState.getStatus() == nextStatus) {  // 방어 로직
+                                    handleEventTimeout(gameState, nextStatus, roomId);
+                                }
                             }
                         },
                         nextStatus.getTimeoutSeconds(),
                         TimeUnit.SECONDS
                 );
+
+                gameState.setCurrentTimeout(future);
             }
+
 
             GameMessage response = defaultGameResponse("MOVE_COMPLETE", gameState);
             // 이번에 얻은 보상을 메시지에 실어 보냄(프론트에서 토스트/연출 가능)
@@ -457,6 +472,7 @@ public class GameWsController {
                         response.setType("ATM_OPENED");
                         break;
                     case "CLOSE_ACTION":
+                        gameState.clearCurrentTimeout();
                         player.setUiStep(0); // UI 스텝 초기화
                         gameState.setStatus(GameStatus.WAITING_PLAYER_ACTION);
                         response.setType("ACTION_CLOSED");
@@ -501,6 +517,7 @@ public class GameWsController {
         if (gameState == null) return;
 
         synchronized (gameState) {
+            gameState.clearCurrentTimeout();
             if (!memberId.equals(gameState.getCurrentPlayerId())) {
                 return;
             }
@@ -575,6 +592,13 @@ public class GameWsController {
         }
     }
 
+    // 애플리케이션 종료 시 스케줄러 종료 (메모리 누수 방지)
+    @PreDestroy
+    public void cleanup() {
+        scheduler.shutdown();
+        System.out.println("🧹 스케줄러 종료됨");
+    }
+
     // DEV 용: 특정 이벤트 상태로 강제 진입시키고 20초 후 메인보드로 복귀시키기
     @MessageMapping("/games/trigger-event")
     public void triggerEvent(GameMessage message) {
@@ -601,13 +625,15 @@ public class GameWsController {
 
         // 3. 타임아웃 설정이 있는 상태(0보다 큰 경우)일 때만 스케줄러 실행
         if (timeout > 0) {
-            scheduler.schedule(
+            gameState.clearCurrentTimeout();
+            ScheduledFuture<?> future = scheduler.schedule(
                     () -> {
                         handleEventTimeout(gameState, targetStatus, roomId);
                     },
                     timeout,
                     TimeUnit.SECONDS
             );
+            gameState.setCurrentTimeout(future);
         } else {
             System.out.println(">>> ℹ️ " + targetStatus + " 상태는 제한 시간이 없으므로 스케줄러를 실행하지 않습니다.");
         }
