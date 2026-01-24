@@ -33,6 +33,7 @@ public enum GameStatus {
     WAITING_START(60), // 시작칸 진행 중 (스탬프 정산)
     WAITING_ITEMS(20),  // 아이템칸 진행 중
     WAITING_MACHURILLA(30), // 마추릴라 진행 중
+    WAITING_SWAP(30), // 몽셰르(스왑 이벤트) 진행 중
 
     // --- 다음 턴으로 넘어가기 전 ---
     TURN_END_PENDING(0), // 턴 종료 전 확인 단계(공통)

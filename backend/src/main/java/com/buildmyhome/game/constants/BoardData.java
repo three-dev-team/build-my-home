@@ -25,7 +25,7 @@ public class BoardData {
             TileType.MACHURILLA, // 15
             TileType.RESOURCE, // 16
             TileType.HARVEST, // 17
-            TileType.LOAN, // 18
+            TileType.SWAP, // 18
             TileType.RESOURCE, // 19
             TileType.ITEM, // 20
             TileType.MUPANI, // 21
