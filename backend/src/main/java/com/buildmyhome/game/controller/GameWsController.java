@@ -29,6 +29,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import com.buildmyhome.swap.service.SwapService;
 import jakarta.annotation.PreDestroy;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -52,6 +53,7 @@ public class GameWsController {
     private final MoveService moveService;
     private final RewardService rewardService;
     private final MachurillaService machurillaService;
+    private final SwapService swapService;
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     // TODO: 추후 GameEventService로 분리 - Tiffany
@@ -75,6 +77,9 @@ public class GameWsController {
                 break;
             case WAITING_MUPANI:
                 mupaniService.onTimeout(roomId, gameState);
+                return;
+            case WAITING_SWAP:
+                swapService.onTimeout(roomId);
                 return;
             case WAITING_START:
                 if (player.getRemainingMoves() > 0) {
@@ -324,6 +329,11 @@ public class GameWsController {
                 mupaniService.startSession(roomId, gameState);
             }
 
+            // SWAP(몽셰르) 세션 시작(2단계 룰렛/5초 자동확정은 서비스에서 처리)
+            if (nextStatus == GameStatus.WAITING_SWAP) {
+                swapService.start(roomId);
+            }
+
             RewardService.RewardResult reward = rewardService.grantRewardsForStatus(nextStatus, player);
             Map<ResourceType, Integer> gainedResources = reward.gainedResources();
             Map<HarvestType, Integer> gainedHarvests = reward.gainedHarvests();
@@ -426,6 +436,9 @@ public class GameWsController {
                         player.setUiStep(2);
                         response.setType("KK_FEE_PAID");
                         break;
+                    case "SWAP_CONFIRM":
+                        swapService.confirm(roomId, memberId);
+                        return;
                     case "BUILD_HOUSE":
                         player.setUiStep(0);
                         houseService.updateHouseInfo(player);

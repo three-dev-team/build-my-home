@@ -26,6 +26,7 @@ import Start from './Start.jsx';
 import Result from './Result.jsx';
 import Mupani from './Mupani.jsx';
 import Machurilla from './Machurilla/Machurilla.jsx';
+import Swap from './Swap.jsx';
 
 const GamePage = () => {
   const { roomId } = useParams();
@@ -529,6 +530,20 @@ const GamePage = () => {
             }}
           />
         )}
+
+        {/* SWAP(몽셰르) 이벤트 (WAITING_SWAP) */}
+        {gameState.status === 'WAITING_SWAP' && (
+          <div style={{ pointerEvents: isMyTurn ? 'auto' : 'none' }}>
+            <Swap
+              isMyTurn={isMyTurn}
+              player={currentPlayer}
+              payloadStr={gameState?.actionDataStr}
+              onConfirm={() => handleAction('SWAP_CONFIRM', {})}
+              onExit={handleEventComplete}
+            />
+          </div>
+        )}
+
         {/* 시작칸 (스탬프 정산칸) */}
         {gameState.status === 'WAITING_START' && (
           <Start
