@@ -85,13 +85,13 @@ public class GameWsController {
                     response = defaultGameResponse("CONTINUE_MOVING", gameState);
                 } else {
                     // 남은 거리가 없다면
-                    gameState.nextTurn();
+                    gameStateService.turnToNextPlayer(roomId);
                     response = defaultGameResponse("EVENT_TIMEOUT", gameState);
                 }
                 break;
             // 기본은 다음 턴으로 넘어감
             default:
-                gameState.nextTurn();
+                gameStateService.turnToNextPlayer(roomId);
                 response = defaultGameResponse("EVENT_TIMEOUT", gameState);
                 break;
         }
@@ -493,9 +493,8 @@ public class GameWsController {
                         response.setType("START_STAMP_SKIPPED");
                         break;
                     case "MACHURILLA_SELECT":
-                        String cardType = message.getActionDataStr();
-                        player.setUiStep(2);
-                        machurillaService.applyCardEffect(gameState, player, cardType);
+                        machurillaService.applyCardEffect(gameState, player);
+                        player.setUiStep(1);
                         response.setType("MACHURILLA_SELECTED");
                         break;
                 }
@@ -530,35 +529,47 @@ public class GameWsController {
             }
             GamePlayerState player = gameState.getPlayers().get(memberId);
 
+            // 1. 아직 이동이 남았는지 체크 (최우선 순위)
             if (player.getRemainingMoves() > 0) {
                 int remainingMoves = player.getRemainingMoves();
                 // 남은 이동 칸이 있으면 MOVING 상태로 복귀
                 moveService.movePlayer(player, remainingMoves);
                 gameState.setStatus(GameStatus.MOVING);
                 GameMessage response = defaultGameResponse("CONTINUE_MOVING", gameState);
-                // 프론트 애니메이션 작업 위해 남은 거리를 보내야할 경우
-                // response.setActionData(remainingMoves);
                 simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
                 return;
+            }
+
+            // 2. 건강운 상승(Extra Dice) 체크
+            if (player.isExtraDice()) {
+                player.setExtraDice(false); // 플래그 소모
+                gameState.setStatus(GameStatus.WAITING_DICE); // 상태를 다시 주사위 대기로
+
+                GameMessage response = defaultGameResponse("EXTRA_DICE_START", gameState);
+                simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
+                return;
+            }
+
+            // 턴 증가
+            // 2026.01.25 nexTurn 기존 GameState -> 서비스로 이동
+            gameStateService.turnToNextPlayer(roomId);
+//            gameState.nextTurn();
+
+
+            // 게임 종료 확인 nextTurn이 currentRound를 증가시키므로 여기서 체크
+            if (gameState.getCurrentRound() > gameState.getTotalRounds()) {
+                gameState.setGameOver(true);
+                gameState.setStatus(GameStatus.FINISHED);
+
+                // 순위 계산
+                // calculateRanking(gameState); -> Service 로직으로 이동
+                gameStateService.calculateRanking(roomId);
+
+                GameMessage response = defaultGameResponse("GAME_OVER", gameState);
+                simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
             } else {
-                // 한 바퀴 다 돌면 라운드 증가
-                gameState.nextTurn();
-
-                // 게임 종료 확인 nextTurn이 currentRound를 증가시키므로 여기서 체크
-                if (gameState.getCurrentRound() > gameState.getTotalRounds()) {
-                    gameState.setGameOver(true);
-                    gameState.setStatus(GameStatus.FINISHED);
-
-                    // 순위 계산
-                    // calculateRanking(gameState); -> Service 로직으로 이동
-                    gameStateService.calculateRanking(roomId);
-
-                    GameMessage response = defaultGameResponse("GAME_OVER", gameState);
-                    simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
-                } else {
-                    GameMessage response = defaultGameResponse("TURN_COMPLETED", gameState);
-                    simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
-                }
+                GameMessage response = defaultGameResponse("TURN_COMPLETED", gameState);
+                simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
             }
         }
     }

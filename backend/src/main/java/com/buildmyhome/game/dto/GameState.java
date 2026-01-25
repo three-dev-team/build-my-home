@@ -7,6 +7,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import lombok.Getter;
 import lombok.Setter;
 
+import static com.buildmyhome.game.constants.GameConstants.RADISH_PRICE_MAX;
+import static com.buildmyhome.game.constants.GameConstants.RADISH_PRICE_MIN;
+
 @Getter
 @Setter
 public class GameState {
@@ -40,8 +43,6 @@ public class GameState {
     private com.buildmyhome.shop.dto.ShopSession shopSession;
 
     // radish(무) 공용 시세: 라운드 시작마다 1회 변경(10~150)
-    private static final int RADISH_PRICE_MIN = 10;
-    private static final int RADISH_PRICE_MAX = 150;
     private int radishPrice;
 
     // 상태 변경 시간 (서버 시간 동기화용)
@@ -59,48 +60,6 @@ public class GameState {
     public void setStatus(GameStatus status) {
         this.status = status;
         this.statusUpdatedAt = java.time.LocalDateTime.now();
-    }
-
-    // 다음 턴으로 넘기는 메서드
-    public void nextTurn() {
-        this.clearCurrentTimeout();
-
-        if (turnOrder.isEmpty()) {
-            throw new IllegalStateException("턴 순서가 설정되지 않았습니다.");
-        }
-
-        this.currentTurnIndex = (this.currentTurnIndex + 1) % turnOrder.size();
-        this.currentPlayerId = turnOrder.get(currentTurnIndex);
-
-        // 한 바퀴 다 돌면 라운드 증가
-        if (currentTurnIndex == 0) {
-            this.currentRound++;
-
-            // 라운드 시작 순간: 시세 1회 변경(방 공용)
-            this.radishPrice = java.util.concurrent.ThreadLocalRandom.current().nextInt(
-                    RADISH_PRICE_MIN,
-                    RADISH_PRICE_MAX + 1
-            );
-
-            // 라운드 시작 순간: 무 썩음 처리(일괄 제거)
-            for (GamePlayerState p : players.values()) {
-                Integer removeRound = p.getRadishRemoveRound();
-                if (removeRound != null && removeRound <= this.currentRound && p.getRadishQty() > 0) {
-                    p.setRadishQty(0);
-                    p.setRadishRemoveRound(null);
-                }
-            }
-        }
-
-        GamePlayerState currentPlayer = players.get(currentPlayerId);
-        if (currentPlayer != null) {
-            currentPlayer.setMovePath(null);
-            currentPlayer.setUiStep(0);
-            currentPlayer.setActionData(null); // 다음 사람에게 턴 넘기기 전 청소
-        }
-
-        this.status = GameStatus.WAITING_PLAYER_ACTION;
-        this.statusUpdatedAt = LocalDateTime.now();
     }
 
     // 타임아웃 디버깅용 메소드

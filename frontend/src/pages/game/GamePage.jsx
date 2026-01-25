@@ -329,6 +329,8 @@ const GamePage = () => {
   };
   // ------------------- [DEV] 상태 강제 변경 핸들러 ------------------- //
 
+  console.log('players:', gameState.players);
+
   if (!gameState) return <Loading />;
 
   // 낚시 렌더링 상태 확장 (새로고침/재접속 대비)

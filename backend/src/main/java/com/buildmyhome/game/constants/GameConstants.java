@@ -15,9 +15,13 @@ public class GameConstants {
 
     // 스탬프 보상
     public static final int[] STAMP_REWARDS = {0, 50, 200, 1000};
-    // 중복 스탬프 보상
     public static final int STAMP_DUPLICATE_REWARD = 20;
+
+    // radish(무) 공용 시세 범위
+    public static final int RADISH_PRICE_MIN = 10;
+    public static final int RADISH_PRICE_MAX = 150;
 
     // 마추릴라 우정운 카드 벨
     public static final int MACHURILLA_FRIENDSHIP_BELL = 100;
+    public static final String[] CARD_TYPES = {"MONEY", "PROPERTY", "HEALTH", "FRIENDSHIP"};
 }
