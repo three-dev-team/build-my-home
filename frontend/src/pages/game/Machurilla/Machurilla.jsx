@@ -1,5 +1,5 @@
 // uiStep 0: NPC 소개
-// uiStep 1: 카드 4개 선택
+// uiStep 1: 카드 4개 화면
 // uiStep 2: 결과 화면
 import React from 'react';
 import { motion } from 'framer-motion';
@@ -21,9 +21,9 @@ const Machurilla = ({ isMyTurn = false, player, currentPlayerName = '익명의 �
     onAction('SET_STEP', { uiStep: newStep });
   };
 
-  const handleCardSelect = (cardType) => {
+  const handleSelect = () => {
     if (!isMyTurn) return;
-    onAction('MACHURILLA_SELECT', { actionDataStr: cardType });
+    onAction('MACHURILLA_SELECT', {});
   };
 
   return (
@@ -32,10 +32,15 @@ const Machurilla = ({ isMyTurn = false, player, currentPlayerName = '익명의 �
       animate={{ opacity: 1 }}
       className="fixed inset-0 w-screen h-screen flex flex-col items-center justify-center z-[100] overflow-hidden bg-purple-900"
     >
-      {step === 0 && (
-        <IntroScreen onNext={() => setStep(1)} isMyTurn={isMyTurn} currentPlayerName={currentPlayerName} />
+      {step === 0 && <IntroScreen onSelect={handleSelect} isMyTurn={isMyTurn} currentPlayerName={currentPlayerName} />}
+      {step === 1 && (
+        <CardSelectScreen
+          currentPlayerName={currentPlayerName}
+          result={result}
+          isMyTurn={isMyTurn}
+          onNext={() => setStep(2)}
+        />
       )}
-      {step === 1 && <CardSelectScreen onSelect={handleCardSelect} isMyTurn={isMyTurn} />}
       {step === 2 && <ResultScreen result={result} />}
     </motion.div>
   );

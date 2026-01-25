@@ -1,4 +1,4 @@
-const IntroScreen = ({ onNext, isMyTurn, currentPlayerName }) => {
+const IntroScreen = ({ onSelect, isMyTurn, currentPlayerName }) => {
   return (
     <div className="bg-purple-800 rounded-3xl p-12 max-w-xl text-center shadow-2xl border-4 border-yellow-400">
       <h2 className="text-4xl font-bold mb-8 text-yellow-300">🔮 마추릴라</h2>
@@ -11,7 +11,7 @@ const IntroScreen = ({ onNext, isMyTurn, currentPlayerName }) => {
       </div>
 
       <button
-        onClick={onNext}
+        onClick={onSelect}
         disabled={!isMyTurn}
         className="mt-8 px-8 py-4 bg-yellow-400 text-purple-900 rounded-full text-2xl font-bold hover:bg-yellow-300 disabled:opacity-50"
       >
