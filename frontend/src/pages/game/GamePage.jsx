@@ -27,6 +27,7 @@ import Result from './Result.jsx';
 import Mupani from './Mupani.jsx';
 import Machurilla from './Machurilla/Machurilla.jsx';
 import Swap from './Swap.jsx';
+import PlayerSkipped from './PlayerSkipped.jsx';
 
 const GamePage = () => {
   const { roomId } = useParams();
@@ -428,6 +429,11 @@ const GamePage = () => {
         {/* 주사위 던져서 순서 정하기 페이지 */}
         {gameState.status === 'DETERMINING_ORDER' && stompClient && (
           <RollForOrder players={gameState.players} myId={myId} onRoll={handleRollDiceForOrder} />
+        )}
+
+        {/* 플레이어 턴 스킵 페이지 */}
+        {gameState.status === 'PLAYER_SKIPPED' && (
+          <PlayerSkipped isMyTurn={isMyTurn} currentPlayerName={currentPlayer?.nickname} onExit={handleEventComplete} />
         )}
 
         {/* ------------------------------------- 개별 이벤트 추가 ------------------------------------- */}

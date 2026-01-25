@@ -231,10 +231,24 @@ public class GameWsController {
         if (gameState == null) return;
 
         synchronized (gameState) {
-            if (
-                    !memberId.equals(gameState.getCurrentPlayerId()) || gameState.getStatus() != GameStatus.WAITING_PLAYER_ACTION
-            ) {
+            if (!memberId.equals(gameState.getCurrentPlayerId()) ||
+                    gameState.getStatus() != GameStatus.WAITING_PLAYER_ACTION) {
                 // 잘못된 턴이거나 상태일 경우 에러 메시지 전송 로직 추가 가능
+                return;
+            }
+
+            GamePlayerState player = gameState.getPlayers().get(memberId);
+            if (player == null) return;
+
+            // 건강운 하락(스킵) 체크
+            if (player.getSkipNextTurnCount() > 0) {
+                player.setSkipNextTurnCount(player.getSkipNextTurnCount() - 1);
+                gameState.setStatus(GameStatus.PLAYER_SKIPPED);
+
+                // 프론트에 스킵 알림 전송
+                GameMessage skipResponse = defaultGameResponse("PLAYER_SKIPPED", gameState);
+                simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, skipResponse);
+
                 return;
             }
 
