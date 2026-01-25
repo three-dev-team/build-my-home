@@ -1,39 +1,36 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useGameTimer } from '../../hooks/useGameTimer.js';
 import './css/ShopPage.css';
 
-const items = [
-  { type: 'CUSTOM_DICE', name: '내맘대로 주사위', price: 100 },
-  { type: 'PIPE', name: '토관', price: 60 },
-  { type: 'GOLD_PIPE', name: '금토관', price: 150 },
-  { type: 'GOLD_DICE', name: '금주사위', price: 100 },
-  { type: 'DOUBLE_DICE', name: '더블주사위', price: 80 },
-  { type: 'MIRROR', name: '거울', price: 70 },
-  { type: 'GOLD_MIRROR', name: '금거울', price: 120 },
+const shopItems = [
+  { type: 'FISHING_CHANCE', name: '낚시 떡밥', price: 300, category: 'shopItem' },
+  { type: 'TARANTULA', name: '타란튤라', price: 200, category: 'shopItem' },
+  { type: 'WATERING', name: '물뿌리개', price: 50, category: 'shopItem' },
+  { type: 'KK_TICKET', name: 'KK 관람 티켓', price: 50, category: 'shopItem' },
 ];
 
 const resources = [
-  { type: 'WOOD', name: '목재', buyPrice: 120, sellPrice: 60 },
-  { type: 'IRON', name: '철광석', buyPrice: 80, sellPrice: 40 },
-  { type: 'CLOTH', name: '천', buyPrice: 60, sellPrice: 30 },
-  { type: 'BRICK', name: '벽돌', buyPrice: 140, sellPrice: 70 },
-  { type: 'WALLPAPER', name: '벽지', buyPrice: 200, sellPrice: 100 },
-  { type: 'CLAY', name: '점토', buyPrice: 100, sellPrice: 50 },
-  { type: 'FLOOR', name: '바닥', buyPrice: 160, sellPrice: 80 },
+  { type: 'WOOD', name: '목재', buyPrice: 120, sellPrice: 60, category: 'resource' },
+  { type: 'IRON', name: '철광석', buyPrice: 80, sellPrice: 40, category: 'resource' },
+  { type: 'CLOTH', name: '천', buyPrice: 60, sellPrice: 30, category: 'resource' },
+  { type: 'BRICK', name: '벽돌', buyPrice: 140, sellPrice: 70, category: 'resource'},
+  { type: 'WALLPAPER', name: '벽지', buyPrice: 200, sellPrice: 100, category: 'resource' },
+  { type: 'CLAY', name: '점토', buyPrice: 100, sellPrice: 50, category: 'resource' },
+  { type: 'FLOORING', name: '바닥', buyPrice: 160, sellPrice: 80, category: 'resource' },
 ];
 
 const harvests = [
-  { type: 'APPLE', name: '사과', price: 80 },
-  { type: 'ORANGE', name: '오렌지', price: 100 },
-  { type: 'PEAR', name: '배', price: 120 },
-  { type: 'PEACH', name: '복숭아', price: 150 },
-  { type: 'CHERRY', name: '체리', price: 200 },
-  { type: 'FISH_SMALL', name: '작은 물고기', price: 50 },
-  { type: 'FISH_MEDIUM', name: '중간 물고기', price: 150 },
-  { type: 'FISH_LARGE', name: '큰 물고기', price: 300 },
+  { type: 'APPLE', name: '사과', price: 80, category: 'harvest' },
+  { type: 'ORANGE', name: '오렌지', price: 100, category: 'harvest' },
+  { type: 'PEAR', name: '배', price: 120, category: 'harvest' },
+  { type: 'PEACH', name: '복숭아', price: 150, category: 'harvest' },
+  { type: 'CHERRY', name: '체리', price: 200, category: 'harvest' },
+  { type: 'FISH_SMALL', name: '작은 물고기', price: 50, category: 'harvest' },
+  { type: 'FISH_MEDIUM', name: '중간 물고기', price: 150, category: 'harvest' },
+  { type: 'FISH_LARGE', name: '큰 물고기', price: 300, category: 'harvest' },
 ];
 
-const ShopPage = ({ gameState, myId, currentPlayer, shopType, handleAction, onExit }) => {
+const ShopPage = ({ gameState, myId, currentPlayer, shopType, handleAction, onExit, shopRelay }) => {
   const [activeTab, setActiveTab] = useState('buy');
   const [selectedItem, setSelectedItem] = useState(null);
   const [quantity, setQuantity] = useState(1);
@@ -43,12 +40,6 @@ const ShopPage = ({ gameState, myId, currentPlayer, shopType, handleAction, onEx
   const { timeLeft, isUrgent } = useGameTimer(timeoutSeconds);
 
   const shopSession = gameState.shopSession;
-
-  // 상점 타입 결정 (프롭스로 받은 것 우선, 없으면 세션 정보)
-  const currentShopType = shopType || shopSession?.shopType;
-  const isItemShop = currentShopType === 'ITEM_SHOP';
-
-  // 현재 턴인 사람(currentPlayerId)과 내 아이디(myId)가 일치해야 버튼이 활성화
   const isMyTurn = gameState.currentPlayerId === myId;
 
   useEffect(() => {
@@ -73,38 +64,146 @@ const ShopPage = ({ gameState, myId, currentPlayer, shopType, handleAction, onEx
     }
   }, [gameState?.errorMessage]);
 
-  // ========== 액션 핸들러 ========== //
+  // ✅ 관전자 하이라이트/패널용: relay 선택 정보 파싱
+  const relaySelectedType =
+    shopRelay?.type === 'SHOP_SELECT_RELAY'
+      ? (shopRelay.shopItemType || shopRelay.resourceType || shopRelay.harvestType)
+      : null;
+
+  const relayQuantity =
+    shopRelay?.type === 'SHOP_SELECT_RELAY' && Number.isFinite(shopRelay.quantity)
+      ? shopRelay.quantity
+      : 1;
+
+  // ✅ 내 화면은 로컬 selectedItem, 관전자 화면은 relay를 "선택된 것"으로 본다
+  const displaySelected = useMemo(() => {
+    if (isMyTurn) return selectedItem;
+
+    if (!relaySelectedType) return null;
+
+    // buy 목록(상점아이템+재화) + sell 목록(보유 재화/수확물) 어디에서든 찾아 표시해주기
+    const buyList = [...shopItems, ...resources];
+    const fromBuy = buyList.find((x) => x.type === relaySelectedType);
+    if (fromBuy) return fromBuy;
+
+    // sell은 보유 목록에서 찾아야 owned까지 표시 가능
+    const owned = getOwnedItems(currentPlayer);
+    return owned.find((x) => x.type === relaySelectedType) || null;
+  }, [isMyTurn, selectedItem, relaySelectedType, currentPlayer]);
+
+  // ========== relay 전송 helpers ========== //
+  const sendShopSelect = (item, nextQuantity = 1) => {
+    if (!isMyTurn || !item) return;
+
+    const payload = { quantity: nextQuantity };
+
+    if (activeTab === 'buy') {
+      if (item.category === 'shopItem') payload.shopItemType = item.type;
+      else payload.resourceType = item.type;
+    } else {
+      // sell: resource or harvest
+      if (item.category === 'harvest') payload.harvestType = item.type;
+      else payload.resourceType = item.type;
+    }
+
+    handleAction('SHOP_SELECT', payload);
+  };
+
+  const clearShopSelect = () => {
+    if (!isMyTurn) return;
+    handleAction('SHOP_SELECT_CLEAR', {});
+  };
+
+  const getOwnedItems = () => {
+    const owned = [];
+    resources.forEach((r) => {
+      const count = currentPlayer.resources?.[r.type] || 0;
+      if (count > 0) owned.push({ ...r, owned: count, category: 'resource' });
+    });
+    harvests.forEach((h) => {
+      const count = currentPlayer.harvests?.[h.type] || 0;
+      if (count > 0) owned.push({ ...h, owned: count, category: 'harvest' });
+    });
+    return owned;
+  };
+
+  const buyList = useMemo(() => [...shopItems, ...resources], []);
+  const sellList = useMemo(() => getOwnedItems(currentPlayer), [currentPlayer]);
+
+  // ========== 구매 제한(상점아이템: 종류별 1개) UX용 체크 ========== //
+  const purchasedSet = shopSession?.purchasedItems || [];
+  const isPurchasedShopItem = (item) =>
+    item?.category === 'shopItem' && Array.isArray(purchasedSet)
+      ? purchasedSet.includes(item.type)
+      : item?.category === 'shopItem' && purchasedSet?.has
+        ? purchasedSet.has(item.type)
+        : false;
+
+  // ========== 탭 변경 ========== //
   const handleTabChange = (newTab) => {
     if (!isMyTurn) return;
 
     const newStep = newTab === 'buy' ? 0 : 1;
-
-    // 기존 SET_STEP 액션 사용
     handleAction('SET_STEP', { uiStep: newStep });
 
     setActiveTab(newTab);
     setSelectedItem(null);
+    setQuantity(1);
+    clearShopSelect(); // ✅ 관전자 하이라이트도 제거
   };
 
-  const handleConfirm = () => {
-    console.log('🔘 구매/판매 버튼 클릭!');
+  // ========== 총액 계산 (내 선택 or 관전자 표시용) ========== //
+  const calcTotalPrice = (item, qty, tab) => {
+    if (!item) return 0;
 
-    if (!isMyTurn || !selectedItem) {
-      console.error('❌ 조건 불만족:', { isMyTurn, selectedItem });
-      return;
+    if (tab === 'buy') {
+      const unit = item.category === 'shopItem' ? item.price : item.buyPrice;
+      return (unit || 0) * (qty || 1);
     }
 
-    // ✅ 아이템 상점에서 이미 구매했는지 체크
-    if (activeTab === 'buy' && isItemShop && shopSession?.hasItemPurchased) {
-      setErrorMsg('⚠️ 이미 아이템을 구매했습니다!');
+    // sell
+    const unit = item.category === 'resource' ? item.sellPrice : item.price;
+    return (unit || 0) * (qty || 1);
+  };
+
+  const effectiveQty = isMyTurn ? quantity : relayQuantity;
+  const totalPrice = calcTotalPrice(displaySelected, effectiveQty, activeTab);
+
+  const canAfford = (currentPlayer?.bell ?? 0) >= totalPrice;
+
+  // ========== 수량 변경 (내 턴에서만 가능) ========== //
+  const getMaxBuyQuantity = (item) => {
+    if (!item) return 1;
+    if (item.category === 'shopItem') return 1; // 상점아이템은 1개 고정
+    const unit = item.buyPrice || 0;
+    if (unit <= 0) return 1;
+    const maxByMoney = Math.floor((currentPlayer?.bell ?? 0) / unit);
+    return Math.max(1, Math.min(99, maxByMoney));
+  };
+
+  const getMaxSellQuantity = (item) => Math.max(1, item?.owned || 1);
+
+  const changeQuantity = (next) => {
+    if (!isMyTurn) return;
+    const safe = Math.max(1, next);
+    setQuantity(safe);
+    if (selectedItem) sendShopSelect(selectedItem, safe); // ✅ 관전자에게도 수량 반영
+  };
+
+  // ========== 확정(구매/판매) ========== //
+  const handleConfirm = () => {
+    if (!isMyTurn || !selectedItem) return;
+
+    // ✅ 상점 아이템: 종류별 1개 제한
+    if (activeTab === 'buy' && selectedItem.category === 'shopItem' && isPurchasedShopItem(selectedItem)) {
+      setErrorMsg('⚠️ 이미 구매한 상점 아이템입니다!');
       return;
     }
 
     // ✅ 벨 부족 체크
     if (activeTab === 'buy') {
-      const price = isItemShop ? selectedItem.price : selectedItem.buyPrice * quantity;
-
-      if (currentPlayer?.bell < price) {
+      const cost = calcTotalPrice(selectedItem, quantity, 'buy');
+      if ((currentPlayer?.bell ?? 0) < cost) {
         setErrorMsg('⚠️ 벨이 부족합니다!');
         return;
       }
@@ -122,59 +221,39 @@ const ShopPage = ({ gameState, myId, currentPlayer, shopType, handleAction, onEx
     const data = { quantity };
 
     if (activeTab === 'buy') {
-      if (isItemShop) {
+      if (selectedItem.category === 'shopItem') {
         actionType = 'SHOP_BUY_ITEM';
-        data.itemType = selectedItem.type;
+        data.shopItemType = selectedItem.type;
+        data.quantity = 1; // 상점아이템은 1개 고정
       } else {
         actionType = 'SHOP_BUY_RESOURCE';
         data.resourceType = selectedItem.type;
       }
     } else {
-      const isHarvest = selectedItem.category === 'harvest';
-      actionType = isHarvest ? 'SHOP_SELL_HARVEST' : 'SHOP_SELL_RESOURCE';
-      data[isHarvest ? 'harvestType' : 'resourceType'] = selectedItem.type;
+      if (selectedItem.category === 'harvest') {
+        actionType = 'SHOP_SELL_HARVEST';
+        data.harvestType = selectedItem.type;
+      } else {
+        actionType = 'SHOP_SELL_RESOURCE';
+        data.resourceType = selectedItem.type;
+      }
     }
 
-    console.log('📤 액션 전송:', actionType, data);
     handleAction(actionType, data);
 
+    // 로컬 초기화 + 관전자 하이라이트 해제
     setSelectedItem(null);
     setQuantity(1);
+    clearShopSelect();
   };
-
-  // handleConfirm 위에 총 금액 계산 함수 추가
-  const calculateTotalPrice = () => {
-    if (!selectedItem) return 0;
-
-    if (activeTab === 'buy') {
-      const unitPrice = selectedItem.buyPrice || selectedItem.price || 0;
-      return unitPrice * quantity;
-    } else {
-      const unitPrice = selectedItem.sellPrice || selectedItem.price || 0;
-      return unitPrice * quantity;
-    }
-  };
-
-  const totalPrice = calculateTotalPrice();
-  const canAfford = currentPlayer.bell >= totalPrice;
 
   const handleExitClick = () => {
     if (!isMyTurn) return;
-    onExit(); // handleEventComplete 호출
+    clearShopSelect();
+    onExit();
   };
 
-  const getOwnedItems = () => {
-    const owned = [];
-    resources.forEach((r) => {
-      const count = currentPlayer.resources?.[r.type] || 0;
-      if (count > 0) owned.push({ ...r, owned: count, category: 'resource' });
-    });
-    harvests.forEach((h) => {
-      const count = currentPlayer.harvests?.[h.type] || 0;
-      if (count > 0) owned.push({ ...h, owned: count, category: 'harvest' });
-    });
-    return owned;
-  };
+  const gridList = activeTab === 'buy' ? buyList : sellList;
 
   return (
     <div className="shop-page">
@@ -185,7 +264,8 @@ const ShopPage = ({ gameState, myId, currentPlayer, shopType, handleAction, onEx
       )}
 
       <div className="shop-header">
-        <h2>{isItemShop ? '🎁 아이템 상점' : '🏪 재화 상점'}</h2>
+        <h2>🏪 너굴 상점</h2>
+
         <div className="header-center-group">
           <div className={`shop-header-timer ${isUrgent ? 'urgent' : ''}`}>
             <span className="timer-label">TIME LEFT</span>
@@ -218,68 +298,135 @@ const ShopPage = ({ gameState, myId, currentPlayer, shopType, handleAction, onEx
       </div>
 
       <div className="items-grid">
-        {(activeTab === 'buy' ? (isItemShop ? items : resources) : getOwnedItems()).map((item) => (
-          <div
-            key={item.type}
-            className={`item-card ${selectedItem?.type === item.type ? 'selected' : ''} ${!isMyTurn ? 'readonly' : ''}`}
-            onClick={() => {
-              if (isMyTurn) {
-                setSelectedItem(item);
-                setQuantity(1);
-              }
-            }}
-          >
-            <div className="item-image" />
-            <div className="item-name">{item.name}</div>
+        {gridList.map((item) => {
+          const selected =
+            isMyTurn ? selectedItem?.type === item.type : relaySelectedType === item.type;
 
-            <div className="item-price">
-              🔔 {activeTab === 'buy' ? item.buyPrice || item.price : item.sellPrice || item.price}
+          const disabledShopItem = activeTab === 'buy' && item.category === 'shopItem' && isPurchasedShopItem(item);
+
+          return (
+            <div
+              key={`${item.category}-${item.type}`}
+              className={`item-card ${selected ? 'selected' : ''} ${!isMyTurn ? 'readonly' : ''} ${
+                disabledShopItem ? 'disabled' : ''
+              }`}
+              onClick={() => {
+                if (!isMyTurn) return;
+                if (disabledShopItem) return; // 이미 산 상점아이템은 클릭 막기(UX)
+
+                setSelectedItem(item);
+                // 상점아이템은 1개 고정
+                const nextQty = item.category === 'shopItem' ? 1 : 1;
+                setQuantity(nextQty);
+
+                sendShopSelect(item, nextQty);
+              }}
+            >
+              {disabledShopItem && (
+                <div className="sold-out-badge">
+                  <span className="badge-icon">🚫</span>
+                  <span className="badge-text">SOLD OUT</span>
+                </div>
+              )}
+              <div className="item-image" />
+              <div className="item-name">
+                {item.name}
+              </div>
+
+              <div className="item-price">
+                🔔{' '}
+                {activeTab === 'buy'
+                  ? item.category === 'shopItem'
+                    ? item.price
+                    : item.buyPrice
+                  : item.category === 'resource'
+                    ? item.sellPrice
+                    : item.price}
+              </div>
+
+              {item.owned != null && <div className="item-owned">보유: {item.owned}</div>}
             </div>
-            {item.owned && <div className="item-owned">보유: {item.owned}</div>}
-          </div>
-        ))}
+          );
+        })}
       </div>
 
+      {/* 하단 패널: 내 턴은 selectedItem, 관전자는 relay로 보이는 선택 */}
       <div className="bottom-panel">
-        {selectedItem ? (
+        {displaySelected ? (
           <div className="transaction-panel">
             <div className="selected-info">
-              <strong>{selectedItem.name}</strong>
+              <strong>{displaySelected.name}</strong>
             </div>
 
-            {((activeTab === 'buy' && !isItemShop) || activeTab === 'sell') && (
-              <div className="quantity-selector">
-                <button onClick={() => setQuantity(Math.max(1, quantity - 1))} disabled={!isMyTurn || quantity <= 1}>
-                  -
-                </button>
-                <span>
-                  {quantity}
-                  {activeTab === 'sell' && ` / ${selectedItem.owned}`}
-                </span>
-                <button
-                  onClick={() => setQuantity(Math.min(selectedItem.owned || 99, quantity + 1))}
-                  disabled={!isMyTurn || (activeTab === 'sell' && quantity >= selectedItem.owned)}
-                >
-                  +
-                </button>
+            {/* 수량 선택: buy(resource) 또는 sell(resource/harvest)만 */}
+            {isMyTurn && (
+              <>
+                {((activeTab === 'buy' && displaySelected.category !== 'shopItem') || activeTab === 'sell') && (
+                  <div className="quantity-selector">
+                    <button
+                      onClick={() => changeQuantity(quantity - 1)}
+                      disabled={!isMyTurn || quantity <= 1}
+                    >
+                      -
+                    </button>
+
+                    <span>
+                      {quantity}
+                      {activeTab === 'sell' && ` / ${displaySelected.owned}`}
+                    </span>
+
+                    <button
+                      onClick={() => {
+                        const max =
+                          activeTab === 'buy'
+                            ? getMaxBuyQuantity(displaySelected)
+                            : getMaxSellQuantity(displaySelected);
+                        changeQuantity(Math.min(max, quantity + 1));
+                      }}
+                      disabled={
+                        !isMyTurn ||
+                        (activeTab === 'buy'
+                          ? quantity >= getMaxBuyQuantity(displaySelected)
+                          : quantity >= getMaxSellQuantity(displaySelected))
+                      }
+                    >
+                      +
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
+
+            {/* 관전자에게도 수량/총액은 보여주기 */}
+            {!isMyTurn && (
+              <div className="quantity-selector readonly">
+                <span>수량: {relayQuantity}</span>
               </div>
             )}
 
             <div className={`total-price-display ${activeTab === 'buy' && !canAfford ? 'insufficient' : ''}`}>
               <span className="label">{activeTab === 'buy' ? '결제 예정' : '예상 수입'}</span>
               <span className="amount">🔔 {totalPrice.toLocaleString()} Bell</span>
-              {activeTab === 'buy' && !canAfford && <div className="shortage-msg">잔액이 부족합니다!</div>}
+              {activeTab === 'buy' && isMyTurn && !canAfford && <div className="shortage-msg">잔액이 부족합니다!</div>}
             </div>
 
-            {activeTab === 'buy' && isItemShop && shopSession?.hasItemPurchased && (
-              <div className="warning-text">⚠️ 이미 아이템을 구매했습니다</div>
+            {/* 상점아이템 구매 완료 경고 */}
+            {activeTab === 'buy' && displaySelected.category === 'shopItem' && isPurchasedShopItem(displaySelected) && (
+              <div className="warning-text">⚠️ 이미 구매한 상점 아이템입니다</div>
             )}
 
             <div className="button-group">
               <button
                 className="confirm-btn"
                 onClick={handleConfirm}
-                disabled={!isMyTurn || (isItemShop && shopSession?.hasItemPurchased)}
+                disabled={
+                  !isMyTurn ||
+                  !selectedItem ||
+                  (activeTab === 'buy' &&
+                    selectedItem?.category === 'shopItem' &&
+                    isPurchasedShopItem(selectedItem)) ||
+                  (activeTab === 'buy' && !canAfford)
+                }
               >
                 {activeTab === 'buy' ? '구매할래' : '판매할래'}
               </button>
