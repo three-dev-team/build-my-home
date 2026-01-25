@@ -51,6 +51,9 @@ const GamePage = () => {
   const [rewardToast, setRewardToast] = useState(null);
   const rewardCharacterRef = useRef(null);
 
+  // 상점 relay 메시지 저장
+  const [shopRelay, setShopRelay] = useState(null);
+
   // 현재 턴 플레이어 정보
   const currentPlayer = gameState?.players?.find((p) => p.memberId === gameState.currentPlayerId) || null;
   const isMyTurn = gameState ? myId === gameState.currentPlayerId : false;
@@ -100,6 +103,13 @@ const GamePage = () => {
     }
   }, [isMyTurn, gameState?.status]);
 
+  // 상점 종료 시 shopRelay 초기화
+  useEffect(() => {
+    if (gameState?.status !== 'WAITING_SHOP') {
+      setShopRelay(null);
+    }
+  }, [gameState?.status]);
+
   // 1. 소켓 연결 및 데이터 수신 로직은 여기서 한 번만!
   useEffect(() => {
     // stomp 소켓 연결 및 구독 설정
@@ -123,6 +133,18 @@ const GamePage = () => {
 
           if (isRoomEvent || isFishingError) {
             setFishingEventMessage(data);
+            return;
+          }
+
+          // SHOP_SELECT_RELAY 메시지는 shopRelay에 저장
+          if (t === 'SHOP_SELECT_RELAY') {
+            setShopRelay(data);
+            return;
+          }
+
+          // SHOP_SELECT_CLEAR 메시지는 relay 초기화
+          if (t === 'SHOP_SELECT_CLEAR') {
+            setShopRelay(null);
             return;
           }
 
@@ -480,29 +502,16 @@ const GamePage = () => {
           />
         )}
 
-        {/* 아이템 상점 이벤트 (WAITING_SHOP_ITEM) - Develop 버전 적용 */}
-        {gameState.status === 'WAITING_SHOP_ITEM' && (
+        {/* 상점 이벤트 (WAITING_SHOP) */}
+        {gameState.status === 'WAITING_SHOP' && (
           <ShopPage
             gameState={gameState}
             currentPlayer={currentPlayer}
             myId={myId}
-            shopType="ITEM_SHOP"
             handleAction={handleAction}
             onExit={handleEventComplete}
             timeoutSeconds={gameState.timeoutSeconds || 0}
-          />
-        )}
-
-        {/* 재화 상점 이벤트 (WAITING_SHOP_RESOURCE) - Develop 버전 적용 */}
-        {gameState.status === 'WAITING_SHOP_RESOURCE' && (
-          <ShopPage
-            gameState={gameState}
-            currentPlayer={currentPlayer}
-            myId={myId}
-            shopType="HARVEST_SHOP"
-            handleAction={handleAction}
-            onExit={handleEventComplete}
-            timeoutSeconds={gameState.timeoutSeconds || 0}
+            shopRelay={shopRelay}
           />
         )}
 

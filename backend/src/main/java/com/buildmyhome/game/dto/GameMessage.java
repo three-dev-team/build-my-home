@@ -27,8 +27,7 @@ public class GameMessage {
   private int uiStep;
   private List<Integer> movePath; // 플레이어 이동 경로 (칸 인덱스 리스트) -> 프론트 이동 애니메이션용
 
-  private ShopType shopType; // 어떤 상점인지
-  private ItemType itemType; // 구매/판매할 아이템
+  private ShopItemType shopItemType; // 구매할 아이템
   private ResourceType resourceType; // 구매/판매할 재화
   private HarvestType harvestType; // 판매할 작물
   private int quantity; // 수량
