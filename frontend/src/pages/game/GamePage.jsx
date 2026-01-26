@@ -10,7 +10,7 @@ import { getMyIdFromToken } from '../../utils/auth.js';
 import MainBoardPage from './MainBoardPage.jsx';
 import GameIntro from './GameIntro.jsx';
 import PlayerStatusPanel from './PlayerStatusPanel.jsx';
-// import DevControls from './DevControls.jsx';
+import DevControls from './DevControls.jsx';
 import Loan from './Loan.jsx';
 import Stamp from './Stamp.jsx';
 import PlayerActionPanel from './PlayerActionPanel.jsx';
@@ -306,7 +306,6 @@ const GamePage = () => {
 
   // ------------------- [DEV] 상태 강제 변경 핸들러 ------------------- //
   // ------------------- [DEV] 상태 강제 변경 핸들러 ------------------- //
-  /*
   const handleDevStatusChange = (newStatus) => {
     console.log(`>>> [DEV] Status Change Request: ${newStatus}`);
 
@@ -348,7 +347,6 @@ const GamePage = () => {
       }),
     });
   };
-  */
 
   const handleLeaveRoom = () => {
     if (!stompClient) return;
@@ -450,7 +448,7 @@ const GamePage = () => {
 
       {/* 2. 게임 콘텐츠 영역 */}
       <main>
-        {/* <DevControls onStatusChange={handleDevStatusChange} onSetLastRound={handleSetLastRound} /> */}
+        <DevControls onStatusChange={handleDevStatusChange} onSetLastRound={handleSetLastRound} />
 
         {/* INTRO */}
         {gameState.status === 'INTRO' && stompClient && <GameIntro onSkip={handleIntroComplete} />}
