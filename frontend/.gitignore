@@ -33,6 +33,3 @@ dist-ssr
 
 # Spring static files (frontend build output)
 backend/src/main/resources/static/
-
-# Vite entry point
-frontend/index.html
