@@ -11,17 +11,24 @@ public class RoomState {
   private final Long roomId;
   // TODO : 판수 바꾸는 옵션 추가 (final X)
   private int totalRounds;
+  
+  @Setter
+  private int maxPlayers;
 
   @Setter
   private String hostNickname = "";
+
+  @Setter
+  private Long autoStartTime; // 자동 시작 예정 시간 (Server Timestamp)
 
   // 접속할 때 쿠키로 로컬로 다운을 받을 수 있으면 좋을 듯
   // Key: memberId Value: RoomPlayerState
   private final Map<Long, RoomPlayerState> players = new ConcurrentHashMap<>();
 
-  public RoomState(Long roomId, int totalRounds) {
+  public RoomState(Long roomId, int totalRounds, int maxPlayers) {
     this.roomId = roomId;
     this.totalRounds = totalRounds;
+    this.maxPlayers = maxPlayers;
   }
 
   public void addPlayer(RoomPlayerState player) {

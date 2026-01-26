@@ -1,6 +1,6 @@
 package com.buildmyhome.game.dto;
 
-import com.buildmyhome.shop.dto.ShopType;
+
 import java.util.List;
 import java.util.Map;
 import lombok.Getter;

@@ -35,7 +35,8 @@ public class RoomStateServiceImpl implements RoomStateService {
     RoomState room = roomStates.get(roomId);
     synchronized (room) {
       RoomPlayerState removingPlayer = room.getPlayer(memberId);
-      if (removingPlayer == null) return;
+      if (removingPlayer == null)
+        return;
 
       boolean wasHost = removingPlayer.isHost();
       room.removePlayer(memberId);
@@ -45,11 +46,11 @@ public class RoomStateServiceImpl implements RoomStateService {
       } else if (wasHost) {
         // 방장이 나갔으면 가장 오래된 유저에게 방장 위임
         RoomPlayerState nextHost = room
-          .getPlayers()
-          .values()
-          .stream()
-          .min(java.util.Comparator.comparing(RoomPlayerState::getEnteredAt))
-          .orElse(null);
+            .getPlayers()
+            .values()
+            .stream()
+            .min(java.util.Comparator.comparing(RoomPlayerState::getEnteredAt))
+            .orElse(null);
 
         if (nextHost != null) {
           nextHost.setHost(true);
@@ -71,21 +72,23 @@ public class RoomStateServiceImpl implements RoomStateService {
   }
 
   @Override
-  public void createRoom(Long roomId, int totalRounds) {
-    RoomState room = new RoomState(roomId, totalRounds);
+  public void createRoom(Long roomId, int totalRounds, int maxPlayers) {
+    RoomState room = new RoomState(roomId, totalRounds, maxPlayers);
     roomStates.put(roomId, room);
   }
 
   @Override
   public void delegateHost(Long roomId, Long currentHostId, Long newHostId) {
     RoomState room = roomStates.get(roomId);
-    if (room == null) return;
+    if (room == null)
+      return;
 
     synchronized (room) {
       RoomPlayerState currentHost = room.getPlayer(currentHostId);
       RoomPlayerState newHost = room.getPlayer(newHostId);
 
-      if (currentHost == null || newHost == null) return;
+      if (currentHost == null || newHost == null)
+        return;
 
       // 권한 검증: 요청자가 진짜 방장인지 확인
       if (!currentHost.isHost()) {
@@ -98,6 +101,20 @@ public class RoomStateServiceImpl implements RoomStateService {
       room.setHostNickname(newHost.getNickname());
 
       System.out.println(">>> 👑 Host Delegated: " + currentHost.getNickname() + " -> " + newHost.getNickname());
+    }
+  }
+
+  @Override
+  public void resetReadyStatus(Long roomId) {
+    RoomState room = roomStates.get(roomId);
+    if (room == null)
+      return;
+
+    synchronized (room) {
+      room.setAutoStartTime(null); // 타이머 리셋
+      for (RoomPlayerState player : room.getPlayers().values()) {
+        player.setReady(false);
+      }
     }
   }
 }

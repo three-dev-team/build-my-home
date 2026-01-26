@@ -45,6 +45,10 @@ export default function RoomList() {
 
   const [rooms, setRooms] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [keyword, setKeyword] = useState(''); // 검색어 상태
+
+  // ✅ 검색 모달
+  const [searchOpen, setSearchOpen] = useState(false);
 
   // ✅ 전환(입장/생성) 로딩 오버레이
   const [transitioning, setTransitioning] = useState(false);
@@ -98,6 +102,7 @@ export default function RoomList() {
     joinable: r.joinable ?? true,
     hostNickname: r.hostNickname ?? '',
     createdAt: r.createdAt ?? null,
+    isPrivate: r.isPrivate ?? false,
   });
 
   const authHeaders = () => {
@@ -111,10 +116,14 @@ export default function RoomList() {
   };
 
   // ✅ REST: @RequestMapping("/api/roomlists") 고정이므로 여기 경로도 맞춤
-  const refreshRooms = async () => {
+  const refreshRooms = async (searchKeyword) => {
+    // 인자로 넘어온 값이 문자열이면 우선 사용, 없으면 state의 keyword 사용
+    const finalKeyword = typeof searchKeyword === 'string' ? searchKeyword : keyword;
+
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/api/roomlists/rooms`, {
+      const query = finalKeyword ? `?keyword=${encodeURIComponent(finalKeyword)}` : '';
+      const res = await fetch(`${API_BASE}/api/roomlists/rooms${query}`, {
         method: 'GET',
         headers: authHeaders(),
       });
@@ -132,7 +141,7 @@ export default function RoomList() {
   };
 
   useEffect(() => {
-    refreshRooms();
+    refreshRooms('');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -291,7 +300,8 @@ export default function RoomList() {
   };
 
   // ✅ 입장 모달에서 "참여하기" 눌렀을 때: 로딩 -> join publish -> CharacterSelect로 이동
-  const confirmJoin = () => {
+  // ✅ 입장 모달에서 "참여하기" 눌렀을 때: 로딩 -> join publish -> CharacterSelect로 이동
+  const confirmJoin = async (password) => {
     if (!selectedRoom) return;
 
     const isFull = selectedRoom.currentPlayers >= selectedRoom.maxPlayers;
@@ -303,7 +313,28 @@ export default function RoomList() {
 
     startTransition();
 
-    const ok = publish(`${WS_APP_PREFIX}/join`, { roomId: selectedRoom.id });
+    // ✅ 비밀방이면 REST API로 비밀번호 검증 먼저 수행 (틀리면 이동 방지)
+    if (selectedRoom.isPrivate) {
+      try {
+        const res = await fetch(`${API_BASE}/api/roomlists/rooms/${selectedRoom.id}/verify`, {
+          method: 'POST',
+          headers: authHeaders(),
+          body: JSON.stringify({ password }),
+        });
+
+        if (!res.ok) {
+          endTransition();
+          showToast('비밀번호가 일치하지 않아.');
+          return;
+        }
+      } catch (e) {
+        endTransition();
+        showToast('비밀번호 확인 중 오류가 발생했어.');
+        return;
+      }
+    }
+
+    const ok = publish(`${WS_APP_PREFIX}/join`, { roomId: selectedRoom.id, password });
     if (!ok) {
       endTransition();
       return;
@@ -357,8 +388,8 @@ export default function RoomList() {
       )}
 
       {/* 상단 아이콘 영역 */}
-      <div className="relative z-10 px-8 pt-6 flex items-start justify-between">
-        {/* 홈 */}
+      <div className="absolute top-6 left-0 right-0 px-8 z-20 flex items-start justify-between">
+        {/* 1. 좌측 홈 버튼 (복구) */}
         <button className="group flex flex-col items-center gap-1" onClick={() => navigate('/home')} title="홈">
           <div
             className={[
@@ -374,92 +405,36 @@ export default function RoomList() {
           <div className={`text-xs font-extrabold ${TONE.brownText2}`}>홈</div>
         </button>
 
-        {/* 우측 아이콘 */}
-        <div className="flex items-start gap-4">
+        {/* 2. 상단 우측 메뉴 (유저, 알람 - Home 스타일 유지) */}
+        <div className="flex gap-4 md:gap-8 items-start">
+          {/* 유저(마이페이지) 버튼 */}
           <button
-            className="group flex flex-col items-center gap-1"
             onClick={() => navigate('/mypage')}
+            className="flex flex-col items-center gap-2 group"
             title="마이페이지"
           >
-            <div
-              className={[
-                'w-12 h-12 rounded-full flex items-center justify-center',
-                TONE.cardBg,
-                'border-[3px] shadow-[0_10px_24px_rgba(0,0,0,0.12)]',
-                TONE.border,
-                'group-hover:brightness-[0.98] transition',
-              ].join(' ')}
-            >
-              <span className="text-xl">👤</span>
+            <div className="w-12 h-12 md:w-16 md:h-16 bg-[#efe7d1] border-[4px] border-[#a67c52] rounded-full flex items-center justify-center shadow-md group-hover:scale-110 transition-transform overflow-hidden relative">
+              <img src="/images/villager_avatar.png" alt="유저 아바타" className="w-full h-full object-cover" />
             </div>
-            <div className={`text-xs font-extrabold ${TONE.brownText2}`}>마이페이지</div>
+            <span className="text-[10px] md:text-sm font-black text-[#8b5a2b] bg-white/90 px-3 py-0.5 rounded-full shadow-sm">
+              마이페이지
+            </span>
           </button>
 
-          <button className="group flex flex-col items-center gap-1" title="알림">
-            <div
-              className={[
-                'w-12 h-12 rounded-full flex items-center justify-center',
-                TONE.cardBg,
-                'border-[3px] shadow-[0_10px_24px_rgba(0,0,0,0.12)]',
-                TONE.border,
-                'group-hover:brightness-[0.98] transition',
-              ].join(' ')}
-            >
-              <span className="text-xl">🔔</span>
+          {/* 알람 버튼 */}
+          <button className="flex flex-col items-center gap-2 group" title="알림">
+            <div className="w-12 h-12 md:w-16 md:h-16 bg-[#efe7d1] border-[4px] border-[#a67c52] rounded-full flex items-center justify-center text-2xl md:text-3xl shadow-md group-hover:scale-110 transition-transform">
+              🔔
             </div>
-            <div className={`text-xs font-extrabold ${TONE.brownText2}`}>알림</div>
+            <span className="text-[10px] md:text-sm font-black text-[#8b5a2b] bg-white/90 px-3 py-0.5 rounded-full shadow-sm">
+              알림
+            </span>
           </button>
-
-          <div className="relative">
-            <button
-              onClick={() => setMenuOpen((v) => !v)}
-              className="group flex flex-col items-center gap-1"
-              title="설정"
-            >
-              <div
-                className={[
-                  'w-12 h-12 rounded-full flex items-center justify-center',
-                  TONE.cardBg,
-                  'border-[3px] shadow-[0_10px_24px_rgba(0,0,0,0.12)]',
-                  TONE.border,
-                  'group-hover:brightness-[0.98] transition',
-                ].join(' ')}
-              >
-                <span className="text-xl">⚙️</span>
-              </div>
-              <div className={`text-xs font-extrabold ${TONE.brownText2}`}>설정</div>
-            </button>
-
-            {menuOpen && (
-              <div
-                className={[
-                  'absolute right-0 mt-3 w-52 overflow-hidden',
-                  TONE.cardBg,
-                  'border-[3px] rounded-2xl shadow-2xl',
-                  TONE.border,
-                ].join(' ')}
-                onMouseLeave={() => setMenuOpen(false)}
-              >
-                <button
-                  className={`w-full text-left px-4 py-3 hover:bg-[#efe2c8] font-black ${TONE.brownText}`}
-                  onClick={() => navigate('/mypage')}
-                >
-                  마이페이지
-                </button>
-                <button
-                  className={`w-full text-left px-4 py-3 hover:bg-[#efe2c8] font-black ${TONE.brownText}`}
-                  onClick={() => navigate('/login')}
-                >
-                  로그아웃
-                </button>
-              </div>
-            )}
-          </div>
         </div>
       </div>
 
       {/* 중앙 패널 */}
-      <div className="relative z-10 px-6 pb-10">
+      <div className="relative z-10 px-6 pb-10 pt-28">
         <div className="max-w-5xl mx-auto mt-6 flex justify-center">
           <div
             className={[
@@ -471,23 +446,39 @@ export default function RoomList() {
           >
             {/* 제목 */}
             <div className="flex items-center justify-between">
-              <div className="w-12" />
-              <h1 className={`text-center text-[28px] sm:text-[32px] font-black tracking-tight ${TONE.brownText}`}>
-                🍃 발견한 섬 리스트 🍃
-              </h1>
-              <button
-                onClick={refreshRooms}
-                className={[
-                  'w-12 h-12 rounded-full flex items-center justify-center',
-                  TONE.chipBg,
-                  'border-2 shadow-[0_10px_24px_rgba(0,0,0,0.10)]',
-                  'border-[#e2cfae] hover:bg-[#e9d7b5] transition',
-                ].join(' ')}
-                title="새로고침"
-                disabled={loading}
-              >
-                <span className={loading ? 'text-xl animate-spin' : 'text-xl'}>🔄</span>
-              </button>
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#f2e6cf] border-2 border-[#e2cfae]">
+                <span className="text-xl">🏝️</span>
+                <span className="text-[#5b4636] font-black">발견된 섬 목록</span>
+              </div>
+
+              {/* 검색 및 새로고침 */}
+              <div className="flex items-center gap-2">
+                {/* 검색 버튼 (모달 열기) */}
+                <button
+                  onClick={() => setSearchOpen(true)}
+                  className={[
+                    'w-10 h-10 flex items-center justify-center rounded-full border-2 text-xl shadow-sm transition',
+                    'bg-[#f2e6cf] border-[#e2cfae] hover:scale-105 active:scale-95 text-[#4b3a2e]',
+                    keyword ? 'ring-2 ring-[#7bb46b]' : '', // 검색어 있으면 강조
+                  ].join(' ')}
+                  title="검색"
+                >
+                  🔍
+                </button>
+
+                {/* 새로고침 */}
+                <button
+                  onClick={() => {
+                    setKeyword('');
+                    refreshRooms('');
+                  }}
+                  disabled={loading}
+                  className="w-10 h-10 flex items-center justify-center rounded-full bg-[#f2e6cf] border-2 border-[#e2cfae] text-xl shadow-sm hover:scale-105 active:scale-95 transition"
+                  title="목록 새로고침"
+                >
+                  <span className={loading ? 'animate-spin' : ''}>🔄</span>
+                </button>
+              </div>
             </div>
 
             {/* 리스트 컨테이너 */}
@@ -514,7 +505,7 @@ export default function RoomList() {
                       const disabled = isFull || !room.joinable;
 
                       const btnText = room.status === 'PLAYING' ? '진행중' : isFull ? '마감' : '입장';
-                      const lockIcon = '🔓'; // (현재 백엔드에 공개/비공개 값이 없어서 UI만 유지)
+                      const lockIcon = room.isPrivate ? '🔒' : '🔓'; // (현재 백엔드에 공개/비공개 값이 없어서 UI만 유지) -> 이제 있음
 
                       const playersPreview = roomPlayersMap[room.id] || [];
 
@@ -539,7 +530,7 @@ export default function RoomList() {
                                   : 'text-[10px] font-bold text-[#6a5342]/80'
                               }
                             >
-                              공개
+                              {room.isPrivate ? '비공개' : '공개'}
                             </div>
                           </div>
 
@@ -663,6 +654,19 @@ export default function RoomList() {
           authHeaders={authHeaders}
         />
       )}
+
+      {/* ✅ 검색 모달 */}
+      {searchOpen && (
+        <SearchModal
+          initialKeyword={keyword}
+          onClose={() => setSearchOpen(false)}
+          onSearch={(newKeyword) => {
+            setKeyword(newKeyword);
+            setSearchOpen(false);
+            refreshRooms(newKeyword);
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -720,6 +724,72 @@ function RoomCharacterPreview({ players, maxSlots, currentPlayers, disabled }) {
   );
 }
 
+/** 검색 모달 */
+function SearchModal({ initialKeyword, onClose, onSearch }) {
+  const [val, setVal] = useState(initialKeyword || '');
+
+  return (
+    <div className="fixed inset-0 bg-black/35 flex items-center justify-center px-6 z-50" onMouseDown={onClose}>
+      <div
+        className={[
+          'w-full max-w-md rounded-[32px] p-6',
+          'bg-[#f7f0e4] border-[5px] border-[#d6b98a]',
+          'shadow-[0_28px_80px_rgba(0,0,0,0.35)]',
+        ].join(' ')}
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        <div className="text-center mb-5">
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#efe2c8] border border-[#e2cfae]">
+            <span className="text-lg">🔍</span>
+            <span className="text-[#5b4636] font-black">섬 검색</span>
+          </div>
+        </div>
+
+        <div className="bg-[#fff8ea] border-[3px] border-[#ead7b8] rounded-[22px] p-5">
+          <div className="text-sm font-black text-[#7a5c44] mb-2">검색어</div>
+          <div className="relative">
+            <input
+              autoFocus
+              value={val}
+              onChange={(e) => setVal(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') onSearch(val.trim());
+              }}
+              placeholder="찾고 싶은 섬 이름을 입력해줘"
+              className="w-full px-4 py-3 rounded-[14px] bg-[#f2e6cf] border-2 border-[#e2cfae] outline-none text-[#4b3a2e] font-bold placeholder:text-[#6a5342]/60"
+            />
+            {val && (
+              <button
+                onClick={() => setVal('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8a6e57] hover:text-[#4b3a2e]"
+              >
+                ✕
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-6 flex items-center justify-center gap-4">
+          <button
+            onClick={onClose}
+            className="px-6 py-2.5 rounded-full bg-[#efe2c8] hover:bg-[#e9d7b5] text-[#4b3a2e] font-black border-2 border-[#e2cfae]"
+          >
+            취소
+          </button>
+          <button
+            onClick={() => onSearch(val.trim())}
+            className={['px-8 py-2.5 rounded-full text-white font-black border-2', TONE.greenBtn, 'shadow-md'].join(
+              ' ',
+            )}
+          >
+            검색
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /** 섬 만들기 모달 */
 function CreateIslandModal({ onClose, onCreate }) {
   const [title, setTitle] = useState('');
@@ -730,7 +800,8 @@ function CreateIslandModal({ onClose, onCreate }) {
   const [isPrivate, setIsPrivate] = useState(false);
   const [password, setPassword] = useState('');
 
-  const canSubmit = title.trim().length >= 1 && [2, 3, 4].includes(maxPlayers);
+  const canSubmit =
+    title.trim().length >= 1 && [2, 3, 4].includes(maxPlayers) && (!isPrivate || password.trim().length > 0);
 
   return (
     <div className="fixed inset-0 bg-black/35 flex items-center justify-center px-6 z-50" onMouseDown={onClose}>
@@ -765,7 +836,7 @@ function CreateIslandModal({ onClose, onCreate }) {
           {/* 인원수 */}
           <div className="mt-5 flex items-center gap-4">
             <div className="w-24 text-sm font-black text-[#7a5c44]">인원수</div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
               {[2, 3, 4].map((v) => (
                 <Chip key={v} active={maxPlayers === v} onClick={() => setMaxPlayers(v)}>
                   {v}명
@@ -786,7 +857,7 @@ function CreateIslandModal({ onClose, onCreate }) {
             </div>
           </div>
 
-          {/* 공개 설정 (UI만) */}
+          {/* 공개 설정 */}
           <div className="mt-5 flex items-center gap-4">
             <div className="w-24 text-sm font-black text-[#7a5c44]">공개 설정</div>
             <div className="flex items-center gap-3 flex-wrap">
@@ -796,18 +867,17 @@ function CreateIslandModal({ onClose, onCreate }) {
               <Chip active={isPrivate} onClick={() => setIsPrivate(true)}>
                 비공개 🔒
               </Chip>
-              <span className="text-xs font-extrabold text-[#8a6e57]">(비공개/비밀번호 기능은 UI만 먼저)</span>
             </div>
           </div>
 
-          {/* 비밀번호 (UI만) */}
+          {/* 비밀번호 */}
           <div className="mt-4 flex items-center gap-4">
             <div className="w-24 text-sm font-black text-[#7a5c44]">비밀번호</div>
             <div className="flex-1 relative">
               <input
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder={isPrivate ? '비밀번호' : '공개 섬은 비밀번호가 필요 없어요'}
+                placeholder={isPrivate ? '비밀번호를 입력해야 생성이 가능해요' : '공개 섬은 비밀번호가 필요 없어요'}
                 disabled={!isPrivate}
                 className={[
                   'w-full px-4 py-3 rounded-[14px] border-2 outline-none',
@@ -833,6 +903,7 @@ function CreateIslandModal({ onClose, onCreate }) {
                 title: title.trim(),
                 maxPlayers,
                 totalRounds,
+                password: isPrivate && password ? password.trim() : null,
               })
             }
             disabled={!canSubmit}
@@ -873,6 +944,7 @@ function JoinIslandModal({ room, initialPlayers, onClose, onConfirm, authHeaders
 
   const [players, setPlayers] = useState(Array.isArray(initialPlayers) ? initialPlayers : []);
   const [playersLoading, setPlayersLoading] = useState(false);
+  const [password, setPassword] = useState('');
 
   useEffect(() => {
     let ignore = false;
@@ -956,6 +1028,19 @@ function JoinIslandModal({ room, initialPlayers, onClose, onConfirm, authHeaders
             </div>
           </div>
 
+          {room.isPrivate && (
+            <div className="mt-4">
+              <div className="text-sm font-black text-[#7a5c44] mb-2">비밀번호</div>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="비밀번호를 입력해주세요"
+                className="w-full px-4 py-3 rounded-[14px] bg-[#f2e6cf] border-2 border-[#e2cfae] outline-none text-[#4b3a2e]"
+              />
+            </div>
+          )}
+
           {playersLoading && (
             <div className="mt-4 text-xs font-extrabold text-[#8a6e57]">주민 정보를 불러오는 중...</div>
           )}
@@ -975,7 +1060,7 @@ function JoinIslandModal({ room, initialPlayers, onClose, onConfirm, authHeaders
             뒤로가기
           </button>
           <button
-            onClick={onConfirm}
+            onClick={() => onConfirm(password)}
             className={[
               'px-9 py-3 rounded-full',
               'text-white font-black border-2',

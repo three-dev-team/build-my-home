@@ -32,7 +32,13 @@ public class RoomListWsController {
   public void create(CreateRoomRequest req, Principal principal) {
     Long memberId = memberIdFromPrincipal(principal);
 
-    Long roomId = roomListService.createRoom(memberId, req.getTitle(), req.getMaxPlayers(), req.getTotalRounds());
+    Long roomId = roomListService.createRoom(
+        memberId,
+        req.getTitle(),
+        req.getMaxPlayers(),
+        req.getTotalRounds(),
+        req.getPassword()
+    );
 
     RoomCreatedEvent event = RoomCreatedEvent.builder()
       .type("ROOM_CREATED")
@@ -47,7 +53,7 @@ public class RoomListWsController {
   public void join(JoinRoomRequest req, Principal principal) {
     Long memberId = memberIdFromPrincipal(principal);
 
-    roomListService.joinRoom(memberId, req.getRoomId());
+    roomListService.joinRoom(memberId, req.getRoomId(), req.getPassword());
   }
 
   @MessageMapping("/roomlist/rooms/leave")

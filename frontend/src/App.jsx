@@ -15,12 +15,15 @@ import UserInquiry from './pages/UserInquiry.jsx';
 import GamePage from './pages/game/GamePage.jsx';
 import NotFound from './pages/NotFound.jsx';
 import Loading from './components/common/Loading.jsx';
+import LogoutModal from './components/common/LogoutModal.jsx';
 
 function App() {
   const audioRef = useRef(null);
   const [isMuted, setIsMuted] = useState(true);
   // 기능 수정을 위해 필요한 상태 선언
   const [isInitialized, setIsInitialized] = useState(false);
+  const [logoutModalOpen, setLogoutModalOpen] = useState(false); // 모달 상태 추가
+
   // 권한 확인 - 경로로 admin 페이지로 들어오려고 하면 차단
   const ProtectedAdminRoute = ({ children }) => {
     const userRole = sessionStorage.getItem('role');
@@ -57,38 +60,57 @@ function App() {
     setIsInitialized(true);
   }, []);
 
+  // ✅ 중복 로그인 감지 이벤트 리스너
+  useEffect(() => {
+    const handleForceLogout = () => setLogoutModalOpen(true);
+    window.addEventListener('forceLogout', handleForceLogout);
+    return () => window.removeEventListener('forceLogout', handleForceLogout);
+  }, []);
+
   // 초기화가 완료되기 전에는 렌더링을 잠시 멈춤 (에러 방지)
   if (!isInitialized) return null;
 
   if (!isInitialized) return <Loading />;
 
   return (
-    <Router>
-      <Routes>
-        <Route path="/home" element={<Home />} />
-        <Route path="/" element={<Login />} />
-        <Route path="/config" element={<Config />} />
-        <Route path="/store" element={<Store />} />
-        <Route path="/rooms/:roomId" element={<Room />} />
-        <Route path="/rooms/:roomId/select" element={<CharacterSelect />} />
-        <Route path="/room-list" element={<RoomList />} />
-        <Route path="/join" element={<Join />} />
-        <Route path="/mypage" element={<MyPage />} />
-        <Route path="/oauth2/redirect" element={<OAuth2RedirectHandler />} />
-        <Route
-          path="/admin"
-          element={
-            <ProtectedAdminRoute>
-              {' '}
-              <AdminPage />{' '}
-            </ProtectedAdminRoute>
-          }
+    <>
+      <Router>
+        <Routes>
+          <Route path="/home" element={<Home />} />
+          <Route path="/" element={<Login />} />
+          <Route path="/config" element={<Config />} />
+          <Route path="/store" element={<Store />} />
+          <Route path="/rooms/:roomId" element={<Room />} />
+          <Route path="/rooms/:roomId/select" element={<CharacterSelect />} />
+          <Route path="/room-list" element={<RoomList />} />
+          <Route path="/join" element={<Join />} />
+          <Route path="/mypage" element={<MyPage />} />
+          <Route path="/oauth2/redirect" element={<OAuth2RedirectHandler />} />
+          <Route
+            path="/admin"
+            element={
+              <ProtectedAdminRoute>
+                {' '}
+                <AdminPage />{' '}
+              </ProtectedAdminRoute>
+            }
+          />
+          <Route path="/games/:roomId" element={<GamePage />} />
+          <Route path="/user-inquiry" element={<UserInquiry />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </Router>
+
+      {/* ✅ 중복 로그인 알림 모달 */}
+      {logoutModalOpen && (
+        <LogoutModal
+          onConfirm={() => {
+            setLogoutModalOpen(false);
+            window.location.href = '/';
+          }}
         />
-        <Route path="/games/:roomId" element={<GamePage />} />
-        <Route path="/user-inquiry" element={<UserInquiry />} />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </Router>
+      )}
+    </>
   );
 }
 

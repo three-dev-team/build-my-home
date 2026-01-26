@@ -20,7 +20,7 @@ const CHARACTER_IMG_MAP = CHARACTERS.reduce((acc, char) => {
   return acc;
 }, {});
 
-const Result = ({ gameState, myId, onLeave }) => {
+const Result = ({ gameState, myId, roomId, onLeave }) => {
   const navigate = useNavigate();
   const [timeLeft, setTimeLeft] = useState(10);
   const [visibleRanks, setVisibleRanks] = useState([]);
@@ -69,7 +69,7 @@ const Result = ({ gameState, myId, onLeave }) => {
           clearInterval(timer);
           clearInterval(timer);
           onLeave(); // [Explicit Leave]
-          setTimeout(() => navigate('/home'), 500); // 0.5초 뒤 이동 (메시지 전송 보장)
+          setTimeout(() => navigate('/room-list'), 500); // 0.5초 뒤 이동 (메시지 전송 보장)
           return 0;
         }
         return prev - 1;
@@ -165,18 +165,33 @@ const Result = ({ gameState, myId, onLeave }) => {
         {/* 하단 버튼 및 카운트다운 */}
         <div className="mt-12 text-center">
           <p className="text-[#8a6e57] font-bold mb-4 animate-pulse">{timeLeft}초 후 자동으로 나가지게 됩니다...</p>
-          <button
-            onClick={() => {
-              onLeave(); // [Explicit Leave]
-              setTimeout(() => navigate('/home'), 500);
-            }}
-            className={[
-              'px-10 py-4 rounded-full font-black text-xl text-white shadow-[0_10px_20px_rgba(123,180,107,0.3)] transition transform active:scale-95',
-              TONE.greenBtn,
-            ].join(' ')}
-          >
-            나가기 🚪
-          </button>
+          <div className="flex gap-4 justify-center">
+            <button
+              onClick={() => {
+                clearInterval(100); // 타이머 ID를 알 수 없으나 어차피 언마운트됨
+                // [Continue] - 방으로 복귀
+                navigate(`/rooms/${roomId}`);
+              }}
+              className={[
+                'px-8 py-4 rounded-full font-black text-xl text-white shadow-[0_10px_20px_rgba(74,144,226,0.3)] transition transform active:scale-95',
+                'bg-[#4A90E2] hover:bg-[#357ABD] border-[#2E6DA4]',
+              ].join(' ')}
+            >
+              계속하기 🔄
+            </button>
+            <button
+              onClick={() => {
+                onLeave(); // [Explicit Leave]
+                setTimeout(() => navigate('/room-list'), 500);
+              }}
+              className={[
+                'px-8 py-4 rounded-full font-black text-xl text-white shadow-[0_10px_20px_rgba(123,180,107,0.3)] transition transform active:scale-95',
+                TONE.greenBtn,
+              ].join(' ')}
+            >
+              나가기 🚪
+            </button>
+          </div>
         </div>
       </div>
     </div>
