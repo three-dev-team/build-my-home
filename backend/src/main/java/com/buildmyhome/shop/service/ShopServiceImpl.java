@@ -4,7 +4,6 @@ import com.buildmyhome.game.dto.*;
 import com.buildmyhome.game.service.GameStateService;
 import com.buildmyhome.shop.dto.ShopSession;
 import java.util.UUID;
-
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -29,74 +28,79 @@ public class ShopServiceImpl implements ShopService {
     }
 
     private final GameStateService gameStateService;
-
-  @Override
-  public void startShopSession(Long roomId, Long memberId) {
-    GameState gameState = gameStateService.getGame(roomId);
+    @Override
+    public void startShopSession(Long roomId, Long memberId) {
+        GameState gameState = gameStateService.getGame(roomId);
 
         // 현재 턴 플레이어인지 확인
         if (!gameState.getCurrentPlayerId().equals(memberId)) {
             throw new IllegalStateException("본인의 턴이 아닙니다.");
         }
 
-    // ShopSession 생성
-    ShopSession session = new ShopSession();
-    session.setShopSessionId(UUID.randomUUID().toString());
-    session.setMemberId(memberId);
+        // ShopSession 생성
+        ShopSession session = new ShopSession();
+        session.setShopSessionId(UUID.randomUUID().toString());
+        session.setMemberId(memberId);
 
-    gameState.setShopSession(session);
-  }
+        gameState.setShopSession(session);
+    }
 
-  @Override
+    @Override
     public GameMessage relayMessage(Long roomId, Long memberId, GameMessage request) {
-      GameState gameState = gameStateService.getGame(roomId);
+        GameState gameState = gameStateService.getGame(roomId);
 
-      // 상점 세션 / 턴 검증
-      validateShopSession(gameState, memberId);
+        // 상점 세션 / 턴 검증
+        validateShopSession(gameState, memberId);
 
-      // relay 메시지 구성
-      GameMessage relay = new GameMessage();
-      relay.setType("SHOP_SELECT_RELAY");
-      relay.setMemberId(memberId);
+        // relay 메시지 구성
+        GameMessage relay = new GameMessage();
+        relay.setType("SHOP_SELECT_RELAY");
+        relay.setMemberId(memberId);
 
-      relay.setShopItemType(request.getShopItemType());
-      relay.setResourceType(request.getResourceType());
-      relay.setHarvestType(request.getHarvestType());
-      relay.setQuantity(request.getQuantity());
-      relay.setUiStep(request.getUiStep());
+        relay.setShopItemType(request.getShopItemType());
+        relay.setResourceType(request.getResourceType());
+        relay.setHarvestType(request.getHarvestType());
+        relay.setQuantity(request.getQuantity());
+        relay.setUiStep(request.getUiStep());
 
-      return relay;
+        return relay;
     }
 
-  @Override
-  public void buyItem(Long roomId, Long memberId, ShopItemType shopItemType) {
-    GameState gameState = gameStateService.getGame(roomId);
-    GamePlayerState player = gameState.getPlayers().get(memberId);
+    @Override
+    public void buyItem(Long roomId, Long memberId, ShopItemType shopItemType) {
+        GameState gameState = gameStateService.getGame(roomId);
+        GamePlayerState player = gameState.getPlayers().get(memberId);
 
-    ShopSession session = validateShopSession(gameState, memberId);
+        ShopSession session = validateShopSession(gameState, memberId);
 
-    // 이미 구매한 아이템인지
-    if (session.getPurchasedItems().contains(shopItemType)) {
-      throw new IllegalStateException("이미 구매한 아이템입니다.");
+        // 이미 구매한 아이템인지
+        if (session.getPurchasedItems().contains(shopItemType)) {
+            throw new IllegalStateException("이미 구매한 아이템입니다.");
+        }
+
+        // 벨 확인 및 구매
+        int cost = shopItemType.getPrice();
+        if (player.getBell() < cost) {
+            throw new IllegalStateException("벨이 부족합니다.");
+        }
+        player.setBell(player.getBell() - cost);
+
+        player.getShopItems().add(shopItemType);
+
+        // 세션에는 상점 상품 기준으로 구매 기록
+        session.getPurchasedItems().add(shopItemType);
     }
 
-    // 벨 확인 및 구매
-    int cost = shopItemType.getPrice();
-    if (player.getBell() < cost) {
-      throw new IllegalStateException("벨이 부족합니다.");
-    }
-    player.setBell(player.getBell() - cost);
+    @Override
+    public void buyResource(Long roomId, Long memberId, ResourceType resourceType, int quantity) {
+        GameState gameState = gameStateService.getGame(roomId);
+        GamePlayerState player = gameState.getPlayers().get(memberId);
 
-    player.getShopItems().add(shopItemType);
+        validateShopSession(gameState, memberId);
 
-    // 세션에는 상점 상품 기준으로 구매 기록
-    session.getPurchasedItems().add(shopItemType);
-  }
-
-        // 재화 상점에서만 구매 가능
-        validatedSession(gameState, memberId, ShopType.HARVEST_SHOP);
-
-    validateShopSession(gameState, memberId);
+        if (quantity <= 0) {
+            throw new IllegalArgumentException("수량은 1개 이상이어야 합니다.");
+        }
 
         int totalCost = resourceType.getBuyPrice() * quantity;
         if (player.getBell() < totalCost) {
@@ -112,10 +116,11 @@ public class ShopServiceImpl implements ShopService {
         GameState gameState = gameStateService.getGame(roomId);
         GamePlayerState player = gameState.getPlayers().get(memberId);
 
-        // 상점 세션 검증 (상점 타입 무관)
-        validatedSession(gameState, memberId, null);
+        validateShopSession(gameState, memberId);
 
-    validateShopSession(gameState, memberId);
+        if (quantity <= 0) {
+            throw new IllegalArgumentException("수량은 1개 이상이어야 합니다.");
+        }
 
         // 보유 수량 확인
         int currentAmount = player.getResources().get(resourceType);
@@ -134,10 +139,11 @@ public class ShopServiceImpl implements ShopService {
         GameState gameState = gameStateService.getGame(roomId);
         GamePlayerState player = gameState.getPlayers().get(memberId);
 
-        // 상점 세션 검증 (상점 타입 무관)
-        validatedSession(gameState, memberId, null);
+        validateShopSession(gameState, memberId);
 
-    validateShopSession(gameState, memberId);
+        if (quantity <= 0) {
+            throw new IllegalArgumentException("수량은 1개 이상이어야 합니다.");
+        }
 
         // 보유 수량 확인
         int currentAmount = player.getHarvests().get(harvestType);
@@ -161,15 +167,11 @@ public class ShopServiceImpl implements ShopService {
             return;
         }
 
-        // 상점 세션 검증
-        if (!gameState.getShopSession().getMemberId().equals(memberId)) {
-            throw new IllegalStateException("본인의 턴이 아닙니다.");
-        }
+        validateShopSession(gameState, memberId);
 
-    validateShopSession(gameState, memberId);
-
-    /* 상점 거래 전 세션 유효성 및 권한을 통합 검증 */
-    private ShopSession validatedSession(GameState gameState, Long memberId, ShopType shopType) {
-        ShopSession session = gameState.getShopSession();
+        // 세션 종료
+        gameState.setShopSession(null);
+        gameState.setStatus(GameStatus.WAITING_PLAYER_ACTION);
+    }
 
 }
