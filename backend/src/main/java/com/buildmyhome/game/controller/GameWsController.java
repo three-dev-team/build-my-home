@@ -444,7 +444,7 @@ public class GameWsController {
                         response.setType("SHOP_SELECT_CLEAR");
                         break;
                     case "SHOP_BUY_ITEM":
-                        shopService.buyItem(roomId, memberId, message.getItemType());
+                        shopService.buyItem(roomId, memberId, message.getShopItemType());
                         break;
                     case "SHOP_BUY_RESOURCE":
                         shopService.buyResource(roomId, memberId, message.getResourceType(), message.getQuantity());

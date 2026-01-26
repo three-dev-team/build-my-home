@@ -57,7 +57,7 @@ public class ShopServiceImpl implements ShopService {
         relay.setType("SHOP_SELECT_RELAY");
         relay.setMemberId(memberId);
 
-        relay.setItemType(request.getItemType());
+        relay.setShopItemType(request.getShopItemType());
         relay.setResourceType(request.getResourceType());
         relay.setHarvestType(request.getHarvestType());
         relay.setQuantity(request.getQuantity());
@@ -67,28 +67,28 @@ public class ShopServiceImpl implements ShopService {
     }
 
     @Override
-    public void buyItem(Long roomId, Long memberId, ItemType itemType) {
+    public void buyItem(Long roomId, Long memberId, ShopItemType shopItemType) {
         GameState gameState = gameStateService.getGame(roomId);
         GamePlayerState player = gameState.getPlayers().get(memberId);
 
         ShopSession session = validateShopSession(gameState, memberId);
 
         // 이미 구매한 아이템인지
-        if (session.getPurchasedItems().contains(itemType)) {
+        if (session.getPurchasedItems().contains(shopItemType)) {
             throw new IllegalStateException("이미 구매한 아이템입니다.");
         }
 
         // 벨 확인 및 구매
-        int cost = itemType.getPrice();
+        int cost = shopItemType.getPrice();
         if (player.getBell() < cost) {
             throw new IllegalStateException("벨이 부족합니다.");
         }
         player.setBell(player.getBell() - cost);
 
-        player.getShopItems().add(itemType);
+        player.getShopItems().add(shopItemType);
 
         // 세션에는 상점 상품 기준으로 구매 기록
-        session.getPurchasedItems().add(itemType);
+        session.getPurchasedItems().add(shopItemType);
     }
 
     @Override

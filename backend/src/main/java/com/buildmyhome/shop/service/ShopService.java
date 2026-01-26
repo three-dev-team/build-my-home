@@ -3,7 +3,7 @@ package com.buildmyhome.shop.service;
 import com.buildmyhome.game.dto.GameMessage;
 import com.buildmyhome.game.dto.HarvestType;
 import com.buildmyhome.game.dto.ResourceType;
-import com.buildmyhome.game.dto.ItemType;
+import com.buildmyhome.game.dto.ShopItemType;
 
 public interface ShopService {
   // 상점 세션 시작
@@ -13,7 +13,7 @@ public interface ShopService {
   GameMessage relayMessage(Long roomId, Long memberId, GameMessage request);
 
   // 아이템 구매 (1회만 가능)
-  void buyItem(Long roomId, Long memberId, ItemType itemType);
+  void buyItem(Long roomId, Long memberId, ShopItemType shopItemType);
 
   // 재화 구매
   void buyResource(Long roomId, Long memberId, ResourceType resourceType, int quantity);
