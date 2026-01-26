@@ -16,7 +16,7 @@ import org.springframework.stereotype.Service;
 public class MoveServiceImpl implements MoveService {
 
   // 지나가기 로직이 적용되는 타일
-  private static final Set<TileType> STOP_POINTS = Set.of(TileType.START);
+  private static final Set<TileType> STOP_POINTS = Set.of(TileType.START, TileType.SHOP);
 
   @Override
   public void movePlayer(GamePlayerState player, int diceValue) {
