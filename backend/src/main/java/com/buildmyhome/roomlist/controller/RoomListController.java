@@ -14,7 +14,16 @@ public class RoomListController {
   private final RoomListService roomListService;
 
   @GetMapping("/rooms")
-  public List<RoomListResponse> rooms() {
-    return roomListService.getRoomList();
+  public List<RoomListResponse> rooms(@RequestParam(required = false) String keyword) {
+    return roomListService.getRoomList(keyword);
+  }
+
+  @PostMapping("/rooms/{roomId}/verify")
+  public void verifyPassword(@PathVariable Long roomId, @RequestBody java.util.Map<String, String> body) {
+    String password = body.get("password");
+    boolean match = roomListService.verifyPassword(roomId, password);
+    if (!match) {
+      throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
+    }
   }
 }

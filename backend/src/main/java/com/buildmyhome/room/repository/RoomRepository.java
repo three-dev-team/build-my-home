@@ -19,4 +19,7 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
 
   // 스케줄러/관리용: 특정 상태 방 전체 조회
   List<Room> findByStatusIn(List<Room.Status> statuses);
+
+  // 제목 검색 (정확히 일치, 최신순)
+  List<Room> findByStatusAndTitleOrderByIdDesc(Room.Status status, String title, Pageable pageable);
 }

@@ -19,8 +19,15 @@ import com.buildmyhome.reward.service.RewardService;
 import com.buildmyhome.room.dto.RoomPlayerState;
 import com.buildmyhome.room.dto.RoomState;
 import com.buildmyhome.room.service.RoomStateService;
+import com.buildmyhome.roomlist.service.RoomListService;
 import com.buildmyhome.shop.service.ShopService;
 import com.buildmyhome.stamp.service.StampService;
+import com.buildmyhome.swap.service.SwapService;
+import jakarta.annotation.PreDestroy;
+import lombok.RequiredArgsConstructor;
+import org.springframework.messaging.handler.annotation.MessageMapping;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
+import org.springframework.stereotype.Controller;
 
 import java.security.Principal;
 import java.util.*;
@@ -28,13 +35,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-
-import com.buildmyhome.swap.service.SwapService;
-import jakarta.annotation.PreDestroy;
-import lombok.RequiredArgsConstructor;
-import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.stereotype.Controller;
 
 @Controller
 @RequiredArgsConstructor
@@ -55,6 +55,7 @@ public class GameWsController {
     private final MachurillaService machurillaService;
     private final SwapService swapService;
     private final ItemService itemService;
+    private final RoomListService roomListService;
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     // TODO: 추후 GameEventService로 분리 - Tiffany
@@ -155,6 +156,12 @@ public class GameWsController {
     public void startGame(GameMessage message) {
         Long roomId = message.getRoomId();
         RoomState room = roomStateService.getRoom(roomId);
+
+        // DB 상태를 PLAYING으로 변경 (중도 입장 방지)
+        roomListService.startGame(roomId);
+
+        // 방 상태(Ready, Timer) 초기화
+        roomStateService.resetReadyStatus(roomId);
 
         GameState gameState = new GameState(roomId);
         gameState.setStatus(GameStatus.INTRO);
