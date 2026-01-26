@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="acb222b1-1d7e-4913-af3a-4de68535c583" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/buildmyhome/game/controller/GameWsController.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main/java/com/buildmyhome/game/controller/GameWsController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/buildmyhome/room/service/RoomStateService.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main/java/com/buildmyhome/room/service/RoomStateService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/buildmyhome/room/service/RoomStateServiceImpl.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main/java/com/buildmyhome/room/service/RoomStateServiceImpl.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/src/main/java/com/buildmyhome/roomlist/service/RoomListService.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/src/main/java/com/buildmyhome/roomlist/service/RoomListService.java" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ExternalProjectsData">
+    <projectState path="$PROJECT_DIR$/backend">
+      <ProjectState />
+    </projectState>
+  </component>
+  <component name="ExternalProjectsManager">
+    <system id="GRADLE">
+      <state>
+        <projects_view>
+          <tree_state>
+            <expand>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="backend" type="f1a62948:ProjectNode" />
+              </path>
+            </expand>
+            <select />
+          </tree_state>
+        </projects_view>
+      </state>
+    </system>
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Interface" />
+        <option value="Class" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 5
+}</component>
+  <component name="ProjectId" id="3806Cn7J9gawyF4Q48HTDKe7iZg" />
+  <component name="ProjectLevelVcsManager">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "Gradle.Build backend.executor": "Run",
+    "RequestMappingsPanelOrder0": "0",
+    "RequestMappingsPanelOrder1": "1",
+    "RequestMappingsPanelWidth0": "75",
+    "RequestMappingsPanelWidth1": "75",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "Spring Boot.BackendApplication.executor": "Run",
+    "git-widget-placeholder": "feature/BMH-28-game-end-conditions",
+    "kotlin-language-version-configured": "true",
+    "last_opened_file_path": "/home/zxcvne/build-my-home/frontend/public/images",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "project.structure.last.edited": "SDKs",
+    "project.structure.proportion": "0.0",
+    "project.structure.side.proportion": "0.0",
+    "settings.editor.selected.configurable": "preferences.sourceCode",
+    "ts.external.directory.path": "/opt/intellij/idea-IU-253.29346.138/plugins/javascript-plugin/jsLanguageServicesImpl/external",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/frontend/public/images" />
+      <recent name="$PROJECT_DIR$/frontend/public" />
+      <recent name="$PROJECT_DIR$/frontend/public/videos" />
+      <recent name="$PROJECT_DIR$/frontend/public/sounds" />
+      <recent name="$PROJECT_DIR$/frontend/src/assets" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="$PROJECT_DIR$/frontend/public/images" />
+      <recent name="$PROJECT_DIR$/frontend/public/videos" />
+      <recent name="$PROJECT_DIR$/frontend/src" />
+    </key>
+  </component>
+  <component name="RunManager">
+    <configuration name="BackendApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <module name="backend.main" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="com.buildmyhome.BackendApplication" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-30f59d01ecdd-26cb7f24e5b0-intellij.indexing.shared.core-IU-253.29346.138" />
+        <option value="bundled-js-predefined-d6986cc7102b-9b0f141eb926-JavaScript-IU-253.29346.138" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="acb222b1-1d7e-4913-af3a-4de68535c583" name="Changes" comment="" />
+      <created>1767924017919</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1767924017919</updated>
+      <workItem from="1767924019066" duration="2784000" />
+      <workItem from="1767926951831" duration="18823000" />
+      <workItem from="1767956534114" duration="11469000" />
+      <workItem from="1767968771525" duration="7071000" />
+      <workItem from="1767983162619" duration="1969000" />
+      <workItem from="1768024685722" duration="1614000" />
+      <workItem from="1768027156886" duration="42000" />
+      <workItem from="1768109641239" duration="2413000" />
+      <workItem from="1768112127287" duration="8849000" />
+      <workItem from="1768122930233" duration="2165000" />
+      <workItem from="1768148055824" duration="1285000" />
+      <workItem from="1768177065318" duration="7317000" />
+      <workItem from="1768184765819" duration="2462000" />
+      <workItem from="1768187240091" duration="175000" />
+      <workItem from="1768187455866" duration="43000" />
+      <workItem from="1768187572795" duration="3237000" />
+      <workItem from="1768195048647" duration="12048000" />
+      <workItem from="1768264480537" duration="24828000" />
+      <workItem from="1768292380164" duration="1656000" />
+      <workItem from="1768349636057" duration="8673000" />
+      <workItem from="1768367375656" duration="11652000" />
+      <workItem from="1768443237298" duration="7517000" />
+      <workItem from="1768456156617" duration="80000" />
+      <workItem from="1768456269451" duration="161000" />
+      <workItem from="1768456652749" duration="9411000" />
+      <workItem from="1769143061220" duration="1402000" />
+      <workItem from="1769147364312" duration="3777000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="javascript">
+          <url>file://$PROJECT_DIR$/frontend/src/pages/MyPage.jsx</url>
+          <option name="timeStamp" value="2" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+  </component>
+  <component name="XSLT-Support.FileAssociations.UIState">
+    <expand />
+    <select />
+  </component>
+</project>

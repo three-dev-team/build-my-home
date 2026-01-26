@@ -41,7 +41,7 @@ public class GamePlayerState {
     private Set<StampType> collectedStamps = EnumSet.noneOf(StampType.class);
 
     // 상점용 아이템
-    private List<ShopItemType> shopItems = new ArrayList<>();
+    private List<ItemType> shopItems = new ArrayList<>();
 
     // 무(무파니) 정보
     private int radishQty = 0; // 보유 무 개수

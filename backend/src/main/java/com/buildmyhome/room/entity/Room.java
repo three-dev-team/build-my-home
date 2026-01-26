@@ -38,6 +38,10 @@ public class Room extends BaseTimeEntity {
   @Column(nullable = false)
   private Integer totalRounds; // 5, 10, 15, 20
 
+  @Column
+  private String password;
+
+
   public enum Status {
     WAITING, // 대기 중
     PLAYING, // 게임 중

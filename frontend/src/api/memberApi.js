@@ -28,10 +28,11 @@ API.interceptors.response.use(
 
       // 이미 로그아웃 처리 중이 아니라면 실행
       if (sessionStorage.getItem('token') || localStorage.getItem('token')) {
-        alert('다른 기기에서 접속하여 로그아웃 되었습니다.');
+        // alert('다른 기기에서 접속하여 로그아웃 되었습니다.'); // alert 제거
         sessionStorage.removeItem('token');
         localStorage.removeItem('token');
-        window.location.href = '/';
+        // window.location.href = '/'; // 바로 이동하지 않고 이벤트 발송
+        window.dispatchEvent(new CustomEvent('forceLogout'));
       }
     }
     return Promise.reject(error);
