@@ -18,6 +18,10 @@ public enum GameStatus {
     MOVING(0), // 캐릭터 이동 중 (애니메이션 연출 시간 확보용)
     WAITING_HOUSE(0), // 집짓기
     WAITING_ATM(60), // ATM
+    WAITING_USING_ITEM(30), // 아이템 사용 대기 중
+    WAITING_PIPE(0),
+    WAITING_MIRROR(0),
+    WAITING_DOUBLE_DICE(0),
 
     // --- 칸 이벤트별 유저 입력을 기다리는 상태 ---
     WAITING_STAMP(15), // 스탬프칸 이용 중
@@ -27,11 +31,10 @@ public enum GameStatus {
     WAITING_LOAN(30), // 대출 여부 선택 중
     WAITING_FISHING(10), // 시작하기 버튼/연출 단계
     FISHING_IN_PROGRESS(0), // 실제 미니게임 진행(낚시 내부 타이머로 종료)
-    SUPER_EVENT(0), // 은행/스탬프 등 슈퍼 이벤트 진행 중
     WAITING_KK(20), // KK칸 진행 중 (KK 노래 여러개)
     WAITING_MUPANI(20), // 무파니 진행 중
     WAITING_START(60), // 시작칸 진행 중 (스탬프 정산)
-    WAITING_ITEMS(20),  // 아이템칸 진행 중
+    WAITING_ITEMS(30),  // 아이템칸 진행 중
     WAITING_MACHURILLA(60), // 마추릴라 진행 중
     WAITING_SWAP(30), // 몽셰르(스왑 이벤트) 진행 중
 

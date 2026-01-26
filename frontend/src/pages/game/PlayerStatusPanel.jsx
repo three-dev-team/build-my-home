@@ -35,16 +35,23 @@ const PlayerStatusPanel = ({ players, currentPlayerId, myId }) => {
                 {player.loan > 0 && <span style={{ color: '#ff6b6b', marginLeft: '8px' }}>📉{player.loan}</span>}
                 <span>🏠 Lv.{player.houseLevel}</span>
               </div>
-              <div className="items">
-                {player.items?.length > 0 ? (
-                  player.items.map((item, i) => (
-                    <span key={i} title={ITEM_INFO[item]?.name}>
-                      {ITEM_INFO[item]?.emoji || '📦'}
+              <div className="items flex gap-1 mt-1 items-center">
+                {Array.from({ length: 3 }).map((_, i) => {
+                  const itemKey = player.items && player.items[i];
+                  return (
+                    <span
+                      key={i}
+                      className="inline-flex items-center justify-center w-6"
+                      title={itemKey ? ITEM_INFO[itemKey]?.name : '비어있음'}
+                    >
+                      {itemKey ? (
+                        <span className="text-lg">{ITEM_INFO[itemKey]?.emoji || '📦'}</span>
+                      ) : (
+                        <span className="text-[#594E36] opacity-30 font-bold text-xs tracking-widest">·</span>
+                      )}
                     </span>
-                  ))
-                ) : (
-                  <span className="no-items">아이템 없음</span>
-                )}
+                  );
+                })}
               </div>
             </div>
           </div>

@@ -554,6 +554,37 @@ public class GameWsController {
                         }
                         response.setType("INVENTORY_HANDLED");
                         break;
+                    case "OPEN_ITEM_INVENTORY":
+                        gameState.setStatus(GameStatus.WAITING_USING_ITEM);
+                        response.setType("ITEM_INVENTORY_OPENED");
+                        break;
+                    case "CLOSE_ITEM_INVENTORY":
+                        gameState.setStatus(GameStatus.WAITING_PLAYER_ACTION);
+                        response.setType("ITEM_INVENTORY_CLOSED");
+                        break;
+                    case "USE_ITEM":
+                        try {
+                            String useItemType = message.getActionDataStr();
+                            int useItemIdx = message.getActionData();
+                            GameStatus nextStatus = itemService.useItem(gameState, player, useItemType, useItemIdx);
+                            gameState.setStatus(nextStatus);
+                            response.setType("ITEM_USED");
+                        } catch (IllegalArgumentException e) {
+                            response.setType("ITEM_USE_ERROR");
+                            response.setErrorMessage(e.getMessage());
+                        }
+                        break;
+                    case "PIPE_COMPLETE":
+                        player.clearTurnData();
+                        gameState.setStatus(GameStatus.WAITING_PLAYER_ACTION);
+                        response.setType("PIPE_COMPLETED");
+                        break;
+                    case "MIRROR_COMPLETE":
+                        player.clearTurnData();
+                        gameState.setStatus(GameStatus.WAITING_PLAYER_ACTION);
+                        response.setType("MIRROR_COMPLETED");
+                        break;
+
                 }
 
                 response.setStatus(gameState.getStatus().name());
@@ -608,9 +639,7 @@ public class GameWsController {
             }
 
             // 턴 증가
-            // 2026.01.25 nexTurn 기존 GameState -> 서비스로 이동
             gameStateService.turnToNextPlayer(roomId);
-//            gameState.nextTurn();
 
 
             // 게임 종료 확인 nextTurn이 currentRound를 증가시키므로 여기서 체크

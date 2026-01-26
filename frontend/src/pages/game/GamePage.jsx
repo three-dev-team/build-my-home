@@ -29,6 +29,9 @@ import Machurilla from './Machurilla/Machurilla.jsx';
 import Swap from './Swap.jsx';
 import PlayerSkipped from './PlayerSkipped.jsx';
 import ItemTile from './ItemTile/ItemTile.jsx';
+import ItemInventory from './ItemInventory.jsx';
+import Pipe from './itemEffect/Pipe.jsx';
+import Mirror from './itemEffect/Mirror.jsx';
 
 const GamePage = () => {
   const { roomId } = useParams();
@@ -592,6 +595,26 @@ const GamePage = () => {
 
         {/* ------------------------------------- 개별 이벤트 추가 ------------------------------------- */}
 
+        {/* ------------------------------------- 아이템 상태 페이지 ------------------------------------- */}
+
+        {/* 파이프 아이템 사용 */}
+        {gameState.status === 'WAITING_PIPE' && (
+          <Pipe isMyTurn={isMyTurn} actionDataStr={currentPlayer?.actionDataStr} onAction={handleAction} />
+        )}
+
+        {/* 거울 아이템 사용 */}
+        {gameState.status === 'WAITING_MIRROR' && (
+          <Mirror
+            isMyTurn={isMyTurn}
+            actionDataStr={currentPlayer?.actionDataStr}
+            players={gameState.players}
+            onAction={handleAction}
+          />
+        )}
+
+        {/* ------------------------------------- 아이템 상태 페이지 ------------------------------------- */}
+
+        {/* -------------------------------- 사용자 액션 패널 관련 컴포넌트 -------------------------------- */}
         {/* 사용자 액션 패널 */}
         {gameState.status === 'WAITING_PLAYER_ACTION' && (
           <PlayerActionPanel
@@ -603,8 +626,12 @@ const GamePage = () => {
                 body: JSON.stringify({ roomId }),
               });
             }}
-            onSelectItem={() => console.log('아이템 선택')}
-            onSelectMap={() => console.log('맵 선택')}
+            onSelectItem={() => {
+              stompClient.publish({
+                destination: '/app/games/action',
+                body: JSON.stringify({ roomId, type: 'OPEN_ITEM_INVENTORY' }),
+              });
+            }}
             onATM={() => {
               stompClient.publish({
                 destination: '/app/games/action',
@@ -618,10 +645,10 @@ const GamePage = () => {
               });
             }}
             onInventory={handleOpenInventory}
+            itemUsed={currentPlayer?.itemUsed}
           />
         )}
 
-        {/* -------------------------------- 사용자 액션 패널 관련 컴포넌트 -------------------------------- */}
         {/* 주사위 굴리는 페이지 */}
         {/*WAITING_DICE: 스페이스바 대기*/}
         {/*ROLLING_DICE: 3D 애니메이션 + 결과 화면*/}
@@ -643,6 +670,16 @@ const GamePage = () => {
                 body: JSON.stringify({ roomId }),
               });
             }}
+          />
+        )}
+
+        {/* 아이템 사용 컴포넌트 */}
+        {gameState.status === 'WAITING_USING_ITEM' && (
+          <ItemInventory
+            items={currentPlayer?.items}
+            isMyTurn={isMyTurn}
+            onSelectItem={(item, idx) => handleAction('USE_ITEM', { actionDataStr: item, actionData: idx })}
+            onClose={() => handleAction('CLOSE_ITEM_INVENTORY', {})}
           />
         )}
 

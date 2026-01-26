@@ -31,7 +31,8 @@ public class GamePlayerState {
     private String actionDataStr;
 
     // 아이템 정보
-    private int skipNextTurnCount = 0;       // 다음 턴 건너뛰기
+    private boolean itemUsed = false;
+    private int skipNextTurnCount = 0;  // 다음 턴 건너뛰기
     private boolean extraDice = false;  // 주사위 한 번 더
     private List<ItemType> items = new ArrayList<>();
 
@@ -65,5 +66,12 @@ public class GamePlayerState {
         for (HarvestType type : HarvestType.values()) {
             harvests.put(type, 0);
         }
+    }
+
+    public void clearTurnData() {
+        this.movePath = null;
+        this.uiStep = 0;
+        this.actionData = null;
+        this.actionDataStr = null;
     }
 }
