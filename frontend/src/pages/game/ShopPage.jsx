@@ -75,6 +75,21 @@ const ShopPage = ({ gameState, myId, currentPlayer, shopType, handleAction, onEx
       ? shopRelay.quantity
       : 1;
 
+  const getOwnedItems = (player) => {  // ✅ () → (player) 변경!
+    if (!player) return [];  // ✅ 추가!
+
+    const owned = [];
+    resources.forEach((r) => {
+      const count = player.resources?.[r.type] || 0;  // ✅ currentPlayer → player
+      if (count > 0) owned.push({ ...r, owned: count, category: 'resource' });
+    });
+    harvests.forEach((h) => {
+      const count = player.harvests?.[h.type] || 0;  // ✅ currentPlayer → player
+      if (count > 0) owned.push({ ...h, owned: count, category: 'harvest' });
+    });
+    return owned;
+  };
+
   // ✅ 내 화면은 로컬 selectedItem, 관전자 화면은 relay를 "선택된 것"으로 본다
   const displaySelected = useMemo(() => {
     if (isMyTurn) return selectedItem;
@@ -87,6 +102,7 @@ const ShopPage = ({ gameState, myId, currentPlayer, shopType, handleAction, onEx
     if (fromBuy) return fromBuy;
 
     // sell은 보유 목록에서 찾아야 owned까지 표시 가능
+    if (!currentPlayer) return null;
     const owned = getOwnedItems(currentPlayer);
     return owned.find((x) => x.type === relaySelectedType) || null;
   }, [isMyTurn, selectedItem, relaySelectedType, currentPlayer]);
@@ -112,19 +128,6 @@ const ShopPage = ({ gameState, myId, currentPlayer, shopType, handleAction, onEx
   const clearShopSelect = () => {
     if (!isMyTurn) return;
     handleAction('SHOP_SELECT_CLEAR', {});
-  };
-
-  const getOwnedItems = () => {
-    const owned = [];
-    resources.forEach((r) => {
-      const count = currentPlayer.resources?.[r.type] || 0;
-      if (count > 0) owned.push({ ...r, owned: count, category: 'resource' });
-    });
-    harvests.forEach((h) => {
-      const count = currentPlayer.harvests?.[h.type] || 0;
-      if (count > 0) owned.push({ ...h, owned: count, category: 'harvest' });
-    });
-    return owned;
   };
 
   const buyList = useMemo(() => [...shopItems, ...resources], []);
