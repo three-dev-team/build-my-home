@@ -49,7 +49,7 @@ const SelectScreen = ({ inventory, newItem, isMyTurn, onAction }) => {
         </div>
       </div>
 
-      <BubbleBasic>
+      <BubbleBasic speaker="미첼">
         {selectedIdx === null ? (
           '버릴 아이템을 하나 선택해줘.'
         ) : (

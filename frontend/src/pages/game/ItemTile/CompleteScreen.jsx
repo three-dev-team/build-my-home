@@ -5,7 +5,7 @@ const CompleteScreen = () => {
   return (
     <div className="flex-1 flex flex-col items-center justify-center relative">
       <img src="#" alt="Success" className="h-[50vh] object-contain drop-shadow-lg" />
-      <BubbleBasic>좋아! 주머니 정리가 다 됐어!{'\n'}이제 다시 가볼까?</BubbleBasic>
+      <BubbleBasic speaker="미첼">좋아! 주머니 정리가 다 됐어!{'\n'}이제 다시 가볼까?</BubbleBasic>
     </div>
   );
 };
