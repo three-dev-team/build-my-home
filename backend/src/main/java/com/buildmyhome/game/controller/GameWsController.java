@@ -19,7 +19,6 @@ import com.buildmyhome.reward.service.RewardService;
 import com.buildmyhome.room.dto.RoomPlayerState;
 import com.buildmyhome.room.dto.RoomState;
 import com.buildmyhome.room.service.RoomStateService;
-import com.buildmyhome.shop.dto.ShopType;
 import com.buildmyhome.shop.service.ShopService;
 import com.buildmyhome.stamp.service.StampService;
 
@@ -354,12 +353,9 @@ public class GameWsController {
             Map<ResourceType, Integer> gainedResources = reward.gainedResources();
             Map<HarvestType, Integer> gainedHarvests = reward.gainedHarvests();
 
-            if (nextStatus == GameStatus.WAITING_SHOP_ITEM) {
-                shopService.startShopSession(roomId, memberId, ShopType.ITEM_SHOP);
+            if (nextStatus == GameStatus.WAITING_SHOP) {
+                shopService.startShopSession(roomId, memberId);
                 System.out.println("🏪 아이템 상점 세션 생성: memberId=" + memberId);
-            } else if (nextStatus == GameStatus.WAITING_SHOP_RESOURCE) {
-                shopService.startShopSession(roomId, memberId, ShopType.HARVEST_SHOP);
-                System.out.println("🏪 재화 상점 세션 생성: memberId=" + memberId);
             }
 
             // 도착한 칸이 타임아웃이 설정된 상태라면 스케줄러로 타임아웃 등록
@@ -433,9 +429,15 @@ public class GameWsController {
                         player.setUiStep(2);
                         response.setType(canCollectStamp ? "STAMP_ADDED" : "STAMP_DUPLICATE");
                         break;
+                    case "SHOP_SELECT":
+                        GameMessage relay = shopService.relayMessage(roomId, memberId, message);
+                        response = relay;
+                        break;
+                    case "SHOP_SELECT_CLEAR":
+                        response.setType("SHOP_SELECT_CLEAR");
+                        break;
                     case "SHOP_BUY_ITEM":
-                        // 아이템 구매 로직 처리
-                        shopService.buyItem(roomId, memberId, message.getItemType());
+                        shopService.buyItem(roomId, memberId, message.getShopItemType());
                         break;
                     case "SHOP_BUY_RESOURCE":
                         shopService.buyResource(roomId, memberId, message.getResourceType(), message.getQuantity());

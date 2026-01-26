@@ -10,7 +10,7 @@ public class BoardData {
             TileType.START, // 0
             TileType.RESOURCE, // 1
             TileType.HARVEST, // 2
-            TileType.SHOP_RESOURCE, // 3
+            TileType.SHOP, // 3
             TileType.STAMP_GAPDOL, // 4
             TileType.RESOURCE, // 5
             TileType.LOAN, // 6

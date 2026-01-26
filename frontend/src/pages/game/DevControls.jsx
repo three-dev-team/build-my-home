@@ -38,16 +38,10 @@ const DevControls = ({ onStatusChange, onSetLastRound }) => {
           ⏎ 맵으로 돌아가기
         </button>
         <button
-          onClick={() => onStatusChange('WAITING_SHOP_ITEM')}
-          className="px-3 py-1 bg-yellow-500 hover:bg-yellow-600 text-white text-xs rounded shadow"
+          onClick={() => onStatusChange('WAITING_SHOP')}
+          className="px-3 py-1 bg-pink-300 hover:bg-pink-600 text-white text-xs rounded shadow"
         >
-          아이템 상점
-        </button>
-        <button
-          onClick={() => onStatusChange('WAITING_SHOP_RESOURCE')}
-          className="px-3 py-1 bg-pink-500 hover:bg-pink-600 text-white text-xs rounded shadow"
-        >
-          재화 상점
+          상점
         </button>
         <button
           onClick={() => onStatusChange('WAITING_FISHING')}
