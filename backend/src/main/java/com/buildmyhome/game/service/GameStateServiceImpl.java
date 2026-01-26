@@ -98,10 +98,8 @@ public class GameStateServiceImpl implements GameStateService {
 
             // 다음 사람에게 턴 넘기기 전 청소
             if (currentPlayer != null) {
-                currentPlayer.setMovePath(null);
-                currentPlayer.setUiStep(0);
-                currentPlayer.setActionData(null);
-                currentPlayer.setActionDataStr(null);
+                currentPlayer.clearTurnData();
+                currentPlayer.setItemUsed(false); // 아이템 사용 기록 초기화
             }
 
             gameState.setStatus(GameStatus.WAITING_PLAYER_ACTION);

@@ -7,7 +7,7 @@ const rawTiles = [
   { id: 0, type: 'START', name: '시작' },
   { id: 1, type: 'RESOURCE', name: '재화칸' },
   { id: 2, type: 'HARVEST', name: '과일칸' },
-  { id: 3, type: 'SHOP_RESOURCE', name: '재화상점' },
+  { id: 3, type: 'SHOP', name: '상점' },
   { id: 4, type: 'STAMP_GAPDOL', name: '갑돌섬' },
   { id: 5, type: 'RESOURCE', name: '재화칸' },
   { id: 6, type: 'LOAN', name: '대출칸' },
