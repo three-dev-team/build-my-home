@@ -28,6 +28,7 @@ import Mupani from './Mupani.jsx';
 import Machurilla from './Machurilla/Machurilla.jsx';
 import Swap from './Swap.jsx';
 import PlayerSkipped from './PlayerSkipped.jsx';
+import ItemTile from './ItemTile/ItemTile.jsx';
 
 const GamePage = () => {
   const { roomId } = useParams();
@@ -570,6 +571,11 @@ const GamePage = () => {
             onAction={handleAction}
             onExit={handleEventComplete}
           />
+        )}
+
+        {/* 아이템칸 */}
+        {gameState.status === 'WAITING_ITEMS' && (
+          <ItemTile isMyTurn={isMyTurn} player={currentPlayer} onAction={handleAction} onExit={handleEventComplete} />
         )}
 
         {/* 결과 페이지 */}

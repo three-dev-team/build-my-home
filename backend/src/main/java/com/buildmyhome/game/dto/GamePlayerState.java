@@ -33,12 +33,12 @@ public class GamePlayerState {
     // 아이템 정보
     private int skipNextTurnCount = 0;       // 다음 턴 건너뛰기
     private boolean extraDice = false;  // 주사위 한 번 더
+    private List<ItemType> items = new ArrayList<>();
 
     // 재화 정보
     private Map<ResourceType, Integer> resources = new EnumMap<>(ResourceType.class);
     private Map<HarvestType, Integer> harvests = new EnumMap<>(HarvestType.class);
     private Set<StampType> collectedStamps = EnumSet.noneOf(StampType.class);
-    private List<ItemType> items = new ArrayList<>();
 
     // 무(무파니) 정보
     private int radishQty = 0; // 보유 무 개수

@@ -15,7 +15,7 @@ const RollDicePage = ({ currentPlayer, isMyTurn, diceValue, isRolling, onRollCom
   }, [isMyTurn, isRolling]);
 
   return (
-    <div className="fixed inset-0 w-screen h-screen flex flex-col items-center justify-center z-[100] bg-gray-100">
+    <div className="fixed inset-0 w-screen h-screen flex flex-col items-center justify-center bg-gray-100">
       {/* 주사위 영역 */}
       <div className="w-64 h-48 flex items-center justify-center mb-8">
         {isRolling && diceValue ? (

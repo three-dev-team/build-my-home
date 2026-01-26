@@ -1,4 +1,5 @@
 import './css/PlayerStatusPanel.css';
+import { ITEM_INFO } from '../../constants/gameConstants.js';
 
 const getRankText = (index) => {
   const rank = index + 1;
@@ -16,7 +17,7 @@ const PlayerStatusPanel = ({ players, currentPlayerId, myId }) => {
   });
 
   return (
-    <div className="player-status-panel">
+    <div className="player-status-panel z-200">
       {sortedPlayers.map((player, index) => {
         const isCurrentTurn = player.memberId === currentPlayerId;
         const isMe = player.memberId === myId;
@@ -36,7 +37,11 @@ const PlayerStatusPanel = ({ players, currentPlayerId, myId }) => {
               </div>
               <div className="items">
                 {player.items?.length > 0 ? (
-                  player.items.map((item, i) => <span key={i}>📦</span>)
+                  player.items.map((item, i) => (
+                    <span key={i} title={ITEM_INFO[item]?.name}>
+                      {ITEM_INFO[item]?.emoji || '📦'}
+                    </span>
+                  ))
                 ) : (
                   <span className="no-items">아이템 없음</span>
                 )}
