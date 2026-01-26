@@ -10,6 +10,7 @@ import com.buildmyhome.game.dto.*;
 import com.buildmyhome.game.service.GameStateService;
 import com.buildmyhome.game.service.MoveService;
 import com.buildmyhome.house.service.HouseService;
+import com.buildmyhome.item.service.ItemService;
 import com.buildmyhome.kk.KKService;
 import com.buildmyhome.loan.service.LoanService;
 import com.buildmyhome.machurilla.service.MachurillaService;
@@ -53,6 +54,7 @@ public class GameWsController {
     private final RewardService rewardService;
     private final MachurillaService machurillaService;
     private final SwapService swapService;
+    private final ItemService itemService;
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
     // TODO: 추후 GameEventService로 분리 - Tiffany
@@ -525,6 +527,32 @@ public class GameWsController {
                         machurillaService.applyCardEffect(gameState, player);
                         player.setUiStep(1);
                         response.setType("MACHURILLA_SELECTED");
+                        break;
+                    case "GET_RANDOM_ITEM":
+                        ItemType item = itemService.getRandomItem(player);
+                        player.setActionDataStr(item.name());
+
+                        if (player.getItems().size() < 3) {
+                            itemService.addItem(player, item);
+                            player.setUiStep(2);  // GetScreen
+                        } else {
+                            player.setUiStep(1);  // SelectScreen
+                        }
+                        response.setType("RANDOM_ITEM_SELECTED");
+                        break;
+                    case "HANDLE_INVENTORY_FULL":
+                        int selectedIdx = message.getActionData();
+                        if (selectedIdx < 3) {
+                            // 기존 아이템 버리고 새 아이템 받기
+                            ItemType dropItem = player.getItems().get(selectedIdx);
+                            ItemType newItem = ItemType.valueOf(player.getActionDataStr());
+                            itemService.swapItem(player, dropItem, newItem);
+                            player.setUiStep(2); // GetScreen
+                        } else {
+                            // selectedIdx == 3이면 새 아이템 포기 (아무것도 안 함)
+                            player.setUiStep(3);  // CompleteScreen
+                        }
+                        response.setType("INVENTORY_HANDLED");
                         break;
                 }
 

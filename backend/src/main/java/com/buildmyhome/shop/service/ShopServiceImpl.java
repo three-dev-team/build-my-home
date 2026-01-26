@@ -4,6 +4,7 @@ import com.buildmyhome.game.dto.*;
 import com.buildmyhome.game.service.GameStateService;
 import com.buildmyhome.shop.dto.ShopSession;
 import java.util.UUID;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -27,16 +28,16 @@ public class ShopServiceImpl implements ShopService {
         return session;
     }
 
-  private final GameStateService gameStateService;
+    private final GameStateService gameStateService;
 
   @Override
   public void startShopSession(Long roomId, Long memberId) {
     GameState gameState = gameStateService.getGame(roomId);
 
-    // 현재 턴 플레이어인지 확인
-    if (!gameState.getCurrentPlayerId().equals(memberId)) {
-      throw new IllegalStateException("본인의 턴이 아닙니다.");
-    }
+        // 현재 턴 플레이어인지 확인
+        if (!gameState.getCurrentPlayerId().equals(memberId)) {
+            throw new IllegalStateException("본인의 턴이 아닙니다.");
+        }
 
     // ShopSession 생성
     ShopSession session = new ShopSession();
@@ -92,87 +93,83 @@ public class ShopServiceImpl implements ShopService {
     session.getPurchasedItems().add(shopItemType);
   }
 
-  @Override
-  public void buyResource(Long roomId, Long memberId, ResourceType resourceType, int quantity) {
-    GameState gameState = gameStateService.getGame(roomId);
-    GamePlayerState player = gameState.getPlayers().get(memberId);
+        // 재화 상점에서만 구매 가능
+        validatedSession(gameState, memberId, ShopType.HARVEST_SHOP);
 
     validateShopSession(gameState, memberId);
 
-    if (quantity <= 0) {
-      throw new IllegalArgumentException("수량은 1개 이상이어야 합니다.");
+        int totalCost = resourceType.getBuyPrice() * quantity;
+        if (player.getBell() < totalCost) {
+            throw new IllegalStateException("벨이 부족합니다.");
+        }
+
+        player.setBell(player.getBell() - totalCost);
+        player.getResources().put(resourceType, player.getResources().get(resourceType) + quantity);
     }
 
-    int totalCost = resourceType.getBuyPrice() * quantity;
-    if (player.getBell() < totalCost) {
-      throw new IllegalStateException("벨이 부족합니다.");
-    }
+    @Override
+    public void sellResource(Long roomId, Long memberId, ResourceType resourceType, int quantity) {
+        GameState gameState = gameStateService.getGame(roomId);
+        GamePlayerState player = gameState.getPlayers().get(memberId);
 
-    player.setBell(player.getBell() - totalCost);
-    player.getResources().put(resourceType, player.getResources().get(resourceType) + quantity);
-  }
-
-  @Override
-  public void sellResource(Long roomId, Long memberId, ResourceType resourceType, int quantity) {
-    GameState gameState = gameStateService.getGame(roomId);
-    GamePlayerState player = gameState.getPlayers().get(memberId);
+        // 상점 세션 검증 (상점 타입 무관)
+        validatedSession(gameState, memberId, null);
 
     validateShopSession(gameState, memberId);
 
-    if (quantity <= 0) {
-      throw new IllegalArgumentException("수량은 1개 이상이어야 합니다.");
+        // 보유 수량 확인
+        int currentAmount = player.getResources().get(resourceType);
+        if (currentAmount < quantity) {
+            throw new IllegalStateException("보유한 재화가 부족합니다.");
+        }
+
+        // 재화 판매
+        int totalPrice = resourceType.getSellPrice() * quantity;
+        player.setBell(player.getBell() + totalPrice);
+        player.getResources().put(resourceType, currentAmount - quantity);
     }
 
-    // 보유 수량 확인
-    int currentAmount = player.getResources().get(resourceType);
-    if (currentAmount < quantity) {
-      throw new IllegalStateException("보유한 재화가 부족합니다.");
-    }
+    @Override
+    public void sellHarvest(Long roomId, Long memberId, HarvestType harvestType, int quantity) {
+        GameState gameState = gameStateService.getGame(roomId);
+        GamePlayerState player = gameState.getPlayers().get(memberId);
 
-    // 재화 판매
-    int totalPrice = resourceType.getSellPrice() * quantity;
-    player.setBell(player.getBell() + totalPrice);
-    player.getResources().put(resourceType, currentAmount - quantity);
-  }
-
-  @Override
-  public void sellHarvest(Long roomId, Long memberId, HarvestType harvestType, int quantity) {
-    GameState gameState = gameStateService.getGame(roomId);
-    GamePlayerState player = gameState.getPlayers().get(memberId);
+        // 상점 세션 검증 (상점 타입 무관)
+        validatedSession(gameState, memberId, null);
 
     validateShopSession(gameState, memberId);
 
-    if (quantity <= 0) {
-      throw new IllegalArgumentException("수량은 1개 이상이어야 합니다.");
+        // 보유 수량 확인
+        int currentAmount = player.getHarvests().get(harvestType);
+        if (currentAmount < quantity) {
+            throw new IllegalStateException("보유한 작물이 부족합니다.");
+        }
+
+        // 작물 판매
+        int totalPrice = harvestType.getPrice() * quantity;
+        player.setBell(player.getBell() + totalPrice);
+        player.getHarvests().put(harvestType, currentAmount - quantity);
     }
 
-    // 보유 수량 확인
-    int currentAmount = player.getHarvests().get(harvestType);
-    if (currentAmount < quantity) {
-      throw new IllegalStateException("보유한 작물이 부족합니다.");
-    }
+    @Override
+    public void endShopSession(Long roomId, Long memberId) {
+        GameState gameState = gameStateService.getGame(roomId);
 
-    // 작물 판매
-    int totalPrice = harvestType.getPrice() * quantity;
-    player.setBell(player.getBell() + totalPrice);
-    player.getHarvests().put(harvestType, currentAmount - quantity);
-  }
+        // DevControl 테스트 대응: shopSession이 없으면 그냥 상태만 변경
+        if (gameState.getShopSession() == null) {
+            gameState.setStatus(GameStatus.WAITING_PLAYER_ACTION);
+            return;
+        }
 
-  @Override
-  public void endShopSession(Long roomId, Long memberId) {
-    GameState gameState = gameStateService.getGame(roomId);
-
-    // DevControl 테스트 대응: shopSession이 없으면 그냥 상태만 변경
-    if (gameState.getShopSession() == null) {
-      gameState.setStatus(GameStatus.WAITING_PLAYER_ACTION);
-      return;
-    }
+        // 상점 세션 검증
+        if (!gameState.getShopSession().getMemberId().equals(memberId)) {
+            throw new IllegalStateException("본인의 턴이 아닙니다.");
+        }
 
     validateShopSession(gameState, memberId);
 
-    // 세션 종료
-    gameState.setShopSession(null);
-    gameState.setStatus(GameStatus.WAITING_PLAYER_ACTION);
-  }
+    /* 상점 거래 전 세션 유효성 및 권한을 통합 검증 */
+    private ShopSession validatedSession(GameState gameState, Long memberId, ShopType shopType) {
+        ShopSession session = gameState.getShopSession();
 
 }

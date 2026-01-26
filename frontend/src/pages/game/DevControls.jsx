@@ -4,7 +4,7 @@ const DevControls = ({ onStatusChange, onSetLastRound }) => {
   if (import.meta.env.PROD) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 bg-black/50 p-4 rounded-lg backdrop-blur-sm">
+    <div className="fixed bottom-4 right-4 z-9999 flex flex-col gap-2 bg-black/50 p-4 rounded-lg backdrop-blur-sm">
       <p className="text-white text-xs font-bold mb-1 text-center">DEV CONTROLS</p>
       <div className="grid grid-cols-2 gap-2">
         <button
@@ -54,6 +54,12 @@ const DevControls = ({ onStatusChange, onSetLastRound }) => {
           className="px-3 py-1 bg-purple-500 hover:bg-purple-600 text-white text-xs rounded shadow"
         >
           🔮 마추릴라
+        </button>
+        <button
+          onClick={() => onStatusChange('WAITING_ITEMS')}
+          className="px-3 py-1 bg-purple-500 hover:bg-purple-600 text-white text-xs rounded shadow"
+        >
+          📦 아이템칸
         </button>
         <button
           onClick={onSetLastRound}
