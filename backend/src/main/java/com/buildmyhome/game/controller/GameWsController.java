@@ -561,9 +561,17 @@ public class GameWsController {
                         }
                         response.setType("INVENTORY_HANDLED");
                         break;
+                    case "SELECT_ITEM_TO_DROP":
+                        player.setActionData(message.getActionData());  // 선택한 인덱스 저장
+                        response.setType("ITEM_DROP_SELECTED");
+                        break;
                     case "OPEN_ITEM_INVENTORY":
                         gameState.setStatus(GameStatus.WAITING_USING_ITEM);
                         response.setType("ITEM_INVENTORY_OPENED");
+                        break;
+                    case "SELECT_ITEM_TO_USE":
+                        player.setActionData(message.getActionData());  // 선택한 인덱스
+                        response.setType("ITEM_USE_SELECTED");
                         break;
                     case "CLOSE_ITEM_INVENTORY":
                         gameState.setStatus(GameStatus.WAITING_PLAYER_ACTION);
@@ -591,7 +599,6 @@ public class GameWsController {
                         gameState.setStatus(GameStatus.WAITING_PLAYER_ACTION);
                         response.setType("MIRROR_COMPLETED");
                         break;
-
                 }
 
                 response.setStatus(gameState.getStatus().name());

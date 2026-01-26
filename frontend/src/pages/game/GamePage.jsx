@@ -61,7 +61,6 @@ const GamePage = () => {
   // 현재 턴 플레이어 정보
   const currentPlayer = gameState?.players?.find((p) => p.memberId === gameState.currentPlayerId) || null;
   const isMyTurn = gameState ? myId === gameState.currentPlayerId : false;
-  const [movePath, setMovePath] = useState([]); // 플레이어 이동 경로 저장소
   // 내 무 보유 개수/썩는 턴 안내용
   const myPlayerState = gameState?.players?.find((p) => Number(p?.memberId) === Number(myId)) || null;
 
@@ -358,8 +357,6 @@ const GamePage = () => {
   };
   // ------------------- [DEV] 상태 강제 변경 핸들러 ------------------- //
 
-  console.log('players:', gameState.players);
-
   if (!gameState) return <Loading />;
 
   // 낚시 렌더링 상태 확장 (새로고침/재접속 대비)
@@ -557,7 +554,7 @@ const GamePage = () => {
             <Swap
               isMyTurn={isMyTurn}
               player={currentPlayer}
-              payloadStr={gameState?.actionDataStr}
+              resultText={gameState?.actionDataStr}
               onConfirm={() => handleAction('SWAP_CONFIRM', {})}
               onExit={handleEventComplete}
             />
@@ -681,7 +678,8 @@ const GamePage = () => {
           <ItemInventory
             items={currentPlayer?.items}
             isMyTurn={isMyTurn}
-            onSelectItem={(item, idx) => handleAction('USE_ITEM', { actionDataStr: item, actionData: idx })}
+            selectedIdx={currentPlayer?.actionData}
+            onAction={handleAction}
             onClose={() => handleAction('CLOSE_ITEM_INVENTORY', {})}
           />
         )}

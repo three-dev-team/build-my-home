@@ -1,9 +1,7 @@
-import React, { useState } from 'react';
 import BubbleBasic from '../../../components/common/BubbleBasic.jsx';
 import { ITEM_INFO } from '../../../constants/gameConstants.js';
 
-const SelectScreen = ({ inventory, newItem, isMyTurn, onAction }) => {
-  const [selectedIdx, setSelectedIdx] = useState(null);
+const SelectScreen = ({ playerName, inventory, newItem, isMyTurn, selectedIdx, onAction }) => {
   const newItemObj = ITEM_INFO[newItem] || { emoji: '📦', name: '새 아이템' };
 
   // 기존 인벤토리(최대 3개) + 새 아이템 1개 = 총 4개
@@ -12,8 +10,13 @@ const SelectScreen = ({ inventory, newItem, isMyTurn, onAction }) => {
     { ...newItemObj, isNew: true },
   ];
 
+  const handleSelect = (idx) => {
+    if (!isMyTurn) return;
+    onAction('SELECT_ITEM_TO_DROP', { actionData: idx });
+  };
+
   const handleConfirm = () => {
-    if (selectedIdx === null || !isMyTurn) return;
+    if (selectedIdx === null || selectedIdx === undefined || !isMyTurn) return;
 
     // 마지막 인덱스(3) 선택 시 새 아이템을 버리는 것, 0~2 선택 시 기존 것과 교체
     onAction('HANDLE_INVENTORY_FULL', { actionData: selectedIdx });
@@ -23,13 +26,11 @@ const SelectScreen = ({ inventory, newItem, isMyTurn, onAction }) => {
     <div className="flex-1 flex flex-col items-center justify-center relative w-full h-full bg-black/20 backdrop-blur-sm">
       {/* 아이템 선택 그리드 UI */}
       <div className="bg-[#F0F2EB] p-8 rounded-[50px] shadow-2xl border-4 border-white mb-36 max-w-lg w-[90%]">
-        <h2 className="text-[#594E36] text-xl font-bold mb-6 text-center">주머니가 가득해! 무엇을 버릴까?</h2>
-
         <div className="grid grid-cols-2 gap-4">
           {allItems.map((item, idx) => (
             <button
               key={idx}
-              onClick={() => setSelectedIdx(idx)}
+              onClick={() => handleSelect(idx)}
               disabled={!isMyTurn}
               className={`
                 relative aspect-square rounded-[32px] flex flex-col items-center justify-center border-4 transition-all
@@ -49,9 +50,9 @@ const SelectScreen = ({ inventory, newItem, isMyTurn, onAction }) => {
         </div>
       </div>
 
-      <BubbleBasic speaker="미첼">
+      <BubbleBasic speaker={playerName}>
         {selectedIdx === null ? (
-          '버릴 아이템을 하나 선택해줘.'
+          '주머니가 가득해! 무엇을 버릴까?.'
         ) : (
           <div className="flex flex-col items-center gap-2">
             <p>

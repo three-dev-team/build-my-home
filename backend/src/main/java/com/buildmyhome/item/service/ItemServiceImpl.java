@@ -57,9 +57,8 @@ public class ItemServiceImpl implements ItemService {
         // 4. 아이템별 효과 적용
         return switch (itemType) {
             case PIPE -> applyPipe(player);
-            case DOUBLE_DICE -> applyDoubleDice(player);
             case MIRROR -> applyMirror(gameState, player);
-            case CUSTOM_DICE, GOLD_DICE ->
+            case DOUBLE_DICE, CUSTOM_DICE, GOLD_DICE ->
                 // TODO: 마지막주에 구현
                     GameStatus.WAITING_PLAYER_ACTION;
             default -> GameStatus.WAITING_PLAYER_ACTION;
@@ -73,12 +72,6 @@ public class ItemServiceImpl implements ItemService {
         player.setPosition(newPosition);  // 이동할 위치 저장
         player.setActionDataStr("PIPE:" + oldPosition + ":" + newPosition);
         return GameStatus.WAITING_PIPE;
-    }
-
-    // 더블 주사위: 주사위 2번 굴리기
-    private GameStatus applyDoubleDice(GamePlayerState player) {
-        player.setActionDataStr("DOUBLE_DICE");
-        return GameStatus.WAITING_DOUBLE_DICE;
     }
 
     // 거울: 랜덤 플레이어와 위치 교환
