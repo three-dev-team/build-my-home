@@ -2,7 +2,7 @@ import React from 'react';
 import BubbleBasic from '../../../components/common/BubbleBasic.jsx';
 import { ITEM_INFO } from '../../../constants/gameConstants.js';
 
-const GetScreen = ({ newItem }) => {
+const GetScreen = ({ playerName, newItem }) => {
   const item = ITEM_INFO[newItem] || { emoji: '📦', name: '아이템' };
 
   return (
@@ -14,7 +14,7 @@ const GetScreen = ({ newItem }) => {
         </div>
       </div>
 
-      <BubbleBasic showArrow>
+      <BubbleBasic speaker={playerName}>
         <span className="text-[#E76C21] font-bold">{item.name}</span>을 얻었다!
       </BubbleBasic>
     </div>

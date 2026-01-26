@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect } from 'react';
 import BubbleBasic from '../../../components/common/BubbleBasic.jsx';
 
-const DiscoverScreen = ({ isMyTurn, onAction }) => {
+const DiscoverScreen = ({ playerName, isMyTurn, onAction }) => {
   const handleClick = useCallback(() => {
     if (!isMyTurn) return;
     onAction('GET_RANDOM_ITEM', {});
@@ -22,7 +22,7 @@ const DiscoverScreen = ({ isMyTurn, onAction }) => {
     <div className="flex-1 flex flex-col items-center justify-center relative">
       {/* 캐릭터 이미지 */}
       <img src="#" alt="캐릭터 이미지" className="h-[50vh] object-contain" />
-      <BubbleBasic speaker="미첼">무언가를 발견했어...</BubbleBasic>
+      <BubbleBasic speaker={playerName}>무언가를 발견했어...</BubbleBasic>
       {isMyTurn && (
         <button onClick={handleClick} className="mt-4 bg-[#E76C21] text-white px-8 py-2 rounded-full font-bold">
           확인하기

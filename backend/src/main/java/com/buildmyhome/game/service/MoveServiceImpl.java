@@ -35,7 +35,6 @@ public class MoveServiceImpl implements MoveService {
 
             // 중간에 멈춰야 할 칸(START 등)을 만난 경우
             if (STOP_POINTS.contains(tile) && i < diceValue) {
-//        player.setPosition(checkPosition);
                 player.setRemainingMoves(diceValue - i);
                 player.setMovePath(movePath);
                 return; // 중간 지점에서 정지
@@ -43,7 +42,6 @@ public class MoveServiceImpl implements MoveService {
         }
 
         // 최종 위치 도착
-//    player.setPosition((currentPosition + diceValue) % BOARD_SIZE);
         player.setRemainingMoves(0);
         player.setMovePath(movePath);
     }

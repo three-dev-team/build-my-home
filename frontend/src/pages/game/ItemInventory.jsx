@@ -1,17 +1,21 @@
-import React, { useState } from 'react';
 import { ITEM_INFO } from '../../constants/gameConstants.js';
 
-const ItemInventory = ({ items, isMyTurn, onSelectItem, onClose }) => {
-  const [selectedIdx, setSelectedIdx] = useState(null);
-
-  const selectedItem = selectedIdx !== null ? items[selectedIdx] : null;
+const ItemInventory = ({ items, isMyTurn, selectedIdx, onAction, onClose }) => {
+  const selectedItem = selectedIdx !== null && selectedIdx !== undefined ? items[selectedIdx] : null;
   const selectedInfo = selectedItem ? ITEM_INFO[selectedItem] : null;
 
-  const handleUse = () => {
-    if (selectedIdx === null || !isMyTurn) return;
-    onSelectItem(selectedItem, selectedIdx);
+  const handleSelect = (idx) => {
+    if (!isMyTurn) return;
+    onAction('SELECT_ITEM_TO_USE', { actionData: idx });
   };
 
+  const handleUse = () => {
+    if (selectedIdx === null || selectedIdx === undefined || !isMyTurn) return;
+    onAction('USE_ITEM', {
+      actionData: selectedIdx,
+      actionDataStr: selectedItem,
+    });
+  };
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100]">
       <div className="bg-white/90 backdrop-blur-md rounded-3xl p-8 shadow-2xl max-w-lg w-[90%]">
@@ -23,7 +27,8 @@ const ItemInventory = ({ items, isMyTurn, onSelectItem, onClose }) => {
             return (
               <button
                 key={idx}
-                onClick={() => setSelectedIdx(idx)}
+                onClick={() => handleSelect(idx)}
+                disabled={!isMyTurn}
                 className={`
                   w-24 h-24 rounded-2xl border-4 flex items-center justify-center transition-all
                   ${
