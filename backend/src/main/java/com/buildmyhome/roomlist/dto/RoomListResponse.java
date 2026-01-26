@@ -18,4 +18,6 @@ public class RoomListResponse {
   private boolean joinable; // 입장 버튼 활성/비활성
   private String hostNickname; // 방장 닉네임
   private LocalDateTime createdAt; // 방 생성 시간
+  @com.fasterxml.jackson.annotation.JsonProperty("isPrivate")
+  private boolean isPrivate; // 비밀방 여부
 }
