@@ -1,101 +1,96 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import ExitButton from '../components/common/ExitButton';
+import TopButtons from '../components/common/TopButtons';
+import { HomeIcon } from '@heroicons/react/24/solid';
 
 export default function Config() {
-  // 1. localStorage에서 기존 볼륨을 가져오거나 기본값(0.4) 설정
+  const navigate = useNavigate();
+
+  // BGM Volume State
   const [bgVolume, setBgVolume] = useState(() => {
     const saved = localStorage.getItem('bgVolume');
     return saved !== null ? parseFloat(saved) : 0.4;
   });
 
-  // 2. 볼륨이 변경될 때마다 상태 업데이트 및 localStorage 저장
+  // SFX Volume State (Mock for now, or use localStorage)
+  const [sfxVolume, setSfxVolume] = useState(0.5);
+
   const handleVolumeChange = (e) => {
     const newVolume = parseFloat(e.target.value);
     setBgVolume(newVolume);
     localStorage.setItem('bgVolume', newVolume);
   };
 
+  const handleSfxChange = (e) => {
+    setSfxVolume(parseFloat(e.target.value));
+  };
+
   return (
     <div
-      className="relative w-full h-screen bg-cover bg-center flex items-center justify-center overflow-hidden"
+      className="relative w-full h-screen flex items-center justify-center overflow-hidden font-gosanja"
       style={{
-        backgroundImage: "url('/images/background.jpg')",
+        backgroundImage: "url('/images/setting/bg-setting.jpg')",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
       }}
     >
-      {/* 뒤로가기 버튼 */}
-      <Link
-        to="/home"
-        className="absolute top-8 left-8 bg-[#fdf6e3] border-[4px] border-[#8b5a2b] p-3 rounded-2xl shadow-[4px_4px_0px_#8b5a2b] hover:scale-110 transition z-50"
-      >
-        <span className="text-2xl">🏠</span>
-      </Link>
+      {/* 2026 배경 패턴(세모 등) - CSS로 구현하려면 별도 작업 필요 */}
 
-      {/* 설정 보드 (메인 컨테이너) */}
-      <div className="relative w-[650px] bg-[#fdf6e3] rounded-[60px] border-[12px] border-[#8b5a2b] shadow-[20px_20px_0px_rgba(0,0,0,0.1)] overflow-hidden">
-        {/* 상단 타이틀 영역 */}
-        <div className="pt-10 pb-6 px-16">
-          <h1 className="text-6xl font-black text-[#5d4037] tracking-tighter opacity-80 uppercase">CONFIG</h1>
+      {/* 1. 상단 아이콘 영역 */}
+      {/* 홈 버튼 (좌측 상단) */}
+      <div className="absolute top-[40px] left-[40px] z-50">
+        <button
+          onClick={() => navigate('/home')}
+          className="w-[80px] h-[80px] bg-white rounded-full flex items-center justify-center shadow-lg hover:scale-105 transition-transform cursor-pointer border-[3px] border-white"
+        >
+          <HomeIcon className="w-10 h-10 text-[#594E36]" />
+        </button>
+      </div>
+
+      {/* TopButtons (우측 상단) */}
+      <div className="absolute top-[40px] right-[40px] z-50">
+        <TopButtons
+          nickname={sessionStorage.getItem('nickname') || '주민'}
+          onProfileClick={() => navigate('/mypage')}
+          onBellClick={() => navigate('/notifications')}
+          onConfigClick={() => {}} // 이미 설정 페이지
+          colors={{
+            text: '#594E36',
+            badgeBg: '#FDFBF6',
+            badgeText: '#594E36',
+          }}
+        />
+      </div>
+
+      {/* 중앙 컨텐츠 영역 (타이틀 + 카드) */}
+      <div className="flex flex-col items-center gap-8 relative z-10">
+        {/* 타이틀 영역 (카드 밖으로 이동) */}
+        <div className="flex flex-col items-center gap-[60px] w-[1346px]">
+          <h1 className="text-[60px] font-black text-[#594E36] whitespace-nowrap">환경설정</h1>
+
+          <div className="flex items-center w-full">
+            {/* 시작점 (동그라미) */}
+            <div className="w-4 h-4 rounded-full bg-[#594E36]" />
+            {/* 점선 (Flex grow로 나머지 영역 채움) */}
+            <div className="h-[4px] flex-1 border-b-[6px] border-[#594E36] border-dashed opacity-80" />
+            {/* 끝점 (동그라미) */}
+            <div className="w-4 h-4 rounded-full bg-[#594E36]" />
+          </div>
         </div>
 
-        {/* 중간 나무 선반/구분선 */}
-        <div className="h-6 bg-[#8b5a2b] w-full border-y-4 border-[#6d4622] relative">
-          <span className="absolute -top-8 left-10 text-3xl">🌰</span>
-          <span className="absolute -top-6 right-16 text-2xl">🍄</span>
-        </div>
-
-        {/* 설정 항목 리스트 */}
-        <div className="p-12 space-y-8 text-[#5d4037]">
-          {/* Key Config */}
-          <div className="flex items-center text-3xl font-bold">
-            <span className="w-48 text-[#a67c52]">key Config</span>
-          </div>
-
-          {/* Com Level */}
-          <div className="flex items-center justify-between text-3xl font-bold">
-            <span className="text-[#a67c52]">Com Level </span>
-            <div className="relative w-64">
-              <select className="w-full bg-[#d4a373] border-[4px] border-[#8b5a2b] rounded-2xl py-2 px-4 appearance-none text-[#fdf6e3] cursor-pointer outline-none shadow-md">
-                <option>Very Easy</option>
-                <option>Easy</option>
-                <option>Normal</option>
-              </select>
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xl">🍃</span>
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-[#fdf6e3]">▼</span>
-            </div>
-          </div>
-
-          {/* Quality */}
-          <div className="flex items-center justify-between text-3xl font-bold">
-            <span className="text-[#a67c52]">Quality </span>
-            <div className="relative w-64">
-              <select className="w-full bg-[#d4a373] border-[4px] border-[#8b5a2b] rounded-2xl py-2 px-4 appearance-none text-[#fdf6e3] cursor-pointer outline-none shadow-md text-center">
-                <option>Low</option>
-                <option>Medium</option>
-                <option>High</option>
-              </select>
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm text-[#fdf6e3]">▼</span>
-            </div>
-          </div>
-
-          {/* Voice Slider (UI만 유지) */}
-          <div className="flex items-center justify-between text-3xl font-bold opacity-50">
-            <span className="text-[#a67c52]">Voice </span>
-            <div className="flex items-center gap-4 w-64">
-              <span className="text-2xl">🔊</span>
-              <div className="relative w-full h-3 bg-[#8b5a2b]/30 rounded-full">
-                <div className="absolute top-0 left-0 h-full bg-[#8b5a2b] rounded-full w-[70%]"></div>
-                <div className="absolute top-1/2 left-[70%] -translate-x-1/2 -translate-y-1/2 text-2xl">🍃</div>
+        {/* 2. 중앙 컨텐츠 카드 (1346 x 664, Radius 120px) */}
+        <div className="relative w-[1346px] h-[664px] bg-[#E8F5E9] rounded-[120px] shadow-2xl flex flex-col items-center justify-center pt-[20px]">
+          {/* 슬라이더 영역 */}
+          <div className="flex flex-col gap-[60px] w-full items-center">
+            {/* BGM Slider */}
+            <div className="w-[1080px] flex flex-col gap-4">
+              <div className="flex justify-between items-end px-4">
+                <span className="text-[32px] font-black text-[#594E36]">배경음악 (BGM)</span>
+                <span className="text-[32px] font-black text-[#594E36] opacity-50">{Math.round(bgVolume * 100)}%</span>
               </div>
-            </div>
-          </div>
-
-          {/* bg Sound Slider (실제 작동 로직 적용) */}
-          <div className="flex items-center justify-between text-3xl font-bold">
-            <span className="text-[#a67c52]">bg Sound </span>
-            <div className="flex items-center gap-4 w-64">
-              <span className="text-2xl">🎵</span>
-              <div className="relative flex-1 h-3 bg-[#8b5a2b]/30 rounded-full flex items-center">
-                {/* 실제 슬라이더 입력창 (투명하게 덮음) */}
+              {/* Slider Track: White */}
+              <div className="relative w-full h-[48px] bg-white rounded-[24px] flex items-center px-0 shadow-inner">
                 <input
                   type="range"
                   min="0"
@@ -103,29 +98,53 @@ export default function Config() {
                   step="0.01"
                   value={bgVolume}
                   onChange={handleVolumeChange}
-                  className="absolute w-full h-8 opacity-0 cursor-pointer z-10"
+                  className="absolute w-full h-full opacity-0 cursor-pointer z-20 top-0 left-0"
                 />
-                {/* 볼륨 게이지 바 */}
+                {/* Filled Bar - White (Hidden effectively, or same as track) */}
                 <div
-                  className="h-full bg-[#8b5a2b] rounded-full transition-all"
+                  className="h-full bg-white rounded-[24px] absolute top-0 left-0 pointer-events-none"
                   style={{ width: `${bgVolume * 100}%` }}
                 />
-                {/* 나뭇잎 핸들 아이콘 */}
+                {/* Thumb Circle - Brown #594E36 */}
                 <div
-                  className="absolute text-3xl pointer-events-none transition-all"
-                  style={{ left: `calc(${bgVolume * 100}% - 15px)` }}
-                >
-                  🍃
-                </div>
+                  className="w-[48px] h-[48px] bg-[#594E36] rounded-full absolute top-0 pointer-events-none shadow-lg border-4 border-white"
+                  style={{ left: `calc(${bgVolume * 100}% - 24px)` }}
+                />
+              </div>
+            </div>
+
+            {/* SFX Slider */}
+            <div className="w-[1080px] flex flex-col gap-4">
+              <div className="flex justify-between items-end px-4">
+                <span className="text-[32px] font-black text-[#594E36]">효과음 (SFX)</span>
+                <span className="text-[32px] font-black text-[#594E36] opacity-50">{Math.round(sfxVolume * 100)}%</span>
+              </div>
+              <div className="relative w-full h-[48px] bg-white rounded-[24px] flex items-center px-0 shadow-inner">
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value={sfxVolume}
+                  onChange={handleSfxChange}
+                  className="absolute w-full h-full opacity-0 cursor-pointer z-20 top-0 left-0"
+                />
+                <div
+                  className="h-full bg-white rounded-[24px] absolute top-0 left-0 pointer-events-none"
+                  style={{ width: `${sfxVolume * 100}%` }}
+                />
+                <div
+                  className="w-[48px] h-[48px] bg-[#594E36] rounded-full absolute top-0 pointer-events-none shadow-lg border-4 border-white"
+                  style={{ left: `calc(${sfxVolume * 100}% - 24px)` }}
+                />
               </div>
             </div>
           </div>
         </div>
-
-        {/* 하단 모서리 장식 */}
-        <span className="absolute bottom-4 left-6 text-4xl transform -rotate-12">🍄</span>
-        <span className="absolute bottom-6 right-10 text-3xl opacity-80">🍂</span>
       </div>
+
+      {/* 3. 하단 나가기 버튼 (우측 하단) */}
+      <ExitButton onClick={() => navigate('/home')} className="absolute bottom-8 right-8" />
     </div>
   );
 }

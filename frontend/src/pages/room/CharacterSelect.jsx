@@ -7,7 +7,8 @@ import { leaveRoom } from '../../utils/roomUtils.js';
 import { getBrokerURL } from '../../utils/ws.js';
 
 // Icons
-import { CheckCircleIcon, ArrowUturnLeftIcon } from '@heroicons/react/24/solid';
+import { CheckCircleIcon } from '@heroicons/react/24/solid';
+import ExitButton from '../../components/common/ExitButton';
 
 const CharacterSelect = () => {
   const { roomId } = useParams();
@@ -119,7 +120,7 @@ const CharacterSelect = () => {
                 <img
                   src={getPreviewImage(previewChar)}
                   alt={previewChar.name}
-                  className="h-[52vh] max-h-[520px] object-contain drop-shadow-2xl"
+                  className="w-[298px] h-[437px] object-contain drop-shadow-2xl"
                 />
               </div>
 
@@ -221,15 +222,7 @@ const CharacterSelect = () => {
 
           {/* 뒤로가기 (나가기) - 우측 하단 절대 위치 */}
           <div className="absolute bottom-[40px] right-[40px]">
-            <button
-              onClick={handleLeave}
-              className="w-[205px] h-[62px] bg-white rounded-[31px] shadow-lg flex items-center justify-center gap-3 hover:scale-105 active:scale-95 transition-transform"
-            >
-              <ArrowUturnLeftIcon className="w-[32px] h-[32px]" style={{ color: COLORS.darkBrown }} />
-              <span className="text-[32px] font-bold pb-2" style={{ color: COLORS.darkBrown }}>
-                나가기
-              </span>
-            </button>
+            <ExitButton onClick={handleLeave} />
           </div>
         </div>
       </div>

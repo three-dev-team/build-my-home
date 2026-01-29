@@ -284,12 +284,6 @@ export default function Login() {
               className="font-bold text-center whitespace-pre-wrap leading-relaxed mb-8"
               style={{
                 color: COLORS.ac.darkBrown,
-                fontSize: '24px', // 28px might be too big for long text, trying 24px or sticking to 28px as requested? Image says 20px-ish? Let's check image.
-                // Image annotation says "font - 28px" for title-like? No, let's look closely at image 1769562642799.png
-                // The text "등록되지 않은 주민이거나..." looks like 20-24px.
-                // Let's use 24px to be safe, or 28px if strictly requested.
-                // Plan said 28px. Let's stick to 24px for body text to be safe with wrapping, or user complained "exact match".
-                // Let's set 24px for now.
                 fontSize: '24px',
               }}
             >

@@ -10,15 +10,13 @@ import {
   UserIcon,
   BellIcon,
   Cog6ToothIcon,
-  LockClosedIcon,
   ChatBubbleLeftEllipsisIcon,
-  ArrowPathIcon,
-  ExclamationTriangleIcon,
-  XMarkIcon,
   SparklesIcon,
   ArrowUturnLeftIcon,
   StarIcon,
+  ExclamationTriangleIcon,
 } from '@heroicons/react/24/solid';
+import ExitButton from '../../components/common/ExitButton';
 
 // 캐릭터 ID -> 이미지 매핑 (전신 이미지 사용)
 const CHARACTER_IMG_MAP = CHARACTERS.reduce((acc, char) => {
@@ -354,12 +352,20 @@ function Room() {
       )}
 
       {/* --- 상단 헤더 (제목 + 라운드) --- */}
-      <div className="w-full h-[120px] px-8 flex justify-center items-center relative z-10 pt-6 gap-4">
+      <div className="w-full h-[120px] flex justify-center items-center relative z-10 pt-[48px] gap-[18px]">
         {/* 방 제목 보드 */}
-        <div className="flex flex-col items-center transform -rotate-1">
-          <div className="bg-[#FFF8EA] px-8 py-3 rounded-[20px] shadow-[0_4px_4px_rgba(0,0,0,0.1)] border-4 border-[#EAD7B8] flex items-center gap-2">
-            <span className="bg-[#E76C21] text-white text-sm px-2 py-1 rounded-md font-bold">목적지 &gt;&gt;</span>
-            <span className="text-3xl font-black text-[#594E36]">{roomTitle}</span>
+        <div className="flex flex-col items-center">
+          <div
+            className="w-[692px] h-[100px] flex items-center justify-center gap-[36px] bg-center bg-no-repeat"
+            style={{
+              backgroundImage: "url('/images/room-waiting/ui-room-titlebox.webp')",
+              backgroundSize: '100% 100%',
+            }}
+          >
+            <span className="text-4xl font-black text-[#594E36] drop-shadow-sm pt-2">목적지 &gt;&gt;</span>
+            <span className="text-4xl font-black text-[#594E36] drop-shadow-sm pt-2 overflow-hidden text-ellipsis whitespace-nowrap max-w-[380px]">
+              {roomTitle}
+            </span>
           </div>
 
           {/* Host Auto-Start Countdown (Below Title) - Only for Host */}
@@ -372,8 +378,26 @@ function Room() {
         </div>
 
         {/* 라운드 배지 (읽기 전용) */}
-        <div className="bg-white/90 p-3 rounded-[20px] shadow-md border-4 border-[#EAD7B8] flex items-center justify-center gap-1">
-          <img src={`/images/icon-dice-${totalRounds}.png`} alt="rounds" className="w-[50px] h-[50px] object-contain" />
+        <div
+          className="w-[100px] h-[100px] flex items-center justify-center bg-center bg-no-repeat"
+          style={{
+            backgroundImage: "url('/images/room-waiting/ui-room-dicebox.webp')",
+            backgroundSize: 'contain',
+          }}
+        >
+          <div
+            className="w-[64px] h-[64px] bg-[#594E36]"
+            style={{
+              maskImage: `url(/images/room-waiting/icon-dice-${totalRounds}.png)`,
+              maskSize: 'contain',
+              maskRepeat: 'no-repeat',
+              maskPosition: 'center',
+              WebkitMaskImage: `url(/images/room-waiting/icon-dice-${totalRounds}.png)`,
+              WebkitMaskSize: 'contain',
+              WebkitMaskRepeat: 'no-repeat',
+              WebkitMaskPosition: 'center',
+            }}
+          />
         </div>
       </div>
 
@@ -388,19 +412,22 @@ function Room() {
 
           return (
             <div key={player.index} className="flex flex-col items-center gap-4 relative">
-              {/* 신고 버튼 - 모서리 겹침을 위해 래퍼로 이동 */}
-              {!isMySlot && player.nickname && (
-                <div className="absolute -top-4 -right-4 z-50">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleReport(player);
-                    }}
-                    className="bg-white border-2 border-[#ff6b6b] text-[#ff6b6b] rounded-full p-2 shadow-md hover:bg-[#FFF0F0] flex items-center justify-center transition hover:scale-110"
-                    title="신고하기"
-                  >
-                    <ExclamationTriangleIcon className="w-6 h-6" />
-                  </button>
+              {/* 신고 드롭다운 (overflow 방지를 위해 카드 밖으로 이동) */}
+              {activeDropdown === `report-${player.index}` && (
+                <div className="absolute top-[-10px] z-[60] animate-fade-in-up">
+                  <div className="bg-white border-2 border-[#EAD7B8] rounded-xl shadow-lg overflow-hidden">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleReport(player);
+                        setActiveDropdown(null);
+                      }}
+                      className="px-4 py-2 hover:bg-[#FFF0F0] text-[#ff6b6b] font-bold flex items-center gap-2 w-full whitespace-nowrap"
+                    >
+                      <ExclamationTriangleIcon className="w-5 h-5" />
+                      신고하기
+                    </button>
+                  </div>
                 </div>
               )}
               {/* 카드 */}
@@ -420,9 +447,13 @@ function Room() {
                 {/* 1. 플레이어 존재 */}
                 {player.nickname && (
                   <div className="w-full h-full relative">
-                    {/* 배경 이미지 */}
+                    {/* 배경 이미지 - 내 슬롯이면 me, 아니면 other */}
                     <img
-                      src="/images/room-waiting/ui-room-playercard-other.webp"
+                      src={
+                        isMySlot
+                          ? '/images/room-waiting/ui-room-playercard-me.webp'
+                          : '/images/room-waiting/ui-room-playercard-other.webp'
+                      }
                       alt="background"
                       className="absolute inset-0 w-full h-full object-cover"
                     />
@@ -434,8 +465,18 @@ function Room() {
                       </div>
 
                       {/* 이름 + 방장 배지 */}
-                      <div className="relative flex justify-center items-center mb-2 mt-4 w-full">
-                        <div className="text-3xl font-black text-[#594E36] relative">
+                      <div className="relative flex justify-center items-center mb-2 mt-4 w-full z-50">
+                        <div
+                          className={`text-3xl font-black text-[#594E36] relative ${!isMySlot ? 'cursor-pointer' : ''}`}
+                          onClick={(e) => {
+                            if (!isMySlot) {
+                              e.stopPropagation();
+                              setActiveDropdown(
+                                activeDropdown === `report-${player.index}` ? null : `report-${player.index}`,
+                              );
+                            }
+                          }}
+                        >
                           {player.nickname}
                           {player.isHost && (
                             <div className="absolute left-full top-1/2 -translate-y-1/2 ml-2 bg-[#896339] text-white text-xs font-bold px-2 py-1 rounded-full shadow-sm whitespace-nowrap">
@@ -499,7 +540,16 @@ function Room() {
                         {player.index}
                       </div>
 
-                      {/* 필요 시 콘텐츠 오버레이, 현재 배경에 텍스트 있음 */}
+                      {/* 대기중 텍스트 오버레이 */}
+                      <span
+                        className="text-4xl font-black text-white tracking-widest relative z-30"
+                        style={{
+                          WebkitTextStroke: '8px #C4A485',
+                          paintOrder: 'stroke fill',
+                        }}
+                      >
+                        대기중
+                      </span>
                     </div>
                   </div>
                 )}
@@ -508,13 +558,10 @@ function Room() {
                 {islocked && (
                   <div className="w-full h-full relative">
                     <img
-                      src="/images/room-waiting/ui-room-playercard-other.webp"
+                      src="/images/room-waiting/ui-room-playercard-lock.webp"
                       alt="locked"
-                      className="absolute inset-0 w-full h-full object-cover opacity-80"
+                      className="absolute inset-0 w-full h-full object-cover"
                     />
-                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center pb-12">
-                      <LockClosedIcon className="w-20 h-20 text-[#A89B8D]" />
-                    </div>
                   </div>
                 )}
               </div>
@@ -529,10 +576,10 @@ function Room() {
                       e.stopPropagation();
                       handleKick(player.memberId);
                     }}
-                    className="w-[80px] h-[80px] bg-white rounded-[24px] shadow-lg flex items-center justify-center hover:scale-105 transition text-[#594E36] hover:text-[#EB5757]"
+                    className="w-[80px] h-[80px] bg-white rounded-[24px] shadow-lg flex items-center justify-center hover:scale-105 transition hover:bg-[#FFF0F0]"
                     title="강퇴하기"
                   >
-                    <XMarkIcon className="w-10 h-10" />
+                    <img src="/images/room-waiting/icon-x.svg" alt="kick" className="w-10 h-10 object-contain" />
                   </button>
 
                   {/* 위임 버튼 */}
@@ -541,7 +588,7 @@ function Room() {
                       e.stopPropagation();
                       handleDelegate(player.memberId);
                     }}
-                    className="w-[80px] h-[80px] bg-white rounded-[24px] shadow-lg flex items-center justify-center hover:scale-105 transition text-[#FFD700] hover:text-[#F2994A]"
+                    className="w-[80px] h-[80px] bg-white rounded-[24px] shadow-lg flex items-center justify-center hover:scale-105 transition text-[#594E36]"
                     title="방장 위임"
                   >
                     <StarIcon className="w-10 h-10" />
@@ -581,7 +628,11 @@ function Room() {
                     onClick={() => navigate(`/rooms/${roomId}/select`)}
                     className="w-[80px] h-[80px] bg-white rounded-[24px] shadow-lg flex items-center justify-center hover:scale-105 transition"
                   >
-                    <ArrowPathIcon className="w-8 h-8 text-[#594E36]" />
+                    <img
+                      src="/images/room-waiting/icon-choose.svg"
+                      alt="re-select"
+                      className="w-[80px] h-[80px] object-contain p-4"
+                    />
                   </button>
 
                   {/* 주사위 (라운드 선택 - 방장 전용) */}
@@ -591,10 +642,18 @@ function Room() {
                         onClick={() => setActiveDropdown(activeDropdown === 'rounds' ? null : 'rounds')}
                         className="w-[80px] h-[80px] bg-white rounded-[24px] shadow-lg flex items-center justify-center hover:scale-105 transition relative"
                       >
-                        <img
-                          src={`/images/icon-dice-${totalRounds}.png`}
-                          alt="dice"
-                          className="w-[50px] h-[50px] object-contain"
+                        <div
+                          className="w-[64px] h-[64px] bg-[#594E36]"
+                          style={{
+                            maskImage: `url(/images/room-waiting/icon-dice-${totalRounds}.png)`,
+                            maskSize: 'contain',
+                            maskRepeat: 'no-repeat',
+                            maskPosition: 'center',
+                            WebkitMaskImage: `url(/images/room-waiting/icon-dice-${totalRounds}.png)`,
+                            WebkitMaskSize: 'contain',
+                            WebkitMaskRepeat: 'no-repeat',
+                            WebkitMaskPosition: 'center',
+                          }}
                         />
                       </button>
 
@@ -678,13 +737,7 @@ function Room() {
 
         {/* 우측: 나가기 (작은 알약) - 위치 조정? */}
         <div className="absolute right-10 bottom-8">
-          <button
-            onClick={handleLeave}
-            className="bg-white w-[180px] h-[60px] rounded-[30px] shadow-lg hover:scale-105 transition flex items-center justify-center gap-2"
-          >
-            <ArrowUturnLeftIcon className="w-6 h-6 text-[#594E36]" />
-            <span className="text-[#594E36] text-xl font-bold pb-1">나가기</span>
-          </button>
+          <ExitButton onClick={handleLeave} />
         </div>
       </div>
 

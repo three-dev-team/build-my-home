@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Cog6ToothIcon, BellIcon, UserIcon } from '@heroicons/react/24/solid';
+import TopButtons from '../components/common/TopButtons';
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -65,41 +65,25 @@ export default function Home() {
       {/*<audio ref={audioRef} src="/sounds/home_bgm.mp3" loop />*/}
 
       {/* 1. 상단 좌측 로고 (위치/크기 조정) */}
-      <header className={`absolute top-[20px] -left-[56px] z-10 ${uiTransitionClass}`}>
+      <header className={`w-[360px] h-[180px] absolute top-[20px] left-[56px] z-10 ${uiTransitionClass}`}>
         <Link to="/home" className="inline-block hover:scale-105 transition-transform">
           <img src="/images/ui-logo.png" alt="지어봐요 마이홈 로고" className="w-[634px] drop-shadow-md" />
         </Link>
       </header>
 
-      {/* 2. 상단 우측 메뉴 (프로필, 알림, 설정) */}
-      <div className={`absolute top-[20px] right-[40px] z-20 flex gap-6 items-start ${uiTransitionClass}`}>
-        {/* 프로필 (아이콘 + 닉네임) */}
-        <Link to={isLoggedIn ? '/myPage' : '/login'} className="flex flex-col items-center gap-1 group">
-          <div className={`${iconBoxStyle} overflow-hidden border-[3px] border-white`}>
-            <UserIcon className="w-10 h-10 text-[#594E36]" />
-          </div>
-          {/* 닉네임 뱃지 (80x40, radius-20px) */}
-          <div className="flex items-center justify-center min-w-[80px] h-[40px] bg-[#FDFBF6] rounded-[20px] shadow-sm px-3">
-            <span className="text-[24px] font-black text-[#594E36] leading-none pb-1">
-              {isLoggedIn ? nickname : '로그인'}
-            </span>
-          </div>
-        </Link>
-
-        {/* 알림 */}
-        <Link to="/notifications" className="flex flex-col items-center gap-1 group">
-          <div className={iconBoxStyle}>
-            <BellIcon className="w-10 h-10 text-[#594E36]" />
-          </div>
-        </Link>
-
-        {/* 설정 */}
-        <button className="flex flex-col items-center gap-1 group">
-          <div className={iconBoxStyle}>
-            <Cog6ToothIcon className="w-10 h-10 text-[#594E36]" />
-          </div>
-        </button>
-      </div>
+      {/* 2. 상단 우측 메뉴 (TopButtons 컴포넌트 사용) */}
+      <TopButtons
+        nickname={isLoggedIn ? nickname : '로그인'}
+        onProfileClick={() => navigate(isLoggedIn ? '/myPage' : '/login')}
+        onBellClick={() => navigate('/notifications')}
+        onConfigClick={() => navigate('/config')}
+        colors={{
+          text: '#594E36',
+          badgeBg: '#FDFBF6',
+          badgeText: '#594E36',
+        }}
+        className={`absolute top-[40px] right-[40px] z-20 ${uiTransitionClass}`}
+      />
 
       {/* 3. 우측 하단 게임 시작 버튼 (540*190) */}
       <div className={`absolute bottom-6 right-3 z-30 ${uiTransitionClass}`}>
