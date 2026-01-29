@@ -35,3 +35,9 @@ out/
 
 ### VS Code ###
 .vscode/
+
+# OAuth & JWT Secrets
+src/main/resources/application-secret.yml
+
+# backend/.gitignore에 작성
+src/main/resources/static

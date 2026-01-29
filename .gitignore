@@ -1,0 +1,46 @@
+# Project IDX & History
+.history/
+.antigravityrules
+history/
+
+
+# Media files (용량이 크다면 제외 권장)
+*.mp3
+*.mp4
+.vscode
+.env
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Secret
+**/application-secret.yml
+**/application-secret.yaml
+
+# Build output
+**/dist/
+.history
+
+backend/src/main/resources/

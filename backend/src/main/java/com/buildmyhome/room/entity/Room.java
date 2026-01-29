@@ -6,43 +6,44 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "rooms")
+@Table(
+  name = "rooms",
+  indexes = {
+    // 방이 많아졌을 때 "WAITING만" + "id 범위조회(>=, <)"를 빠르게 하기 위한 인덱스
+    @Index(name = "idx_rooms_status_id", columnList = "status,id"),
+  }
+)
 @Getter
 @Setter
-@ToString(exclude = "host")
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class Room extends BaseTimeEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+  @Id
+  @GeneratedValue(strategy = GenerationType.IDENTITY)
+  private Long id;
 
-    @Column(nullable = false)
-    private String title;
+  @Column(nullable = false)
+  private String title;
 
-    @Column(nullable = false)
-    private Integer maxPlayers; // 2 or 4
+  @Column(nullable = false)
+  private Integer maxPlayers; // 2 ~ 4
 
-    @Builder.Default
-    @Column(nullable = false)
-    private Integer currentPlayers = 1;
+  @Enumerated(EnumType.STRING)
+  @Column(nullable = false)
+  @Builder.Default
+  private Status status = Status.WAITING;
 
-    @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
-    @Builder.Default
-    private Status status = Status.WAITING;
+  @Column(nullable = false)
+  private Integer totalRounds; // 5, 10, 15, 20
 
-    @Column(nullable = false)
-    private Integer totalRounds; // 5, 10, 15, 20
+  @Column
+  private String password;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "host_id", nullable = false)
-    private Member host; // 방장
 
-    public enum Status {
-        WAITING, // 대기 중
-        PLAYING // 게임 중
-    }
+  public enum Status {
+    WAITING, // 대기 중
+    PLAYING, // 게임 중
+  }
 }

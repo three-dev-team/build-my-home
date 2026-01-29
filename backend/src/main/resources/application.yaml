@@ -1,6 +1,85 @@
 spring:
+  profiles:
+    include: secret
   application:
     name: build-my-home
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    # 아래 username, password는 secret 파일에서 변수로 가져옵니다.
+    username: ${spring.mail.username}
+    password: ${spring.mail.password}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope:
+              - profile
+              - email
+
+            # [MODE 1] Localhost Development
+            # redirect-uri: "{baseUrl}/login/oauth2/code/google" # Default
+
+            # [MODE 2] External Access (Server Test) - Update IP!
+            # redirect-uri: "http://192.168.123.8.nip.io:8088/login/oauth2/code/google"
+          kakao:
+            client-id: bfba72ab2da9559a28b22bab5e5f07f2
+            client-secret: Oaqj4wJ5JR9kVAnxtcjZ5exSKzG2SG6y
+            client-authentication-method: client_secret_post
+            authorization-grant-type: authorization_code
+            # [MODE 1] Localhost Development
+            redirect-uri: "{baseUrl}/login/oauth2/code/kakao"
+
+            # [MODE 2] External Access (Server Test) - Update IP!
+            # redirect-uri: "http://192.168.123.8.nip.io:8088/login/oauth2/code/kakao"
+            scope:
+              - profile_nickname
+            client-name: Kakao
+          github:
+            client-id: ${GITHUB_CLIENT_ID}
+            client-secret: ${GITHUB_CLIENT_SECRET}
+            scope:
+              - user:email
+              - read:user
+          naver:
+            client-id: ${NAVER_CLIENT_ID}
+            client-secret: ${NAVER_CLIENT_SECRET}
+            authorization-grant-type: authorization_code
+            # [MODE 1] Localhost Development
+            redirect-uri: "{baseUrl}/login/oauth2/code/naver"
+
+            # [MODE 2] External Access (Server Test) - Update IP!
+            # redirect-uri: "http://192.168.123.8.nip.io:8088/login/oauth2/code/naver"
+            scope:
+              - name
+              - email
+              - profile_image
+            client-name: Naver
+
+        provider:
+          kakao:
+            authorization-uri: https://kauth.kakao.com/oauth/authorize
+            token-uri: https://kauth.kakao.com/oauth/token
+            user-info-uri: https://kapi.kakao.com/v2/user/me
+            user-name-attribute: id # 카카오는 id를 식별자로 사용
+          naver:
+            authorization-uri: https://nid.naver.com/oauth2.0/authorize
+            token-uri: https://nid.naver.com/oauth2.0/token
+            user-info-uri: https://openapi.naver.com/v1/nid/me
+            user-name-attribute: response # 네이버는 response 하위에 데이터가 있음
 
   # Database Configuration
   datasource:
@@ -21,12 +100,28 @@ spring:
 server:
   port: 8088
 
+app:
+  # [MODE 1] Localhost Development
+  frontBaseUrl: ${FRONT_BASE_URL:http://localhost:5173}
+
+  # [MODE 2] External Access (Server Test) - Update IP!
+  # frontBaseUrl: http://192.168.123.8.nip.io:5173
+
 logging:
   level:
     com.buildmyhome: DEBUG
     org.hibernate.SQL: DEBUG
+    org.springframework.web.socket: DEBUG
+    org.springframework.web: DEBUG
 
 #JWT Configuration
 jwt:
-  secret: buildmyhome-secret-key-must-be-at-least-32-characters-long
+  secret: buildmyhome-secret-key-must-be-at-least-32-characters-long #${JWT_SECRET}
   expiration: 86400000
+
+cors:
+  # [MODE 1] Localhost Development
+  allowed-origins: "http://localhost:5173"
+
+  # [MODE 2] External Access (Server Test) - Update IP!
+  # allowed-origins: "http://localhost:5173,http://192.168.123.8.nip.io:5173"

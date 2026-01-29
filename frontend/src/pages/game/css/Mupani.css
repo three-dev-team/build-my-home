@@ -1,0 +1,212 @@
+.mupaniFullScreen {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+}
+
+.mupaniFullImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mupaniUi {
+  flex-direction: column;
+  justify-content: space-between;
+  background: linear-gradient(180deg, #f7f7fb 0%, #ffffff 60%, #f7f7fb 100%);
+}
+
+.mupaniTopBar {
+  width: 100%;
+  padding: 24px 24px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mupaniTopTitle {
+  font-size: 28px;
+  font-weight: 900;
+  color: #111;
+}
+
+.mupaniTopSub {
+  font-size: 14px;
+  color: #666;
+}
+
+.mupaniCenter {
+  width: 100%;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 24px;
+}
+
+.mupaniInfoCard {
+  width: min(640px, 100%);
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 20px;
+  padding: 20px 20px 16px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+}
+
+.mupaniRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+}
+
+.mupaniLabel {
+  font-size: 15px;
+  font-weight: 800;
+  color: #333;
+}
+
+.mupaniValue {
+  font-size: 16px;
+  font-weight: 900;
+  color: #111;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mupaniBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 900;
+  background: rgba(0, 0, 0, 0.06);
+  color: #222;
+}
+
+.mupaniDivider {
+  width: 100%;
+  height: 1px;
+  background: rgba(0, 0, 0, 0.08);
+  margin: 8px 0;
+}
+
+.mupaniHint {
+  margin-top: 12px;
+  font-size: 14px;
+  color: #444;
+  line-height: 1.4;
+  font-weight: 700;
+}
+
+.mupaniBottom {
+  width: 100%;
+  padding: 12px 24px 24px;
+}
+
+.mupaniControls {
+  width: min(640px, 100%);
+  margin: 0 auto;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.mupaniQtyBox {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 999px;
+  padding: 10px 12px;
+}
+
+.mupaniQtyBtn {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(0, 0, 0, 0.06);
+  font-size: 20px;
+  font-weight: 900;
+  color: #111;
+  cursor: pointer;
+}
+
+.mupaniQtyBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.mupaniQty {
+  min-width: 54px;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 900;
+  color: #111;
+}
+
+.mupaniBuyBtn {
+  flex: 1;
+  min-width: 180px;
+  height: 56px;
+  border-radius: 999px;
+  border: none;
+  background: #111;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.mupaniBuyBtn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.mupaniSkipBtn {
+  flex: 1;
+  min-width: 180px;
+  height: 56px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(0, 0, 0, 0.08);
+  color: #111;
+  font-size: 16px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.mupaniSkipBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+@media (max-width: 520px) {
+  .mupaniControls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .mupaniQtyBox {
+    justify-content: center;
+  }
+
+  .mupaniBuyBtn,
+  .mupaniSkipBtn {
+    min-width: 100%;
+  }
+}

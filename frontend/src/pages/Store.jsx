@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 
 export default function Store() {
   const [tickets, setTickets] = useState(100);
@@ -11,14 +11,9 @@ export default function Store() {
     >
       {/* 1. 상단 좌측: 게임 로고 */}
       <header className="absolute top-8 left-8 z-10">
-        <Link
-          to="/"
-          className="inline-block transform hover:scale-105 transition-transform"
-        >
+        <Link to="/home" className="inline-block transform hover:scale-105 transition-transform">
           <div className="bg-[#8b5a2b] px-10 py-4 rounded-[35px] border-[6px] border-[#fdf6e3] shadow-[0_8px_0_rgba(0,0,0,0.2)]">
-            <h1 className="text-4xl font-black text-[#fdf6e3] tracking-tighter">
-              지어봐요 마이홈
-            </h1>
+            <h1 className="text-4xl font-black text-[#fdf6e3] tracking-tighter">지어봐요 마이홈</h1>
           </div>
         </Link>
       </header>
@@ -45,13 +40,11 @@ export default function Store() {
       {/* 2. 우상단 재화 표시 영역 */}
       <div className="absolute top-6 right-8 flex gap-4 z-50">
         <div className="bg-[#fdf6e3] px-5 py-2 rounded-full border-[3px] border-[#8b5a2b] flex items-center gap-2 shadow-md">
-          {" "}
+          {' '}
           <div className="w-8 h-8 flex items-center justify-center bg-[#70a1ff] rounded-md rotate-[-10deg] shadow-sm">
             <span className="text-white text-xs">🎫</span>
           </div>
-          <span className="text-2xl font-black text-[#5d4037]">
-            {tickets} Nook Miles
-          </span>
+          <span className="text-2xl font-black text-[#5d4037]">{tickets} Nook Miles</span>
         </div>
       </div>
 

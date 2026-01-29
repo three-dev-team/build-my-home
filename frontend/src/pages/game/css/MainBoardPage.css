@@ -1,0 +1,25 @@
+/* MainBoardPage.css */
+
+.game-board {
+  position: relative;
+  width: 700px; /* 7칸 * 100px */
+  height: 700px; /* 7칸 * 100px */
+  margin: 40px auto;
+  background-color: #ffffff;
+}
+
+.tile {
+  position: absolute;
+  width: 100px;
+  height: 100px;
+  border: 1px solid black;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: white;
+  font-size: 14px;
+  font-weight: bold;
+  text-align: center;
+  word-break: keep-all;
+}
