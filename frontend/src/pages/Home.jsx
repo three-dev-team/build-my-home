@@ -1,16 +1,15 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { Cog6ToothIcon, BellIcon, UserIcon } from '@heroicons/react/24/solid';
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [nickname, setNickname] = useState('');
-  // 1. 들어가자마자 버튼이 보이도록 초기값을 true로 변경
   const [showUI, setShowUI] = useState(true);
   const navigate = useNavigate();
-  const videoRef = useRef(null);
   const audioRef = useRef(null);
 
-  // --- (오디오/비디오/로그인 체크) ---
+  // --- (오디오 체크) ---
   useEffect(() => {
     let audioTimer;
     if (audioRef.current) {
@@ -31,7 +30,7 @@ export default function Home() {
     }
     return () => {
       if (audioTimer) clearTimeout(audioTimer);
-      if (audioRef.current) {
+      if (audioRef.current && !audioRef.current.paused) {
         audioRef.current.pause();
         audioRef.current.currentTime = 0;
       }
@@ -39,24 +38,12 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    if (videoRef.current) {
-      videoRef.current.defaultMuted = true;
-      videoRef.current.muted = true;
-      const playPromise = videoRef.current.play();
-      if (playPromise !== undefined) {
-        playPromise.catch((error) => console.log('자동 재생 차단:', error));
-      }
-    }
-  }, []);
-
-  useEffect(() => {
     const token = sessionStorage.getItem('token');
     const savedNickname = sessionStorage.getItem('nickname');
 
-    // 토큰 없으면 로그인 페이지로 쫓아냄
     if (!token) {
-      navigate('/'); // 또는 /login
-      return;
+      // navigate('/'); // 토큰 없어도 홈은 볼 수 있게? or 로그인 강제? 기존 로직: navigate('/')
+      // 디자인 보기 위해 잠시 주석 처리 or isLoggedIn false로 유지
     }
 
     if (token) {
@@ -65,58 +52,62 @@ export default function Home() {
     }
   }, [navigate]);
 
-  // 애니메이션 클래스 (즉시 표시를 위해 duration 유지)
   const uiTransitionClass = `transition-all duration-1000 ease-out ${
     showUI ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
   }`;
 
+  // 공통 아이콘 박스 스타일 (80x80, rounded-full)
+  const iconBoxStyle =
+    'w-[80px] h-[80px] bg-white rounded-full flex items-center justify-center shadow-[0_4px_4px_rgba(0,0,0,0.1)] hover:scale-105 transition-transform cursor-pointer';
+
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-black">
+    <div className="relative w-full h-screen overflow-hidden bg-[url('/images/bg-home.png')] bg-cover bg-center font-sans">
       {/*<audio ref={audioRef} src="/sounds/home_bgm.mp3" loop />*/}
-      {/*<video ... />*/}
 
-      <div className="absolute inset-0 bg-black/10 -z-5" />
-
-      {/* 1. 상단 좌측 로고 */}
-      <header className={`absolute top-0 left-0 z-10 ${uiTransitionClass}`}>
-        <Link to="/home" className="inline-block transform hover:scale-105 transition-transform">
-          <img
-            src="/images/logo.png"
-            alt="지어봐요 마이홈 로고"
-            className="w-[350px] drop-shadow-[0_4px_4px_rgba(0,0,0,0.25)]"
-          />
+      {/* 1. 상단 좌측 로고 (위치/크기 조정) */}
+      <header className={`absolute top-[20px] -left-[56px] z-10 ${uiTransitionClass}`}>
+        <Link to="/home" className="inline-block hover:scale-105 transition-transform">
+          <img src="/images/ui-logo.png" alt="지어봐요 마이홈 로고" className="w-[634px] drop-shadow-md" />
         </Link>
       </header>
 
-      {/* 2. 상단 우측 메뉴 (유저, 알람 2개로 변경) */}
-      <div className={`absolute top-6 right-10 z-20 flex gap-8 items-start ${uiTransitionClass}`}>
-        {/* 유저(마이페이지) 버튼 */}
-        <Link to={isLoggedIn ? '/myPage' : '/login'} className="flex flex-col items-center gap-2 group">
-          <div className="w-16 h-16 bg-[#efe7d1] border-[4px] border-[#a67c52] rounded-full flex items-center justify-center shadow-md group-hover:scale-110 transition-transform overflow-hidden relative">
-            {/* 이모티콘 대신 이미지 태그 사용 */}
-            <img src="/images/villager_avatar.png" alt="유저 아바타" className="w-full h-full object-cover" />
+      {/* 2. 상단 우측 메뉴 (프로필, 알림, 설정) */}
+      <div className={`absolute top-[20px] right-[40px] z-20 flex gap-6 items-start ${uiTransitionClass}`}>
+        {/* 프로필 (아이콘 + 닉네임) */}
+        <Link to={isLoggedIn ? '/myPage' : '/login'} className="flex flex-col items-center gap-1 group">
+          <div className={`${iconBoxStyle} overflow-hidden border-[3px] border-white`}>
+            <UserIcon className="w-10 h-10 text-[#594E36]" />
           </div>
-          <span className="text-sm font-black text-[#8b5a2b] bg-white/90 px-3 py-0.5 rounded-full shadow-sm">
-            {isLoggedIn ? `${nickname}님` : '로그인'}
-          </span>
+          {/* 닉네임 뱃지 (80x40, radius-20px) */}
+          <div className="flex items-center justify-center min-w-[80px] h-[40px] bg-[#FDFBF6] rounded-[20px] shadow-sm px-3">
+            <span className="text-[24px] font-black text-[#594E36] leading-none pb-1">
+              {isLoggedIn ? nickname : '로그인'}
+            </span>
+          </div>
         </Link>
 
-        {/* 알람 버튼 (새로 추가) */}
-        <Link to="/notifications" className="flex flex-col items-center gap-2 group">
-          <div className="w-16 h-16 bg-[#efe7d1] border-[4px] border-[#a67c52] rounded-full flex items-center justify-center text-3xl shadow-md group-hover:scale-110 transition-transform">
-            🔔
+        {/* 알림 */}
+        <Link to="/notifications" className="flex flex-col items-center gap-1 group">
+          <div className={iconBoxStyle}>
+            <BellIcon className="w-10 h-10 text-[#594E36]" />
           </div>
-          <span className="text-sm font-black text-[#8b5a2b] bg-white/90 px-3 py-0.5 rounded-full shadow-sm">알림</span>
         </Link>
+
+        {/* 설정 */}
+        <button className="flex flex-col items-center gap-1 group">
+          <div className={iconBoxStyle}>
+            <Cog6ToothIcon className="w-10 h-10 text-[#594E36]" />
+          </div>
+        </button>
       </div>
 
-      {/* 3. 우측 하단 게임 시작 버튼 */}
+      {/* 3. 우측 하단 게임 시작 버튼 (540*190) */}
       <div className={`absolute bottom-6 right-3 z-30 ${uiTransitionClass}`}>
         <Link to={isLoggedIn ? '/room-list' : '/login'} className="inline-block group">
           <img
-            src="/images/start_button.png"
+            src="/images/btn-start.png"
             alt="게임 시작 버튼"
-            className="w-[500px] hover:scale-105 active:scale-95 transition-transform drop-shadow-[0_8px_4px_rgba(0,0,0,0.3)]"
+            className="w-[540px] h-[190px] object-contain hover:scale-105 active:scale-95 transition-transform drop-shadow-[0_8px_4px_rgba(0,0,0,0.3)]"
           />
         </Link>
       </div>

@@ -1,17 +1,13 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { ExclamationTriangleIcon } from '@heroicons/react/24/solid';
+import { COLORS } from '../../constants/colors';
 
 // --- 소셜 아이콘 컴포넌트 ---
 const GoogleIcon = () => (
   <svg width="72" height="72" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
     <g filter="url(#filter0_d_1_2)">
-      <path
-        d="M28 50C40.1503 50 50 40.1503 50 28C50 15.8497 40.1503 6 28 6C15.8497 6 6 15.8497 6 28C6 40.1503 15.8497 50 28 50Z"
-        fill="#FFFCEF"
-        stroke="#DED0A6"
-        strokeWidth="3"
-      />
       <path
         d="M28 13C29.9 13 31.7 13.7 33 14.9L38.4 9.5C35.6 6.9 32 5.3 28 5.3C19.3 5.3 11.9 10.8 9.2 18.5L15.5 23.4C17.4 17.4 22.3 13 28 13Z"
         fill="#EA4335"
@@ -28,54 +24,38 @@ const GoogleIcon = () => (
         d="M50 28C50 26.4 49.8 24.8 49.4 23.3H28V32H40.7C40.2 34.9 38.3 38.3 37.3 40.6L43.2 45.2C47 41.6 50 35.6 50 28Z"
         fill="#4285F4"
       />
-      <path
-        d="M28 4C14.7452 4 4 14.7452 4 28C4 41.2548 14.7452 52 28 52C41.2548 52 52 41.2548 52 28C52 14.7452 41.2548 4 28 4ZM28 49.3333C16.2176 49.3333 6.66667 39.7824 6.66667 28C6.66667 16.2176 16.2176 6.66667 28 6.66667C39.7824 6.66667 49.3333 16.2176 49.3333 28C49.3333 39.7824 39.7824 49.3333 28 49.3333Z"
-        fill="#9E8F5C"
-        opacity="0.3"
-      />
     </g>
   </svg>
 );
 
 const KakaoIcon = () => (
-  <svg width="72" height="72" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <g filter="url(#filter0_d_1_3)">
-      <path
-        d="M28 50C40.1503 50 50 40.1503 50 28C50 15.8497 40.1503 6 28 6C15.8497 6 6 15.8497 6 28C6 40.1503 15.8497 50 28 50Z"
-        fill="#FAE100"
-        stroke="#E3CD12"
-        strokeWidth="3"
-      />
-      <path
-        fillRule="evenodd"
-        clipRule="evenodd"
-        d="M28 15C19.1634 15 12 20.7622 12 27.871C12 32.4842 14.9388 36.561 19.3891 38.8687C19.1416 40.4074 18.2435 44.2045 18.0667 44.8962C17.9252 45.5413 18.6675 45.9298 19.2042 45.5539C20.4777 44.6644 24.5772 41.8398 26.6997 40.354C27.1272 40.3952 27.5606 40.4187 28 40.4187C36.8366 40.4187 44 34.6565 44 27.5478C44 20.439 36.8366 15 28 15Z"
-        fill="#371D1E"
-      />
-      <path
-        d="M28 4C14.7452 4 4 14.7452 4 28C4 41.2548 14.7452 52 28 52C41.2548 52 52 41.2548 52 28C52 14.7452 41.2548 4 28 4ZM28 49.3333C16.2176 49.3333 6.66667 39.7824 6.66667 28C6.66667 16.2176 16.2176 6.66667 28 6.66667C39.7824 6.66667 49.3333 16.2176 49.3333 28C49.3333 39.7824 39.7824 49.3333 28 49.3333Z"
-        fill="#9E8F5C"
-        opacity="0.3"
-      />
-    </g>
+  <svg width="72" height="72" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M12 3C6.477 3 2 6.918 2 11.75C2 14.932 4.062 17.729 7.16 19.16L5.972 23.362C5.875 23.704 6.297 23.951 6.578 23.714L11.516 19.553C11.676 19.563 11.837 19.568 12 19.568C17.523 19.568 22 15.65 22 10.818C22 5.986 17.523 3 12 3Z"
+      fill="#371D1E"
+    />
+    <text
+      x="12"
+      y="12.5"
+      textAnchor="middle"
+      dominantBaseline="middle"
+      fill="#FAE100"
+      fontSize="6.5"
+      fontWeight="900"
+      fontFamily="sans-serif"
+      style={{ letterSpacing: '-0.5px' }}
+    >
+      TALK
+    </text>
   </svg>
 );
 
 const NaverIcon = () => (
   <svg width="72" height="72" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
     <g filter="url(#filter0_d_1_4)">
-      <path
-        d="M28 50C40.1503 50 50 40.1503 50 28C50 15.8497 40.1503 6 28 6C15.8497 6 6 15.8497 6 28C6 40.1503 15.8497 50 28 50Z"
-        fill="#03C75A"
-        stroke="#02A449"
-        strokeWidth="3"
-      />
       <path d="M16.4 16H24.8L33.2 28.5V16H39.6V40H31.2L22.8 27.5V40H16.4V16Z" fill="white" />
-      <path
-        d="M28 4C14.7452 4 4 14.7452 4 28C4 41.2548 14.7452 52 28 52C41.2548 52 52 41.2548 52 28C52 14.7452 41.2548 4 28 4ZM28 49.3333C16.2176 49.3333 6.66667 39.7824 6.66667 28C6.66667 16.2176 16.2176 6.66667 28 6.66667C39.7824 6.66667 49.3333 16.2176 49.3333 28C49.3333 39.7824 39.7824 49.3333 28 49.3333Z"
-        fill="#02A449"
-        opacity="0.3"
-      />
     </g>
   </svg>
 );
@@ -178,36 +158,6 @@ export default function Login() {
     setModal({ isOpen: true, message: msg });
   };
 
-  // const handleLogin = async () => {
-  //     try {
-  //         const response = await axios.post(`${API_BASE_URL}/login`, {
-  //             email: memberId,
-  //             password: password,
-  //         });
-  //
-  //         if (response.status === 200) {
-  //             const { token, nickname, bell, level } = response.data;
-  //
-  //             // --- 아이디 저장 로직 ---
-  //             if (rememberId) {
-  //                 localStorage.setItem("savedMemberId", memberId);
-  //             } else {
-  //                 localStorage.removeItem("savedMemberId");
-  //             }
-  //
-  //             sessionStorage.setItem("token", token);
-  //             sessionStorage.setItem("nickname", nickname);
-  //             sessionStorage.setItem("bell", bell);
-  //             sessionStorage.setItem("level", level);
-  //
-  //             openAlert(`${nickname}님 환영합니다! 🍃`);
-  //             setTimeout(() => navigate("/home"), 1500);
-  //         }
-  //     } catch (error) {
-  //         openAlert("로그인 정보를 확인해주세요. 😢");
-  //     }
-  // };
-
   const handleLogin = async () => {
     try {
       const response = await axios.post(`${API_BASE_URL}/login`, {
@@ -230,21 +180,21 @@ export default function Login() {
         sessionStorage.setItem('bell', bell);
         sessionStorage.setItem('level', level);
 
-        openAlert(`${nickname}님 환영합니다! 🍃`);
+        openAlert(`${nickname}님 환영합니다!`);
         setTimeout(() => navigate('/home'), 1500);
       }
     } catch (error) {
-      openAlert('로그인 정보를 확인해주세요. 😢');
+      openAlert('로그인 정보를 확인해주세요.');
     }
   };
 
   // 인증번호 발송 (중복 클릭 방지 추가)
   const handleSendCode = async () => {
-    if (!findEmail) return openAlert('이메일을 입력해주세요! 📧');
+    if (!findEmail) return openAlert('이메일을 입력해주세요!');
     setIsSending(true); // 버튼 비활성화 시작
     try {
       await axios.post(`${API_BASE_URL}/send-code`, { email: findEmail });
-      openAlert('인증번호를 발송했습니다! \n메일함을 확인해주세요. 🕊️');
+      openAlert('인증번호를 발송했습니다! \n메일함을 확인해주세요.');
       setFindStep(2);
       setTimeLeft(300); // 5분(300초) 설정
     } catch (error) {
@@ -286,7 +236,7 @@ export default function Login() {
         email: findEmail,
         password: newPassword,
       });
-      openAlert('비밀번호가 변경되었습니다! \n새로운 비밀번호로 로그인하세요. 🎉');
+      openAlert('비밀번호가 변경되었습니다! \n새로운 비밀번호로 로그인하세요.');
       setShowFindModal(false);
       setFindStep(1);
       setFindEmail('');
@@ -303,230 +253,457 @@ export default function Login() {
 
   return (
     <div
-      className="relative w-full h-screen bg-cover bg-center overflow-hidden flex items-center justify-center"
-      style={{ backgroundImage: "url('/images/background.jpg')" }}
+      className="relative w-full h-screen overflow-hidden flex items-center justify-center font-gosanja"
+      style={{
+        backgroundImage: "url('/images/bg-pattern-1.png')",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
     >
-      {/* --- 커스텀 알림 모달 --- */}
+      {/* --- 커스텀 알림 모달 (에러 모달 디자인 적용) --- */}
       {modal.isOpen && (
-        <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="relative w-[350px] bg-[#fdf6e3] rounded-[40px] border-[6px] border-[#8b5a2b] shadow-2xl p-8 flex flex-col items-center animate-in zoom-in-95 duration-200">
-            <p className="text-[#5d4037] font-bold text-center whitespace-pre-wrap mb-6">{modal.message}</p>
-            <button
-              onClick={() => setModal({ isOpen: false, message: '' })}
-              className="bg-[#8b5a2b] text-white px-10 py-2 rounded-full font-black active:scale-95 transition-all"
-            >
-              확인
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* --- 비밀번호 재설정 모달 --- */}
-      {showFindModal && (
-        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="relative w-[450px] bg-[#fdf6e3] p-10 rounded-[50px] border-[8px] border-[#8b5a2b] shadow-2xl flex flex-col items-center animate-in zoom-in-95 duration-200">
-            <div className="absolute -top-12 bg-[#8b5a2b] px-10 py-3 rounded-[30px] border-[4px] border-white shadow-lg text-white font-black text-xl">
-              비밀번호 찾기 🍃
+        <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div
+            className="relative flex flex-col items-center justify-center animate-in zoom-in-95 duration-200"
+            style={{
+              width: '480px',
+              minHeight: '360px', // 내용에 따라 늘어날 수 있도록 minHeight 권장하지만, 디자인상 고정일 수 있음. 일단 minHeight.
+              borderRadius: '80px',
+              backgroundColor: '#FFFFFF',
+              padding: '40px 20px',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+            }}
+          >
+            {/* 경고 아이콘 */}
+            <div className="mb-6">
+              <ExclamationTriangleIcon className="w-16 h-16 text-[#F2C94C]" />
             </div>
 
-            {findStep === 1 && (
-              <div className="w-full mt-6 space-y-5 text-center">
-                <p className="font-bold text-[#8b5a2b]">
-                  비밀번호를 찾고자 하는
-                  <br />
-                  이메일을 입력해주세요.
-                </p>
-                <input
-                  type="email"
-                  placeholder="이메일 주소 입력"
-                  value={findEmail}
-                  onChange={(e) => setFindEmail(e.target.value)}
-                  className="w-full bg-[#efe7d1] border-none rounded-3xl py-4 px-6 text-[#5d4037] font-bold outline-none focus:ring-4 ring-[#8b5a2b]/20"
-                />
-                <button
-                  onClick={handleSendCode}
-                  disabled={isSending}
-                  className={`w-full py-4 rounded-3xl font-black text-xl shadow-lg active:scale-95 transition-all ${isSending ? 'bg-gray-400 opacity-70' : 'bg-[#8b5a2b] text-white'}`}
-                >
-                  {isSending ? '발송 중...' : '인증번호 발송'}
-                </button>
-              </div>
-            )}
-
-            {findStep === 2 && (
-              <div className="w-full mt-6 space-y-5 text-center">
-                <div className="flex flex-col gap-2">
-                  <p className="font-bold text-[#8b5a2b]">
-                    메일로 발송된
-                    <br />
-                    6자리 번호를 입력해주세요.
-                  </p>
-                  <span className="text-red-500 font-bold text-lg animate-pulse">{formatTime(timeLeft)}</span>
-                </div>
-                <input
-                  type="text"
-                  placeholder="인증번호 6자리"
-                  value={authCode}
-                  onChange={(e) => setAuthCode(e.target.value)}
-                  className="w-full bg-[#efe7d1] border-none rounded-3xl py-4 px-6 font-bold outline-none text-center text-2xl tracking-[0.5em]"
-                  maxLength={6}
-                />
-                <button
-                  onClick={handleVerifyCode}
-                  className="w-full bg-[#8b5a2b] text-white py-4 rounded-3xl font-black text-xl shadow-lg active:scale-95 transition-all"
-                >
-                  인증 확인
-                </button>
-                <button
-                  onClick={handleSendCode}
-                  disabled={isSending}
-                  className="text-sm text-[#8b5a2b] font-bold underline opacity-80 hover:opacity-100"
-                >
-                  인증번호 재발송
-                </button>
-              </div>
-            )}
-
-            {findStep === 3 && (
-              <div className="w-full mt-6 space-y-4 text-center">
-                <p className="font-bold text-[#8b5a2b]">
-                  새로 사용할
-                  <br />
-                  비밀번호를 입력해주세요.
-                </p>
-                <input
-                  type="password"
-                  placeholder="새 비밀번호 (8~16자, 특수문자 포함)"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="w-full bg-[#efe7d1] border-none rounded-3xl py-4 px-6 font-bold outline-none focus:ring-4 ring-[#8b5a2b]/20"
-                />
-                <input
-                  type="password"
-                  placeholder="비밀번호 확인"
-                  value={confirmNewPassword}
-                  onChange={(e) => setConfirmNewPassword(e.target.value)}
-                  className="w-full bg-[#efe7d1] border-none rounded-3xl py-4 px-6 font-bold outline-none focus:ring-4 ring-[#8b5a2b]/20"
-                />
-                <button
-                  onClick={handleResetPassword}
-                  className="w-full bg-[#8b5a2b] text-white py-4 rounded-3xl font-black text-xl shadow-lg active:scale-95 transition-all"
-                >
-                  변경 완료
-                </button>
-              </div>
-            )}
-
-            <button
-              onClick={() => {
-                setShowFindModal(false);
-                setFindStep(1);
-                setTimeLeft(0);
+            {/* 메시지 */}
+            <p
+              className="font-bold text-center whitespace-pre-wrap leading-relaxed mb-8"
+              style={{
+                color: COLORS.ac.darkBrown,
+                fontSize: '24px', // 28px might be too big for long text, trying 24px or sticking to 28px as requested? Image says 20px-ish? Let's check image.
+                // Image annotation says "font - 28px" for title-like? No, let's look closely at image 1769562642799.png
+                // The text "등록되지 않은 주민이거나..." looks like 20-24px.
+                // Let's use 24px to be safe, or 28px if strictly requested.
+                // Plan said 28px. Let's stick to 24px for body text to be safe with wrapping, or user complained "exact match".
+                // Let's set 24px for now.
+                fontSize: '24px',
               }}
-              className="mt-8 text-[#a67c52] font-bold underline cursor-pointer"
             >
-              돌아가기
+              {modal.message}
+            </p>
+
+            {/* 확인 버튼 */}
+            <button
+              onClick={() => setModal({ isOpen: false, message: '' })}
+              className="flex items-center justify-center font-black active:scale-95 transition-all shadow-none hover:brightness-105"
+              style={{
+                width: '200px',
+                height: '80px',
+                borderRadius: '40px',
+                backgroundColor: COLORS.ac.coffeeBrown,
+                color: COLORS.ac.creamIvory,
+                fontSize: '28px',
+              }}
+            >
+              <span className="relative z-10" style={{ paddingBottom: '3px' }}>
+                확인
+              </span>
             </button>
           </div>
         </div>
       )}
 
-      {/* --- 메인 로그인 박스 --- */}
-      <div className="relative w-[450px] bg-[#fdf6e3] p-10 rounded-[50px] border-[8px] border-[#8b5a2b] shadow-[15px_15px_0px_rgba(139,90,43,0.15)] flex flex-col items-center">
-        <div className="absolute -top-32">
-          <img src="/images/logo.png" alt="지어봐요 마이홈" className="w-[300px] drop-shadow-xl" />
+      {/* --- 비밀번호 재설정 모달 (디자인 가이드 적용) --- */}
+      {showFindModal && (
+        <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+          <div
+            className="relative w-[520px] p-10 rounded-[80px] shadow-2xl flex flex-col items-center animate-in zoom-in-95 duration-200"
+            style={{
+              backgroundColor: '#FFFFFF', // 디자인상 흰색 배경
+            }}
+          >
+            {/* Header: 비밀번호 찾기 + 닫기 버튼 */}
+            <div className="w-full flex items-center justify-center relative mt-2 mb-6">
+              <span className="font-bold text-[28px]" style={{ color: COLORS.ac.darkBrown }}>
+                비밀번호 찾기
+              </span>
+              <button
+                onClick={() => {
+                  setShowFindModal(false);
+                  setFindStep(1);
+                  setTimeLeft(0);
+                }}
+                className="absolute right-0 top-1/2 -translate-y-1/2 p-2 hover:opacity-70 transition-opacity"
+              >
+                <span className="text-[24px] font-bold" style={{ color: COLORS.ac.darkBrown }}>
+                  X
+                </span>
+              </button>
+            </div>
+
+            {/* Content Body */}
+            <div className="w-full flex flex-col items-center">
+              {findStep === 1 && (
+                <>
+                  <p className="font-bold text-[20px] mb-8 text-center" style={{ color: COLORS.ac.darkBrown }}>
+                    가입한 이메일 주소를 입력해주세요
+                  </p>
+                  <input
+                    type="email"
+                    placeholder="이메일 주소 입력"
+                    value={findEmail}
+                    onChange={(e) => setFindEmail(e.target.value)}
+                    className="text-left pl-8 outline-none transition-all placeholder-opacity-50 mb-6"
+                    style={{
+                      width: '400px',
+                      height: '80px',
+                      borderRadius: '40px',
+                      backgroundColor: '#EBEBEB', // 회색 배경 예시
+                      fontSize: '20px',
+                      color: COLORS.text,
+                      fontWeight: 'bold',
+                    }}
+                  />
+                  <button
+                    onClick={handleSendCode}
+                    disabled={isSending}
+                    className={`font-black text-[24px] active:scale-95 transition-all shadow-none hover:brightness-105 ${isSending ? 'opacity-70' : ''}`}
+                    style={{
+                      width: '400px',
+                      height: '80px',
+                      borderRadius: '40px',
+                      backgroundColor: COLORS.ac.coffeeBrown,
+                      color: COLORS.ac.creamIvory,
+                    }}
+                  >
+                    {isSending ? '발송 중...' : '인증번호 발송하기'}
+                  </button>
+                </>
+              )}
+
+              {findStep === 2 && (
+                <>
+                  <div className="flex flex-col items-center mb-6 gap-1">
+                    <p className="font-bold text-[20px] text-center" style={{ color: COLORS.ac.darkBrown }}>
+                      메일로 발송된
+                      <br />
+                      6자리 번호를 입력해주세요
+                    </p>
+                    {/* 타이머 */}
+                    <span className="font-bold text-[24px]" style={{ color: COLORS.ac.red }}>
+                      {formatTime(timeLeft)}
+                    </span>
+                  </div>
+
+                  <input
+                    type="text"
+                    placeholder="인증 번호 6 자 리"
+                    value={authCode}
+                    onChange={(e) => setAuthCode(e.target.value)}
+                    className="text-center outline-none transition-all placeholder-opacity-50 mb-4 tracking-widest"
+                    style={{
+                      width: '400px',
+                      height: '80px',
+                      borderRadius: '40px',
+                      backgroundColor: '#EBEBEB',
+                      fontSize: '20px',
+                      color: COLORS.text,
+                      fontWeight: 'bold',
+                    }}
+                    maxLength={6}
+                  />
+
+                  <button
+                    onClick={handleVerifyCode}
+                    className="font-black text-[28px] active:scale-95 transition-all shadow-none hover:brightness-105 mb-4"
+                    style={{
+                      width: '400px',
+                      height: '80px',
+                      borderRadius: '40px',
+                      backgroundColor: COLORS.ac.coffeeBrown,
+                      color: COLORS.ac.creamIvory,
+                    }}
+                  >
+                    인증번호 발송하기
+                  </button>
+
+                  <button
+                    onClick={handleSendCode}
+                    disabled={isSending}
+                    className="text-[16px] font-bold underline opacity-80 hover:opacity-100"
+                    style={{ color: COLORS.ac.coffeeBrown }}
+                  >
+                    인증번호 재발송
+                  </button>
+                </>
+              )}
+
+              {findStep === 3 && (
+                <>
+                  <p className="font-bold text-[20px] mb-6 text-center" style={{ color: COLORS.ac.darkBrown }}>
+                    새 비밀번호를 입력해주세요
+                  </p>
+                  <input
+                    type="password"
+                    placeholder="새 비밀번호 (8~16자)"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="text-center outline-none transition-all placeholder-opacity-50 mb-3"
+                    style={{
+                      width: '400px',
+                      height: '80px',
+                      borderRadius: '40px',
+                      backgroundColor: '#EBEBEB',
+                      fontSize: '20px',
+                      color: COLORS.text,
+                      fontWeight: 'bold',
+                    }}
+                  />
+                  <input
+                    type="password"
+                    placeholder="비밀번호 확인"
+                    value={confirmNewPassword}
+                    onChange={(e) => setConfirmNewPassword(e.target.value)}
+                    className="text-center outline-none transition-all placeholder-opacity-50 mb-6"
+                    style={{
+                      width: '400px',
+                      height: '80px',
+                      borderRadius: '40px',
+                      backgroundColor: '#EBEBEB',
+                      fontSize: '20px',
+                      color: COLORS.text,
+                      fontWeight: 'bold',
+                    }}
+                  />
+                  <button
+                    onClick={handleResetPassword}
+                    className="font-black text-[24px] active:scale-95 transition-all shadow-none hover:brightness-105"
+                    style={{
+                      width: '400px',
+                      height: '80px',
+                      borderRadius: '40px',
+                      backgroundColor: COLORS.ac.coffeeBrown,
+                      color: COLORS.ac.creamIvory,
+                    }}
+                  >
+                    변경 완료
+                  </button>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* --- 메인 로그인 박스 (디자인 적용됨) --- */}
+      <div
+        className="relative flex flex-col items-center pt-[60px]"
+        style={{
+          width: '560px',
+          height: '780px',
+          borderRadius: '80px',
+          backgroundColor: COLORS.ac.softYellow,
+        }}
+      >
+        {/* 타이틀 배지 "로그인" */}
+        <div
+          className="absolute -top-[44px] flex items-center justify-center text-white text-[48px] font-black tracking-widest"
+          style={{
+            width: '260px',
+            height: '88px',
+            borderRadius: '44px',
+            backgroundColor: COLORS.ac.coffeeBrown,
+            boxShadow: `0px 8px 0px ${COLORS.ac.darkBrown}`, // 3D 그림자 효과
+            textShadow: '3px 3px 0px rgba(0,0,0,0.25)',
+            WebkitTextStroke: `10px ${COLORS.ac.darkBrown}`,
+            paintOrder: 'stroke fill',
+            color: COLORS.ac.creamIvory,
+            WebkitPaintOrder: 'stroke fill', // 사파리/크롬 지원
+          }}
+        >
+          <span className="relative z-10">로그인</span>
         </div>
 
-        <div className="mt-8 w-full space-y-6">
-          <div className="relative group">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl">🍃</span>
+        {/* 입력 필드 */}
+        <div className="flex flex-col gap-[20px] mt-[40px] w-full items-center">
+          <div className="relative">
             <input
               type="text"
-              placeholder="아이디를 입력하세요."
-              value={memberId}
               onChange={(e) => setMemberId(e.target.value)}
-              className="w-full bg-[#efe7d1] border-none rounded-3xl py-4 pl-12 pr-4 text-[#5d4037] font-bold placeholder-[#a67c52] focus:ring-4 ring-[#8b5a2b]/20 outline-none transition-all"
+              value={memberId}
+              placeholder="아이디를 입력하세요"
+              className="text-left pl-8 outline-none transition-all placeholder-opacity-100"
+              style={{
+                width: '440px',
+                height: '88px',
+                borderRadius: '40px',
+                backgroundColor: COLORS.ac.creamIvory,
+                fontSize: '28px',
+                color: COLORS.text,
+              }}
             />
+            <style>{`
+                    input::placeholder {
+                        color: ${COLORS.text};
+                        opacity: 1;
+                    }
+                 `}</style>
           </div>
-
-          <div className="relative group">
-            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-xl">🍃</span>
+          <div className="relative">
             <input
               type={showPassword ? 'text' : 'password'}
-              placeholder="비밀번호를 입력하세요."
-              value={password}
               onChange={(e) => setPassword(e.target.value)}
+              value={password}
               onKeyPress={(e) => e.key === 'Enter' && handleLogin()}
-              className="w-full bg-[#efe7d1] border-none rounded-3xl py-4 pl-12 pr-12 text-[#5d4037] font-bold placeholder-[#a67c52] focus:ring-4 ring-[#8b5a2b]/20 outline-none transition-all"
+              placeholder="비밀번호를 입력하세요"
+              className="text-left pl-8 outline-none transition-all placeholder-opacity-100"
+              style={{
+                width: '440px',
+                height: '88px',
+                borderRadius: '40px',
+                backgroundColor: COLORS.ac.creamIvory,
+                fontSize: '28px',
+                color: COLORS.text,
+              }}
             />
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-[#a67c52] hover:text-[#8b5a2b] transition-colors"
-              tabIndex="-1"
+              className="absolute right-6 top-1/2 -translate-y-1/2 transition-colors"
+              style={{ color: COLORS.ac.coffeeBrown }}
             >
-              {showPassword ? <EyeSlashIcon className="w-5 h-5" /> : <EyeIcon className="w-5 h-5" />}
+              {showPassword ? <EyeSlashIcon className="w-8 h-8" /> : <EyeIcon className="w-8 h-8" />}
             </button>
           </div>
+        </div>
 
-          {/* --- 아이디 저장 체크박스 --- */}
-          <div className="flex justify-start px-2">
-            <label className="flex items-center gap-2 cursor-pointer group text-[#8b5a2b] font-bold text-sm">
-              <input
-                type="checkbox"
-                checked={rememberId}
-                onChange={(e) => setRememberId(e.target.checked)}
-                className="w-4 h-4 accent-[#8b5a2b] cursor-pointer"
-              />
-              <span className="group-hover:underline">아이디 저장</span>
-            </label>
-          </div>
-
-          <button
-            onClick={handleLogin}
-            className="w-full bg-[#8b5a2b] hover:bg-[#6d4622] text-[#fdf6e3] py-5 rounded-[30px] text-2xl font-black shadow-lg transition-all active:scale-95"
+        {/* 아이디 기억하기 */}
+        <div className="w-[440px] mt-[20px] pl-4 flex justify-start items-center">
+          <label
+            className="flex items-center gap-3 cursor-pointer group hover:scale-105 transition-transform"
+            style={{ color: COLORS.ac.coffeeBrown }}
           >
-            로그인
-          </button>
+            <input
+              type="checkbox"
+              checked={rememberId}
+              onChange={(e) => setRememberId(e.target.checked)}
+              className="w-5 h-5 cursor-pointer"
+              style={{ accentColor: COLORS.ac.coffeeBrown }}
+            />
+            <span className="font-bold text-[16px] pt-1">아이디 기억하기</span>
+          </label>
         </div>
 
-        <div className="mt-6 flex gap-6 text-[#8b5a2b] font-bold text-sm">
-          <Link to="/join" className="hover:underline">
-            회원가입
+        {/* 로그인 버튼 */}
+        <button
+          onClick={handleLogin}
+          className="mt-[30px] flex items-center justify-center text-[32px] font-black active:scale-95 transition-transform shadow-lg hover:brightness-110"
+          style={{
+            width: '440px',
+            height: '88px',
+            borderRadius: '44px',
+            backgroundColor: COLORS.ac.coffeeBrown,
+            color: COLORS.ac.creamIvory,
+            paintOrder: 'stroke fill',
+            WebkitPaintOrder: 'stroke fill',
+          }}
+        >
+          <span className="relative z-10" style={{ paddingBottom: '3px' }}>
+            로그인하기
+          </span>
+        </button>
+
+        {/* 서브 버튼 (회원가입 / 비밀번호 찾기) */}
+        <div className="flex gap-[24px] mt-[25px]">
+          <Link to="/join">
+            <div
+              className="flex items-center justify-center text-white text-[20px] font-bold shadow-md active:scale-95 transition-transform hover:brightness-110"
+              style={{
+                width: '208px',
+                height: '60px',
+                borderRadius: '30px',
+                backgroundColor: COLORS.ac.nookMint,
+                color: COLORS.ac.creamIvory,
+              }}
+            >
+              회원가입
+            </div>
           </Link>
-          <span className="text-[#a67c52]">|</span>
-          <button onClick={() => setShowFindModal(true)} className="hover:underline">
-            비밀번호 찾기
+          <button onClick={() => setShowFindModal(true)}>
+            <div
+              className="flex items-center justify-center text-white text-[20px] font-bold shadow-md active:scale-95 transition-transform hover:brightness-110"
+              style={{
+                width: '208px',
+                height: '60px',
+                borderRadius: '30px',
+                backgroundColor: COLORS.ac.nookMint,
+                color: COLORS.ac.creamWhite,
+              }}
+            >
+              비밀번호 찾기
+            </div>
           </button>
         </div>
 
-        <div className="w-full flex items-center gap-3 my-8">
-          <div className="flex-1 h-[2px] bg-[#a67c52]/30"></div>
-          <span className="text-[#a67c52] text-xs font-bold">간편 로그인</span>
-          <div className="flex-1 h-[2px] bg-[#a67c52]/30"></div>
+        {/* 소셜 로그인 구분선 */}
+        <div className="w-[440px] flex items-center justify-center gap-4 mt-[35px] mb-[20px]">
+          <div className="w-full border-t-[2px] border-dashed border-[#a67c52]/30"></div>
+          <span className="text-[16px] font-bold whitespace-nowrap pt-1" style={{ color: COLORS.ac.coffeeBrown }}>
+            간편 로그인
+          </span>
+          <div className="w-full border-t-[2px] border-dashed border-[#a67c52]/30"></div>
         </div>
 
-        <div className="flex gap-5">
+        {/* 소셜 아이콘 */}
+        <div className="flex gap-[20px]">
           <button
             onClick={() => handleSocialLogin('google')}
-            className="hover:scale-110 transition active:translate-y-1"
-            aria-label="구글 로그인"
+            className="hover:scale-110 transition active:translate-y-1 flex items-center justify-center"
+            style={{
+              width: '72px',
+              height: '72px',
+              borderRadius: '20px',
+              backgroundColor: '#FFFFFF',
+              boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+            }}
           >
-            <GoogleIcon />
+            <div className="scale-75">
+              <GoogleIcon />
+            </div>
           </button>
           <button
             onClick={() => handleSocialLogin('kakao')}
-            className="hover:scale-110 transition active:translate-y-1"
-            aria-label="카카오 로그인"
+            className="hover:scale-110 transition active:translate-y-1 flex items-center justify-center"
+            style={{
+              width: '72px',
+              height: '72px',
+              borderRadius: '20px',
+              backgroundColor: '#FAE100',
+              boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+            }}
           >
-            <KakaoIcon />
+            <div className="scale-75">
+              <KakaoIcon />
+            </div>
           </button>
           <button
             onClick={() => handleSocialLogin('naver')}
-            className="hover:scale-110 transition active:translate-y-1"
-            aria-label="네이버 로그인"
+            className="hover:scale-110 transition active:translate-y-1 flex items-center justify-center"
+            style={{
+              width: '72px',
+              height: '72px',
+              borderRadius: '20px',
+              backgroundColor: '#03C75A',
+              boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+            }}
           >
-            <NaverIcon />
+            <div className="scale-75">
+              <NaverIcon />
+            </div>
           </button>
         </div>
       </div>
