@@ -7,7 +7,7 @@ import { leaveRoom } from '../../utils/roomUtils.js';
 import { getBrokerURL } from '../../utils/ws.js';
 
 // Icons
-import { CheckCircleIcon } from '@heroicons/react/24/solid';
+// import { CheckCircleIcon } from '@heroicons/react/24/solid';
 import ExitButton from '../../components/common/ExitButton';
 
 const CharacterSelect = () => {
@@ -19,7 +19,7 @@ const CharacterSelect = () => {
   const [hoveredCharacterId, setHoveredCharacterId] = useState(null);
   const token = sessionStorage.getItem('token');
 
-  // WebSocket Connection
+  // 웹소켓 연결
   useEffect(() => {
     const client = new Client({
       brokerURL: getBrokerURL(),
@@ -51,7 +51,7 @@ const CharacterSelect = () => {
   const handleSelect = (characterId) => {
     if (takenCharacters.includes(characterId)) return;
     if (selectedCharacter === characterId) {
-      setSelectedCharacter(null); // Toggle off if clicked again? Or just keep it. Usually keep.
+      setSelectedCharacter(null); // 다시 클릭 시 해제? 아니면 유지. 보통은 유지.
     } else {
       setSelectedCharacter(characterId);
     }
@@ -75,17 +75,17 @@ const CharacterSelect = () => {
     navigate('/room-list');
   };
 
-  // Preview Logic: Show Hovered if valid, otherwise Selected, otherwise Default (Apple or null)
-  // Design implies "My Selection" is shown. If just hovering, maybe show hover preview?
-  // Let's show: Hovered (if hovering and not taken) > Selected > First available or Apple.
-  // Actually, standard UX: Show what you hover. If not hovering, show what you selected. If nothing selected, show instructions or neutral state.
-  // The image shows "Apple" on the left and "Select Apple" behavior.
-  const previewId = hoveredCharacterId || selectedCharacter || 1; // Default to ID 1 (Apple)
+  // 미리보기 로직: 호버 중이면 호버, 아니면 선택된 캐릭터, 그것도 아니면 기본값(애플)
+  // 디자인상 "나의 선택"이 보여짐. 호버 중일 때는 호버된 캐릭터를 보여줄 수 있음.
+  // 로직: 호버됨(선점되지 않은 경우) > 선택됨 > 첫 번째 가능 또는 애플.
+  // UX 표준: 호버 시 호버된 내용 표시. 호버하지 않을 때는 선택된 내용 표시. 선택된 게 없으면 안내 또는 중립 상태.
+  // 이미지는 왼쪽에 "애플", "애플 선택" 동작을 보여줌.
+  const previewId = hoveredCharacterId || selectedCharacter || 1; // 기본값 ID 1 (애플)
   const previewChar = CHARACTERS.find((c) => c.id === previewId);
 
-  // Helper to determine image for usage in grid/preview
-  // Grid uses iconIdle / iconActive.
-  // Preview uses full body if available (selectBasicImage), else scales up active icon.
+  // 그리드/미리보기에 사용할 이미지 결정 헬퍼
+  // 그리드는 iconIdle / iconActive 사용.
+  // 미리보기는 전신 이미지(selectBasicImage)가 있으면 사용, 없으면 활성 아이콘 확대 사용.
   const getPreviewImage = (char) => {
     if (!char) return null;
     return char.selectBasicImage || char.iconActive;
@@ -99,7 +99,7 @@ const CharacterSelect = () => {
       <div className="w-full h-full flex">
         {/* --- LEFT SECTION (Preview) (50%) --- */}
         <div className="w-1/2 h-full flex flex-col items-center justify-center relative">
-          {/* House Image (Absolute Top-Left of Left Section) */}
+          {/* 집 이미지 (완쪽 섹션 절대 위치 상단 좌측) */}
           {previewChar && previewChar.houseImage && (
             <div className="absolute top-[15%] left-[10%] z-0 animate-fade-in">
               <img
@@ -127,7 +127,7 @@ const CharacterSelect = () => {
               {/* 2. 설명 텍스트 박스 (794px * 268px) */}
               <div
                 className="w-[794px] h-[268px] rounded-[36px] shadow-lg flex flex-col items-center justify-end pb-[40px] relative z-10"
-                style={{ backgroundColor: 'rgba(253, 251, 246, 0.9)' }} // #FDFBF6 90% opacity (user said 'stacked in white')
+                style={{ backgroundColor: 'rgba(253, 251, 246, 0.9)' }} // #FDFBF6 90% 투명도 (사용자가 '흰색에 쌓임' 요청)
               >
                 {/* 이름 (font 60px) */}
                 <h2
@@ -137,7 +137,7 @@ const CharacterSelect = () => {
                   {previewChar.name}
                 </h2>
 
-                {/* Dashed Line (Width 600px aligned center) */}
+                {/* 점선 (너비 600px 중앙 정렬) */}
                 <div className="w-[600px] h-[4px] border-t-4 border-dashed border-[#8A6F5D] opacity-40 mb-5" />
 
                 {/* 명언 (font 36px) */}
@@ -165,6 +165,9 @@ const CharacterSelect = () => {
               const isSelected = selectedCharacter === char.id;
               const isHovered = hoveredCharacterId === char.id;
 
+              // 선택되었을 때만 Active 이미지 사용 (호버 시에는 Idle 유지)
+              const displayIcon = isSelected ? char.iconActive : char.iconIdle;
+
               return (
                 <button
                   key={char.id}
@@ -173,32 +176,16 @@ const CharacterSelect = () => {
                   onMouseLeave={() => setHoveredCharacterId(null)}
                   disabled={isTaken}
                   className={`
-                     relative w-[160px] h-[160px] rounded-[36px] bg-[#FDFBF6] shadow-lg flex items-center justify-center transition-all
+                     relative w-[160px] h-[160px] flex items-center justify-center transition-all p-0
                      ${isTaken ? 'opacity-40 grayscale cursor-not-allowed' : 'cursor-pointer hover:scale-105'}
-                     ${/* Hover or Selected border */ ''}
                    `}
-                  style={{
-                    // Hover 시 또는 선택 시 테두리 (디자인: hover 시 8px solid nookCyan, selected도 동일할듯)
-                    boxShadow:
-                      isSelected || (!isTaken && isHovered)
-                        ? `0 0 0 8px ${COLORS.ac.nookCyan}`
-                        : '0 4px 6px rgba(0,0,0,0.05)',
-                  }}
+                  // 스타일(테두리, 그림자 등) 제거: 이미지만 표시
+                  style={{}}
                 >
-                  {/* 캐릭터 아이콘 */}
-                  <img src={char.iconIdle} alt={char.name} className="w-[120px] h-[120px] object-contain" />
+                  {/* 캐릭터 아이콘 (선택 시 Active, 기본 Idle) */}
+                  <img src={displayIcon} alt={char.name} className="w-full h-full object-cover" />
 
-                  {/* 선택됨 뱃지 (체크마크) */}
-                  {isSelected && (
-                    <div
-                      className="absolute -top-[16px] -right-[16px] w-[60px] h-[60px] rounded-full flex items-center justify-center shadow-md z-10"
-                      style={{ backgroundColor: COLORS.ac.nookCyan }}
-                    >
-                      <CheckCircleIcon className="w-[40px] h-[40px] text-white" />
-                    </div>
-                  )}
-
-                  {/* 이미 선택됨 (다른 사람) 라벨? (디자인엔 없음, 그냥 딤처리만 되어있음) */}
+                  {/* 선택됨 뱃지 제거됨 -> Active 이미지로 대체 */}
                 </button>
               );
             })}
