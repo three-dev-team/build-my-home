@@ -1,0 +1,314 @@
+/* 폰트는 전역(index.css)에서만 로드/정의
+   - 여기서는 var(--font-*)만 사용
+   - @font-face / @import 추가 금지 */
+.game-viewport {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+}
+
+/* 배경 */
+.game-bg {
+    position: fixed;
+    inset: 0;
+    background:
+            url("/images/bg-home.png") center / cover no-repeat,
+            radial-gradient(1200px 600px at 50% 30%, rgba(255, 255, 255, 0.10), transparent 60%),
+            linear-gradient(180deg, rgba(6, 18, 28, 0.55), rgba(6, 18, 28, 0.78));
+    background-size: cover;
+    background-position: center;
+}
+
+/* vw/vh 스테이지 래퍼 */
+.game-stage-wrap {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+}
+
+/* 스테이지(게임 전체 레이아웃 기준) */
+.game-stage {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    font-family: var(--font-gosanja);
+}
+
+/* 숫자/랭크용 Formula 폰트 */
+.f1 {
+    font-family: var(--font-formula);
+}
+
+/* HUD: 상단 좌측 시계 */
+.hud-time {
+    position: absolute;
+    left: 1.0417vw;
+    top: 1.1111vh;
+    display: flex;
+    align-items: center;
+    gap: 0.4167vw;
+    z-index: 2000;
+    pointer-events: none;
+    user-select: none;
+}
+
+.hud-time-icon {
+    width: 3.75vw;
+    height: 3.7037vh;
+    object-fit: contain;
+    opacity: 0.9;
+}
+
+.hud-time-text {
+    font-size: clamp(16px, 1.6667vw, 32px);
+    letter-spacing: 0.02em;
+    color: rgba(255, 255, 255, 0.65);
+    text-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.25);
+}
+
+/* HUD: 상단 우측 라운드 */
+.hud-round {
+    position: absolute;
+    right: 1.0417vw;
+    top: 1.1111vh;
+    width: 6.25vw;
+    height: 9.2593vh;
+    border-radius: 0.8333vw;
+    background: rgba(255, 255, 255, 0.14);
+    backdrop-filter: blur(0.5rem);
+    box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.20);
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5vh;
+    pointer-events: none;
+    user-select: none;
+}
+
+.hud-round-title {
+    font-size: clamp(14px, 1.4583vw, 28px);
+    color: rgba(255, 255, 255, 0.88);
+}
+
+.hud-round-value {
+    font-size: clamp(16px, 1.6667vw, 32px);
+    color: rgba(255, 255, 255, 0.95);
+    display: flex;
+    align-items: baseline;
+    gap: 0.25vw;
+}
+
+.hud-round-slash {
+    font-size: clamp(12px, 1.25vw, 24px);
+    opacity: 0.85;
+}
+
+/* HUD: 우측 무 시세 */
+.hud-radish {
+    position: absolute;
+    right: 1.0417vw;
+    top: 18.5185vh;
+    width: 10.4167vw;
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.8889vh;
+    user-select: none;
+    pointer-events: none;
+}
+
+.hud-radish-icon-wrap {
+    width: clamp(56px, 5.2083vw, 100px);
+    height: clamp(56px, 5.2083vw, 100px);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.20);
+    backdrop-filter: blur(0.5rem);
+    box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.18);
+    display: grid;
+    place-items: center;
+}
+
+.hud-radish-icon {
+    width: clamp(44px, 4.1667vw, 80px);
+    height: clamp(44px, 4.1667vw, 80px);
+    object-fit: contain;
+}
+
+.hud-radish-body {
+    width: 10.4167vw;
+    border-radius: 0.8333vw;
+    padding: 1.3889vh 0.8333vw;
+    background: rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(0.55rem);
+    box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.18);
+    text-align: center;
+}
+
+.hud-radish-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 0.35vw;
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.hud-radish-label {
+    font-size: clamp(12px, 1.0417vw, 20px);
+    opacity: 0.9;
+}
+
+.hud-radish-price {
+    font-size: clamp(16px, 1.6667vw, 32px);
+    font-weight: 700;
+}
+
+.hud-radish-unit {
+    font-size: clamp(12px, 1.0417vw, 20px);
+    opacity: 0.9;
+}
+
+.hud-radish-sub {
+    margin-top: 0.5556vh;
+    display: flex;
+    justify-content: center;
+    align-items: baseline;
+    gap: 0.35vw;
+    color: rgba(255, 255, 255, 0.92);
+}
+
+.hud-radish-own {
+    font-size: clamp(12px, 0.9375vw, 18px);
+    opacity: 0.9;
+}
+
+.hud-radish-own-val {
+    font-size: clamp(14px, 1.25vw, 24px);
+    font-weight: 700;
+}
+
+.hud-radish-own-unit {
+    font-size: clamp(12px, 0.9375vw, 18px);
+    opacity: 0.9;
+}
+
+.hud-radish-guide {
+    margin-top: 0.7407vh;
+    font-size: clamp(12px, 0.8333vw, 16px);
+    opacity: 0.88;
+}
+
+/* HUD: 메뉴/채팅 */
+.hud-common {
+    position: absolute;
+    left: 1.0417vw;
+    top: 4.1667vh;
+    z-index: 2200;
+}
+
+/* TurnCounter: 외형은 컴포넌트 내부에서 관리, 여기서는 위치만 */
+.hud-turncounter {
+    position: absolute;
+    right: 1.0417vw;
+    top: 7.8704vh;
+    z-index: 2100;
+}
+
+/* 게임 메인(스테이지 전체를 덮는 레이어) */
+.game-main {
+    position: absolute;
+    inset: 0;
+    z-index: 1000;
+}
+
+/* 보상 캐릭터(중앙 상단 고정 연출) */
+.reward-character {
+    position: absolute;
+    left: 50%;
+    top: 20.3704vh;
+    transform: translateX(-50%);
+    z-index: 2500;
+    pointer-events: none;
+    user-select: none;
+}
+
+.reward-character img {
+    width: clamp(140px, 11.4583vw, 220px);
+    height: clamp(140px, 20.3704vh, 220px);
+    object-fit: contain;
+    filter: drop-shadow(0 0.75rem 1.125rem rgba(0, 0, 0, 0.25));
+}
+
+/* 하단 플레이어 패널 */
+.hud-bottom {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1800;
+}
+
+/* 좌측 HUD: 행동패널 + 현재 차례 캐릭터 */
+.left-hud {
+    position: absolute;
+    left: 5.2083vw;
+    bottom: 0;
+    width: 16.6667vw;
+
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 5.5556vh;
+
+    z-index: 1500;
+    pointer-events: none;
+    user-select: none;
+}
+
+/* 좌측 HUD 내부에서 액션패널만 입력 허용 */
+.left-hud .player-action-panel {
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
+    transform: none !important;
+    pointer-events: auto !important;
+}
+
+/* 내 턴 아닐 때 액션패널 자리 유지(레이아웃 흔들림 방지) */
+.left-hud-action-spacer {
+    width: 15.625vw;
+    height: 38.8889vh;
+}
+
+/* TurnCharacterPanel은 박스 역할만(부모 레이아웃을 따름) */
+.left-hud .turn-character {
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
+    bottom: auto !important;
+
+    width: 16.6667vw !important;
+    height: 48.1481vh !important;
+    border-radius: 0 !important;
+    overflow: hidden;
+}
+
+/* 남아있을 수 있는 유리/페이드 레이어 제거 */
+.left-hud .turn-character-glass,
+.left-hud .turn-character-fade {
+    display: none !important;
+}
+
+/* 캐릭터 이미지는 박스에 꽉 채우기 */
+.left-hud .turn-character-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    transform: none !important;
+    filter: none !important;
+}
