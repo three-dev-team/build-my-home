@@ -2,7 +2,7 @@ import React from 'react';
 import Dice3D from '../../components/dice/Dice3D.jsx';
 import InstructionText from '../../components/common/InstructionText.jsx';
 import './css/RollDicePage.css';
-import {CHARACTERS} from "../../constants/characters.js";
+import { CHARACTERS } from '../../constants/characters.js';
 
 const RollDicePage = ({ currentPlayer, isMyTurn, diceValue, isRolling, onRollComplete, onAnimationEnd }) => {
   // 스페이스바 핸들러
@@ -24,7 +24,6 @@ const RollDicePage = ({ currentPlayer, isMyTurn, diceValue, isRolling, onRollCom
 
   const charImg = currentPlayer?.characterId ? CHARACTER_IMG[currentPlayer.characterId] : null;
 
-
   return (
     <div className="roll-dice-container">
       {/* 주사위 영역 */}
@@ -32,26 +31,19 @@ const RollDicePage = ({ currentPlayer, isMyTurn, diceValue, isRolling, onRollCom
         {isRolling && diceValue ? (
           <Dice3D value={diceValue} onAnimationEnd={onAnimationEnd} />
         ) : (
-          <img src="/images/dice/dice-idle.png" alt="주사위" className="w-32 h-32 object-contain" />
+          <img src="" alt="" />
+          // <img src="/images/dice/dice-idle.webp" alt="주사위" className="w-32 h-32 object-contain" />
         )}
       </div>
 
       {/* 사용자 캐릭터 + 안내 문구 */}
       <div className="character-area">
-        <img
-          src={charImg}
-          alt={currentPlayer?.nickname}
-          className="current-character"
-        />
+        <img src={charImg} alt={currentPlayer?.nickname} className="current-character" />
         <div className="character-shadow"></div>
       </div>
 
       <InstructionText>
-        {isRolling
-          ? `${diceValue}칸 이동!`
-          : isMyTurn
-            ? '스페이스바를 눌러 주사위를 굴리기'
-            : `${currentPlayer?.nickname}의 차례입니다...`}
+        {isRolling ? `` : isMyTurn ? '스페이스바를 눌러 주사위를 굴리기' : `${currentPlayer?.nickname}의 차례입니다...`}
       </InstructionText>
     </div>
   );
