@@ -8,12 +8,13 @@ const ICON_MUPANI = '/images/board/icon-mupani.png';
 const FONT_GOSANJA = '"Gosanja", system-ui, -apple-system, sans-serif';
 const FONT_FORMULA = '"Formula", system-ui, -apple-system, sans-serif';
 
-// px -> rem 변환(16px 기준)
-const rem = (px) => `${px / 16}rem`;
+// px -> vw/vh 변환 (디자인 기준: 1920x1080)
+const vw = (px) => `${(px / 1920) * 100}vw`;
+const vh = (px) => `${(px / 1080) * 100}vh`;
 
 // 라운드 텍스트 외곽선(검정 20%)
 const STROKE_20 = {
-  WebkitTextStroke: '4px rgba(0,0,0,0.20)',
+  WebkitTextStroke: `${(4 / 1920) * 100}vw rgba(0,0,0,0.20)`,
   paintOrder: 'stroke fill',
 };
 
@@ -30,7 +31,7 @@ const ROUND_BLOCK_H = 24 + 8 + 40;
 const GAP_AFTER_ROUND = 40;
 
 // 무 아이콘 블록 시작 top(가이드 기준)
-const RADISH_BLOCK_TOP = EDGE + ROUND_BLOCK_H + GAP_AFTER_ROUND;
+const RADISH_BLOCK_TOP_PX = EDGE + ROUND_BLOCK_H + GAP_AFTER_ROUND;
 
 const TurnCounter = ({ currentRound, totalRounds, radishPrice }) => {
   const roundText = String(currentRound ?? 1);
@@ -45,9 +46,9 @@ const TurnCounter = ({ currentRound, totalRounds, radishPrice }) => {
       <div
         style={{
           position: 'fixed',
-          top: rem(EDGE),
-          right: rem(EDGE),
-          width: rem(120),
+          top: vh(EDGE),
+          right: vw(EDGE),
+          width: vw(120),
           textAlign: 'center',
           zIndex: 13000,
           userSelect: 'none',
@@ -58,9 +59,9 @@ const TurnCounter = ({ currentRound, totalRounds, radishPrice }) => {
         <div
           style={{
             fontFamily: FONT_GOSANJA,
-            fontSize: rem(24),
-            lineHeight: rem(24),
-            marginBottom: rem(8),
+            fontSize: vw(24),
+            lineHeight: vw(24),
+            marginBottom: vh(8),
             color: PURE_WHITE,
             ...STROKE_20,
           }}
@@ -74,15 +75,15 @@ const TurnCounter = ({ currentRound, totalRounds, radishPrice }) => {
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'baseline',
-            gap: rem(8),
+            gap: vw(8),
           }}
         >
           {/* 현재 라운드 */}
           <span
             style={{
               fontFamily: FONT_FORMULA,
-              fontSize: rem(40),
-              lineHeight: rem(40),
+              fontSize: vw(40),
+              lineHeight: vw(40),
               color: PURE_WHITE,
               ...STROKE_20,
             }}
@@ -94,8 +95,8 @@ const TurnCounter = ({ currentRound, totalRounds, radishPrice }) => {
           <span
             style={{
               fontFamily: FONT_GOSANJA,
-              fontSize: rem(20),
-              lineHeight: rem(20),
+              fontSize: vw(20),
+              lineHeight: vw(20),
               color: PURE_WHITE,
               ...STROKE_20,
             }}
@@ -107,8 +108,8 @@ const TurnCounter = ({ currentRound, totalRounds, radishPrice }) => {
           <span
             style={{
               fontFamily: FONT_FORMULA,
-              fontSize: rem(24),
-              lineHeight: rem(24),
+              fontSize: vw(24),
+              lineHeight: vw(24),
               color: PURE_WHITE,
               ...STROKE_20,
             }}
@@ -122,24 +123,24 @@ const TurnCounter = ({ currentRound, totalRounds, radishPrice }) => {
       <div
         style={{
           position: 'fixed',
-          top: rem(RADISH_BLOCK_TOP),
-          right: rem(EDGE),
-          width: rem(100),
+          top: vh(RADISH_BLOCK_TOP_PX),
+          right: vw(EDGE),
+          width: vw(100),
           zIndex: 12999,
           userSelect: 'none',
           pointerEvents: 'none',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: rem(10),
+          gap: vh(10),
         }}
       >
         {/* 아이콘 원형 배경 */}
         <div
           style={{
-            width: rem(100),
-            height: rem(100),
-            borderRadius: rem(999),
+            width: vw(100),
+            height: vw(100), // 원형 유지(가로 기준으로 맞춤)
+            borderRadius: vw(999),
             background: 'rgba(255,255,255,0.30)',
             display: 'flex',
             alignItems: 'center',
@@ -151,7 +152,7 @@ const TurnCounter = ({ currentRound, totalRounds, radishPrice }) => {
             alt="mupani"
             draggable={false}
             style={{
-              height: rem(80),
+              height: vw(80),
               width: 'auto',
               objectFit: 'contain',
             }}
@@ -161,16 +162,16 @@ const TurnCounter = ({ currentRound, totalRounds, radishPrice }) => {
         {/* 무 가격 pill */}
         <div
           style={{
-            width: rem(100),
-            height: rem(28),
-            borderRadius: rem(999),
+            width: vw(100),
+            height: vh(28),
+            borderRadius: vw(999),
             background: 'rgba(0,0,0,0.30)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             fontFamily: FONT_GOSANJA,
-            fontSize: rem(16),
-            lineHeight: rem(16),
+            fontSize: vw(16),
+            lineHeight: vw(16),
             color: PURE_WHITE,
           }}
         >
