@@ -134,264 +134,270 @@ export default function Join() {
   };
 
   return (
-    <div
-      className="relative w-full h-screen overflow-hidden flex items-center justify-center font-gosanja"
-      style={{
-        backgroundImage: "url('/images/bg-pattern-1.png')",
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      }}
-    >
-      {/* 커스텀 모달 */}
-      {modal.isOpen && (
-        <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div
-            className="relative w-[350px] rounded-[40px] border-[6px] shadow-2xl p-8 flex flex-col items-center animate-in zoom-in-95 duration-200"
-            style={{ backgroundColor: COLORS.ac.creamWhite, borderColor: COLORS.ac.coffeeBrown }}
-          >
-            <p className="font-bold text-center whitespace-pre-wrap mb-6" style={{ color: COLORS.text }}>
-              {modal.message}
-            </p>
-            <button
-              onClick={closeModal}
-              className="px-10 py-2 rounded-full font-black active:scale-95 transition-all text-xl"
-              style={{ backgroundColor: COLORS.ac.coffeeBrown, color: COLORS.ac.creamIvory }}
-            >
-              확인
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* 메인 박스 */}
+    <div className="w-full h-screen bg-black flex items-center justify-center overflow-hidden font-gosanja">
       <div
-        className="relative flex flex-col items-center pt-[60px]"
+        className="relative w-full aspect-video max-h-screen overflow-hidden flex items-center justify-center"
         style={{
-          width: '560px',
-          height: '780px',
-          borderRadius: '80px',
-          backgroundColor: COLORS.ac.softYellow,
-          boxShadow: '15px 15px 0px rgba(139,90,43,0.15)',
+          backgroundImage: "url('/images/bg-pattern-1.png')",
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          containerType: 'size',
         }}
       >
-        {/* 타이틀 배지 "회원가입" */}
-        <div
-          className="absolute -top-[44px] flex items-center justify-center text-white text-[48px] font-black tracking-widest whitespace-nowrap"
-          style={{
-            width: '320px',
-            height: '88px',
-            borderRadius: '44px',
-            backgroundColor: COLORS.ac.coffeeBrown,
-            boxShadow: `0px 8px 0px ${COLORS.ac.darkBrown}`, // 3D 그림자 효과
-            textShadow: '3px 3px 0px rgba(0,0,0,0.25)',
-            WebkitTextStroke: `10px ${COLORS.ac.darkBrown}`,
-            paintOrder: 'stroke fill',
-            WebkitPaintOrder: 'stroke fill',
-            color: COLORS.ac.creamIvory,
-          }}
-        >
-          <span className="relative z-10">회원가입</span>
-        </div>
-
-        <form onSubmit={handleJoin} className="mt-[40px] w-full flex flex-col gap-[20px] items-center">
-          {/* 이메일 영역 */}
-          <div className="flex items-center gap-[10px] w-[440px]">
-            <input
-              type="email"
-              placeholder="이메일 주소"
-              value={email}
-              readOnly={isEmailVerified}
-              onChange={(e) => {
-                setEmail(e.target.value);
-                setIsEmailSent(false);
-              }}
-              className="flex-1 text-left pl-8 outline-none transition-all placeholder-opacity-100"
-              style={{
-                height: '80px',
-                borderRadius: '40px',
-                backgroundColor: COLORS.ac.creamIvory,
-                fontSize: '24px',
-                color: COLORS.text,
-              }}
-            />
-            {!isEmailVerified && (
-              <button
-                type="button"
-                disabled={isSending}
-                onClick={handleSendVerification}
-                className="flex items-center justify-center font-bold text-lg active:scale-95 transition-all shadow-md"
-                style={{
-                  width: '120px',
-                  height: '80px',
-                  borderRadius: '40px',
-                  backgroundColor: isSending ? '#ccc' : COLORS.ac.coffeeBrown,
-                  color: COLORS.ac.creamIvory,
-                }}
+        {/* 커스텀 모달 */}
+        {modal.isOpen && (
+          <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+            <div
+              className="relative w-[18.23cqw] rounded-[2.08cqw] border-[0.31cqw] shadow-2xl p-[1.67cqw] flex flex-col items-center animate-in zoom-in-95 duration-200"
+              style={{ backgroundColor: COLORS.ac.creamWhite, borderColor: COLORS.ac.coffeeBrown }}
+            >
+              <p
+                className="font-bold text-center whitespace-pre-wrap mb-[1.25cqw] text-[0.83cqw]"
+                style={{ color: COLORS.text }}
               >
-                {isSending ? '발송중' : isEmailSent ? '재발송' : '인증요청'}
-              </button>
-            )}
-          </div>
-
-          {/* 인증번호 */}
-          {isEmailSent && !isEmailVerified && (
-            <div className="flex items-center gap-[10px] w-[440px] animate-in slide-in-from-top-2">
-              <div className="relative flex-1">
-                <input
-                  type="text"
-                  placeholder="인증번호 6자리"
-                  value={authCode}
-                  onChange={(e) => setAuthCode(e.target.value)}
-                  className="w-full text-left pl-8 outline-none transition-all placeholder-opacity-100"
-                  style={{
-                    height: '80px',
-                    borderRadius: '40px',
-                    backgroundColor: COLORS.ac.creamIvory,
-                    fontSize: '24px',
-                    color: COLORS.text,
-                  }}
-                  maxLength={6}
-                />
-                <span
-                  className={`absolute right-6 top-1/2 -translate-y-1/2 font-bold text-lg ${timeLeft < 60 ? 'text-red-500 animate-pulse' : 'text-[#8b5a2b]'}`}
-                >
-                  {formatTime(timeLeft)}
-                </span>
-              </div>
+                {modal.message}
+              </p>
               <button
-                type="button"
-                onClick={handleVerifyCode}
-                className="flex items-center justify-center font-bold text-lg active:scale-95 transition-all shadow-md"
-                style={{
-                  width: '120px',
-                  height: '80px',
-                  borderRadius: '40px',
-                  backgroundColor: COLORS.ac.coffeeBrown,
-                  color: COLORS.ac.creamIvory,
-                }}
+                onClick={closeModal}
+                className="px-[2.08cqw] py-[0.42cqw] rounded-full font-black active:scale-95 transition-all text-[1.04cqw]"
+                style={{ backgroundColor: COLORS.ac.coffeeBrown, color: COLORS.ac.creamIvory }}
               >
                 확인
               </button>
             </div>
-          )}
-
-          {/* 비밀번호 */}
-          <div className="relative w-[440px]">
-            <input
-              type="password"
-              placeholder="비밀번호를 입력하세요"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full text-left pl-8 outline-none transition-all placeholder-opacity-100"
-              style={{
-                height: '80px',
-                borderRadius: '40px',
-                backgroundColor: COLORS.ac.creamIvory,
-                fontSize: '24px',
-                color: COLORS.text,
-              }}
-            />
           </div>
+        )}
 
-          {/* 비밀번호 확인 */}
-          <div className="relative w-[440px]">
-            <input
-              type="password"
-              placeholder="비밀번호 확인"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full text-left pl-8 outline-none transition-all placeholder-opacity-100"
-              style={{
-                height: '80px',
-                borderRadius: '40px',
-                backgroundColor: COLORS.ac.creamIvory,
-                fontSize: '24px',
-                color: COLORS.text,
-              }}
-            />
-          </div>
-
-          {/* 닉네임 */}
-          <div className="flex items-center gap-[10px] w-[440px]">
-            <input
-              type="text"
-              placeholder="닉네임 입력하기"
-              value={nickname}
-              onChange={(e) => {
-                setNickname(e.target.value);
-                setIsNicknameChecked(false);
-              }}
-              className="flex-1 text-left pl-8 outline-none transition-all placeholder-opacity-100"
-              style={{
-                height: '80px',
-                borderRadius: '40px',
-                backgroundColor: COLORS.ac.creamIvory,
-                fontSize: '24px',
-                color: COLORS.text,
-              }}
-            />
-            <button
-              type="button"
-              onClick={handleCheckNickname}
-              className="flex items-center justify-center font-bold text-lg active:scale-95 transition-all shadow-md"
-              style={{
-                width: '120px',
-                height: '80px',
-                borderRadius: '40px',
-                backgroundColor: COLORS.ac.coffeeBrown,
-                color: COLORS.ac.creamIvory,
-              }}
-            >
-              중복체크
-            </button>
-          </div>
-
-          {/* 가입 완료 버튼 */}
-          <button
-            type="submit"
-            className="mt-[20px] flex items-center justify-center text-[32px] font-black active:scale-95 transition-transform shadow-lg hover:brightness-110"
-            style={{
-              width: '440px',
-              height: '88px',
-              borderRadius: '44px',
-              backgroundColor: COLORS.ac.coffeeBrown,
-              color: COLORS.ac.creamIvory,
-              paintOrder: 'stroke fill',
-              WebkitPaintOrder: 'stroke fill',
-            }}
-          >
-            <span className="relative z-10" style={{ paddingBottom: '3px' }}>
-              주민 가입 완료!
-            </span>
-          </button>
-        </form>
-
+        {/* 메인 박스 */}
         <div
-          className="mt-[30px] font-bold text-[14px] underline cursor-pointer"
+          className="relative flex flex-col items-center pt-[3.13cqw]"
           style={{
-            color: COLORS.ac.darkBrown,
-            textDecoration: 'none',
+            width: '29.17cqw',
+            height: '40.63cqw',
+            borderRadius: '4.17cqw',
+            backgroundColor: COLORS.ac.softYellow,
+            boxShadow: '0.78cqw 0.78cqw 0px rgba(139,90,43,0.15)',
           }}
         >
-          <Link to="/">
-            이미 주민이신가요?<span style={{ textDecoration: 'underline' }}> 로그인하러 가기</span>
-          </Link>
+          {/* 타이틀 배지 "회원가입" */}
+          <div
+            className="absolute -top-[2.29cqw] flex items-center justify-center text-white text-[2.5cqw] font-black tracking-widest whitespace-nowrap"
+            style={{
+              width: '16.67cqw',
+              height: '4.58cqw',
+              borderRadius: '2.29cqw',
+              backgroundColor: COLORS.ac.coffeeBrown,
+              boxShadow: `0px 0.42cqw 0px ${COLORS.ac.darkBrown}`, // 3D 그림자 효과
+              textShadow: '0.16cqw 0.16cqw 0px rgba(0,0,0,0.25)',
+              WebkitTextStroke: `0.52cqw ${COLORS.ac.darkBrown}`,
+              paintOrder: 'stroke fill',
+              WebkitPaintOrder: 'stroke fill',
+              color: COLORS.ac.creamIvory,
+            }}
+          >
+            <span className="relative z-10">회원가입</span>
+          </div>
+
+          <form onSubmit={handleJoin} className="mt-[2.08cqw] w-full flex flex-col gap-[1.04cqw] items-center">
+            {/* 이메일 영역 */}
+            <div className="flex items-center gap-[0.52cqw] w-[22.92cqw]">
+              <input
+                type="email"
+                placeholder="이메일 주소"
+                value={email}
+                readOnly={isEmailVerified}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  setIsEmailSent(false);
+                }}
+                className="flex-1 text-left pl-[1.67cqw] outline-none transition-all placeholder-opacity-100"
+                style={{
+                  height: '4.17cqw',
+                  borderRadius: '2.08cqw',
+                  backgroundColor: COLORS.ac.creamIvory,
+                  fontSize: '1.25cqw',
+                  color: COLORS.text,
+                }}
+              />
+              {!isEmailVerified && (
+                <button
+                  type="button"
+                  disabled={isSending}
+                  onClick={handleSendVerification}
+                  className="flex items-center justify-center font-bold text-[0.94cqw] active:scale-95 transition-all shadow-md"
+                  style={{
+                    width: '6.25cqw',
+                    height: '4.17cqw',
+                    borderRadius: '2.08cqw',
+                    backgroundColor: isSending ? '#ccc' : COLORS.ac.coffeeBrown,
+                    color: COLORS.ac.creamIvory,
+                  }}
+                >
+                  {isSending ? '발송중' : isEmailSent ? '재발송' : '인증요청'}
+                </button>
+              )}
+            </div>
+
+            {/* 인증번호 */}
+            {isEmailSent && !isEmailVerified && (
+              <div className="flex items-center gap-[0.52cqw] w-[22.92cqw] animate-in slide-in-from-top-2">
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    placeholder="인증번호 6자리"
+                    value={authCode}
+                    onChange={(e) => setAuthCode(e.target.value)}
+                    className="w-full text-left pl-[1.67cqw] outline-none transition-all placeholder-opacity-100"
+                    style={{
+                      height: '4.17cqw',
+                      borderRadius: '2.08cqw',
+                      backgroundColor: COLORS.ac.creamIvory,
+                      fontSize: '1.25cqw',
+                      color: COLORS.text,
+                    }}
+                    maxLength={6}
+                  />
+                  <span
+                    className={`absolute right-[1.25cqw] top-1/2 -translate-y-1/2 font-bold text-[0.94cqw] ${timeLeft < 60 ? 'text-red-500 animate-pulse' : 'text-[#8b5a2b]'}`}
+                  >
+                    {formatTime(timeLeft)}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleVerifyCode}
+                  className="flex items-center justify-center font-bold text-[0.94cqw] active:scale-95 transition-all shadow-md"
+                  style={{
+                    width: '6.25cqw',
+                    height: '4.17cqw',
+                    borderRadius: '2.08cqw',
+                    backgroundColor: COLORS.ac.coffeeBrown,
+                    color: COLORS.ac.creamIvory,
+                  }}
+                >
+                  확인
+                </button>
+              </div>
+            )}
+
+            {/* 비밀번호 */}
+            <div className="relative w-[22.92cqw]">
+              <input
+                type="password"
+                placeholder="비밀번호를 입력하세요"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full text-left pl-[1.67cqw] outline-none transition-all placeholder-opacity-100"
+                style={{
+                  height: '4.17cqw',
+                  borderRadius: '2.08cqw',
+                  backgroundColor: COLORS.ac.creamIvory,
+                  fontSize: '1.25cqw',
+                  color: COLORS.text,
+                }}
+              />
+            </div>
+
+            {/* 비밀번호 확인 */}
+            <div className="relative w-[22.92cqw]">
+              <input
+                type="password"
+                placeholder="비밀번호 확인"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="w-full text-left pl-[1.67cqw] outline-none transition-all placeholder-opacity-100"
+                style={{
+                  height: '4.17cqw',
+                  borderRadius: '2.08cqw',
+                  backgroundColor: COLORS.ac.creamIvory,
+                  fontSize: '1.25cqw',
+                  color: COLORS.text,
+                }}
+              />
+            </div>
+
+            {/* 닉네임 */}
+            <div className="flex items-center gap-[0.52cqw] w-[22.92cqw]">
+              <input
+                type="text"
+                placeholder="닉네임 입력하기"
+                value={nickname}
+                onChange={(e) => {
+                  setNickname(e.target.value);
+                  setIsNicknameChecked(false);
+                }}
+                className="flex-1 text-left pl-[1.67cqw] outline-none transition-all placeholder-opacity-100"
+                style={{
+                  height: '4.17cqw',
+                  borderRadius: '2.08cqw',
+                  backgroundColor: COLORS.ac.creamIvory,
+                  fontSize: '1.25cqw',
+                  color: COLORS.text,
+                }}
+              />
+              <button
+                type="button"
+                onClick={handleCheckNickname}
+                className="flex items-center justify-center font-bold text-[0.94cqw] active:scale-95 transition-all shadow-md"
+                style={{
+                  width: '6.25cqw',
+                  height: '4.17cqw',
+                  borderRadius: '2.08cqw',
+                  backgroundColor: COLORS.ac.coffeeBrown,
+                  color: COLORS.ac.creamIvory,
+                }}
+              >
+                중복체크
+              </button>
+            </div>
+
+            {/* 가입 완료 버튼 */}
+            <button
+              type="submit"
+              className="mt-[1.04cqw] flex items-center justify-center text-[1.67cqw] font-black active:scale-95 transition-transform shadow-lg hover:brightness-110"
+              style={{
+                width: '22.92cqw',
+                height: '4.58cqw',
+                borderRadius: '2.29cqw',
+                backgroundColor: COLORS.ac.coffeeBrown,
+                color: COLORS.ac.creamIvory,
+                paintOrder: 'stroke fill',
+                WebkitPaintOrder: 'stroke fill',
+              }}
+            >
+              <span className="relative z-10" style={{ paddingBottom: '0.16cqw' }}>
+                주민 가입 완료!
+              </span>
+            </button>
+          </form>
+
+          <div
+            className="mt-[1.56cqw] font-bold text-[0.73cqw] underline cursor-pointer"
+            style={{
+              color: COLORS.ac.darkBrown,
+              textDecoration: 'none',
+            }}
+          >
+            <Link to="/">
+              이미 주민이신가요?<span style={{ textDecoration: 'underline' }}> 로그인하러 가기</span>
+            </Link>
+          </div>
         </div>
+
+        {/* 스타일 적용 (플레이스홀더) */}
+        <style>{`
+            input::placeholder {
+                color: ${COLORS.text};
+                opacity: 1;
+            }
+        `}</style>
+
+        {/* 데코레이션 이미지 */}
+        <div
+          className="absolute bottom-[2.6cqw] left-[2.6cqw] w-[8.33cqw] h-[8.33cqw] bg-contain bg-no-repeat opacity-80 pointer-events-none"
+          style={{ backgroundImage: "url('/images/isabelle.png')" }}
+        ></div>
       </div>
-
-      {/* 스타일 적용 (플레이스홀더) */}
-      <style>{`
-          input::placeholder {
-              color: ${COLORS.text};
-              opacity: 1;
-          }
-      `}</style>
-
-      {/* 데코레이션 이미지 */}
-      <div
-        className="absolute bottom-10 left-10 w-32 h-32 bg-contain bg-no-repeat opacity-80 pointer-events-none"
-        style={{ backgroundImage: "url('/images/isabelle.png')" }}
-      ></div>
     </div>
   );
 }

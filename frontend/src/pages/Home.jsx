@@ -53,7 +53,7 @@ export default function Home() {
   }, [navigate]);
 
   const uiTransitionClass = `transition-all duration-1000 ease-out ${
-    showUI ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
+    showUI ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-[1cqw]'
   }`;
 
   // 공통 아이콘 박스 스타일 (80x80, rounded-full)
@@ -61,39 +61,61 @@ export default function Home() {
     'w-[80px] h-[80px] bg-white rounded-full flex items-center justify-center shadow-[0_4px_4px_rgba(0,0,0,0.1)] hover:scale-105 transition-transform cursor-pointer';
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-[url('/images/bg-home.png')] bg-cover bg-center font-sans">
-      {/*<audio ref={audioRef} src="/sounds/home_bgm.mp3" loop />*/}
+    <div className="w-full h-screen bg-black flex items-center justify-center overflow-hidden font-sans">
+      {/* 16:9 비율 컨테이너 */}
+      <div
+        className="relative w-full aspect-video max-h-screen overflow-hidden bg-[url('/images/bg-home.png')] bg-cover bg-center"
+        style={{ containerType: 'size' }}
+      >
+        {/*<audio ref={audioRef} src="/sounds/home_bgm.mp3" loop />*/}
 
-      {/* 1. 상단 좌측 로고 (위치/크기 조정) */}
-      <header className={`w-[360px] h-[180px] absolute top-[20px] left-[56px] z-10 ${uiTransitionClass}`}>
-        <Link to="/home" className="inline-block hover:scale-105 transition-transform">
-          <img src="/images/ui-logo.png" alt="지어봐요 마이홈 로고" className="w-[634px] drop-shadow-md" />
-        </Link>
-      </header>
+        {/* 1. 상단 좌측 로고 (위치/크기 조정) 
+            - Top: 20px -> 1.04cqw
+            - Left: 56px -> 2.92cqw
+            - Width: 360px -> 18.75cqw
+            - Height: 180px -> 9.38cqw
+            - Image Width: 634px -> 33cqw (컨테이너보다 큼. 원본 유지 위해 w-[33cqw] 사용하거나 컨테이너에 맞춤)
+            * 원본 코드에서 w-[360px] 컨테이너 안에 w-[634px] 이미지가 있었으므로
+              이미지 크기를 우선시하여 w-[33cqw]로 설정하고 컨테이너 크기는 제거하거나 맞춤.
+        */}
+        <header className={`absolute top-[1.04cqw] left-[2.92cqw] z-10 ${uiTransitionClass}`}>
+          <Link to="/home" className="inline-block hover:scale-105 transition-transform">
+            <img src="/images/ui-logo.png" alt="지어봐요 마이홈 로고" className="w-[20cqw] drop-shadow-md" />
+          </Link>
+        </header>
 
-      {/* 2. 상단 우측 메뉴 (TopButtons 컴포넌트 사용) */}
-      <TopButtons
-        nickname={isLoggedIn ? nickname : '로그인'}
-        onProfileClick={() => navigate(isLoggedIn ? '/myPage' : '/login')}
-        onBellClick={() => navigate('/notifications')}
-        onConfigClick={() => navigate('/config')}
-        colors={{
-          text: '#594E36',
-          badgeBg: '#FDFBF6',
-          badgeText: '#594E36',
-        }}
-        className={`absolute top-[40px] right-[40px] z-20 ${uiTransitionClass}`}
-      />
+        {/* 2. 상단 우측 메뉴 (TopButtons 컴포넌트 사용) 
+            - Top: 40px -> 2.08cqw
+            - Right: 40px -> 2.08cqw
+        */}
+        <TopButtons
+          nickname={isLoggedIn ? nickname : '로그인'}
+          onProfileClick={() => navigate(isLoggedIn ? '/myPage' : '/login')}
+          onBellClick={() => navigate('/notifications')}
+          onConfigClick={() => navigate('/config')}
+          colors={{
+            text: '#594E36',
+            badgeBg: '#FDFBF6',
+            badgeText: '#594E36',
+          }}
+          className={`absolute top-[2.08cqw] right-[2.08cqw] z-20 ${uiTransitionClass}`}
+        />
 
-      {/* 3. 우측 하단 게임 시작 버튼 (540*190) */}
-      <div className={`absolute bottom-6 right-3 z-30 ${uiTransitionClass}`}>
-        <Link to={isLoggedIn ? '/room-list' : '/login'} className="inline-block group">
-          <img
-            src="/images/btn-start.png"
-            alt="게임 시작 버튼"
-            className="w-[540px] h-[190px] object-contain hover:scale-105 active:scale-95 transition-transform drop-shadow-[0_8px_4px_rgba(0,0,0,0.3)]"
-          />
-        </Link>
+        {/* 3. 우측 하단 게임 시작 버튼 (540*190) 
+            - Bottom: 24px -> 1.25cqw (bottom-6 approx)
+            - Right: 12px -> 0.63cqw (right-3 approx)
+            - Width: 540px -> 28.13cqw
+            - Height: 190px -> 9.9cqw
+        */}
+        <div className={`absolute bottom-[1.25cqw] right-[0.63cqw] z-30 ${uiTransitionClass}`}>
+          <Link to={isLoggedIn ? '/room-list' : '/login'} className="inline-block group">
+            <img
+              src="/images/btn-start.png"
+              alt="게임 시작 버튼"
+              className="w-[28.13cqw] h-[9.9cqw] object-contain hover:scale-105 active:scale-95 transition-transform drop-shadow-[0_0.4cqw_0.2cqw_rgba(0,0,0,0.3)]"
+            />
+          </Link>
+        </div>
       </div>
     </div>
   );
