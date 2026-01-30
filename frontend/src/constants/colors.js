@@ -21,7 +21,7 @@ export const COLORS = {
     lightGreen: '#B4E4B5',
     lilac: '#D9C5F8',
     purpleGray: '#F9F3F9', // 이름 변경 (이미지: 퍼플 그레이)
-    lightPurple: '#F0E0F8', // 값 변경 (이미지: 라이트 퍼플)
+    lightPurple: '#F9F3F9', // 이미지 스펙 반영 (기존 #F0E0F8에서 변경)
     darkBrown: '#594E36',
     coffeeBrown: '#7B6C53',
     nookCyan: '#34C4D3',
