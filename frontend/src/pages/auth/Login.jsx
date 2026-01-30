@@ -570,7 +570,7 @@ export default function Login() {
               className="absolute right-6 top-1/2 -translate-y-1/2 transition-colors"
               style={{ color: COLORS.ac.coffeeBrown }}
             >
-              {showPassword ? <EyeSlashIcon className="w-8 h-8" /> : <EyeIcon className="w-8 h-8" />}
+              {showPassword ? <EyeIcon className="w-8 h-8" /> : <EyeSlashIcon className="w-8 h-8" />}
             </button>
           </div>
         </div>
