@@ -6,7 +6,7 @@ export const CHARACTERS = [
     name: '애플',
     quote: '큐룽뀨뀨 나는 이 섬의 연예인',
     selectBasicImage: '/images/room/char-apple-idle.webp',
-    houseImage: '/images/room/char-apple-house.webp',
+    houseImage: '/images/room/char-apple-h' + 'ouse.webp',
     roomListImage: '/images/roomlist/icon-apple.png', // Restored
     iconIdle: '/images/room/icon-apple-idle.webp',
     iconActive: '/images/room/icon-apple-active.webp',

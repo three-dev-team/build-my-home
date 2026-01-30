@@ -27,24 +27,31 @@ const TopButtons = ({
   },
   className = '',
 }) => {
+  // 80px = 4.17vw, 4px = 0.37vh shadow, 3px = 0.16vw border
   const iconBoxStyle =
-    'w-[80px] h-[80px] bg-white rounded-full flex items-center justify-center shadow-[0_4px_4px_rgba(0,0,0,0.1)] hover:scale-105 transition-transform cursor-pointer border-[3px] border-white';
+    'w-[4.17vw] h-[4.17vw] bg-white rounded-full flex items-center justify-center shadow-[0_0.37vh_0.37vh_rgba(0,0,0,0.1)] hover:scale-105 transition-transform cursor-pointer border-[0.16vw] border-white';
   // RoomList는 모든 버튼에 border가 있었고, Home은 프로필에만 있었으나 일관성을 위해 border를 기본으로 둡니다.
   // 필요하다면 props로 제어할 수 있습니다.
 
   return (
-    <div className={`flex gap-6 items-start ${className}`}>
-      {/* 프로필 (아이콘 + 닉네임) */}
-      <button onClick={onProfileClick} className="flex flex-col items-center gap-1 group">
+    // gap-6 = 24px = 1.25vw
+    <div className={`flex gap-[1.25vw] items-start ${className}`}>
+      {/* 프로필 (아이콘 + 닉네임) - gap-1 = 4px = 0.37vh */}
+      <button onClick={onProfileClick} className="flex flex-col items-center gap-[0.37vh] group">
         <div className={`${iconBoxStyle} overflow-hidden p-0`}>
-          <UserIcon className="w-10 h-10" style={{ color: colors.text }} />
+          {/* w-10 h-10 = 40px = 2.08vw */}
+          <UserIcon className="w-[2.08vw] h-[2.08vw]" style={{ color: colors.text }} />
         </div>
-        {/* 닉네임 뱃지 */}
+        {/* 닉네임 뱃지 - 80px = 4.17vw, 40px = 3.7vh, 20px = 1.04vw radius, px-3 = 12px = 0.63vw */}
         <div
-          className="flex items-center justify-center min-w-[80px] h-[40px] rounded-[20px] shadow-sm px-3"
+          className="flex items-center justify-center min-w-[4.17vw] h-[3.7vh] rounded-[1.04vw] shadow-sm px-[0.63vw]"
           style={{ backgroundColor: colors.badgeBg }}
         >
-          <span className="text-[24px] font-black leading-none pb-1" style={{ color: colors.badgeText || colors.text }}>
+          {/* 24px = 1.25vw text, pb-1 = 4px = 0.37vh */}
+          <span
+            className="text-[1.25vw] font-black leading-none pb-[0.37vh]"
+            style={{ color: colors.badgeText || colors.text }}
+          >
             {nickname}
           </span>
         </div>
@@ -52,12 +59,12 @@ const TopButtons = ({
 
       {/* 알림 */}
       <button onClick={onBellClick} className={iconBoxStyle}>
-        <BellIcon className="w-10 h-10" style={{ color: colors.text }} />
+        <BellIcon className="w-[2.08vw] h-[2.08vw]" style={{ color: colors.text }} />
       </button>
 
       {/* 설정 */}
       <button onClick={onConfigClick} className={iconBoxStyle}>
-        <Cog6ToothIcon className="w-10 h-10" style={{ color: colors.text }} />
+        <Cog6ToothIcon className="w-[2.08vw] h-[2.08vw]" style={{ color: colors.text }} />
       </button>
     </div>
   );
