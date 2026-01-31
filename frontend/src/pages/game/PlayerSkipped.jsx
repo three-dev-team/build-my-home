@@ -4,7 +4,8 @@ import { CHARACTERS } from '../../constants/characters.js';
 import InstructionText from '../../components/common/InstructionText.jsx';
 import './css/PlayerSkipped.css';
 
-const PlayerSkipped = ({ isMyTurn, currentPlayerName, onExit }) => {
+const PlayerSkipped = ({ isMyTurn, player, onExit }) => {
+  const currentPlayerName = player?.nickname || '플레이어';
   const handleExit = useExitHandler(isMyTurn, onExit);
   useGameTimer(5, handleExit);
 
@@ -13,28 +14,20 @@ const PlayerSkipped = ({ isMyTurn, currentPlayerName, onExit }) => {
     return acc;
   }, {});
 
-  const charImg = currentPlayerCharacterId ? CHARACTER_IMG[currentPlayerCharacterId] : null;
+  const charImg = player.characterId ? CHARACTER_IMG[player.characterId] : null;
 
   return (
     <div className="player-skipped-container">
       {/* 상단 메시지 */}
-      <div className="top-message">
-        잠시 후 자동으로 이동합니다...
-      </div>
+      <div className="top-message">잠시 후 자동으로 이동합니다...</div>
 
       {/* 캐릭터 영역 */}
       <div className="skipped-character-area">
-        <img
-          src={charImg}
-          alt={currentPlayerName}
-          className="skipped-character"
-        />
+        <img src={charImg} alt={currentPlayerName} className="skipped-character" />
         <div className="skipped-character-shadow"></div>
       </div>
 
-      <InstructionText>
-        {currentPlayerName}이 잠깐 졸고 있는 거 같다...
-      </InstructionText>
+      <InstructionText>{currentPlayerName}이 잠깐 졸고 있는 거 같다...</InstructionText>
     </div>
   );
 };
