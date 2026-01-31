@@ -1,0 +1,142 @@
+.name-box {
+    position: fixed;
+    left: calc(50% - (66.042vw / 2) + 1.875vw);
+    bottom: 378px;
+    width: 244px;
+    height: 96px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 120;
+    pointer-events: none;
+
+    /* CSS Mask로 SVG 모양 적용 */
+    -webkit-mask-image: url('/images/common/ui-bubble-name.svg');
+    mask-image: url('/images/common/ui-bubble-name.svg');
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+}
+
+.name-text {
+    position: relative;
+    z-index: 121;
+    font-family: 'Gosanja', sans-serif;
+    font-size: 36px;
+    text-align: center;
+    word-break: keep-all;
+    width: 144px;
+    height: 60px;
+    box-sizing: border-box;
+    display: flex;
+    align-content: center;
+    justify-content: center;
+    transform: translateY(4px) rotate(-8deg);
+}
+
+.content-box {
+    position: fixed;
+    left: 50%;
+    bottom: 80px;
+    transform: translateX(-50%);
+    width: 1268px;
+    height: 398px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    pointer-events: none;
+
+    -webkit-mask-image: url('/images/common/ui-bubble-content.svg');
+    mask-image: url('/images/common/ui-bubble-content.svg');
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center 40px;
+    mask-position: center 40px;
+}
+
+.content-text {
+    position: absolute;
+    top: 120px;
+    z-index: 10;
+    font-family: 'Gosanja', sans-serif;
+    font-size: 48px;
+    line-height: 80px;
+    text-align: center;
+    word-break: keep-all;
+    width: 1044px;
+    height: 208px;
+    white-space: pre-line;
+}
+
+.option-box {
+    position: fixed;
+    right: 232px;
+    bottom: 360px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    pointer-events: none;
+
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+}
+
+/* 2줄용 옵션 박스 */
+.option-box-small {
+    width: 480px;
+    height: 284px;
+    -webkit-mask-image: url('/images/common/ui-bubble-choice-2.svg');
+    mask-image: url('/images/common/ui-bubble-choice-2.svg');
+}
+
+/* 3줄용 옵션 박스 */
+.option-box-large {
+    width: 480px;
+    height: 340px;
+    -webkit-mask-image: url('/images/common/ui-bubble-choice-3.svg');
+    mask-image: url('/images/common/ui-bubble-choice-3.svg');
+}
+
+.option-text {
+    position: relative;
+    z-index: 10;
+    font-family: 'Gosanja', sans-serif;
+    font-size: 42px;
+    font-weight: normal;
+    line-height: 80px;
+    text-align: center;
+    word-break: keep-all;
+    width: 320px;
+    padding: 40px;
+}
+
+.triangle {
+    position: absolute;
+    width: 52px;
+    height: 32px;
+    z-index: 120;
+    pointer-events: none;
+    bottom: 64px;
+    left: 50%;
+    transform: translateX(-50%);
+
+    -webkit-mask-image: url('/images/common/ui-bubble-arrow.svg');
+    mask-image: url('/images/common/ui-bubble-arrow.svg');
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+}
