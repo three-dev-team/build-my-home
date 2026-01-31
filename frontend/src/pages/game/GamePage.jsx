@@ -434,11 +434,7 @@ const GamePage = () => {
 
             {/* PLAYER_SKIPPED */}
             {gameState.status === 'PLAYER_SKIPPED' && (
-              <PlayerSkipped
-                isMyTurn={isMyTurn}
-                currentPlayerName={currentPlayer?.nickname}
-                onExit={handleEventComplete}
-              />
+              <PlayerSkipped isMyTurn={isMyTurn} player={currentPlayer} onExit={handleEventComplete} />
             )}
 
             {/* WAITING_LOAN */}
@@ -561,7 +557,12 @@ const GamePage = () => {
 
             {/* WAITING_ITEMS */}
             {gameState.status === 'WAITING_ITEMS' && (
-              <ItemTile isMyTurn={isMyTurn} player={currentPlayer} onAction={handleAction} onExit={handleEventComplete} />
+              <ItemTile
+                isMyTurn={isMyTurn}
+                player={currentPlayer}
+                onAction={handleAction}
+                onExit={handleEventComplete}
+              />
             )}
 
             {/* FINISHED */}
@@ -654,7 +655,11 @@ const GamePage = () => {
 
           {/* 보드에서만 하단 플레이어 상태 패널 */}
           {shouldShowHud && (
-            <PlayerStatusPanel players={gameState.players || []} currentPlayerId={gameState.currentPlayerId} myId={myId} />
+            <PlayerStatusPanel
+              players={gameState.players || []}
+              currentPlayerId={gameState.currentPlayerId}
+              myId={myId}
+            />
           )}
         </div>
       </div>

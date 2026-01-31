@@ -2,6 +2,8 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { HOUSE_LEVEL_MAP, RESOURCE_MAP, HOUSE_DETAILS } from '../../constants/houseLevel.js';
+import Subtitle from '../../components/common/Subtitle.jsx';
+import { COLORS } from '../../constants/colors.js';
 
 // TODO: 내 차례가 아닐때 버튼 비활성화 유지보수를 위한 공통처리 방법 고민
 const House = ({ player, isMyTurn, onClose, onAction, radishPrice = 0 }) => {
@@ -48,44 +50,28 @@ const House = ({ player, isMyTurn, onClose, onAction, radishPrice = 0 }) => {
 
       {/* Step 0: 메뉴 선택 */}
       {step === 0 && (
-        <div className="w-full h-full flex flex-col items-center justify-center p-8">
-          <h2 className="text-3xl font-bold mb-6 text-black">🏠 너굴씨의 집짓기</h2>
-          <p className="text-xl mb-8 text-black">집을 지으러 왔구리?</p>
-
-          <div className="flex flex-col gap-4">
-            <button
-              onClick={() => setStep(1)}
-              disabled={!isMyTurn}
-              className="px-8 py-4 bg-yellow-400 hover:bg-yellow-500 rounded-full font-bold text-lg"
-            >
-              집 짓는 재료를 알고 싶어
-            </button>
-            <button
-              onClick={() => setStep(2)}
-              disabled={!isMyTurn}
-              className="px-8 py-4 bg-green-400 hover:bg-green-500 rounded-full font-bold text-lg"
-            >
-              집을 업그레이드 하고 싶어
-            </button>
-
-            {/* 무 판매하기 추가 */}
-            <button
-              onClick={() => {
-                setSellQty(1);
-                setStep(11);
-              }}
-              disabled={!isMyTurn || radishQty <= 0}
-              className="px-8 py-4 bg-lime-400 hover:bg-lime-500 rounded-full font-bold text-lg disabled:opacity-50"
-              title={radishQty <= 0 ? '보유한 무가 없어구리' : ''}
-            >
-              무 판매하기
-            </button>
-
-            {radishQty <= 0 && (
-              <p className="text-sm text-gray-600 text-center">지금은 보유한 무가 없어서 판매할 수 없어구리.</p>
-            )}
-          </div>
-        </div>
+        <Subtitle
+          nameText="너굴"
+          nameColor={COLORS.characters.naugul.nameBox}
+          nameTextColor={COLORS.characters.naugul.nameText}
+          contentText="어떤 업무를 보러 왔나구리?"
+          options={[
+            { text: '집재료알려줘', onClick: () => setStep(1) },
+            { text: '업그레이드할래', onClick: () => setStep(2) },
+            {
+              text: radishQty > 0 ? '무 판매하기' : '무',
+              onClick:
+                radishQty > 0
+                  ? () => {
+                      setSellQty(1);
+                      setStep(11);
+                    }
+                  : null,
+            },
+          ]}
+          optionDisabled={!isMyTurn}
+          showTriangle
+        />
       )}
 
       {/* Step 1: 필요한 재료 안내 */}

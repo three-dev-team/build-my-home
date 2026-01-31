@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Client } from '@stomp/stompjs';
 import TopButtons from '../../components/common/TopButtons';
-import TopButtons from '../../components/common/TopButtons';
+// import TopButtons from '../../components/common/TopButtons';
 
 import { CHARACTERS } from '../../constants/characters.js';
 import { COLORS } from '../../constants/colors.js';
