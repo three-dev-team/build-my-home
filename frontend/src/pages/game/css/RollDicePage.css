@@ -1,17 +1,32 @@
-/* RollDicePage.css */
 .roll-dice-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-  color: white;
+    width: 100%;
+    height: 100vh;
+    position: relative;
+    overflow: hidden;
+    background-image: url("/images/bg-rolldice.jpg");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
 }
 
 /* 주사위 영역 */
 .dice-area {
-  margin-bottom: 40px;
+    position: absolute;
+    top: 20vh;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 11.5vw;
+    height: 20.4vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dice-idle {
+    width: 11.5vw;
+    height: 11.5vw;
+    object-fit: contain;
+    filter: drop-shadow(0 1vh 2vh rgba(0, 0, 0, 0.3));
 }
 
 .dice-block {
@@ -44,24 +59,38 @@
   }
 }
 
-/* 안내 문구 */
-.roll-dice-container .instruction-text {
-  font-size: 20px;
-  margin-bottom: 40px;
-  color: #ccc;
-}
-
-/* 현재 플레이어 캐릭터 */
-.current-player-area {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+/* 캐릭터 영역 */
+.character-area {
+    position: absolute;
+    bottom: 16.1vh;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 11.5vw;
+    height: 38.9vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
 }
 
 .current-character {
-  width: 150px;
-  height: 150px;
-  object-fit: contain;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: bottom;
+}
+
+.character-shadow {
+    width: 80%;
+    height: 3vh;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 50%;
+    position: absolute;
+    top: 95%;
+    left: 45%;
+    transform: translateX(-45%);
+    z-index: -1;
+    filter: blur(0.28vh);
 }
 
 .player-name {
