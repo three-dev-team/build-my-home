@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Client } from '@stomp/stompjs';
 import TopButtons from '../../components/common/TopButtons';
-import { BellIcon, Cog6ToothIcon, LockClosedIcon, LockOpenIcon, UserIcon, HomeIcon } from '@heroicons/react/24/solid';
+import TopButtons from '../../components/common/TopButtons';
 
 import { CHARACTERS } from '../../constants/characters.js';
 import { COLORS } from '../../constants/colors.js';
@@ -14,15 +14,6 @@ const WS_APP_PREFIX = '/app/roomlist/rooms';
 const WS_TOPIC_ROOMS = '/topic/roomlist/rooms';
 
 const CHARACTER_BY_ID = new Map(CHARACTERS.map((c) => [Number(c.id), c]));
-
-// 보라색 테마 (Lavender Theme) - 색상 조정
-const THEME = {
-  textPurple: { color: COLORS.roomList.textMain },
-  textDark: { color: COLORS.roomList.textSub },
-  bgMain: { backgroundColor: COLORS.roomList.bgMainTransparent },
-  bgItem: 'bg-white',
-  // Tailwind 클래스 조립은 복잡하므로 스타일 객체나 인라인 스타일로 변환
-};
 
 export default function RoomList() {
   const navigate = useNavigate();
@@ -309,7 +300,20 @@ export default function RoomList() {
       {/* 1. 상단 아이콘 및 프로필 영역 - 40px = 2.08vw, 3.7vh */}
       <div className="absolute top-[3.7vh] left-[2.08vw] z-50">
         <button onClick={() => navigate('/home')} className={iconBtnStyle}>
-          <HomeIcon className="w-[2.08vw] h-[2.08vw]" style={{ color: COLORS.roomList.textMain }} />
+          <div
+            className="w-[2.08vw] h-[2.08vw]"
+            style={{
+              backgroundColor: COLORS.roomList.textMain,
+              maskImage: 'url("/images/icon-home.svg")',
+              WebkitMaskImage: 'url("/images/icon-home.svg")',
+              maskSize: 'contain',
+              WebkitMaskSize: 'contain',
+              maskRepeat: 'no-repeat',
+              WebkitMaskRepeat: 'no-repeat',
+              maskPosition: 'center',
+              WebkitMaskPosition: 'center',
+            }}
+          />
         </button>
       </div>
 
@@ -317,7 +321,15 @@ export default function RoomList() {
         <TopButtons
           nickname={sessionStorage.getItem('nickname') || '주민'}
           onProfileClick={() => navigate('/mypage')}
-          colors={{ text: COLORS.roomList.textMain, badgeBg: COLORS.roomList.btnMain, badgeText: 'white' }}
+          onConfigClick={() => navigate('/config')}
+          colors={{
+            text: COLORS.roomList.textMain,
+            badgeBg: COLORS.roomList.btnMain,
+            badgeText: 'white',
+            dropdownBorder: COLORS.roomList.border, // #B39DDB
+            dropdownHoverBg: COLORS.roomList.bgMain, // #EAD8F9
+            dropdownText: COLORS.roomList.textMain, // #6A4F9C
+          }}
         />
       </div>
 
