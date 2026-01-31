@@ -92,20 +92,25 @@ const CharacterSelect = () => {
   };
 
   return (
-    <div
-      className="w-full h-screen bg-cover bg-center font-gosanja relative overflow-hidden"
-      style={{ backgroundImage: "url('/images/room/bg-character-select.jpg')" }}
-    >
-      <div className="w-full h-full flex">
+    <div className="w-full h-screen bg-black flex items-center justify-center overflow-hidden font-gosanja">
+      <div
+        className="relative w-full aspect-video max-h-screen overflow-hidden flex"
+        style={{
+          backgroundImage: "url('/images/room/bg-character-select.jpg')",
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          containerType: 'size',
+        }}
+      >
         {/* --- LEFT SECTION (Preview) (50%) --- */}
         <div className="w-1/2 h-full flex flex-col items-center justify-center relative">
           {/* 집 이미지 (완쪽 섹션 절대 위치 상단 좌측) */}
           {previewChar && previewChar.houseImage && (
-            <div className="absolute top-[15%] left-[10%] z-0 animate-fade-in">
+            <div className="absolute top-[8.7%] left-[12%] z-0 animate-fade-in">
               <img
                 src={previewChar.houseImage}
                 alt={`${previewChar.name}'s House`}
-                className="w-[180px] h-auto object-contain drop-shadow-md hover:scale-105 transition-transform"
+                className="w-[9.38cqw] h-auto object-contain hover:scale-105 transition-transform"
               />
             </div>
           )}
@@ -113,35 +118,38 @@ const CharacterSelect = () => {
           {/* 캐릭터 미리보기 이미지 */}
           {/* 캐릭터 미리보기 이미지 & 설명 (상하 배치) */}
           {previewChar && (
-            <div className="flex flex-col items-center mt-[40px] relative z-10 w-full">
+            <div className="flex flex-col items-center mt-[8.08cqw] relative z-10 w-full">
               {/* 1. 캐릭터 이미지 (박스 위로 겹쳐보이게) */}
-              {/* mb-[-60px]로 텍스트 박스와 겹침 효과 */}
-              <div className="relative z-20 mb-[-60px] animate-fade-in-up">
+              {/* mb-[-3.13cqw]로 텍스트 박스와 겹침 효과 */}
+              <div className="relative z-20 mb-[-2.08cqw] animate-fade-in-up">
                 <img
                   src={getPreviewImage(previewChar)}
                   alt={previewChar.name}
-                  className="w-[298px] h-[437px] object-contain drop-shadow-2xl"
+                  className="w-[15.52cqw] h-[22.76cqw] object-contain"
                 />
               </div>
 
-              {/* 2. 설명 텍스트 박스 (794px * 268px) */}
+              {/* 2. 설명 텍스트 박스 (41.35cqw * 13.96cqw) */}
               <div
-                className="w-[794px] h-[268px] rounded-[36px] shadow-lg flex flex-col items-center justify-end pb-[40px] relative z-10"
+                className="w-[41.35cqw] h-[13.96cqw] rounded-[1.88cqw] flex flex-col items-center justify-end pb-[2.08cqw] relative z-10"
                 style={{ backgroundColor: 'rgba(253, 251, 246, 0.9)' }} // #FDFBF6 90% 투명도 (사용자가 '흰색에 쌓임' 요청)
               >
-                {/* 이름 (font 60px) */}
+                {/* 이름 */}
                 <h2
-                  className="text-[60px] font-black leading-none mb-4 tracking-tight"
+                  className="text-[3.13cqw] font-black leading-none mb-[0.83cqw] tracking-tight"
                   style={{ color: COLORS.darkBrown }}
                 >
                   {previewChar.name}
                 </h2>
 
-                {/* 점선 (너비 600px 중앙 정렬) */}
-                <div className="w-[600px] h-[4px] border-t-4 border-dashed border-[#8A6F5D] opacity-40 mb-5" />
+                {/* 점선 (너비 31.25cqw 중앙 정렬) */}
+                <div className="w-[31.25cqw] h-[0.21cqw] border-t-[0.21cqw] border-dashed border-[#8A6F5D] opacity-40 mb-[1.04cqw]" />
 
-                {/* 명언 (font 36px) */}
-                <p className="text-[36px] font-bold opacity-80 whitespace-nowrap" style={{ color: COLORS.darkBrown }}>
+                {/* 명언 */}
+                <p
+                  className="text-[1.88cqw] font-bold opacity-80 whitespace-nowrap"
+                  style={{ color: COLORS.darkBrown }}
+                >
                   "{previewChar.quote}"
                 </p>
               </div>
@@ -152,18 +160,18 @@ const CharacterSelect = () => {
         </div>
 
         {/* --- RIGHT SECTION (Grid & Actions) (50%) --- */}
-        <div className="w-1/2 h-full flex flex-col items-center justify-center pt-[60px] relative">
+        <div className="w-1/2 h-full flex flex-col items-center justify-center pt-[3.13cqw] relative">
           {/* 상단 타이틀 */}
-          <h1 className="text-[60px] font-black mb-[60px]" style={{ color: COLORS.darkBrown }}>
+          <h1 className="text-[3.13cqw] font-black mb-[3.13cqw]" style={{ color: COLORS.darkBrown }}>
             나의 주민을 선택해주세요
           </h1>
 
           {/* 캐릭터 그리드 (4x2) */}
-          <div className="grid grid-cols-4 gap-[24px]">
+          <div className="grid grid-cols-4 gap-[1.25cqw]">
             {CHARACTERS.map((char) => {
               const isTaken = takenCharacters.includes(char.id);
               const isSelected = selectedCharacter === char.id;
-              const isHovered = hoveredCharacterId === char.id;
+              // const isHovered = hoveredCharacterId === char.id; // Unused variable removed
 
               // 선택되었을 때만 Active 이미지 사용 (호버 시에는 Idle 유지)
               const displayIcon = isSelected ? char.iconActive : char.iconIdle;
@@ -176,7 +184,7 @@ const CharacterSelect = () => {
                   onMouseLeave={() => setHoveredCharacterId(null)}
                   disabled={isTaken}
                   className={`
-                     relative w-[160px] h-[160px] flex items-center justify-center transition-all p-0
+                     relative w-[8.33cqw] h-[8.33cqw] flex items-center justify-center transition-all p-0
                      ${isTaken ? 'opacity-40 grayscale cursor-not-allowed' : 'cursor-pointer hover:scale-105'}
                    `}
                   // 스타일(테두리, 그림자 등) 제거: 이미지만 표시
@@ -192,23 +200,23 @@ const CharacterSelect = () => {
           </div>
 
           {/* 하단 버튼 영역 */}
-          <div className="mt-[80px] flex flex-col items-center gap-4">
+          <div className="mt-[4.17cqw] flex flex-col items-center gap-[0.83cqw]">
             {/* 선택하기 버튼 */}
             <button
               onClick={handleEnter}
               disabled={!selectedCharacter}
               className={`
-                 w-[400px] h-[120px] rounded-[48px] flex items-center justify-center shadow-xl transition-all
+                 w-[20.83cqw] h-[6.25cqw] rounded-[2.5cqw] flex items-center justify-center transition-all
                  ${selectedCharacter ? 'hover:brightness-105 active:scale-95' : 'opacity-50 cursor-not-allowed'}
                `}
               style={{ backgroundColor: COLORS.ac.nookCyan }}
             >
-              <span className="text-[50px] font-black text-white pb-2">선택하기</span>
+              <span className="text-[2.60cqw] font-black text-white pb-[0.42cqw]">선택하기</span>
             </button>
           </div>
 
           {/* 뒤로가기 (나가기) - 우측 하단 절대 위치 */}
-          <div className="absolute bottom-[40px] right-[40px]">
+          <div className="absolute bottom-[2.08cqw] right-[2.08cqw]">
             <ExitButton onClick={handleLeave} />
           </div>
         </div>

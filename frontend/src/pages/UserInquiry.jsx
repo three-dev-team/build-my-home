@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import TopButtons from '../components/common/TopButtons';
+import ExitButton from '../components/common/ExitButton';
 
 export default function UserInquiryPage() {
   const navigate = useNavigate();
@@ -19,11 +21,11 @@ export default function UserInquiryPage() {
 
   const [loading, setLoading] = useState(false);
 
-  // 카테고리 옵션
+  // 카테고리 옵션 (이미지 경로 설정)
   const categories = [
-    { value: 'USER_REPORT', label: '🚨 유저 신고', color: 'bg-red-100' },
-    { value: 'BUG_REPORT', label: '🐛 버그 신고', color: 'bg-orange-100' },
-    { value: 'ETC', label: '📦 기타', color: 'bg-gray-100' },
+    { value: 'USER_REPORT', label: '유저 신고', icon: '/images/user-inquiry/icon-siren.svg', color: 'bg-red-100' },
+    { value: 'BUG_REPORT', label: '버그 신고', icon: '/images/user-inquiry/icon-bug.svg', color: 'bg-orange-100' },
+    { value: 'ETC', label: '기타', icon: '/images/user-inquiry/icon-etc.svg', color: 'bg-gray-100' },
   ];
 
   // 내 문의 목록 불러오기
@@ -48,21 +50,11 @@ export default function UserInquiryPage() {
         ? `/api/member/inquiries/my?cursor=${currentCursor}&size=${size}`
         : `/api/member/inquiries/my?size=${size}`;
 
-      console.log('=== 문의 목록 요청 ===');
-      console.log('URL:', url);
-      console.log('Token:', token ? '있음' : '없음');
-
       const response = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      console.log('응답 데이터:', response.data);
-
       const newInquiries = response.data;
-
-      console.log('=== 조회 결과 ===');
-      console.log('받은 데이터 개수:', newInquiries.length);
-      console.log('데이터:', newInquiries);
 
       if (newInquiries.length > 0) {
         // 기존 데이터에 추가
@@ -72,24 +64,15 @@ export default function UserInquiryPage() {
         const lastInquiry = newInquiries[newInquiries.length - 1];
         setCursor(lastInquiry.id);
 
-        console.log('다음 커서:', lastInquiry.id);
-
         // size개 미만이면 더 이상 데이터가 없음
         if (newInquiries.length < size) {
           setHasMore(false);
-          console.log(`더 이상 데이터 없음 (${size}개 미만)`);
-        } else {
-          console.log('더 보기 가능');
         }
       } else {
         setHasMore(false);
-        console.log('데이터 없음');
       }
     } catch (error) {
-      console.error('=== 문의 목록 조회 실패 ===');
-      console.error('에러:', error);
-      console.error('에러 응답:', error.response?.data);
-      console.error('에러 상태:', error.response?.status);
+      console.error('문의 목록 조회 실패:', error);
       alert('문의 목록을 불러오는데 실패했습니다.');
     } finally {
       setLoading(false);
@@ -148,272 +131,338 @@ export default function UserInquiryPage() {
 
   // 상태 배지 컴포넌트
   const StatusBadge = ({ status }) => {
-    const statusConfig = {
-      OPEN: { label: '답변 대기', color: 'bg-yellow-100 text-yellow-800' },
-      ANSWERED: { label: '답변 완료', color: 'bg-green-100 text-green-800' },
-    };
-    const config = statusConfig[status] || statusConfig.OPEN;
-
-    return <span className={`px-3 py-1 rounded-full text-xs font-bold ${config.color}`}>{config.label}</span>;
+    const isAnswered = status === 'ANSWERED';
+    return (
+      <span
+        className={`px-[1.25vw] py-[0.6vh] rounded-full text-[0.83vw] font-bold text-white ${
+          isAnswered ? 'bg-[#10E3A8]' : 'bg-[#00C9E0]'
+        }`}
+      >
+        {isAnswered ? '답변완료' : '답변대기'}
+      </span>
+    );
   };
 
-  // 카테고리 배지 컴포넌트 추가
+  // 카테고리 배지 컴포넌트
   const CategoryBadge = ({ category }) => {
     const categoryConfig = {
-      USER_REPORT: { label: '🚨 유저 신고', color: 'bg-red-100 text-red-800' },
-      BUG_REPORT: { label: '🐛 버그 신고', color: 'bg-orange-100 text-orange-800' },
-      ETC: { label: '📦 기타', color: 'bg-gray-100 text-gray-800' },
+      USER_REPORT: {
+        label: '유저 신고',
+        icon: '/images/user-inquiry/icon-siren.svg',
+        color: 'bg-[#FFF8E1] text-[#594E36]',
+      },
+      BUG_REPORT: {
+        label: '버그 신고',
+        icon: '/images/user-inquiry/icon-bug.svg',
+        color: 'bg-[#F9F0A3] text-[#594E36]',
+      },
+      ETC: { label: '기타', icon: '/images/user-inquiry/icon-etc.svg', color: 'bg-[#F3F4F6] text-[#616161]' },
     };
     const config = categoryConfig[category] || categoryConfig.ETC;
 
-    return <span className={`px-3 py-1 rounded-full text-xs font-bold ${config.color}`}>{config.label}</span>;
+    return (
+      <div className={`flex items-center gap-[0.42vw] px-[1.04vw] py-[0.6vh] rounded-full ${config.color}`}>
+        <div
+          className="w-[1.04vw] h-[1.04vw]"
+          style={{
+            backgroundColor: config.color.includes('text-[#594E36]') ? '#594E36' : '#616161',
+            maskImage: `url("${config.icon}")`,
+            WebkitMaskImage: `url("${config.icon}")`,
+            maskSize: 'contain',
+            WebkitMaskSize: 'contain',
+            maskRepeat: 'no-repeat',
+            WebkitMaskRepeat: 'no-repeat',
+            maskPosition: 'center',
+            WebkitMaskPosition: 'center',
+          }}
+        />
+        <span className="text-[0.83vw] font-bold">{config.label}</span>
+      </div>
+    );
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#a8d5ba] to-[#e8f5e9] p-4">
-      <style>
-        {' '}
-        {/* 스크롤 스타일 */}
-        {`
-                .custom-scrollbar::-webkit-scrollbar {
-                    width: 10px;
-                }
-                .custom-scrollbar::-webkit-scrollbar-track {
-                    background: #efe7d1;
-                    border-radius: 10px;
-                }
-                .custom-scrollbar::-webkit-scrollbar-thumb {
-                    background: #8b5a2b;
-                    border-radius: 10px;
-                    border: 2px solid #efe7d1;
-                }
-                .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-                    background: #bc8a5f;
-                }
-            `}
-      </style>
-      {/* 헤더 */}
-      <div className="max-w-4xl mx-auto mb-4">
-        <button
-          onClick={() => navigate('/mypage')}
-          className="mb-3 px-4 py-2 bg-white rounded-lg shadow hover:bg-gray-50 transition text-sm"
-        >
-          ← 마이페이지로 돌아가기
-        </button>
-
-        <div className="bg-white rounded-2xl shadow-lg p-4 border-4 border-[#8b5a2b]">
-          <h1 className="text-2xl font-black text-[#5d4037] mb-1">📮 문의하기</h1>
-          <p className="text-sm text-gray-600">너굴에게 궁금한 점을 물어보세요! 🦝</p>
-        </div>
-      </div>
-
-      {/* 탭 메뉴 */}
-      <div className="max-w-4xl mx-auto mb-4">
-        <div className="flex gap-3">
+    <div className="w-full h-screen bg-black flex items-center justify-center overflow-hidden font-gosanja">
+      {/* 16:9 비율 컨테이너 */}
+      <div
+        className="relative w-full aspect-video max-h-screen overflow-hidden bg-[url('/images/user-inquiry/bg-inquiry.jpg')] bg-cover bg-center flex flex-col items-center"
+        style={{ containerType: 'size' }}
+      >
+        {/* 1. 상단 아이콘 영역 */}
+        {/* 홈 버튼 (좌측 상단) */}
+        <div className="absolute top-[2.08cqw] left-[2.08cqw] z-50">
           <button
-            onClick={() => setActiveTab('write')}
-            className={`flex-1 py-2.5 rounded-xl font-bold transition text-sm ${
-              activeTab === 'write'
-                ? 'bg-white text-[#5d4037] shadow-lg border-2 border-[#8b5a2b]'
-                : 'bg-[#efe7d1] text-gray-600 hover:bg-white'
-            }`}
+            onClick={() => navigate('/home')}
+            className="w-[4.17cqw] h-[4.17cqw] bg-white rounded-full flex items-center justify-center hover:scale-105 transition-transform cursor-pointer border-[0.16cqw] border-white"
           >
-            ✍️ 문의 작성
-          </button>
-          <button
-            onClick={() => setActiveTab('list')}
-            className={`flex-1 py-2.5 rounded-xl font-bold transition text-sm ${
-              activeTab === 'list'
-                ? 'bg-white text-[#5d4037] shadow-lg border-2 border-[#8b5a2b]'
-                : 'bg-[#efe7d1] text-gray-600 hover:bg-white'
-            }`}
-          >
-            📋 내 문의 내역
+            <div
+              className="w-[2.08cqw] h-[2.08cqw] bg-[#594E36]"
+              style={{
+                maskImage: 'url("/images/icon-home.svg")',
+                WebkitMaskImage: 'url("/images/icon-home.svg")',
+                maskSize: 'contain',
+                WebkitMaskSize: 'contain',
+                maskRepeat: 'no-repeat',
+                WebkitMaskRepeat: 'no-repeat',
+                maskPosition: 'center',
+                WebkitMaskPosition: 'center',
+              }}
+            />
           </button>
         </div>
-      </div>
 
-      {/* 문의 작성 탭 */}
-      {activeTab === 'write' && (
-        <div className="max-w-4xl mx-auto">
-          <div className="bg-white rounded-2xl shadow-lg p-6 border-4 border-[#8b5a2b]">
-            {/* 카테고리 선택 */}
-            <div className="mb-4">
-              <label className="block text-base font-bold text-[#5d4037] mb-2">카테고리 선택</label>
-              <div className="grid grid-cols-3 gap-2">
-                {categories.map((cat) => (
-                  <button
-                    key={cat.value}
-                    onClick={() => setCategory(cat.value)}
-                    className={`p-2.5 rounded-xl font-bold transition border-2 text-sm ${
-                      category === cat.value
-                        ? `${cat.color} border-[#8b5a2b] shadow-md`
-                        : 'bg-gray-50 border-gray-200 hover:bg-gray-100'
-                    }`}
-                  >
-                    {cat.label}
-                  </button>
-                ))}
-              </div>
-            </div>
+        {/* TopButtons (우측 상단) */}
+        <div className="absolute top-[2.08cqw] right-[2.08cqw] z-50">
+          <TopButtons
+            nickname={sessionStorage.getItem('nickname') || '주민'}
+            onProfileClick={() => navigate('/mypage')}
+            onBellClick={() => navigate('/notifications')}
+            onConfigClick={() => navigate('/config')}
+            showShadow={false}
+            colors={{
+              text: '#594E36',
+              badgeBg: '#FDFBF6',
+              badgeText: '#594E36',
+            }}
+          />
+        </div>
 
-            {/* 제목 입력 */}
-            <div className="mb-4">
-              <label className="block text-base font-bold text-[#5d4037] mb-2">제목</label>
-              <input
-                type="text"
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="문의 제목을 입력하세요"
-                className="w-full p-2.5 border-2 border-[#8b5a2b] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#a8d5ba] text-sm"
-              />
-            </div>
-
-            {/* 내용 입력 */}
-            <div className="mb-4">
-              <label className="block text-base font-bold text-[#5d4037] mb-2">내용</label>
-              <textarea
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="문의 내용을 상세히 작성해주세요"
-                rows="6"
-                className="w-full p-2.5 border-2 border-[#8b5a2b] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#a8d5ba] text-sm"
-              />
-            </div>
-
-            {/* 제출 버튼 */}
-            <button
-              onClick={handleSubmitInquiry}
-              disabled={loading}
-              className="w-full py-3 bg-[#a8d5ba] text-white font-black text-base rounded-xl hover:bg-[#8bc4a0] transition disabled:bg-gray-300 disabled:cursor-not-allowed shadow-lg"
-            >
-              {loading ? '등록 중...' : '📮 문의 등록하기'}
-            </button>
+        {/* 헤더 타이틀 - 80px = 4.17vw font size, top margin adjustment */}
+        <div className="flex flex-col items-center gap-[1.56vh] mb-[1.85vh]">
+          <h1 className="text-[4.17vw] font-black text-[#594E36] mt-[4.63vh]">
+            {activeTab === 'write' ? '문의하기' : '내 문의내역'}
+          </h1>
+          {/* 구분선 (점선) */}
+          <div className="flex items-center w-[40vw] gap-[0.52vw]">
+            <div className="w-[0.63vw] h-[0.63vw] rounded-full bg-[#594E36]" />
+            <div className="flex-1 h-[0.16vh] border-b-[0.26vh] border-[#594E36] border-dashed opacity-80" />
+            <div className="w-[0.63vw] h-[0.63vw] rounded-full bg-[#594E36]" />
           </div>
         </div>
-      )}
 
-      {/* 내 문의 내역 탭 */}
-      {activeTab === 'list' && (
-        <div className="max-w-4xl mx-auto">
-          {loading && myInquiries.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-xl font-bold text-[#5d4037]">로딩 중...</p>
-            </div>
-          ) : myInquiries.length === 0 ? (
-            <div className="bg-white rounded-2xl shadow-lg p-12 text-center border-4 border-[#8b5a2b]">
-              <p className="text-xl font-bold text-gray-400">아직 문의 내역이 없어요 🌿</p>
-              <button
-                onClick={() => setActiveTab('write')}
-                className="mt-4 px-6 py-3 bg-[#a8d5ba] text-white font-bold rounded-xl hover:bg-[#8bc4a0] transition"
-              >
-                첫 문의 작성하기
-              </button>
-            </div>
-          ) : (
-            <div className="flex flex-col">
-              {/* --- 1. 스크롤이 발생하는 리스트 영역 --- */}
-              <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar border-b-2 border-dashed border-[#8b5a2b]/20 pb-4">
-                {myInquiries.map((inquiry) => (
-                  <div
-                    key={inquiry.id}
-                    onClick={() => handleSelectInquiry(inquiry.id)}
-                    className="bg-white p-4 rounded-xl shadow-lg border-2 border-[#8b5a2b] hover:shadow-xl transition cursor-pointer"
-                  >
-                    <div className="flex justify-between items-start mb-2">
-                      <h3 className="text-base font-bold text-[#5d4037] flex-1">{inquiry.title}</h3>
-                      <StatusBadge status={inquiry.status} />
-                    </div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <CategoryBadge category={inquiry.category} />
-                    </div>
-                    <p className="text-xs text-gray-500">{new Date(inquiry.createdAt).toLocaleDateString('ko-KR')}</p>
-                  </div>
-                ))}
+        {/* 메인 컨텐트 카드 - 1280px = 66.67vw width, 680px = 62.96vh height */}
+        <div className="w-[66.67vw] h-[62.96vh] bg-[#FDF5E6] rounded-[2.08vw] flex flex-col items-center py-[3.7vh] px-[4.17vw] relative">
+          {/* 탭 메뉴 (하단 중앙 배치 또는 상단 배치? 디자인 시안에는 하단에 위치함) */}
+          {/* 디자인 시안대로라면 컨텐츠 영역이 먼저 나오고 하단에 버튼이 있음. 
+              하지만 UX상 상단 탭이 익숙할 수 있으나, 요구사항에 맞춰 하단 탭 버튼(초록/파랑)으로 구현 */}
+
+          {/* 1. 문의 작성 탭 컨텐츠 */}
+          {activeTab === 'write' && (
+            <div className="w-full flex flex-col gap-[2.22vh]">
+              {/* 카테고리 선택 - 60px = 3.13vw height */}
+              <div className="flex items-center gap-[2.08vw]">
+                <span className="text-[1.25vw] font-bold text-[#594E36] w-[8.33vw] text-right">카테고리 선택</span>
+                <div className="flex gap-[1.04vw]">
+                  {categories.map((cat) => (
+                    <button
+                      key={cat.value}
+                      onClick={() => setCategory(cat.value)}
+                      className={`flex items-center gap-[0.42vw] px-[1.25vw] py-[0.93vh] rounded-[1.04vw] font-bold text-[1.04vw] transition-all border-[0.16vw] ${
+                        category === cat.value
+                          ? 'bg-[#F9F0A3] border-[#F2C94C] text-[#594E36] shadow-sm'
+                          : 'bg-[#FFF8E7] border-[#EAD7B8] text-[#9CA3AF] hover:bg-[#FFF8EA]'
+                      }`}
+                    >
+                      <div
+                        className="w-[1.25vw] h-[1.25vw]"
+                        style={{
+                          backgroundColor: category === cat.value ? '#594E36' : '#9CA3AF',
+                          maskImage: `url("${cat.icon}")`,
+                          WebkitMaskImage: `url("${cat.icon}")`,
+                          maskSize: 'contain',
+                          WebkitMaskSize: 'contain',
+                          maskRepeat: 'no-repeat',
+                          WebkitMaskRepeat: 'no-repeat',
+                          maskPosition: 'center',
+                          WebkitMaskPosition: 'center',
+                        }}
+                      />
+                      {cat.label}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              {/* --- 2. 스크롤 영역 밖의 하단 버튼 영역 --- */}
-              <div className="mt-6 space-y-3">
-                {hasMore && (
-                  <div className="flex justify-center">
-                    <button
-                      onClick={loadMore}
-                      disabled={loading}
-                      className="px-8 py-3 bg-[#a8d5ba] text-white font-black rounded-xl hover:bg-[#8bc4a0] disabled:bg-gray-300 shadow-lg transition text-base border-2 border-[#8b5a2b]/20"
-                    >
-                      {loading ? '주민님 글 찾는 중...' : '📜 더 많은 문의 보기'}
-                    </button>
-                  </div>
-                )}
+              {/* 제목 입력 - 60px = 5.56vh height */}
+              <div className="flex items-center gap-[2.08vw]">
+                <span className="text-[1.25vw] font-bold text-[#594E36] w-[8.33vw] text-right">제목</span>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="제목"
+                  className="flex-1 h-[5.56vh] px-[1.25vw] rounded-[1.04vw] bg-[#FFFBF0] border-[0.16vw] border-transparent focus:border-[#F2C94C] outline-none text-[1.04vw] font-bold text-[#594E36] placeholder:text-[#D1D5DB]"
+                  maxLength={25}
+                />
+              </div>
 
-                {!hasMore && (
-                  <div className="text-center py-4 bg-white/30 rounded-full text-[#5d4037] font-bold text-sm">
-                    모든 문의를 다 읽었습니다 🍃
-                  </div>
-                )}
+              {/* 내용 입력 - 300px = 27.78vh height */}
+              <div className="flex items-start gap-[2.08vw]">
+                <span className="text-[1.25vw] font-bold text-[#594E36] w-[8.33vw] text-right mt-[0.93vh]">내용</span>
+                <div className="flex-1 flex flex-col gap-[1.48vh]">
+                  <textarea
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    placeholder="내용"
+                    className="w-full h-[23.15vh] p-[1.25vw] rounded-[1.04vw] bg-[#FFFBF0] border-[0.16vw] border-transparent focus:border-[#F2C94C] outline-none text-[1.04vw] font-bold text-[#594E36] resize-none placeholder:text-[#D1D5DB]"
+                  />
+                  {/* 첨부파일 버튼 (더미) - 24px height approx */}
+                  <button className="self-start px-[0.83vw] py-[0.46vh] bg-[#E5E7EB] rounded-[1.04vw] text-[0.73vw] font-bold text-[#6B7280] hover:bg-[#D1D5DB]">
+                    첨부파일
+                  </button>
+                </div>
+              </div>
+
+              {/* 등록하기 버튼 (카드 내부 하단) - 160px width, 60px height */}
+              <div className="flex justify-center mt-[1.85vh]">
+                <button
+                  onClick={handleSubmitInquiry}
+                  disabled={loading}
+                  className="px-[3.33vw] py-[1.39vh] bg-[#594E36] text-[#FDFBF6] text-[1.25vw] font-bold rounded-[1.04vw] hover:scale-105 active:scale-95 transition-transform disabled:opacity-50"
+                >
+                  {loading ? '등록 중...' : '등록하기'}
+                </button>
               </div>
             </div>
           )}
-        </div>
-      )}
 
-      {/* 문의 상세 모달 */}
-      {selectedInquiry && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto border-4 border-[#8b5a2b]">
-            <div className="p-6">
-              {/* 헤더 */}
-              <div className="flex justify-between items-start mb-6">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
+          {/* 2. 내 문의 내역 탭 컨텐츠 */}
+          {activeTab === 'list' && (
+            <div className="w-full h-full flex flex-col">
+              {loading && myInquiries.length === 0 ? (
+                <div className="flex-1 flex items-center justify-center">
+                  <p className="text-[1.25vw] font-bold text-[#594E36]">로딩 중...</p>
+                </div>
+              ) : myInquiries.length === 0 ? (
+                <div className="flex-1 flex flex-col items-center justify-center gap-[1.85vh]">
+                  <p className="text-[1.25vw] font-bold text-[#9CA3AF]">아직 문의 내역이 없어요 🌿</p>
+                </div>
+              ) : (
+                <div className="flex-1 overflow-y-auto px-[1.04vw] py-[0.93vh] space-y-[1.48vh] scrollbar-thin scrollbar-thumb-[#D1D5DB] scrollbar-track-transparent">
+                  {myInquiries.map((inquiry) => (
+                    <div
+                      key={inquiry.id}
+                      onClick={() => handleSelectInquiry(inquiry.id)}
+                      className="bg-white px-[2.08vw] py-[1.85vh] rounded-[2.08vw] flex flex-col gap-[1.11vh] cursor-pointer hover:bg-gray-50 transition"
+                    >
+                      {/* 1열: 문의번호 | 날짜 */}
+                      <div className="flex justify-between items-center text-[0.83vw] text-[#9CA3AF] font-bold">
+                        <span>[문의번호] {inquiry.id}</span>
+                        <span>{new Date(inquiry.createdAt).toLocaleDateString('ko-KR')}</span>
+                      </div>
+
+                      {/* 2열: 제목 */}
+                      <h3 className="text-[1.04vw] font-black text-[#594E36] line-clamp-1">{inquiry.title}</h3>
+
+                      {/* 3열: 카테고리 | 상태 */}
+                      <div className="flex justify-between items-center">
+                        <CategoryBadge category={inquiry.category} />
+                        <StatusBadge status={inquiry.status} />
+                      </div>
+                    </div>
+                  ))}
+
+                  {hasMore ? (
+                    <div className="flex justify-center pt-[0.93vh]">
+                      <button
+                        onClick={loadMore}
+                        disabled={loading}
+                        className="px-[1.67vw] py-[0.93vh] bg-[#FFF8E1] text-[#F57F17] font-bold rounded-[1.04vw] text-[0.83vw] hover:bg-[#FFECB3] transition"
+                      >
+                        {loading ? '로딩 중...' : '더 보기'}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex justify-center pt-[0.93vh] pb-[0.93vh]">
+                      <div className="w-full bg-[#FFFBF0] py-[1.39vh] rounded-[1.04vw] flex justify-center items-center">
+                        <span className="text-[0.94vw] font-bold text-[#9CA3AF]">모든 문의를 다 읽었습니다</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* 하단 탭 전환 버튼들 - 180px width, 60px height approx */}
+        <div className="flex gap-[1.04vw] mt-[2.78vh]">
+          <button
+            onClick={() => setActiveTab('write')}
+            className={`px-[2.5vw] py-[1.39vh] rounded-[2.08vw] text-[1.25vw] font-bold transition-transform hover:scale-105 active:scale-95 ${
+              activeTab === 'write' ? 'bg-[#10E3A8] text-white' : 'bg-[#E5E7EB] text-[#9CA3AF]'
+            }`}
+          >
+            문의작성
+          </button>
+          <button
+            onClick={() => setActiveTab('list')}
+            className={`px-[2.5vw] py-[1.39vh] rounded-[2.08vw] text-[1.25vw] font-bold transition-transform hover:scale-105 active:scale-95 ${
+              activeTab === 'list' ? 'bg-[#00C9E0] text-white' : 'bg-[#E5E7EB] text-[#9CA3AF]'
+            }`}
+          >
+            내 문의내역
+          </button>
+        </div>
+
+        {/* 나가기 버튼 (우측 하단 고정) */}
+        <ExitButton onClick={() => navigate('/home')} className="absolute bottom-[2.78vh] right-[2.08vw]" />
+
+        {/* 문의 상세 모달 */}
+        {selectedInquiry && (
+          <div
+            className="absolute inset-0 z-50 bg-black/50 flex items-center justify-center backdrop-blur-sm"
+            onClick={() => setSelectedInquiry(null)}
+          >
+            <div
+              className="w-[50vw] max-h-[80vh] bg-[#FDFBF6] rounded-[2.08vw] p-[2.08vw] overflow-y-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex justify-between items-start mb-[1.85vh]">
+                <div className="flex flex-col gap-[0.93vh]">
+                  <div className="flex items-center gap-[0.63vw]">
                     <CategoryBadge category={selectedInquiry.category} />
                     <StatusBadge status={selectedInquiry.status} />
                   </div>
-                  <h2 className="text-2xl font-black text-[#5d4037] mt-3">{selectedInquiry.title}</h2>
-                  <p className="text-sm text-gray-500 mt-2">
-                    작성일: {new Date(selectedInquiry.createdAt).toLocaleDateString('ko-KR')}
-                  </p>
+                  <h2 className="text-[1.67vw] font-black text-[#594E36]">{selectedInquiry.title}</h2>
+                  <span className="text-[0.83vw] text-[#9CA3AF]">
+                    {new Date(selectedInquiry.createdAt).toLocaleDateString('ko-KR')}
+                  </span>
                 </div>
                 <button
                   onClick={() => setSelectedInquiry(null)}
-                  className="text-gray-400 hover:text-gray-600 text-2xl font-bold"
+                  className="text-[1.67vw] font-bold text-[#9CA3AF] hover:text-[#594E36]"
                 >
                   ✕
                 </button>
               </div>
 
-              {/* 문의 내용 */}
-              <div className="bg-[#efe7d1] p-6 rounded-xl mb-6">
-                <h3 className="font-bold text-[#5d4037] mb-2">📝 문의 내용</h3>
-                <p className="whitespace-pre-wrap text-gray-700">{selectedInquiry.content}</p>
+              <div className="bg-[#FFF8E1] p-[1.25vw] rounded-[1.04vw] mb-[1.85vh]">
+                <h3 className="text-[1.04vw] font-bold text-[#594E36] mb-[0.93vh]">📝 문의 내용</h3>
+                <p className="text-[0.94vw] text-[#4B5563] whitespace-pre-wrap leading-relaxed">
+                  {selectedInquiry.content}
+                </p>
               </div>
 
-              {/* 답변 */}
               {selectedInquiry.answer ? (
-                <div className="bg-[#e8f5e9] p-6 rounded-xl border-2 border-[#a8d5ba]">
-                  <h3 className="font-bold text-[#5d4037] mb-2">💬 너굴의 답변</h3>
-                  <p className="whitespace-pre-wrap text-gray-700 mb-3">{selectedInquiry.answer.content}</p>
-                  <p className="text-sm text-gray-500">
-                    답변일: {new Date(selectedInquiry.answer.createdAt).toLocaleDateString('ko-KR')}
+                <div className="bg-[#E8F5E9] p-[1.25vw] rounded-[1.04vw] border-[0.16vw] border-[#81C784]">
+                  <h3 className="text-[1.04vw] font-bold text-[#2E7D32] mb-[0.93vh]">💬 답변</h3>
+                  <p className="text-[0.94vw] text-[#1B5E20] whitespace-pre-wrap leading-relaxed mb-[0.93vh]">
+                    {selectedInquiry.answer.content}
                   </p>
+                  <span className="text-[0.73vw] text-[#4CAF50]">
+                    답변일: {new Date(selectedInquiry.answer.createdAt).toLocaleDateString('ko-KR')}
+                  </span>
                 </div>
               ) : (
-                <div className="bg-yellow-50 p-6 rounded-xl border-2 border-yellow-200">
-                  <p className="text-center text-yellow-700 font-bold">⏳ 아직 답변이 등록되지 않았어요</p>
+                <div className="bg-[#F3F4F6] p-[1.25vw] rounded-[1.04vw] flex justify-center">
+                  <span className="text-[0.94vw] font-bold text-[#9CA3AF]">⏳ 아직 답변이 등록되지 않았어요</span>
                 </div>
               )}
-
-              {/* 닫기 버튼 */}
-              <button
-                onClick={() => setSelectedInquiry(null)}
-                className="w-full mt-6 py-3 bg-[#8b5a2b] text-white font-bold rounded-xl hover:bg-[#6d4520] transition"
-              >
-                닫기
-              </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
