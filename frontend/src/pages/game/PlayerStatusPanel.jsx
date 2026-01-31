@@ -2,7 +2,7 @@ import './css/PlayerStatusPanel.css';
 import { CHARACTERS } from '../../constants/characters.js';
 
 const IMG = {
-  bell: '/images/board/icon-bell.png',
+  bell: '/images/board/icon-bell.webp',
   loan: '/images/board/icon-loan.png',
 };
 

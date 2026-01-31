@@ -1,228 +1,234 @@
 /* PlayerStatusPanel.css */
 
 :root {
-    /* 1920x1080(16:9) 기준 px -> vw/vh 스케일 */
-    --ps-w: calc(100vw / 1920);
-    --ps-h: calc(100vh / 1080);
-    --ps-s: min(var(--ps-w), var(--ps-h));
+  /* 1920x1080(16:9) 기준 px -> vw/vh 스케일 */
+  --ps-w: calc(100vw / 1920);
+  --ps-h: calc(100vh / 1080);
+  --ps-s: min(var(--ps-w), var(--ps-h));
 
-    /* 공통 색상 */
-    --ps-white30: rgba(255, 255, 255, 0.30);
-    --ps-black30: rgba(0, 0, 0, 0.30);
+  /* 공통 색상 */
+  --ps-white30: rgba(255, 255, 255, 0.3);
+  --ps-black30: rgba(0, 0, 0, 0.3);
 }
 
 /* 폰트 규칙: 기본(Gosanja), 숫자/랭크(Formula) */
 .ps-container {
-    font-family: var(--font-gosanja);
+  font-family: var(--font-gosanja);
+  z-index: 999;
 }
 
 .f1 {
-    font-family: var(--font-formula);
+  font-family: var(--font-formula);
 }
 
 /* 전체 컨테이너(배경 없음, 하단 고정 영역) */
 .ps-container {
-    position: absolute;
-    left: 50%;
-    bottom: calc(12 * var(--ps-h));
-    width: calc(1660 * var(--ps-w));
-    height: calc(156 * var(--ps-h));
-    z-index: 1800;
-    pointer-events: none;
-    transform: translateX(-50%);
-    transform-origin: bottom center;
+  position: absolute;
+  left: 50%;
+  bottom: calc(12 * var(--ps-h));
+  width: calc(1660 * var(--ps-w));
+  height: calc(156 * var(--ps-h));
+  z-index: 1800;
+  pointer-events: none;
+  transform: translateX(-50%);
+  transform-origin: bottom center;
 }
 
 /* 카드 행(가운데 정렬 + 간격 유지) */
 .ps-row {
-    height: 100%;
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-    gap: calc(72 * var(--ps-w));
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: calc(72 * var(--ps-w));
 }
 
 /* 카드(패널 박스 + 닉네임 영역을 세로로 배치) */
 .ps-card {
-    width: calc(361 * var(--ps-w));
-    height: calc(156 * var(--ps-h));
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    gap: calc(12 * var(--ps-h));
+  width: calc(361 * var(--ps-w));
+  height: calc(156 * var(--ps-h));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: calc(12 * var(--ps-h));
 }
 
 /* 카드 내부 패널 박스(배경/보더/패딩 포함) */
 .ps-box {
-    width: calc(361 * var(--ps-w));
-    height: calc(116 * var(--ps-h));
-    padding: calc(4 * var(--ps-h)) calc(20 * var(--ps-w));
-    border-radius: calc(30 * var(--ps-s));
-    border: calc(3 * var(--ps-s)) solid var(--ps-black30);
-    background: var(--ps-white30);
-    box-sizing: border-box;
+  width: calc(361 * var(--ps-w)); /* 너비 */
+  height: calc(116 * var(--ps-h)); /* 높이 */
+  padding: calc(4 * var(--ps-h)) calc(20 * var(--ps-w)); /* 안쪽 여백 */
+  border-radius: calc(30 * var(--ps-s)); /* 모서리 둥글기 */
+  border: calc(3 * var(--ps-s)) solid var(--ps-black30); /* 테두리 */
+  background: var(--ps-white30); /* 배경색 */
+  box-sizing: border-box; /* 크기 계산 방식 */
 
-    display: flex;
-    align-items: center;
-    gap: calc(12 * var(--ps-w));
-    pointer-events: none;
+  display: flex; /* 플렉스 레이아웃 */
+  align-items: center; /* 세로 중앙 정렬 */
+  gap: calc(12 * var(--ps-w)); /* 자식 요소 간격 */
+  pointer-events: none; /* 클릭 불가 */
 }
 
 /* 상태 표시(현재 턴/내 카드) */
-.ps-card.is-current .ps-box {
-    outline: calc(2 * var(--ps-s)) solid rgba(0, 0, 0, 0.18);
-    outline-offset: calc(2 * var(--ps-s));
-}
+/*.ps-card.is-current .ps-box {*/
+/*    outline: calc(2 * var(--ps-s)) solid rgba(0, 0, 0, 0.18);*/
+/*    outline-offset: calc(2 * var(--ps-s));*/
+/*}*/
 
 .ps-card.is-me .ps-box {
-    box-shadow: inset 0 0 0 calc(2 * var(--ps-s)) rgba(0, 0, 0, 0.12);
+  /*box-shadow: inset 0 0 0 calc(2 * var(--ps-s)) rgba(0, 0, 0, 0.12);*/
 }
 
 /* 좌측 블록(집 아이콘 + 랭크) */
 .ps-left {
-    width: calc(68 * var(--ps-w));
-    height: calc(88 * var(--ps-h));
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
+  width: calc(68 * var(--ps-w));
+  height: calc(88 * var(--ps-h));
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
 }
 
 /* 집 아이콘 영역(레벨별 이미지/도트) */
 .ps-house {
-    width: calc(44 * var(--ps-w));
-    height: calc(44 * var(--ps-h));
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  width: calc(44 * var(--ps-w));
+  height: calc(44 * var(--ps-h));
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .ps-house-dot {
-    width: calc(8 * var(--ps-s));
-    height: calc(8 * var(--ps-s));
-    border-radius: 999px;
-    background: rgba(0, 0, 0, 0.30);
-    display: inline-block;
+  width: calc(8 * var(--ps-s));
+  height: calc(8 * var(--ps-s));
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.3);
+  display: inline-block;
 }
 
 .ps-house-img {
-    width: calc(44 * var(--ps-w));
-    height: calc(44 * var(--ps-h));
-    object-fit: contain;
+  width: calc(44 * var(--ps-w));
+  height: calc(44 * var(--ps-h));
+  object-fit: contain;
 }
 
 /* 랭크 텍스트(하단 정렬) */
 .ps-rank {
-    width: calc(68 * var(--ps-w));
-    flex: 1 1 auto;
-    display: flex;
-    align-items: flex-end;
-    justify-content: flex-start;
+  width: calc(68 * var(--ps-w));
+  flex: 1 1 auto;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-start;
 
-    font-size: calc(32 * var(--ps-s));
-    line-height: 1;
+  font-size: calc(32 * var(--ps-s));
+  line-height: 1;
 
-    color: rgba(255, 255, 255, 0.95);
-    -webkit-text-stroke: calc(3 * var(--ps-s)) rgba(0, 0, 0, 0.30);
+  color: rgba(255, 255, 255, 0.95);
+  /* text-stroke 대신 text-shadow로 바깥 획 */
+  -webkit-text-stroke: calc(6 * var(--ps-s)) rgba(0, 0, 0, 0.3);
+  paint-order: stroke fill; /* 획을 먼저 그리고 글자를 위에 */
 }
 
 /* 캐릭터 영역 */
 .ps-char {
-    width: calc(72 * var(--ps-w));
-    height: calc(88 * var(--ps-h));
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  width: calc(72 * var(--ps-w));
+  height: calc(88 * var(--ps-h));
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .ps-char-img,
 .ps-char-ph {
-    width: calc(72 * var(--ps-w));
-    height: calc(88 * var(--ps-h));
-    object-fit: contain;
+  width: calc(72 * var(--ps-w));
+  height: calc(88 * var(--ps-h));
+  object-fit: contain;
 }
 
 .ps-char-ph {
-    background: rgba(0, 0, 0, 0.08);
-    border-radius: calc(12 * var(--ps-s));
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: calc(12 * var(--ps-s));
 }
 
 /* 재화 영역(벨/대출 2줄) */
 .ps-money {
-    width: calc(112 * var(--ps-w));
-    height: calc(88 * var(--ps-h));
-    display: flex;
-    flex-direction: column;
+  width: calc(112 * var(--ps-w));
+  height: calc(88 * var(--ps-h));
+  display: flex;
+  flex-direction: column;
 }
 
 .ps-money-row {
-    flex: 1 1 0;
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    gap: calc(4 * var(--ps-w));
+  flex: 1 1 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: calc(4 * var(--ps-w));
 }
 
 .ps-money-icon {
-    width: calc(32 * var(--ps-w));
-    height: auto;
-    object-fit: contain;
+  width: calc(32 * var(--ps-w));
+  height: auto;
+  object-fit: contain;
 }
 
 .ps-money-val {
-    font-size: calc(32 * var(--ps-s));
-    line-height: 1;
-    text-align: left;
-    color: rgba(255, 255, 255, 0.95);
-    -webkit-text-stroke: calc(3 * var(--ps-s)) rgba(0, 0, 0, 0.30);
-    white-space: nowrap;
+  font-size: calc(24 * var(--ps-s));
+  line-height: 1;
+  text-align: left;
+  color: rgba(255, 255, 255, 0.95);
+  letter-spacing: calc(1.5 * var(--ps-s));
+  /*-webkit-text-stroke: calc(3 * var(--ps-s)) rgba(0, 0, 0, 0.3);*/
+  -webkit-text-stroke: calc(6 * var(--ps-s)) rgba(0, 0, 0, 0.3);
+  paint-order: stroke fill; /* 획을 먼저 그리고 글자를 위에 */
+  white-space: nowrap;
 }
 
 /* 아이템 영역(3슬롯) */
 .ps-items {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    gap: calc(4 * var(--ps-h));
-    margin-left: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: calc(4 * var(--ps-h));
+  margin-left: auto;
 }
 
 .ps-item-slot {
-    width: calc(32 * var(--ps-w));
-    height: calc(32 * var(--ps-h));
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  width: calc(32 * var(--ps-w));
+  height: calc(32 * var(--ps-h));
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .ps-item-img {
-    width: calc(32 * var(--ps-w));
-    height: calc(32 * var(--ps-h));
-    object-fit: contain;
+  width: calc(32 * var(--ps-w));
+  height: calc(32 * var(--ps-h));
+  object-fit: contain;
 }
 
 .ps-item-dot {
-    width: calc(8 * var(--ps-s));
-    height: calc(8 * var(--ps-s));
-    border-radius: 999px;
-    background: rgba(0, 0, 0, 0.30);
-    display: inline-block;
+  width: calc(8 * var(--ps-s));
+  height: calc(8 * var(--ps-s));
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.3);
+  display: inline-block;
 }
 
 /* 닉네임 박스 */
 .ps-nickname {
-    width: calc(200 * var(--ps-w));
-    height: calc(28 * var(--ps-h));
-    border-radius: 999px;
-    background: rgba(0, 0, 0, 0.30);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  width: calc(200 * var(--ps-w));
+  height: calc(28 * var(--ps-h));
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
-    font-size: calc(16 * var(--ps-s));
-    color: rgba(255, 255, 255, 0.92);
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  font-size: calc(16 * var(--ps-s));
+  color: rgba(255, 255, 255, 0.92);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
