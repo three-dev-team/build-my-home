@@ -1,74 +1,145 @@
-import BubbleBasic from '../../../components/common/BubbleBasic.jsx';
-import { ITEM_INFO } from '../../../constants/gameConstants.js';
+import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
+import { motion } from 'framer-motion';
+import { ITEM_INFO_BY_KEY } from '../../../constants/items.js';
+import useSpaceKey from '../../../components/common/useSpaceKey.js';
 
-const SelectScreen = ({ playerName, inventory, newItem, isMyTurn, selectedIdx, onAction }) => {
-  const newItemObj = ITEM_INFO[newItem] || { emoji: '📦', name: '새 아이템' };
+const fallbackItem = (key) => ({
+  key,
+  name: '알 수 없음',
+  desc: '',
+  image: '/images/item/item-custom_dice.webp',
+});
 
-  // 기존 인벤토리(최대 3개) + 새 아이템 1개 = 총 4개
-  const allItems = [
-    ...inventory.map((itemKey) => ITEM_INFO[itemKey] || { emoji: '📦', name: '알 수 없음' }),
-    { ...newItemObj, isNew: true },
-  ];
+const toBool = (v) => v === true || v === 'true';
 
-  const handleSelect = (idx) => {
-    if (!isMyTurn) return;
-    onAction('SELECT_ITEM_TO_DROP', { actionData: idx });
-  };
+const SelectScreen = ({ inventoryKeys, newItemKey, selectedIdx, onAction, isMyTurn }) => {
+  const myTurn = toBool(isMyTurn);
 
-  const handleConfirm = () => {
-    if (selectedIdx === null || selectedIdx === undefined || !isMyTurn) return;
+  // ✅ confirm 중복 전송 방지(연타/스페이스 반복/클릭 중복)
+  const submittingRef = useRef(false);
 
-    // 마지막 인덱스(3) 선택 시 새 아이템을 버리는 것, 0~2 선택 시 기존 것과 교체
-    onAction('HANDLE_INVENTORY_FULL', { actionData: selectedIdx });
-  };
+  const allItems = useMemo(() => {
+    const inv = (inventoryKeys || []).map((k) => ITEM_INFO_BY_KEY[k] || fallbackItem(k));
+    const newOne = { ...(ITEM_INFO_BY_KEY[newItemKey] || fallbackItem(newItemKey)), isNew: true };
+    return [...inv, newOne];
+  }, [inventoryKeys, newItemKey]);
+
+  const getInitial = useCallback(() => {
+    if (Number.isInteger(selectedIdx)) return selectedIdx;
+    if (allItems.length > 0) return 0;
+    return null;
+  }, [selectedIdx, allItems.length]);
+
+  const [localSelected, setLocalSelected] = useState(getInitial);
+
+  useEffect(() => {
+    // 화면 다시 열릴 때(혹은 서버에서 selectedIdx 내려올 때) submitting 잠금 해제
+    submittingRef.current = false;
+
+    if (Number.isInteger(selectedIdx)) {
+      setLocalSelected(selectedIdx);
+      return;
+    }
+    if (!Number.isInteger(localSelected) && allItems.length > 0) {
+      setLocalSelected(0);
+    }
+  }, [selectedIdx, allItems.length]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleSelect = useCallback(
+    (idx) => {
+      if (!myTurn) return;
+      if (submittingRef.current) return; // confirm 처리 중엔 선택 변경 막기(중복 액션 방지)
+
+      setLocalSelected(idx);
+
+      // ✅ 서버 호환성 위해 actionData + actionDataStr 둘 다 실어 보냄
+      onAction('SELECT_ITEM_TO_DROP', { actionData: idx, actionDataStr: String(idx) });
+    },
+    [onAction, myTurn],
+  );
+
+  const handleConfirm = useCallback(() => {
+    if (!myTurn) return;
+    if (submittingRef.current) return;
+    if (!Number.isInteger(localSelected)) return;
+
+    submittingRef.current = true;
+
+    // ✅ 서버 호환성 위해 actionData + actionDataStr 둘 다
+    onAction('HANDLE_INVENTORY_FULL', {
+      actionData: localSelected,
+      actionDataStr: String(localSelected),
+    });
+  }, [localSelected, onAction, myTurn]);
+
+  // ✅ 스페이스도 confirm인데, “키 반복”으로 중복 전송이 쉽게 나서
+  // submittingRef로 한번 잠그고, canConfirm 조건에도 반영
+  const canConfirm = Number.isInteger(localSelected) && myTurn && !submittingRef.current;
+
+  useSpaceKey(handleConfirm, { enabled: canConfirm });
 
   return (
-    <div className="flex-1 flex flex-col items-center justify-center relative w-full h-full bg-black/20 backdrop-blur-sm">
-      {/* 아이템 선택 그리드 UI */}
-      <div className="bg-[#F0F2EB] p-8 rounded-[50px] shadow-2xl border-4 border-white mb-36 max-w-lg w-[90%]">
-        <div className="grid grid-cols-2 gap-4">
-          {allItems.map((item, idx) => (
-            <button
-              key={idx}
-              onClick={() => handleSelect(idx)}
-              disabled={!isMyTurn}
-              className={`
-                relative aspect-square rounded-[32px] flex flex-col items-center justify-center border-4 transition-all
-                ${selectedIdx === idx ? 'bg-[#FDF6D6] border-[#E76C21] scale-105 shadow-md' : 'bg-white border-[#C5D0C6] hover:bg-white/80'}
-              `}
-            >
-              <div className="text-5xl mb-2">{item.emoji}</div>
-              <div className="text-sm font-bold text-[#594E36]">{item.name}</div>
-
-              {item.isNew && (
-                <span className="absolute -top-2 -right-2 bg-[#E76C21] text-white text-[11px] px-2.5 py-1 rounded-full font-extrabold shadow-sm animate-pulse">
-                  NEW
-                </span>
-              )}
-            </button>
+    <motion.div
+      className="itemtile-layer itemtile-select-layer"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onPointerDown={(e) => e.stopPropagation()}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="itemtile-select-area">
+        {/* ✅ 버튼 줄(선택된 카드 위에만 버튼 노출) */}
+        <div className="itemtile-confirm-row" aria-hidden>
+          {allItems.map((_, idx) => (
+            <div key={idx} className="itemtile-confirm-cell">
+              {localSelected === idx ? (
+                <button
+                  type="button"
+                  className={`itemtile-floating-confirm ${canConfirm ? '' : 'is-disabled'}`}
+                  aria-disabled={!canConfirm}
+                  disabled={!canConfirm}
+                  onClick={handleConfirm}
+                >
+                  선택하기 ✓
+                </button>
+              ) : null}
+            </div>
           ))}
+        </div>
+
+        {/* ✅ 카드 줄 */}
+        <div className="itemtile-select-wrap" aria-label="아이템 선택">
+          {allItems.map((it, idx) => {
+            const selected = localSelected === idx;
+            return (
+              <button
+                key={`${it.key}-${idx}`}
+                type="button"
+                className={`itemtile-card ${selected ? 'is-selected' : ''}`}
+                onClick={() => handleSelect(idx)}
+                disabled={!myTurn || submittingRef.current}
+              >
+                {it.isNew && <div className="itemtile-new-pill">새로운 아이템</div>}
+
+                <div className="itemtile-card-image" aria-hidden>
+                  <div className="itemtile-itembox" aria-hidden>
+                    <img src={it.image} alt="" draggable={false} />
+                  </div>
+                </div>
+
+                <div className="itemtile-card-title">{it.name}</div>
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      <BubbleBasic speaker={playerName}>
-        {selectedIdx === null ? (
-          '주머니가 가득해! 무엇을 버릴까?.'
-        ) : (
-          <div className="flex flex-col items-center gap-2">
-            <p>
-              <span className="text-[#E76C21] font-bold">{allItems[selectedIdx].name}</span>
-              을(를) 버릴까?
-            </p>
-            <button
-              onClick={handleConfirm}
-              className="bg-[#E76C21] text-white px-10 py-2 rounded-full font-bold shadow-md active:scale-95 transition-transform"
-            >
-              결정하기
-            </button>
-          </div>
-        )}
-      </BubbleBasic>
-    </div>
+      {/* ✅ 하단 안내 */}
+      <div className="itemtile-bottom-guide">
+        <div>주머니가 가득해서 더이상 담을 수 없어</div>
+        <div>아이템을 하나 버려야할 거 같아 무엇을 버릴까?</div>
+      </div>
+    </motion.div>
   );
 };
 
