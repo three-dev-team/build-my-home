@@ -34,6 +34,10 @@
   }
 }
 
+.font-gosanja { font-family: var(--font-gosanja); }
+.font-formula { font-family: var(--font-formula); }
+.font-gaegu   { font-family: var(--font-gaegu); }
+
 /* 5. 커스텀 유틸리티 */
 .wood-panel {
   @apply bg-[#fdf6e3] border-[6px] border-[#8b5a2b] shadow-[8px_8px_0px_rgba(139,90,43,0.2)];
