@@ -1,8 +1,7 @@
-// 파일이 전부 webp인 경우
-
 const BASE = {
   room: "/images/room",
   roomList: "/images/roomlist",
+  character: "/images/character"
 };
 
 function makeCharacter({ id, name, quote, key, color }) {
@@ -10,12 +9,15 @@ function makeCharacter({ id, name, quote, key, color }) {
     id,
     name,
     quote,
+    color,
+
     selectBasicImage: `${BASE.room}/char-${key}-idle.webp`,
     houseImage: `${BASE.room}/char-${key}-house.webp`,
     roomListImage: `${BASE.roomList}/icon-${key}.webp`,
     iconIdle: `${BASE.room}/icon-${key}-idle.webp`,
     iconActive: `${BASE.room}/icon-${key}-active.webp`,
-    color,
+    deliveryImage: `${BASE.character}/char-${key}-delivery.webp`,
+    happyImage: `${BASE.character}/char-${key}-happy.webp`,
   };
 }
 

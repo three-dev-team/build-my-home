@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import './Subtitle.css';
 import { COLORS } from '../../constants/colors.js';
 
@@ -60,6 +60,7 @@ const Subtitle = ({
   contentText,
   contentColor = COLORS.subtitle.contentBox,
   contentTextColor = COLORS.subtitle.contentText,
+  highlights = [],
 
   // 옵션 박스
   options, // [{ text, onClick }, ...]
@@ -127,6 +128,68 @@ const Subtitle = ({
   // 표시할 텍스트
   const displayText = contentText ? contentText.slice(0, characterCount) : '';
 
+  // displayText에서 highlights 단어만 색칠해서 렌더
+  const highlightedNodes = useMemo(() => {
+    if (!displayText) return null;
+
+    const rules = Array.isArray(highlights)
+      ? highlights
+        .filter((h) => h && typeof h.text === 'string' && h.text.trim())
+        .sort((a, b) => b.text.length - a.text.length)
+      : [];
+
+    if (!rules.length) return displayText;
+
+    const ranges = [];
+    for (const rule of rules) {
+      const needle = rule.text;
+      let startIndex = 0;
+      while (startIndex < displayText.length) {
+        const idx = displayText.indexOf(needle, startIndex);
+        if (idx === -1) break;
+        ranges.push({
+          start: idx,
+          end: idx + needle.length,
+          color: rule.color || contentTextColor,
+        });
+        startIndex = idx + needle.length;
+      }
+    }
+
+    if (!ranges.length) return displayText;
+
+    ranges.sort((a, b) => a.start - b.start);
+
+    const merged = [];
+    let lastEnd = 0;
+    for (const r of ranges) {
+      if (r.start < lastEnd) continue;
+      merged.push(r);
+      lastEnd = r.end;
+    }
+
+    const nodes = [];
+    let cursor = 0;
+
+    merged.forEach((r, i) => {
+      if (cursor < r.start) {
+        nodes.push(<span key={`t-${i}-pre`}>{displayText.slice(cursor, r.start)}</span>);
+      }
+      nodes.push(
+        <span key={`t-${i}-hi`} style={{ color: r.color }}>
+          {displayText.slice(r.start, r.end)}
+        </span>,
+      );
+      cursor = r.end;
+    });
+
+    if (cursor < displayText.length) {
+      nodes.push(<span key="t-last">{displayText.slice(cursor)}</span>);
+    }
+
+    return nodes;
+  }, [displayText, highlights, contentTextColor]);
+
   // 옵션 개수에 따라 클래스 결정 (2개 이하: small, 3개 이상: large)
   const optionBoxClass = options?.length >= 3 ? 'option-box-large' : 'option-box-small';
 
@@ -147,8 +210,8 @@ const Subtitle = ({
         style={{ backgroundColor: contentColor, cursor: isTyping ? 'pointer' : 'default' }}
         onClick={handleClick}
       >
-        <div className="content-text" style={{ color: contentTextColor, whiteSpace: 'pre-line' }}>
-          {displayText}
+        <div className="content-text" style={{ color: contentTextColor, whiteSpace: 'pre-wrap' }}>
+          {highlightedNodes}
           {isTyping && <span className="typing-cursor">|</span>}
         </div>
       </div>

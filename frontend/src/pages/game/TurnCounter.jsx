@@ -1,8 +1,7 @@
-// TurnCounter.jsx
 import React from 'react';
 
 // 아이콘(public 기준 경로)
-const ICON_MUPANI = '/images/board/icon-mupani.png';
+const ICON_MUPANI = '/images/board/icon-mupani.webp';
 
 // 폰트 패밀리(@font-face 이름과 일치해야 적용됨)
 const FONT_GOSANJA = '"Gosanja", system-ui, -apple-system, sans-serif';

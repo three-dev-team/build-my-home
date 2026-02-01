@@ -1,12 +1,10 @@
 import React from 'react';
 import '../common/InstructionText.css';
 
-const InstructionText = ({ children, twoLines }) => {
+const InstructionText = ({ children, twoLines = false }) => {
   return (
-    <div className="instruction-wrapper ${isTwoLines ? 'two-lines' : ''}">
-      <div className="instruction-text">
-        {children}
-      </div>
+    <div className={`instruction-wrapper ${twoLines ? 'two-lines' : ''}`}>
+      <div className="instruction-text">{children}</div>
     </div>
   );
 };

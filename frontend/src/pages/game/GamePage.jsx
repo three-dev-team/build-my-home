@@ -1,5 +1,4 @@
-// src/pages/game/GamePage.jsx
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Client } from '@stomp/stompjs';
 import { getBrokerURL } from '../../utils/ws.js';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
@@ -21,7 +20,7 @@ import TurnCounter from './TurnCounter.jsx';
 import House from './House.jsx';
 import Fishing from './Fishing.jsx';
 import Inventory from './Inventory.jsx';
-import RewardDrop from './RewardDrop.jsx';
+import GatherTile from './rewardTile/GatherTile.jsx';
 import Start from './Start.jsx';
 import Result from './Result.jsx';
 import Mupani from './Mupani.jsx';
@@ -34,7 +33,7 @@ import Pipe from './itemEffect/Pipe.jsx';
 import Mirror from './itemEffect/Mirror.jsx';
 
 import './css/GamePage.css';
-import TurnCharacterPanel from './TurnCharacterPanel.jsx';
+import MyCharacterPanel from './MyCharacterPanel.jsx';
 
 const GamePage = () => {
   const { roomId } = useParams();
@@ -55,7 +54,6 @@ const GamePage = () => {
 
   // 재화/과일 드롭 이펙트 트리거 데이터
   const [rewardToast, setRewardToast] = useState(null);
-  const rewardCharacterRef = useRef(null);
 
   // 상점 relay 메시지 저장
   const [shopRelay, setShopRelay] = useState(null);
@@ -383,7 +381,7 @@ const GamePage = () => {
                 <div className="left-hud-action-spacer" aria-hidden="true" />
               )}
 
-              <TurnCharacterPanel currentPlayer={currentPlayer} />
+              <MyCharacterPanel players={gameState.players || []} myId={myId} currentPlayer={currentPlayer} />
             </div>
           )}
 
@@ -393,34 +391,6 @@ const GamePage = () => {
           {/* 인벤토리 오버레이 */}
           {showInventory && isMyTurn && gameState.status === 'WAITING_PLAYER_ACTION' && (
             <Inventory player={currentPlayer} onClose={handleCloseInventory} />
-          )}
-
-          {/* 보상 연출용 캐릭터 앵커(RewardDrop 기준점) */}
-          {rewardToast && (gameState.status === 'WAITING_RESOURCES' || gameState.status === 'WAITING_HARVEST') && (
-            <div
-              ref={rewardCharacterRef}
-              style={{
-                position: 'fixed',
-                left: '50%',
-                top: '20.3704vh',
-                transform: 'translateX(-50%)',
-                zIndex: 12000,
-                pointerEvents: 'none',
-                userSelect: 'none',
-              }}
-            >
-              <img
-                src="/images/RewardCharater.webp"
-                alt="reward-character"
-                draggable={false}
-                style={{
-                  width: '11.4583vw',
-                  height: '20.3704vh',
-                  objectFit: 'contain',
-                  filter: 'drop-shadow(0 12px 18px rgba(0,0,0,0.25))',
-                }}
-              />
-            </div>
           )}
 
           <main className="game-main">
@@ -506,17 +476,16 @@ const GamePage = () => {
             )}
 
             {/* WAITING_RESOURCES / WAITING_HARVEST */}
-            {rewardToast && (gameState.status === 'WAITING_RESOURCES' || gameState.status === 'WAITING_HARVEST') && (
-              <RewardDrop
-                key={rewardToast.key}
-                anchorRef={rewardCharacterRef}
-                gainedResources={rewardToast.gainedResources}
-                gainedHarvests={rewardToast.gainedHarvests}
-                durationMs={1200}
-                onDone={() => {
-                  setRewardToast(null);
+            {(gameState.status === 'WAITING_RESOURCES' || gameState.status === 'WAITING_HARVEST') && (
+              <GatherTile
+                roomId={roomId}
+                stompClient={stompClient}
+                gameState={gameState}
+                isMyTurn={isMyTurn}
+                onStart={() => {
                   if (isMyTurn) handleEventComplete();
                 }}
+                onClose={() => {}}
               />
             )}
 
@@ -558,8 +527,9 @@ const GamePage = () => {
             {/* WAITING_ITEMS */}
             {gameState.status === 'WAITING_ITEMS' && (
               <ItemTile
+                gameState={gameState}
+                myId={myId}
                 isMyTurn={isMyTurn}
-                player={currentPlayer}
                 onAction={handleAction}
                 onExit={handleEventComplete}
               />
