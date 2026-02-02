@@ -1,116 +1,103 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 
-// 아이콘(public 기준 경로)
 const ICON_MUPANI = '/images/board/icon-mupani.webp';
 
-// 폰트 패밀리(@font-face 이름과 일치해야 적용됨)
-const FONT_GOSANJA = '"Gosanja", system-ui, -apple-system, sans-serif';
-const FONT_FORMULA = '"Formula", system-ui, -apple-system, sans-serif';
-
-// px -> vw/vh 변환 (디자인 기준: 1920x1080)
-const vw = (px) => `${(px / 1920) * 100}vw`;
-const vh = (px) => `${(px / 1080) * 100}vh`;
-
-// 라운드 텍스트 외곽선(검정 20%)
-const STROKE_20 = {
-  WebkitTextStroke: `${(4 / 1920) * 100}vw rgba(0,0,0,0.20)`,
-  paintOrder: 'stroke fill',
-};
-
-// 기본 색상
-const PURE_WHITE = '#FFFFFF';
-
-// 고정 여백(가이드 기준)
-const EDGE = 28;
-
-// 라운드 블록 높이(가이드 합산)
-const ROUND_BLOCK_H = 24 + 8 + 40;
-
-// 라운드 블록과 무 아이콘 블록 사이 간격(가이드 기준)
-const GAP_AFTER_ROUND = 40;
-
-// 무 아이콘 블록 시작 top(가이드 기준)
-const RADISH_BLOCK_TOP_PX = EDGE + ROUND_BLOCK_H + GAP_AFTER_ROUND;
-
-const TurnCounter = ({ currentRound, totalRounds, radishPrice }) => {
+export default function TurnCounter({
+                                      currentRound,
+                                      totalRounds,
+                                      radishPrice,
+                                      radishQty,
+                                      radishGuideText,
+                                    }) {
   const roundText = String(currentRound ?? 1);
   const totalText = String(totalRounds ?? 20);
 
-  // 무 가격 텍스트(무 가격 라인은 외곽선 미적용)
-  const radishText = typeof radishPrice === 'number' ? `무: ${radishPrice}벨` : '무: -';
+  const radishText = useMemo(() => {
+    if (typeof radishPrice === 'number') return `무: ${radishPrice}벨`;
+    return '무: -';
+  }, [radishPrice]);
+
+  // 1920 기준 4px stroke
+  const stroke20 = useMemo(
+    () => ({
+      WebkitTextStroke: '0.2083cqw rgba(0,0,0,0.20)',
+      paintOrder: 'stroke fill',
+    }),
+    []
+  );
+
+  const white = '#FFFFFF';
 
   return (
     <>
-      {/* 라운드 표시 */}
+      {/* 라운드 */}
       <div
+        aria-label="라운드 표시"
         style={{
-          position: 'fixed',
-          top: vh(EDGE),
-          right: vw(EDGE),
-          width: vw(120),
+          position: 'absolute',
+          top: '2.5926cqh',
+          right: '1.4583cqw',
+          width: '6.25cqw',
           textAlign: 'center',
           zIndex: 13000,
           userSelect: 'none',
           pointerEvents: 'none',
         }}
       >
-        {/* 라운드 라벨 */}
         <div
           style={{
-            fontFamily: FONT_GOSANJA,
-            fontSize: vw(24),
-            lineHeight: vw(24),
-            marginBottom: vh(8),
-            color: PURE_WHITE,
-            ...STROKE_20,
+            fontFamily: 'var(--font-gosanja)',
+            fontSize: '1.25cqw',
+            lineHeight: '1.25cqw',
+            marginBottom: '0.7407cqh',
+            color: white,
+            ...stroke20,
           }}
         >
           라운드
         </div>
 
-        {/* 라운드 카운트(현재 / 전체) */}
         <div
           style={{
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'baseline',
-            gap: vw(8),
+            gap: '0.4167cqw',
           }}
         >
-          {/* 현재 라운드 */}
           <span
+            className="f1"
             style={{
-              fontFamily: FONT_FORMULA,
-              fontSize: vw(40),
-              lineHeight: vw(40),
-              color: PURE_WHITE,
-              ...STROKE_20,
+              fontFamily: 'var(--font-formula)',
+              fontSize: '2.0833cqw',
+              lineHeight: '2.0833cqw',
+              color: white,
+              ...stroke20,
             }}
           >
             {roundText}
           </span>
 
-          {/* 구분자 */}
           <span
             style={{
-              fontFamily: FONT_GOSANJA,
-              fontSize: vw(20),
-              lineHeight: vw(20),
-              color: PURE_WHITE,
-              ...STROKE_20,
+              fontFamily: 'var(--font-gosanja)',
+              fontSize: '1.0417cqw',
+              lineHeight: '1.0417cqw',
+              color: white,
+              ...stroke20,
             }}
           >
             /
           </span>
 
-          {/* 전체 라운드 */}
           <span
+            className="f1"
             style={{
-              fontFamily: FONT_FORMULA,
-              fontSize: vw(24),
-              lineHeight: vw(24),
-              color: PURE_WHITE,
-              ...STROKE_20,
+              fontFamily: 'var(--font-formula)',
+              fontSize: '1.25cqw',
+              lineHeight: '1.25cqw',
+              color: white,
+              ...stroke20,
             }}
           >
             {totalText}
@@ -118,28 +105,30 @@ const TurnCounter = ({ currentRound, totalRounds, radishPrice }) => {
         </div>
       </div>
 
-      {/* 무 아이콘 + 무 가격 */}
+      {/* 무 시세 */}
       <div
+        aria-label="무 시세 표시"
         style={{
-          position: 'fixed',
-          top: vh(RADISH_BLOCK_TOP_PX),
-          right: vw(EDGE),
-          width: vw(100),
+          position: 'absolute',
+          top: '12.9630cqh',
+          right: '1.4583cqw',
+          width: '5.2083cqw',
           zIndex: 12999,
           userSelect: 'none',
           pointerEvents: 'none',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: vh(10),
+          gap: '0.9259cqh',
         }}
       >
-        {/* 아이콘 원형 배경 */}
+        {/* 아이콘 */}
         <div
+          aria-hidden="true"
           style={{
-            width: vw(100),
-            height: vw(100), // 원형 유지(가로 기준으로 맞춤)
-            borderRadius: vw(999),
+            width: '5.2083cqw',
+            height: '9.2593cqh',
+            borderRadius: '99cqw',
             background: 'rgba(255,255,255,0.30)',
             display: 'flex',
             alignItems: 'center',
@@ -148,37 +137,67 @@ const TurnCounter = ({ currentRound, totalRounds, radishPrice }) => {
         >
           <img
             src={ICON_MUPANI}
-            alt="mupani"
+            alt=""
             draggable={false}
             style={{
-              height: vw(80),
+              height: '4.1667cqw',
               width: 'auto',
               objectFit: 'contain',
             }}
           />
         </div>
 
-        {/* 무 가격 pill */}
+        {/* 가격 */}
         <div
           style={{
-            width: vw(100),
-            height: vh(28),
-            borderRadius: vw(999),
+            width: '5.2083cqw',
+            height: '2.5926cqh',
+            borderRadius: '99cqw',
             background: 'rgba(0,0,0,0.30)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontFamily: FONT_GOSANJA,
-            fontSize: vw(16),
-            lineHeight: vw(16),
-            color: PURE_WHITE,
+            fontFamily: 'var(--font-gosanja)',
+            fontSize: '0.8333cqw',
+            lineHeight: '0.8333cqw',
+            color: white,
           }}
         >
           {radishText}
         </div>
+
+        {/* 보유 */}
+        {typeof radishQty === 'number' && (
+          <div
+            style={{
+              marginTop: '0.3704cqh',
+              fontFamily: 'var(--font-gosanja)',
+              fontSize: '0.7292cqw',
+              color: 'rgba(255,255,255,0.92)',
+              textAlign: 'center',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {`보유: ${radishQty}개`}
+          </div>
+        )}
+
+        {/* 가이드 */}
+        {radishGuideText ? (
+          <div
+            style={{
+              marginTop: '0.1852cqh',
+              fontFamily: 'var(--font-gosanja)',
+              fontSize: '0.625cqw',
+              color: 'rgba(255,255,255,0.88)',
+              textAlign: 'center',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {radishGuideText}
+          </div>
+        ) : null}
       </div>
     </>
   );
-};
-
-export default TurnCounter;
+}

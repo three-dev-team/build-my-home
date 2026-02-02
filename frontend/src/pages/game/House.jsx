@@ -1,7 +1,7 @@
-// House.jsx
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { HOUSE_LEVEL_MAP, RESOURCE_MAP, HOUSE_DETAILS } from '../../constants/houseLevel.js';
+import { HOUSE_LEVEL_MAP, HOUSE_DETAILS } from '../../constants/houseLevel.js';
+import { koName, rewardIconSrc } from '../../constants/reward.js';
 import Subtitle from '../../components/common/Subtitle.jsx';
 import { COLORS } from '../../constants/colors.js';
 
@@ -18,7 +18,7 @@ const House = ({ player, isMyTurn, onClose, onAction, radishPrice = 0 }) => {
 
   // 서버 문자열("LAND")로 해당 레벨 상수 정보(벨,  프론트에서 가져오기
   const nextLevelData = HOUSE_DETAILS[nextHouseLevel];
-  const diffBell = nextLevelData?.bell - player.bell; // 부족한 벨
+  const diffBell = (nextLevelData?.bell ?? 0) - (player.bell ?? 0); // 부족한 벨
   const isBellEnough = diffBell <= 0; // 벨이 충분한지 여부
 
   // 무 판매 UI
@@ -63,9 +63,9 @@ const House = ({ player, isMyTurn, onClose, onAction, radishPrice = 0 }) => {
               onClick:
                 radishQty > 0
                   ? () => {
-                      setSellQty(1);
-                      setStep(11);
-                    }
+                    setSellQty(1);
+                    setStep(11);
+                  }
                   : null,
             },
           ]}
@@ -106,6 +106,7 @@ const House = ({ player, isMyTurn, onClose, onAction, radishPrice = 0 }) => {
               );
             })}
           </div>
+
           <button
             onClick={() => setStep(0)}
             disabled={!isMyTurn}
@@ -164,34 +165,41 @@ const House = ({ player, isMyTurn, onClose, onAction, radishPrice = 0 }) => {
                 <br />
                 찾아오라구리! 💪
               </p>
+
               <div className="bg-white/80 rounded-xl p-6 mb-8">
                 <p className="font-bold text-center text-gray-800 mb-2">
                   {nextLevelData?.name}를 지으려면 아래 재료를 더 가져오라구리
                 </p>
-                <div className="grid grid-cols-2 gap-2 text-gray-700">
-                  {/* 벨 상태에 따른 메시지 노출 */}
-                  <p
-                    className={`text-right text-sm mt-1 ${isBellEnough ? 'text-green-500 font-bold' : 'text-red-400'}`}
-                  >
-                    {isBellEnough
-                      ? '벨을 다 모았어구리! 이제 업그레이드 할 수 있다구리! ✨'
-                      : `앞으로 ${diffBell.toLocaleString()}벨이 더 필요해구리!`}
-                  </p>
 
-                  {/* 자원 섹션 */}
-                  <div className="grid grid-cols-2 gap-2">
-                    {Object.entries(requiredResourcesForNextHouse).map(([resKey, amount]) => (
-                      <div
-                        key={resKey}
-                        className="flex items-center justify-between p-3 bg-white/90 rounded-lg shadow-sm"
-                      >
-                        <span className="text-lg">{RESOURCE_MAP[resKey]?.icon}</span>
-                        <span className="font-bold text-red-500">-{amount}개</span>
+                {/* 벨 상태 메시지 */}
+                <p className={`text-sm mt-1 text-center ${isBellEnough ? 'text-green-500 font-bold' : 'text-red-400'}`}>
+                  {isBellEnough
+                    ? '벨을 다 모았어구리! 이제 업그레이드 할 수 있다구리! ✨'
+                    : `앞으로 ${diffBell.toLocaleString()}벨이 더 필요해구리!`}
+                </p>
+
+                {/* 자원 섹션 */}
+                <div className="grid grid-cols-2 gap-2 mt-4">
+                  {Object.entries(requiredResourcesForNextHouse || {}).map(([resKey, amount]) => (
+                    <div
+                      key={resKey}
+                      className="flex items-center justify-between p-3 bg-white/90 rounded-lg shadow-sm"
+                    >
+                      <div className="flex items-center gap-2">
+                        <img
+                          src={rewardIconSrc(resKey)}
+                          alt={koName(resKey)}
+                          className="w-7 h-7 object-contain"
+                          draggable={false}
+                        />
+                        <span className="text-gray-800 font-bold">{koName(resKey)}</span>
                       </div>
-                    ))}
-                  </div>
+                      <span className="font-bold text-red-500">-{amount}개</span>
+                    </div>
+                  ))}
                 </div>
               </div>
+
               <button
                 onClick={() => setStep(0)}
                 disabled={!isMyTurn}
@@ -214,9 +222,11 @@ const House = ({ player, isMyTurn, onClose, onAction, radishPrice = 0 }) => {
             <div className="w-32 h-32 mx-auto bg-gray-300 rounded-lg mb-4 flex items-center justify-center text-5xl">
               🏠
             </div>
+
             <div className="bg-white/80 rounded-xl p-6 mb-8 text-center text-gray-700">
               <p className="text-2xl font-bold text-center mb-4">{nextLevelData?.name}</p>
               <p className="text-lg font-bold mb-3">🛠️ 필요한 재료구리</p>
+
               <div className="flex flex-wrap justify-center gap-3">
                 {/* 벨 정보 */}
                 <p className={isBellEnough ? 'text-green-600' : 'text-red-500'}>
@@ -224,18 +234,23 @@ const House = ({ player, isMyTurn, onClose, onAction, radishPrice = 0 }) => {
                 </p>
 
                 {/* 자원 정보들 */}
-                {Object.entries(requiredResourcesForNextHouse).map(([key, amount]) => (
-                  <p key={key} className="text-red-500 font-medium">
-                    / {RESOURCE_MAP[key]?.icon} {RESOURCE_MAP[key]?.name} x{amount}
-                  </p>
+                {Object.entries(requiredResourcesForNextHouse || {}).map(([key, amount]) => (
+                  <div key={key} className="flex items-center gap-2 text-red-500 font-medium">
+                    <span>/</span>
+                    <img src={rewardIconSrc(key)} alt={koName(key)} className="w-6 h-6 object-contain" draggable={false} />
+                    <span>{koName(key)} x{amount}</span>
+                  </div>
                 ))}
               </div>
 
-              {/* 아까 만든 부족한 금액/재료 요약 메시지 */}
               <p
-                className={`mt-4 text-sm ${isBellEnough && Object.keys(requiredResourcesForNextHouse).length === 0 ? 'text-green-500' : 'text-red-400'}`}
+                className={`mt-4 text-sm ${
+                  isBellEnough && Object.keys(requiredResourcesForNextHouse || {}).length === 0
+                    ? 'text-green-500'
+                    : 'text-red-400'
+                }`}
               >
-                {isBellEnough && Object.keys(requiredResourcesForNextHouse).length === 0
+                {isBellEnough && Object.keys(requiredResourcesForNextHouse || {}).length === 0
                   ? '모든 준비가 끝났다구리! ✨'
                   : '조금만 더 힘내라구리! 💪'}
               </p>

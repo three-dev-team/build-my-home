@@ -1,135 +1,109 @@
-:root {
-    --safeW: min(100vw, calc(100vh * 16 / 9));
-    --safeH: min(100vh, calc(100vw * 9 / 16));
-
-    --svw: calc(var(--safeW) / 100);
-    --svh: calc(var(--safeH) / 100);
-
-    --u: calc(var(--safeW) / 1920);
-    --v: calc(var(--safeH) / 1080);
-
-    --char-scale: 1.0;
-
-    --slot-px: 200;
-    --slot: calc(var(--slot-px) * var(--u));
-
-    --items-top-px: 190;
-    --char-offset-px: 160;
-    --inst-bottom-px: 120;
-
-    --slot-pad-px: 14;
-    --slot-pad: calc(var(--slot-pad-px) * var(--u));
-}
-
-/* GatherTile 전체 오버레이 루트(화면 전체 덮기) */
-.gathertile-root {
+.rewardtile-root {
     position: fixed;
     inset: 0;
     z-index: 24000;
     overflow: hidden;
 }
 
-/* 배경 레이어(리소스/과일에 따라 이미지 변경) */
-.gathertile-bg {
+/* AspectLayout 내부 16:9 화면 컨테이너 */
+.rewardtile-screen {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    --u: calc(1cqw / 19.2);
+    --v: calc(1cqh / 10.8);
+    --char-scale: 1.0;
+    --slot-px: 200;
+    --slot: calc(var(--slot-px) * var(--u));
+    --items-top-px: 190;
+    --char-offset-px: 160;
+    --inst-bottom-px: 148;
+    --slot-pad-px: 14;
+    --slot-pad: calc(var(--slot-pad-px) * var(--u));
+}
+
+/* 배경 */
+.rewardtile-bg {
     position: absolute;
     inset: 0;
     background: center/cover no-repeat;
     filter: saturate(1.05);
+    z-index: 0;
 }
 
-/* 리소스 배경 이미지 */
-.gathertile-bg.resource { background-image: url('/images/reward/bg-resource.webp'); }
+.rewardtile-bg.resource {
+    background-image: url('/images/reward/bg-resource.webp');
+}
 
-/* 과일 배경 이미지 */
-.gathertile-bg.fruit { background-image: url('/images/reward/bg-fruit.webp'); }
+.rewardtile-bg.fruit {
+    background-image: url('/images/reward/bg-fruit.webp');
+}
 
-/* 16:9 safe 영역을 화면 중앙에 고정 */
-.gathertile-safe {
+/* 화면 레이어 */
+.rewardtile-layer {
     position: absolute;
     inset: 0;
-    display: grid;
-    place-items: center;
+    z-index: 1;
 }
 
-/* 실제 컨텐츠가 올라가는 16:9 프레임(좌표 기준 컨테이너) */
-.gathertile-screen {
-    position: relative;
-    width: var(--safeW);
-    height: var(--safeH);
-    overflow: hidden;
-}
-
-/* step 화면(Discover/Get/Complete) 페이드용 레이어 */
-.gathertile-layer {
-    position: absolute;
-    inset: 0;
-}
-
-/* 상단 안내 pill(“잠시후 자동으로 이동…” 같은 텍스트) */
-.gather-top-pill{
+/* 상단 안내 pill */
+.reward-top-pill {
     position: absolute;
     left: 50%;
     top: calc(72 * var(--v));
     transform: translateX(-50%);
-
     width: calc(400 * var(--u));
     height: calc(80 * var(--v));
     border-radius: 999px;
-
     background: rgba(12, 32, 48, 0.55);
     color: #fff;
-
     font-family: var(--font-gosanja, "Gosanja", system-ui, sans-serif);
     font-size: calc(24 * var(--u));
-
     display: flex;
     align-items: center;
     justify-content: center;
-
-    text-shadow: 1px 1px 6px rgba(0,0,0,0.25);
+    text-shadow: 1px 1px 6px rgba(0, 0, 0, 0.25);
     z-index: 135;
     pointer-events: none;
 }
 
-/* 상단 보상 슬롯 2개(드랍/완료 상태 모두 여기로 착지) */
-.gather-top-items {
+/* 상단 보상 슬롯 2개 */
+.reward-top-items {
     position: absolute;
     top: calc(var(--items-top-px) * var(--v));
     left: 50%;
     transform: translateX(-50%);
-
     width: calc(880 * var(--u));
     height: var(--slot);
-
     display: grid;
     grid-template-columns:
-    var(--slot)
-    calc(60 * var(--u))
-    calc(360 * var(--u))
-    calc(60 * var(--u))
-    var(--slot);
+        var(--slot)
+        calc(60 * var(--u))
+        calc(360 * var(--u))
+        calc(60 * var(--u))
+        var(--slot);
     align-items: center;
-
     pointer-events: none;
     z-index: 110;
 }
 
-/* 개별 슬롯 박스(좌/우) */
-.gather-item-box {
+.reward-item-box {
     position: relative;
     width: var(--slot);
     height: var(--slot);
     overflow: visible;
 }
 
-/* 왼쪽 슬롯 위치 */
-.gather-top-items .gather-item-box:first-child { grid-column: 1; }
+.reward-top-items .reward-item-box:first-child {
+    grid-column: 1;
+}
 
-/* 오른쪽 슬롯 위치 */
-.gather-top-items .gather-item-box:last-child  { grid-column: 5; }
+.reward-top-items .reward-item-box:last-child {
+    grid-column: 5;
+}
 
-/* 슬롯 내부 여백(inset) 영역 + 드랍 착지 영역 */
-.gather-item-inner,
+.reward-item-inner,
 .slot-drop-wrap {
     position: absolute;
     inset: var(--slot-pad);
@@ -139,8 +113,7 @@
     overflow: visible;
 }
 
-/* 슬롯 안에 들어가는 보상 이미지(잘리지 않게 contain) */
-.gather-item-img {
+.reward-item-img {
     width: 100%;
     height: 100%;
     object-fit: contain;
@@ -149,36 +122,31 @@
     pointer-events: none;
 }
 
-/* step2(Complete) 캐릭터 위치(기존 중앙 기준 + 아래로 오프셋) */
-.gather-character-wrap {
+/* step2(Complete) 캐릭터 위치 */
+.reward-character-wrap {
     position: absolute;
     left: 50%;
     top: calc(50% + (var(--char-offset-px) * var(--v)));
     transform: translate(-50%, -50%);
-
     width: calc(360 * var(--u));
     height: calc(660 * var(--v));
-
     pointer-events: none;
     z-index: 60;
 }
 
-/* step0/1(Discover/Get) 캐릭터 위치(발끝 기준 bottom으로 배치) */
-.gather-character-wrap-bottom {
+/* step0(Discover) 캐릭터 위치(발끝 기준 bottom) */
+.reward-character-wrap-bottom {
     position: absolute;
     left: 50%;
-    bottom: calc(250 * var(--v));
+    bottom: calc(120 * var(--v));
     transform: translateX(-50%);
-
     width: calc(360 * var(--u));
     height: calc(660 * var(--v));
-
     pointer-events: none;
     z-index: 60;
 }
 
-/* 캐릭터 박스(발끝 정렬용 컨테이너) */
-.gather-character-box {
+.reward-character-box {
     width: 100%;
     height: 100%;
     display: flex;
@@ -187,8 +155,7 @@
     pointer-events: none;
 }
 
-/* 캐릭터 이미지(발끝=박스 바닥 기준, contain으로 잘림 방지) */
-.gather-character-img {
+.reward-character-img {
     height: 100%;
     width: auto;
     max-width: 100%;
@@ -200,15 +167,13 @@
     pointer-events: none;
 }
 
-/* InstructionText 위치 고정(하단에서 --inst-bottom-px만큼 올림) */
-.gathertile-screen .instruction-wrapper {
+/* InstructionText 위치 */
+.rewardtile-screen .instruction-wrapper {
     top: auto !important;
     bottom: calc(var(--inst-bottom-px) * var(--v)) !important;
-
     left: 50% !important;
     right: auto !important;
     transform: translateX(-50%) !important;
-
     width: 100% !important;
     z-index: 140 !important;
     pointer-events: none;

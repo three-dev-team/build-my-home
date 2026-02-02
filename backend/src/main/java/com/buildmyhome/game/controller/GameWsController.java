@@ -16,7 +16,6 @@ import com.buildmyhome.loan.service.LoanService;
 import com.buildmyhome.machurilla.service.MachurillaService;
 import com.buildmyhome.mupani.service.MupaniService;
 import com.buildmyhome.reward.service.RewardService;
-import com.buildmyhome.reward.service.GatherFlowService;
 import com.buildmyhome.room.dto.RoomPlayerState;
 import com.buildmyhome.room.dto.RoomState;
 import com.buildmyhome.room.service.RoomStateService;
@@ -53,7 +52,6 @@ public class GameWsController {
     private final MupaniService mupaniService;
     private final MoveService moveService;
     private final RewardService rewardService;
-    private final GatherFlowService gatherFlowService;
     private final MachurillaService machurillaService;
     private final SwapService swapService;
     private final ItemService itemService;
@@ -358,10 +356,7 @@ public class GameWsController {
                 swapService.start(roomId);
             }
 
-            RewardService.RewardResult reward = rewardService.grantRewardsForStatus(nextStatus, player);
-            Map<ResourceType, Integer> gainedResources = reward.gainedResources();
-            Map<HarvestType, Integer> gainedHarvests = reward.gainedHarvests();
-            gatherFlowService.enter(nextStatus, player, gainedResources, gainedHarvests);
+            rewardService.prepareReward(nextStatus, player);
 
             if (nextStatus == GameStatus.WAITING_SHOP) {
                 shopService.startShopSession(roomId, memberId);
@@ -464,18 +459,18 @@ public class GameWsController {
                     case "SWAP_CONFIRM":
                         swapService.confirm(roomId, memberId);
                         return;
-                    case "GATHER_CONFIRM":
+                    case "REWARD_CONFIRM":
                         if (gameState.getStatus() == GameStatus.WAITING_RESOURCES
                                 || gameState.getStatus() == GameStatus.WAITING_HARVEST) {
-                            player.setUiStep(1); // Get
-                            response.setType("GATHER_CONFIRMED");
+                            player.setUiStep(2);
+                            response.setType("REWARD_CONFIRMED");
                         }
                         break;
-                    case "GATHER_NEXT":
+                    case "REWARD_NEXT":
                         if (gameState.getStatus() == GameStatus.WAITING_RESOURCES
                                 || gameState.getStatus() == GameStatus.WAITING_HARVEST) {
-                            player.setUiStep(2); // Complete
-                            response.setType("GATHER_NEXT");
+                            player.setUiStep(2);
+                            response.setType("REWARD_NEXT");
                         }
                         break;
                     case "BUILD_HOUSE":
@@ -527,6 +522,7 @@ public class GameWsController {
                     case "CLOSE_ACTION":
                         gameState.clearCurrentTimeout();
                         player.setUiStep(0); // UI 스텝 초기화
+                        player.setActionDataStr(null); // 이전 이벤트 연출 데이터 정리(잔상 방지)
                         gameState.setStatus(GameStatus.WAITING_PLAYER_ACTION);
                         response.setType("ACTION_CLOSED");
                         break;
@@ -549,37 +545,40 @@ public class GameWsController {
                         player.setUiStep(1);
                         response.setType("MACHURILLA_SELECTED");
                         break;
-                    case "GET_RANDOM_ITEM":
+                    case "GET_RANDOM_ITEM": {
                         ItemType item = itemService.getRandomItem(player);
                         player.setActionDataStr(item.name());
                         gameState.setStatus(GameStatus.WAITING_ITEMS);
-
-                        if (player.getItems().size() < 3) {
+                        boolean invFull = player.getItems() != null && player.getItems().size() >= 3;
+                        if (!invFull) {
                             itemService.addItem(player, item);
-                            player.setUiStep(2);  // GetScreen
+                            player.setUiStep(3);
                         } else {
-                            player.setUiStep(1);  // SelectScreen
+                            player.setUiStep(1);
                         }
                         response.setType("RANDOM_ITEM_SELECTED");
                         break;
-                    case "HANDLE_INVENTORY_FULL":
+                    }
+                    case "HANDLE_INVENTORY_FULL": {
                         int selectedIdx = message.getActionData();
+                        boolean invFull = player.getItems() != null && player.getItems().size() >= 3;
+                        if (!invFull) return;
                         if (selectedIdx < 3) {
-                            // 기존 아이템 버리고 새 아이템 받기
                             ItemType dropItem = player.getItems().get(selectedIdx);
                             ItemType newItem = ItemType.valueOf(player.getActionDataStr());
                             itemService.swapItem(player, dropItem, newItem);
-                            player.setUiStep(2); // GetScreen
                         } else {
-                            // selectedIdx == 3이면 새 아이템 포기 (아무것도 안 함)
-                            player.setUiStep(3);  // CompleteScreen
+                            player.setActionDataStr(null);
                         }
+                        player.setUiStep(3);
                         response.setType("INVENTORY_HANDLED");
                         break;
-                    case "SELECT_ITEM_TO_DROP":
-                        player.setActionData(message.getActionData());  // 선택한 인덱스 저장
+                    }
+                    case "SELECT_ITEM_TO_DROP": {
+                        player.setActionData(message.getActionData());
                         response.setType("ITEM_DROP_SELECTED");
                         break;
+                    }
                     case "OPEN_ITEM_INVENTORY":
                         gameState.setStatus(GameStatus.WAITING_USING_ITEM);
                         response.setType("ITEM_INVENTORY_OPENED");
@@ -617,6 +616,7 @@ public class GameWsController {
                 }
 
                 response.setStatus(gameState.getStatus().name());
+                response.setPlayers(new ArrayList<>(gameState.getPlayers().values()));
                 simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
                 // 무파니 전원 결정 완료면 응답 전송 후 즉시 턴 종료(TURN_COMPLETED 브로드캐스트)
                 if (endMupaniAfterSend) {

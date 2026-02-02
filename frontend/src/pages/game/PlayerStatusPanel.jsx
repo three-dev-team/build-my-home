@@ -1,16 +1,11 @@
 import './css/PlayerStatusPanel.css';
 import { CHARACTERS } from '../../constants/characters.js';
+import { getHouseIconByLevel } from '../../constants/houseLevel.js';
+import { ITEM_INFO_BY_KEY, resolveItemKey } from '../../constants/items.js';
 
 const IMG = {
   bell: '/images/board/icon-bell.webp',
-  loan: '/images/board/icon-loan.png',
-};
-
-const HOUSE_ICON_BY_LEVEL = {
-  1: '/images/board/land.webp',
-  2: '/images/board/tent.webp',
-  3: '/images/board/house_1.webp',
-  4: '/images/board/house_2.webp',
+  loan: '/images/board/icon-loan.webp',
 };
 
 const getRankText = (index) => {
@@ -26,10 +21,19 @@ const getCharacter = (characterId) => {
   return CHARACTERS.find((c) => Number(c.id) === id) || null;
 };
 
+const toItemMeta = (raw) => {
+  const meta = resolveItemKey?.(raw);
+  if (meta) return meta;
+
+  const key = raw === null || raw === undefined ? '' : String(raw).trim();
+  return ITEM_INFO_BY_KEY[key] || null;
+};
+
 export default function PlayerStatusPanel({ players = [], currentPlayerId, myId }) {
-  // 순위 정렬: 집 레벨 높은 순 -> 벨 많은 순
   const sortedPlayers = [...players].sort((a, b) => {
-    if (Number(b.houseLevel) !== Number(a.houseLevel)) return Number(b.houseLevel) - Number(a.houseLevel);
+    const ah = Number(a.houseLevel);
+    const bh = Number(b.houseLevel);
+    if (bh !== ah) return bh - ah;
     return Number(b.bell) - Number(a.bell);
   });
 
@@ -37,24 +41,20 @@ export default function PlayerStatusPanel({ players = [], currentPlayerId, myId 
     <div className="ps-container" role="presentation">
       <div className="ps-row">
         {sortedPlayers.map((player, index) => {
-          // 현재 턴/내 카드 여부
           const isCurrentTurn = Number(player.memberId) === Number(currentPlayerId);
           const isMe = Number(player.memberId) === Number(myId);
 
-          // 캐릭터 데이터 및 아이콘(roomListImage 고정)
           const ch = getCharacter(player.characterId);
           const iconImg = ch?.roomListImage || null;
 
-          // 표시용 숫자(기본값 방어)
           const bell = Number(player.bell ?? 0);
           const loan = Number(player.loan ?? 0);
           const houseLevel = Number(player.houseLevel ?? 0);
 
-          // 집 아이콘(레벨별, 없으면 도트)
-          const houseIcon = HOUSE_ICON_BY_LEVEL[houseLevel] || null;
+          const houseIcon = getHouseIconByLevel(houseLevel);
 
-          // 아이템 3칸만 노출
-          const items = Array.isArray(player.items) ? player.items.slice(0, 3) : [];
+          const rawItems = Array.isArray(player.items) ? player.items.slice(0, 3) : [];
+          const itemMetas = rawItems.map(toItemMeta);
 
           return (
             <div
@@ -62,11 +62,11 @@ export default function PlayerStatusPanel({ players = [], currentPlayerId, myId 
               className={`ps-card ${isCurrentTurn ? 'is-current' : ''} ${isMe ? 'is-me' : ''}`}
             >
               <div className="ps-box">
-                {/* 왼쪽 블록: 집 아이콘 + 랭크 */}
+                {/* 집 + 랭크 */}
                 <div className="ps-left">
                   <div className="ps-house" aria-label="집 레벨 아이콘">
                     {houseIcon ? (
-                      <img className="ps-house-img" src={houseIcon} alt="" />
+                      <img className="ps-house-img" src={houseIcon} alt="" draggable={false} />
                     ) : (
                       <span className="ps-house-dot" aria-hidden />
                     )}
@@ -75,35 +75,35 @@ export default function PlayerStatusPanel({ players = [], currentPlayerId, myId 
                   <div className="ps-rank f1">{getRankText(index)}</div>
                 </div>
 
-                {/* 캐릭터 아이콘(roomListImage) */}
+                {/* 캐릭터 */}
                 <div className="ps-char" aria-label="캐릭터 아이콘">
                   {iconImg ? (
-                    <img className="ps-char-img" src={iconImg} alt="" />
+                    <img className="ps-char-img" src={iconImg} alt="" draggable={false} />
                   ) : (
                     <div className="ps-char-ph" aria-hidden />
                   )}
                 </div>
 
-                {/* 재화: 벨 / 대출 */}
+                {/* 돈 */}
                 <div className="ps-money" aria-label="돈 영역">
                   <div className="ps-money-row">
-                    <img className="ps-money-icon" src={IMG.bell} alt="" />
+                    <img className="ps-money-icon" src={IMG.bell} alt="" draggable={false} />
                     <div className="ps-money-val f1">{bell}</div>
                   </div>
                   <div className="ps-money-row">
-                    <img className="ps-money-icon" src={IMG.loan} alt="" />
+                    <img className="ps-money-icon" src={IMG.loan} alt="" draggable={false} />
                     <div className="ps-money-val f1">{loan}</div>
                   </div>
                 </div>
 
-                {/* 아이템 3칸 */}
+                {/* 아이템 */}
                 <div className="ps-items" aria-label="아이템 3칸">
                   {Array.from({ length: 3 }).map((_, i) => {
-                    const item = items[i];
+                    const meta = itemMetas[i];
                     return (
                       <div key={i} className="ps-item-slot">
-                        {item ? (
-                          <img className="ps-item-img" src={item} alt="" />
+                        {meta?.image ? (
+                          <img className="ps-item-img" src={meta.image} alt="" draggable={false} />
                         ) : (
                           <span className="ps-item-dot" aria-hidden />
                         )}
