@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Client } from '@stomp/stompjs';
 import TopButtons from '../../components/common/TopButtons';
-// import TopButtons from '../../components/common/TopButtons';
+import AspectLayout from '../../components/layout/AspectLayout';
 
 import { CHARACTERS } from '../../constants/characters.js';
 import { COLORS } from '../../constants/colors.js';
@@ -291,327 +291,331 @@ export default function RoomList() {
     navigate(`/rooms/${selectedRoom.id}/select`);
   };
 
-  // 상단 우측 아이콘 박스 스타일 - 80px = 4.17vw, 3px = 0.16vw
+  // 상단 우측 아이콘 박스 스타일 - 80px = 4.17cqw, 3px = 0.16cqw
   const iconBtnStyle =
-    'w-[4.17vw] h-[4.17vw] bg-white rounded-full flex items-center justify-center shadow-lg hover:scale-105 transition-transform cursor-pointer border-[0.16vw] border-white';
+    'w-[4.17cqw] h-[4.17cqw] bg-white rounded-full flex items-center justify-center shadow-lg hover:scale-105 transition-transform cursor-pointer border-[0.16cqw] border-white';
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-[url('/images/bg-roomlist.jpg')] bg-cover bg-center font-gosanja flex items-center justify-center">
-      {/* 1. 상단 아이콘 및 프로필 영역 - 40px = 2.08vw, 3.7vh */}
-      <div className="absolute top-[3.7vh] left-[2.08vw] z-50">
-        <button onClick={() => navigate('/home')} className={iconBtnStyle}>
-          <div
-            className="w-[2.08vw] h-[2.08vw]"
-            style={{
-              backgroundColor: COLORS.roomList.textMain,
-              maskImage: 'url("/images/icon-home.svg")',
-              WebkitMaskImage: 'url("/images/icon-home.svg")',
-              maskSize: 'contain',
-              WebkitMaskSize: 'contain',
-              maskRepeat: 'no-repeat',
-              WebkitMaskRepeat: 'no-repeat',
-              maskPosition: 'center',
-              WebkitMaskPosition: 'center',
+    <AspectLayout>
+      <div className="relative w-full h-full overflow-hidden bg-[url('/images/bg-roomlist.jpg')] bg-cover bg-center font-gosanja flex items-center justify-center">
+        {/* 1. 상단 아이콘 및 프로필 영역 - 40px = 2.08cqw, 3.7cqh */}
+        <div className="absolute top-[3.7cqh] left-[2.08cqw] z-50">
+          <button onClick={() => navigate('/home')} className={iconBtnStyle}>
+            <div
+              className="w-[2.08cqw] h-[2.08cqw]"
+              style={{
+                backgroundColor: COLORS.roomList.textMain,
+                maskImage: 'url("/images/icon-home.svg")',
+                WebkitMaskImage: 'url("/images/icon-home.svg")',
+                maskSize: 'contain',
+                WebkitMaskSize: 'contain',
+                maskRepeat: 'no-repeat',
+                WebkitMaskRepeat: 'no-repeat',
+                maskPosition: 'center',
+                WebkitMaskPosition: 'center',
+              }}
+            />
+          </button>
+        </div>
+
+        <div className="absolute top-[3.7cqh] right-[2.08cqw] z-50">
+          <TopButtons
+            nickname={sessionStorage.getItem('nickname') || '주민'}
+            onProfileClick={() => navigate('/mypage')}
+            onConfigClick={() => navigate('/config')}
+            colors={{
+              text: COLORS.roomList.textMain,
+              badgeBg: COLORS.roomList.btnMain,
+              badgeText: 'white',
+              dropdownBorder: COLORS.roomList.border, // #B39DDB
+              dropdownHoverBg: COLORS.roomList.bgMain, // #EAD8F9
+              dropdownText: COLORS.roomList.textMain, // #6A4F9C
             }}
           />
-        </button>
-      </div>
+        </div>
 
-      <div className="absolute top-[3.7vh] right-[2.08vw] z-50">
-        <TopButtons
-          nickname={sessionStorage.getItem('nickname') || '주민'}
-          onProfileClick={() => navigate('/mypage')}
-          onConfigClick={() => navigate('/config')}
-          colors={{
-            text: COLORS.roomList.textMain,
-            badgeBg: COLORS.roomList.btnMain,
-            badgeText: 'white',
-            dropdownBorder: COLORS.roomList.border, // #B39DDB
-            dropdownHoverBg: COLORS.roomList.bgMain, // #EAD8F9
-            dropdownText: COLORS.roomList.textMain, // #6A4F9C
-          }}
-        />
-      </div>
-
-      <div className="relative w-[66.67vw] flex flex-col items-center overflow-visible mt-[3.7vh]">
-        {/* [상단 섹션] 헤더 (Title & Meta) - 60px = 3.13vw, 56px = 5.19vh, 16px = 1.48vh */}
-        <div className="w-full flex flex-col items-center shrink-0 relative z-10">
-          <h1 className="text-[3.13vw] font-black leading-none mb-[5.19vh]" style={{ color: COLORS.roomList.textMain }}>
-            발견한 <span style={{ color: COLORS.roomList.textHighlight }}>섬</span> 리스트
-          </h1>
-
-          <div className="flex justify-between w-full px-[2.08vw] items-end mb-[1.48vh]">
-            <div
-              className="flex items-baseline gap-[0.42vw] text-[1.25vw] font-bold"
+        <div className="relative w-[66.67cqw] flex flex-col items-center overflow-visible mt-[3.7cqh]">
+          {/* [상단 섹션] 헤더 (Title & Meta) - 60px = 3.13cqw, 56px = 5.19cqh, 16px = 1.48cqh */}
+          <div className="w-full flex flex-col items-center shrink-0 relative z-10">
+            <h1
+              className="text-[3.13cqw] font-black leading-none mb-[5.19cqh]"
               style={{ color: COLORS.roomList.textMain }}
             >
-              총 <span className="text-[1.46vw]">{rooms.length}</span>개
-            </div>
-            <div className="text-[1.25vw] font-bold" style={{ color: COLORS.roomList.textMain }}>
-              스크롤해서 더보기 ↓
+              발견한 <span style={{ color: COLORS.roomList.textHighlight }}>섬</span> 리스트
+            </h1>
+
+            <div className="flex justify-between w-full px-[2.08cqw] items-end mb-[1.48cqh]">
+              <div
+                className="flex items-baseline gap-[0.42cqw] text-[1.25cqw] font-bold"
+                style={{ color: COLORS.roomList.textMain }}
+              >
+                총 <span className="text-[1.46cqw]">{rooms.length}</span>개
+              </div>
+              <div className="text-[1.25cqw] font-bold" style={{ color: COLORS.roomList.textMain }}>
+                스크롤해서 더보기 ↓
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* [하단 컨테이너] 리스트 + 푸터 (배경색 적용) - 800px = 74.07vh, 60px = 3.13vw */}
-        <div
-          className="w-full h-[74.07vh] flex flex-col items-center rounded-[3.13vw] relative overflow-hidden"
-          style={{ backgroundColor: COLORS.roomList.bgMainTransparent }}
-        >
-          {/* [중앙 섹션] 리스트 스크롤 영역 - flex-1, 40px = 2.08vw */}
+          {/* [하단 컨테이너] 리스트 + 푸터 (배경색 적용) - 800px = 74.07cqh, 60px = 3.13cqw */}
           <div
-            className={`w-full flex-1 overflow-y-auto px-[2.08vw] scrollbar-hide ${
-              rooms.length === 0 && !loading ? 'flex flex-col items-center justify-center' : ''
-            }`}
+            className="w-full h-[74.07cqh] flex flex-col items-center rounded-[3.13cqw] relative overflow-hidden"
+            style={{ backgroundColor: COLORS.roomList.bgMainTransparent }}
           >
-            {rooms.length === 0 && !loading ? (
-              <div className="flex flex-col items-center opacity-60 pb-[3.7vh]">
-                <span className="text-[1.67vw] font-bold text-[#594E36]">아직 만들어진 섬이 없어!</span>
-                <span className="text-[1.25vw] text-[#594E36] mt-[0.19vh]">직접 새로운 섬을 만들어볼까? 🏝️</span>
-              </div>
-            ) : (
-              <div className="flex flex-col items-center pb-[1.85vh] pt-[3.7vh]">
-                {sortedRooms.map((room) => {
-                  const isFull = room.currentPlayers >= room.maxPlayers;
-                  const disabled = isFull || !room.joinable;
-                  const btnText = room.status === 'PLAYING' ? '마감' : isFull ? '마감' : '입장';
-                  const playersPreview = roomPlayersMap[room.id] || [];
+            {/* [중앙 섹션] 리스트 스크롤 영역 - flex-1, 40px = 2.08cqw */}
+            <div
+              className={`w-full flex-1 overflow-y-auto px-[2.08cqw] scrollbar-hide ${
+                rooms.length === 0 && !loading ? 'flex flex-col items-center justify-center' : ''
+              }`}
+            >
+              {rooms.length === 0 && !loading ? (
+                <div className="flex flex-col items-center opacity-60 pb-[3.7cqh]">
+                  <span className="text-[1.67cqw] font-bold text-[#594E36]">아직 만들어진 섬이 없어!</span>
+                  <span className="text-[1.25cqw] text-[#594E36] mt-[0.19cqh]">직접 새로운 섬을 만들어볼까? 🏝️</span>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center pb-[1.85cqh] pt-[3.7cqh]">
+                  {sortedRooms.map((room) => {
+                    const isFull = room.currentPlayers >= room.maxPlayers;
+                    const disabled = isFull || !room.joinable;
+                    const btnText = room.status === 'PLAYING' ? '마감' : isFull ? '마감' : '입장';
+                    const playersPreview = roomPlayersMap[room.id] || [];
 
-                  return (
-                    <div key={room.id} className="w-full flex flex-col items-center">
-                      {/* 리스트 아이템 - 1200px = 62.5vw, 92px = 8.52vh, 40px = 2.08vw radius, 12px = 1.11vh margin */}
-                      <div className="w-[62.5vw] h-[8.52vh] bg-white rounded-[2.08vw] flex items-center px-[2.08vw] shadow-sm relative my-[1.11vh] shrink-0 hover:scale-[1.01] transition-transform">
-                        {/* [좌측 영역] 잠금 + 제목 - 400px = 20.83vw, 40px = 2.08vw, 20px = 1.04vw gap, 32px = 1.67vw text, 320px = 16.67vw max-width */}
-                        <div className="flex items-center gap-[1.04vw] w-[20.83vw]">
-                          {room.isPrivate ? (
+                    return (
+                      <div key={room.id} className="w-full flex flex-col items-center">
+                        {/* 리스트 아이템 - 1200px = 62.5cqw, 92px = 8.52cqh, 40px = 2.08cqw radius, 12px = 1.11cqh margin */}
+                        <div className="w-[62.5cqw] h-[8.52cqh] bg-white rounded-[2.08cqw] flex items-center px-[2.08cqw] shadow-sm relative my-[1.11cqh] shrink-0 hover:scale-[1.01] transition-transform">
+                          {/* [좌측 영역] 잠금 + 제목 - 400px = 20.83cqw, 40px = 2.08cqw, 20px = 1.04cqw gap, 32px = 1.67cqw text, 320px = 16.67cqw max-width */}
+                          <div className="flex items-center gap-[1.04cqw] w-[20.83cqw]">
+                            {room.isPrivate ? (
+                              <div
+                                className="w-[2.08cqw] h-[2.08cqw]"
+                                style={{
+                                  backgroundColor: COLORS.roomList.lock,
+                                  maskImage: `url("/images/roomlist/icon-lock.svg")`,
+                                  WebkitMaskImage: `url("/images/roomlist/icon-lock.svg")`,
+                                  maskSize: 'contain',
+                                  WebkitMaskSize: 'contain',
+                                  maskRepeat: 'no-repeat',
+                                  WebkitMaskRepeat: 'no-repeat',
+                                  maskPosition: 'center',
+                                  WebkitMaskPosition: 'center',
+                                }}
+                              />
+                            ) : (
+                              <div className="w-[2.08cqw] h-[2.08cqw]" />
+                            )}
+                            <span
+                              className="text-[1.67cqw] font-bold truncate max-w-[16.67cqw] pt-[0.09cqh]"
+                              style={{ color: COLORS.roomList.textSub }}
+                            >
+                              {room.title}
+                            </span>
+                          </div>
+
+                          {/* [중앙 영역] 주사위 + 정보 그룹 - 48px = 2.5cqw, 52px = 2.71cqw gap, 24px = 1.25cqw text */}
+                          <div className="absolute left-[50%] -translate-x-1/2 flex items-center gap-[2.71cqw]">
+                            {/* 주사위 */}
                             <div
-                              className="w-[2.08vw] h-[2.08vw]"
+                              className="w-[2.5cqw] h-[2.5cqw]"
                               style={{
-                                backgroundColor: COLORS.roomList.lock,
-                                maskImage: `url("/images/roomlist/icon-lock.svg")`,
-                                WebkitMaskImage: `url("/images/roomlist/icon-lock.svg")`,
+                                backgroundColor: '#8B5E83',
+                                maskImage: `url("/images/icon-dice-${room.totalRounds}.png")`,
+                                WebkitMaskImage: `url("/images/icon-dice-${room.totalRounds}.png")`,
                                 maskSize: 'contain',
-                                WebkitMaskSize: 'contain',
                                 maskRepeat: 'no-repeat',
-                                WebkitMaskRepeat: 'no-repeat',
-                                maskPosition: 'center',
-                                WebkitMaskPosition: 'center',
                               }}
                             />
-                          ) : (
-                            <div className="w-[2.08vw] h-[2.08vw]" />
-                          )}
-                          <span
-                            className="text-[1.67vw] font-bold truncate max-w-[16.67vw] pt-[0.09vh]"
-                            style={{ color: COLORS.roomList.textSub }}
-                          >
-                            {room.title}
-                          </span>
-                        </div>
-
-                        {/* [중앙 영역] 주사위 + 정보 그룹 - 48px = 2.5vw, 52px = 2.71vw gap, 24px = 1.25vw text */}
-                        <div className="absolute left-[50%] -translate-x-1/2 flex items-center gap-[2.71vw]">
-                          {/* 주사위 */}
-                          <div
-                            className="w-[2.5vw] h-[2.5vw]"
-                            style={{
-                              backgroundColor: '#8B5E83',
-                              maskImage: `url("/images/icon-dice-${room.totalRounds}.png")`,
-                              WebkitMaskImage: `url("/images/icon-dice-${room.totalRounds}.png")`,
-                              maskSize: 'contain',
-                              maskRepeat: 'no-repeat',
-                            }}
-                          />
-                          {/* 방장/인원 정보 - 24px = 1.25vw, 120px = 6.25vw max-width */}
-                          <div className="flex flex-col gap-[0.09vh]">
-                            <div
-                              className="flex items-center gap-[0.42vw] text-[1.25vw] font-bold"
-                              style={{ color: '#8B5E83' }}
-                            >
+                            {/* 방장/인원 정보 - 24px = 1.25cqw, 120px = 6.25cqw max-width */}
+                            <div className="flex flex-col gap-[0.09cqh]">
                               <div
-                                className="w-[1.25vw] h-[1.25vw] bg-[#8B5E83]"
-                                style={{
-                                  maskImage: `url("/images/roomlist/icon-leaf.webp")`,
-                                  WebkitMaskImage: `url("/images/roomlist/icon-leaf.webp")`,
-                                  maskSize: 'contain',
-                                }}
-                              />
-                              <span className="truncate max-w-[6.25vw]">{room.hostNickname}</span>
-                            </div>
-                            <div
-                              className="flex items-center gap-[0.42vw] text-[1.25vw] font-bold"
-                              style={{ color: '#8B5E83' }}
-                            >
+                                className="flex items-center gap-[0.42cqw] text-[1.25cqw] font-bold"
+                                style={{ color: '#8B5E83' }}
+                              >
+                                <div
+                                  className="w-[1.25cqw] h-[1.25cqw] bg-[#8B5E83]"
+                                  style={{
+                                    maskImage: `url("/images/roomlist/icon-leaf.webp")`,
+                                    WebkitMaskImage: `url("/images/roomlist/icon-leaf.webp")`,
+                                    maskSize: 'contain',
+                                  }}
+                                />
+                                <span className="truncate max-w-[6.25cqw]">{room.hostNickname}</span>
+                              </div>
                               <div
-                                className="w-[1.25vw] h-[1.25vw] bg-[#8B5E83]"
-                                style={{
-                                  maskImage: `url("/images/roomlist/icon-people.svg")`,
-                                  WebkitMaskImage: `url("/images/roomlist/icon-people.svg")`,
-                                  maskSize: 'contain',
-                                }}
-                              />
-                              <span>
-                                {room.currentPlayers}/{room.maxPlayers}
-                              </span>
+                                className="flex items-center gap-[0.42cqw] text-[1.25cqw] font-bold"
+                                style={{ color: '#8B5E83' }}
+                              >
+                                <div
+                                  className="w-[1.25cqw] h-[1.25cqw] bg-[#8B5E83]"
+                                  style={{
+                                    maskImage: `url("/images/roomlist/icon-people.svg")`,
+                                    WebkitMaskImage: `url("/images/roomlist/icon-people.svg")`,
+                                    maskSize: 'contain',
+                                  }}
+                                />
+                                <span>
+                                  {room.currentPlayers}/{room.maxPlayers}
+                                </span>
+                              </div>
                             </div>
                           </div>
+
+                          {/* [우측 영역] 캐릭터 프리뷰 + 입장 버튼 - 40px = 2.08cqw gap */}
+                          <div className="ml-auto flex items-center gap-[2.08cqw]">
+                            {/* 캐릭터 프리뷰 - 60px = 3.13cqw 슬롯 */}
+                            <RoomCharacterImages players={playersPreview} maxSlots={Math.min(room.maxPlayers, 4)} />
+
+                            {/* 입장 버튼 - 120px = 6.25cqw, 64px = 5.93cqh, 32px = 1.67cqw text/radius */}
+                            <button
+                              onClick={() => openJoinModal(room)}
+                              disabled={disabled}
+                              className={`w-[6.25cqw] h-[5.93cqh] rounded-[1.67cqw] font-black text-[1.67cqw] flex items-center justify-center transition-all active:scale-95 shadow-md ${disabled ? 'cursor-not-allowed opacity-50' : 'hover:brightness-105'}`}
+                              style={{
+                                backgroundColor: disabled ? COLORS.roomList.btnDisabled : COLORS.roomList.btnMain,
+                                color: 'white',
+                              }}
+                            >
+                              {btnText}
+                            </button>
+                          </div>
                         </div>
-
-                        {/* [우측 영역] 캐릭터 프리뷰 + 입장 버튼 - 40px = 2.08vw gap */}
-                        <div className="ml-auto flex items-center gap-[2.08vw]">
-                          {/* 캐릭터 프리뷰 - 60px = 3.13vw 슬롯 */}
-                          <RoomCharacterImages players={playersPreview} maxSlots={Math.min(room.maxPlayers, 4)} />
-
-                          {/* 입장 버튼 - 120px = 6.25vw, 64px = 5.93vh, 32px = 1.67vw text/radius */}
-                          <button
-                            onClick={() => openJoinModal(room)}
-                            disabled={disabled}
-                            className={`w-[6.25vw] h-[5.93vh] rounded-[1.67vw] font-black text-[1.67vw] flex items-center justify-center transition-all active:scale-95 shadow-md ${disabled ? 'cursor-not-allowed opacity-50' : 'hover:brightness-105'}`}
-                            style={{
-                              backgroundColor: disabled ? COLORS.roomList.btnDisabled : COLORS.roomList.btnMain,
-                              color: 'white',
-                            }}
-                          >
-                            {btnText}
-                          </button>
+                        {/* 점선 구분선 - 1160px = 60.42cqw, 24px = 2.22cqh, 4px stroke, 12 12 dash */}
+                        <div className="w-[60.42cqw] h-[2.22cqh] opacity-30 flex items-center">
+                          <svg width="100%" height="100%">
+                            <line
+                              x1="2"
+                              y1="3"
+                              x2="100%"
+                              y2="3"
+                              stroke={COLORS.roomList.textMain}
+                              strokeWidth="0.21cqw"
+                              strokeLinecap="round"
+                              strokeDasharray="0.63cqw 0.63cqw"
+                            />
+                          </svg>
                         </div>
                       </div>
-                      {/* 점선 구분선 - 1160px = 60.42vw, 24px = 2.22vh, 4px stroke, 12 12 dash */}
-                      <div className="w-[60.42vw] h-[2.22vh] opacity-30 flex items-center">
-                        <svg width="100%" height="100%">
-                          <line
-                            x1="2"
-                            y1="3"
-                            x2="100%"
-                            y2="3"
-                            stroke={COLORS.roomList.textMain}
-                            strokeWidth="0.21vw"
-                            strokeLinecap="round"
-                            strokeDasharray="0.63vw 0.63vw"
-                          />
-                        </svg>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
 
-          {/* [하단 섹션] 액션 바 (Footer) - 148px = 13.7vh, 80px = 4.17vw padding, 10px = 0.93vh pb */}
-          <div className="w-full h-[13.7vh] px-[4.17vw] flex justify-between items-center shrink-0 pb-[0.93vh]">
-            {/* 검색 버튼 - 56px = 2.92vw, padding 4 = 0.21vw */}
-            <button
-              onClick={() => setSearchOpen(true)}
-              className="flex flex-col items-center hover:scale-110 transition-transform p-[0.21vw]"
-            >
-              <div
-                className="w-[2.92vw] h-[2.92vw] bg-[#8B5E83]"
-                style={{
-                  maskImage: `url("/images/roomlist/icon-search.svg")`,
-                  WebkitMaskImage: `url("/images/roomlist/icon-search.svg")`,
-                  maskSize: 'contain',
-                  WebkitMaskSize: 'contain',
-                }}
-              />
-            </button>
+            {/* [하단 섹션] 액션 바 (Footer) - 148px = 13.7cqh, 80px = 4.17cqw padding, 10px = 0.93cqh pb */}
+            <div className="w-full h-[13.7cqh] px-[4.17cqw] flex justify-between items-center shrink-0 pb-[0.93cqh]">
+              {/* 검색 버튼 - 56px = 2.92cqw, padding 4 = 0.21cqw */}
+              <button
+                onClick={() => setSearchOpen(true)}
+                className="flex flex-col items-center hover:scale-110 transition-transform p-[0.21cqw]"
+              >
+                <div
+                  className="w-[2.92cqw] h-[2.92cqw] bg-[#8B5E83]"
+                  style={{
+                    maskImage: `url("/images/roomlist/icon-search.svg")`,
+                    WebkitMaskImage: `url("/images/roomlist/icon-search.svg")`,
+                    maskSize: 'contain',
+                    WebkitMaskSize: 'contain',
+                  }}
+                />
+              </button>
 
-            {/* 섬 만들기 (중앙 버튼) - 300px = 15.63vw, 80px = 7.41vh, 40px = 2.08vw radius, 32px = 1.67vw text */}
-            <button
-              onClick={() => setCreateOpen(true)}
-              className="w-[15.63vw] h-[7.41vh] rounded-[2.08vw] text-[1.67vw] font-black text-white shadow-xl hover:brightness-105 active:scale-95 transition-all"
-              style={{ backgroundColor: COLORS.roomList.btnMain }}
-            >
-              섬 만들기
-            </button>
+              {/* 섬 만들기 (중앙 버튼) - 300px = 15.63cqw, 80px = 7.41cqh, 40px = 2.08cqw radius, 32px = 1.67cqw text */}
+              <button
+                onClick={() => setCreateOpen(true)}
+                className="w-[15.63cqw] h-[7.41cqh] rounded-[2.08cqw] text-[1.67cqw] font-black text-white shadow-xl hover:brightness-105 active:scale-95 transition-all"
+                style={{ backgroundColor: COLORS.roomList.btnMain }}
+              >
+                섬 만들기
+              </button>
 
-            {/* 새로고침 버튼 - 56px = 2.92vw */}
-            <button
-              onClick={() => refreshRooms('')}
-              className="flex flex-col items-center hover:rotate-180 transition-transform duration-500 p-[0.21vw]"
-            >
-              <div
-                className="w-[2.92vw] h-[2.92vw] bg-[#8B5E83]"
-                style={{
-                  maskImage: `url("/images/roomlist/icon-refresh.svg")`,
-                  WebkitMaskImage: `url("/images/roomlist/icon-refresh.svg")`,
-                  maskSize: 'contain',
-                  WebkitMaskSize: 'contain',
-                }}
-              />
-            </button>
+              {/* 새로고침 버튼 - 56px = 2.92cqw */}
+              <button
+                onClick={() => refreshRooms('')}
+                className="flex flex-col items-center hover:rotate-180 transition-transform duration-500 p-[0.21cqw]"
+              >
+                <div
+                  className="w-[2.92cqw] h-[2.92cqw] bg-[#8B5E83]"
+                  style={{
+                    maskImage: `url("/images/roomlist/icon-refresh.svg")`,
+                    WebkitMaskImage: `url("/images/roomlist/icon-refresh.svg")`,
+                    maskSize: 'contain',
+                    WebkitMaskSize: 'contain',
+                  }}
+                />
+              </button>
+            </div>
           </div>
         </div>
+
+        {/* --- 모달들 --- */}
+        {transitioning && (
+          <div className="fixed inset-0 z-[9999] bg-black/40 flex items-center justify-center">
+            <div className="bg-white px-[2.08cqw] py-[1.48cqh] rounded-[2.08cqw] flex flex-col items-center shadow-2xl animate-bounce">
+              <span className="text-[2.08cqw]">✈️</span>
+              <span className="text-[1.25cqw] font-bold text-[#5A4A6F] mt-[0.37cqh]">섬으로 이동 중...</span>
+            </div>
+          </div>
+        )}
+
+        {toast && (
+          <div
+            className="fixed top-[0.93cqh] left-1/2 -translate-x-1/2 z-[9999] bg-white/90 backdrop-blur px-[1.67cqw] py-[0.37cqh] rounded-full shadow-xl border-[0.1cqw] animate-in fade-in slide-in-from-top-4"
+            style={{ borderColor: COLORS.roomList.btnMain }}
+          >
+            <span className="text-[1.04cqw] font-bold" style={{ color: COLORS.roomList.textMain }}>
+              📢 {toast}
+            </span>
+          </div>
+        )}
+
+        {createOpen && (
+          <CreateIslandModal
+            onClose={() => setCreateOpen(false)}
+            onCreate={(payload) => {
+              const reqId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+              pendingCreateIdRef.current = reqId;
+              startTransition();
+              const ok = publish(`${WS_APP_PREFIX}/create`, { ...payload, clientRequestId: reqId });
+              if (!ok) {
+                pendingCreateIdRef.current = null;
+                endTransition();
+              } else {
+                setCreateOpen(false);
+              }
+            }}
+          />
+        )}
+
+        {joinOpen && selectedRoom && (
+          <JoinIslandModal
+            room={selectedRoom}
+            initialPlayers={roomPlayersMap[selectedRoom.id] || []}
+            onClose={() => setJoinOpen(false)}
+            onConfirm={confirmJoin}
+          />
+        )}
+
+        {searchOpen && (
+          <SearchModal
+            initialKeyword={keyword}
+            onClose={() => setSearchOpen(false)}
+            onSearch={(newKeyword) => {
+              setKeyword(newKeyword);
+              setSearchOpen(false);
+              refreshRooms(newKeyword);
+            }}
+          />
+        )}
       </div>
-
-      {/* --- 모달들 --- */}
-      {transitioning && (
-        <div className="fixed inset-0 z-[9999] bg-black/40 flex items-center justify-center">
-          <div className="bg-white px-[2.08vw] py-[1.48vh] rounded-[2.08vw] flex flex-col items-center shadow-2xl animate-bounce">
-            <span className="text-[2.08vw]">✈️</span>
-            <span className="text-[1.25vw] font-bold text-[#5A4A6F] mt-[0.37vh]">섬으로 이동 중...</span>
-          </div>
-        </div>
-      )}
-
-      {toast && (
-        <div
-          className="fixed top-[0.93vh] left-1/2 -translate-x-1/2 z-[9999] bg-white/90 backdrop-blur px-[1.67vw] py-[0.37vh] rounded-full shadow-xl border-[0.1vw] animate-in fade-in slide-in-from-top-4"
-          style={{ borderColor: COLORS.roomList.btnMain }}
-        >
-          <span className="text-[1.04vw] font-bold" style={{ color: COLORS.roomList.textMain }}>
-            📢 {toast}
-          </span>
-        </div>
-      )}
-
-      {createOpen && (
-        <CreateIslandModal
-          onClose={() => setCreateOpen(false)}
-          onCreate={(payload) => {
-            const reqId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-            pendingCreateIdRef.current = reqId;
-            startTransition();
-            const ok = publish(`${WS_APP_PREFIX}/create`, { ...payload, clientRequestId: reqId });
-            if (!ok) {
-              pendingCreateIdRef.current = null;
-              endTransition();
-            } else {
-              setCreateOpen(false);
-            }
-          }}
-        />
-      )}
-
-      {joinOpen && selectedRoom && (
-        <JoinIslandModal
-          room={selectedRoom}
-          initialPlayers={roomPlayersMap[selectedRoom.id] || []}
-          onClose={() => setJoinOpen(false)}
-          onConfirm={confirmJoin}
-          authHeaders={authHeaders}
-        />
-      )}
-
-      {searchOpen && (
-        <SearchModal
-          initialKeyword={keyword}
-          onClose={() => setSearchOpen(false)}
-          onSearch={(newKeyword) => {
-            setKeyword(newKeyword);
-            setSearchOpen(false);
-            refreshRooms(newKeyword);
-          }}
-        />
-      )}
-    </div>
+    </AspectLayout>
   );
 }
 
-// 캐릭터 이미지 프리뷰 - 60px = 3.13vw 슬롯, 8px = 0.42vw gap
+// 캐릭터 이미지 프리뷰 - 60px = 3.13cqw 슬롯, 8px = 0.42cqw gap
 function RoomCharacterImages({ players, maxSlots }) {
   return (
-    <div className="flex gap-[0.42vw]">
+    <div className="flex gap-[0.42cqw]">
       {Array.from({ length: 4 }).map((_, idx) => {
         const p = players[idx];
         const charInfo = p?.characterId ? CHARACTER_BY_ID.get(Number(p.characterId)) : null;
@@ -620,7 +624,7 @@ function RoomCharacterImages({ players, maxSlots }) {
         return (
           <div
             key={idx}
-            className={`w-[3.13vw] h-[3.13vw] rounded-full overflow-hidden flex items-center justify-center ${idx < maxSlots ? 'bg-[#EAD8F9]' : 'bg-[#D9D9D9] opacity-40'}`}
+            className={`w-[3.13cqw] h-[3.13cqw] rounded-full overflow-hidden flex items-center justify-center ${idx < maxSlots ? 'bg-[#EAD8F9]' : 'bg-[#D9D9D9] opacity-40'}`}
           >
             {imgSrc && <img src={imgSrc} alt="char" className="w-full h-full object-cover" />}
           </div>
@@ -630,6 +634,9 @@ function RoomCharacterImages({ players, maxSlots }) {
   );
 }
 
+// --------------------------------------------------------------------------------------
+// [MODAL 1: Create Island]
+// --------------------------------------------------------------------------------------
 function CreateIslandModal({ onClose, onCreate }) {
   const [title, setTitle] = useState('');
   const [maxPlayers, setMaxPlayers] = useState(4);
@@ -639,12 +646,12 @@ function CreateIslandModal({ onClose, onCreate }) {
 
   const canSubmit = title.trim().length > 0 && (!isPrivate || password.trim().length > 0);
 
-  // 라벨 스타일 컴포넌트 - 40px = 2.08vw, 48px = 4.44vh
+  // 라벨 아이콘 - 40px = 2.08cqw, 48px = 4.44cqh
   const LabelIcon = ({ iconSrc }) => (
-    <div className="w-[2.08vw] h-[4.44vh] flex items-center justify-center shrink-0">
+    <div className="w-[2.08cqw] h-[4.44cqh] flex items-center justify-center shrink-0">
       {iconSrc && (
         <div
-          className="w-[2.08vw] h-[4.44vh]"
+          className="w-[2.08cqw] h-[4.44cqh]"
           style={{
             backgroundColor: COLORS.ac.darkPurple,
             maskImage: `url("${iconSrc}")`,
@@ -661,10 +668,10 @@ function CreateIslandModal({ onClose, onCreate }) {
     </div>
   );
 
-  // 36px = 1.88vw
+  // 라벨 텍스트 - 36px = 1.88cqw
   const LabelText = ({ text }) => (
     <span
-      className="text-[1.88vw] font-bold whitespace-nowrap leading-none pt-[0.09vh]"
+      className="text-[1.88cqw] font-bold whitespace-nowrap leading-none pt-[0.09cqh]"
       style={{ color: COLORS.ac.darkPurple }}
     >
       {text}
@@ -673,45 +680,52 @@ function CreateIslandModal({ onClose, onCreate }) {
 
   return (
     <div
-      className="fixed inset-0 bg-black/60 z-[200] flex items-center justify-center p-[0.83vw] backdrop-blur-md overflow-auto"
+      className="fixed inset-0 bg-black/60 z-[200] flex items-center justify-center p-[0.83cqw] backdrop-blur-md overflow-auto"
       onMouseDown={onClose}
     >
-      {/* 1132px = 58.96vw, 985px = 91.2vh, 104px = 9.63vh padding-top */}
+      {/* 
+          Modal Spec: 
+          W: 1132px -> 58.96cqw
+          H: 985px -> 91.2cqh
+          Padding Top: 104px -> 9.63cqh
+      */}
       <div
-        className="w-[58.96vw] h-[91.2vh] flex flex-col shadow-none relative shrink-0"
+        className="w-[58.96cqw] h-[91.2cqh] flex flex-col shadow-none relative shrink-0"
         style={{
           backgroundImage: "url('/images/roomlist/ui-roomlist-modal-1.webp')",
           backgroundSize: '100% 100%',
           backgroundColor: 'transparent',
-          paddingTop: '9.63vh',
+          paddingTop: '9.63cqh',
         }}
         onMouseDown={(e) => e.stopPropagation()}
       >
-        {/* 제목 - 56px = 2.92vw, 60px = 5.56vh margin-bottom */}
+        {/* 제목 - 56px = 2.92cqw */}
         <h2
-          className="text-[2.92vw] font-black mb-[5.56vh] leading-none text-center w-full"
+          className="text-[2.92cqw] font-black mb-[5.56cqh] leading-none text-center w-full"
           style={{ color: COLORS.ac.darkPurple }}
         >
           섬 만들기
         </h2>
 
-        {/* 1. 섬 이름 - 124px = 6.46vw pl, 12px = 0.63vw gap, 92px = 4.79vw gap, 600px = 31.25vw input width, 72px = 6.67vh height, 24px = 1.25vw px, 20px = 1.04vw radius, 32px = 1.67vw text, 18px = 0.94vw counter, 16px = 0.83vw right */}
-        <div className="flex items-center pl-[6.46vw]">
+        {/* 1. 섬 이름 - pl 124px(6.46cqw) */}
+        <div className="flex items-center pl-[6.46cqw]">
           <LabelIcon iconSrc="/images/roomlist/icon-leaf.webp" />
-          <div className="w-[0.63vw]" />
+          <div className="w-[0.63cqw]" />
           <LabelText text="섬 이름" />
-          <div className="w-[4.79vw]" />
-          <div className="relative w-[31.25vw]">
+          {/* Gap 92px = 4.79cqw */}
+          <div className="w-[4.79cqw]" />
+          {/* Input W 600px = 31.25cqw, H 72px = 6.67cqh */}
+          <div className="relative w-[31.25cqw]">
             <input
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="섬 이름 입력"
-              className="w-full h-[6.67vh] px-[1.25vw] rounded-[1.04vw] bg-white text-[1.67vw] font-bold outline-none placeholder:text-gray-300 shadow-inner"
+              placeholder="방 제목"
+              className="w-full h-[6.67cqh] px-[1.25cqw] rounded-[1.04cqw] bg-white text-[1.46cqw] font-bold outline-none placeholder:text-gray-300 shadow-inner"
               style={{ color: COLORS.ac.darkPurple }}
               maxLength={18}
             />
             <span
-              className="absolute right-[0.83vw] top-1/2 -translate-y-1/2 text-[0.94vw] font-bold opacity-50"
+              className="absolute right-[0.83cqw] top-1/2 -translate-y-1/2 text-[0.94cqw] font-bold opacity-50"
               style={{ color: COLORS.ac.darkPurple }}
             >
               {title.length}/18
@@ -719,20 +733,21 @@ function CreateIslandModal({ onClose, onCreate }) {
           </div>
         </div>
 
-        {/* 2. 인원 수 - 40px = 3.7vh mt, 104px = 5.42vw gap, 120px = 6.25vw btn, 66px = 6.11vh btn, 32px = 1.67vw radius/text, 12px = 0.63vw btn gap */}
-        <div className="flex items-center pl-[6.46vw] mt-[3.7vh]">
+        {/* 2. 인원 수 - mt 40px(3.7cqh) */}
+        <div className="flex items-center pl-[6.46cqw] mt-[3.7cqh]">
           <LabelIcon iconSrc="/images/roomlist/icon-people.svg" />
-          <div className="w-[0.63vw]" />
+          <div className="w-[0.63cqw]" />
           <LabelText text="인원수" />
-          <div className="w-[5.42vw]" />
-          <div className="flex gap-[0.63vw]">
+          {/* Gap 104px = 5.42cqw */}
+          <div className="w-[5.42cqw]" />
+          <div className="flex gap-[0.63cqw]">
             {[2, 3, 4].map((num) => {
               const isActive = maxPlayers === num;
               return (
                 <button
                   key={num}
                   onClick={() => setMaxPlayers(num)}
-                  className="w-[6.25vw] h-[6.11vh] rounded-[1.67vw] text-[1.67vw] font-bold transition-all shadow-sm flex items-center justify-center leading-none pt-[0.09vh]"
+                  className="w-[6.25cqw] h-[6.11cqh] rounded-[1.67cqw] text-[1.67cqw] font-bold transition-all shadow-sm flex items-center justify-center leading-none pt-[0.09cqh]"
                   style={{
                     backgroundColor: isActive ? COLORS.ac.darkPurple : 'white',
                     color: isActive ? 'white' : COLORS.ac.darkPurple,
@@ -745,20 +760,21 @@ function CreateIslandModal({ onClose, onCreate }) {
           </div>
         </div>
 
-        {/* 3. 라운드 수 - 60px = 3.13vw gap */}
-        <div className="flex items-center pl-[6.46vw] mt-[3.7vh]">
+        {/* 3. 라운드 수 - mt 40px(3.7cqh) */}
+        <div className="flex items-center pl-[6.46cqw] mt-[3.7cqh]">
           <LabelIcon iconSrc="/images/roomlist/icon-dice-10.png" />
-          <div className="w-[0.63vw]" />
+          <div className="w-[0.63cqw]" />
           <LabelText text="라운드 수" />
-          <div className="w-[3.13vw]" />
-          <div className="flex gap-[0.63vw]">
+          {/* Gap 60px = 3.13cqw */}
+          <div className="w-[3.13cqw]" />
+          <div className="flex gap-[0.63cqw]">
             {[10, 20, 30, 40].map((num) => {
               const isActive = totalRounds === num;
               return (
                 <button
                   key={num}
                   onClick={() => setTotalRounds(num)}
-                  className="w-[6.25vw] h-[6.11vh] rounded-[1.67vw] text-[1.67vw] font-bold transition-all shadow-sm flex items-center justify-center leading-none pt-[0.09vh]"
+                  className="w-[6.25cqw] h-[6.11cqh] rounded-[1.67cqw] text-[1.67cqw] font-bold transition-all shadow-sm flex items-center justify-center leading-none pt-[0.09cqh]"
                   style={{
                     backgroundColor: isActive ? COLORS.ac.darkPurple : 'white',
                     color: isActive ? 'white' : COLORS.ac.darkPurple,
@@ -771,17 +787,18 @@ function CreateIslandModal({ onClose, onCreate }) {
           </div>
         </div>
 
-        {/* 4. 공개 설정 - 68px = 3.54vw gap, 72px = 6.67vh height, 40px = 2.08vw radio/gap, 3px = 0.16vw border, 16px = 0.83vw inner dot, 12px = 0.63vw label gap */}
-        <div className="flex items-center pl-[6.46vw] mt-[3.7vh] h-[6.67vh]">
+        {/* 4. 공개 설정 - mt 40px(3.7cqh) */}
+        <div className="flex items-center pl-[6.46cqw] mt-[3.7cqh] h-[6.67cqh]">
           <LabelIcon iconSrc="/images/roomlist/icon-lock.svg" />
-          <div className="w-[0.63vw]" />
+          <div className="w-[0.63cqw]" />
           <LabelText text="공개 설정" />
-          <div className="w-[3.54vw]" />
-          <div className="flex items-center gap-[2.08vw]">
+          {/* Gap 68px = 3.54cqw */}
+          <div className="w-[3.54cqw]" />
+          <div className="flex items-center gap-[2.08cqw]">
             {/* 공개 버튼 */}
-            <button onClick={() => setIsPrivate(false)} className="flex items-center gap-[0.63vw] group">
+            <button onClick={() => setIsPrivate(false)} className="flex items-center gap-[0.63cqw] group">
               <div
-                className={`w-[2.08vw] h-[2.08vw] rounded-full border-[0.16vw] flex items-center justify-center transition-colors ${
+                className={`w-[2.08cqw] h-[2.08cqw] rounded-full border-[0.16cqw] flex items-center justify-center transition-colors ${
                   !isPrivate ? 'bg-[#744990] border-[#744990]' : 'bg-white border-[#744990]'
                 }`}
                 style={{
@@ -789,10 +806,10 @@ function CreateIslandModal({ onClose, onCreate }) {
                   borderColor: COLORS.ac.darkPurple,
                 }}
               >
-                {!isPrivate && <div className="w-[0.83vw] h-[0.83vw] bg-white rounded-full" />}
+                {!isPrivate && <div className="w-[0.83cqw] h-[0.83cqw] bg-white rounded-full" />}
               </div>
               <span
-                className={`text-[1.88vw] font-bold pt-[0.09vh] ${!isPrivate ? 'text-[#744990]' : 'text-[#744990]/50'}`}
+                className={`text-[1.88cqw] font-bold pt-[0.09cqh] ${!isPrivate ? 'text-[#744990]' : 'text-[#744990]/50'}`}
                 style={{
                   color: !isPrivate ? COLORS.ac.darkPurple : COLORS.ac.darkPurple,
                   opacity: !isPrivate ? 1 : 0.5,
@@ -803,9 +820,9 @@ function CreateIslandModal({ onClose, onCreate }) {
             </button>
 
             {/* 비공개 버튼 */}
-            <button onClick={() => setIsPrivate(true)} className="flex items-center gap-[0.63vw] group">
+            <button onClick={() => setIsPrivate(true)} className="flex items-center gap-[0.63cqw] group">
               <div
-                className={`w-[2.08vw] h-[2.08vw] rounded-full border-[0.16vw] flex items-center justify-center transition-colors ${
+                className={`w-[2.08cqw] h-[2.08cqw] rounded-full border-[0.16cqw] flex items-center justify-center transition-colors ${
                   isPrivate ? 'bg-[#744990] border-[#744990]' : 'bg-white border-[#744990]'
                 }`}
                 style={{
@@ -813,11 +830,14 @@ function CreateIslandModal({ onClose, onCreate }) {
                   borderColor: COLORS.ac.darkPurple,
                 }}
               >
-                {isPrivate && <div className="w-[0.83vw] h-[0.83vw] bg-white rounded-full" />}
+                {isPrivate && <div className="w-[0.83cqw] h-[0.83cqw] bg-white rounded-full" />}
               </div>
               <span
-                className={`text-[1.88vw] font-bold pt-[0.09vh] ${isPrivate ? 'text-[#744990]' : 'text-[#744990]/50'}`}
-                style={{ color: isPrivate ? COLORS.ac.darkPurple : COLORS.ac.darkPurple, opacity: isPrivate ? 1 : 0.5 }}
+                className={`text-[1.88cqw] font-bold pt-[0.09cqh] ${isPrivate ? 'text-[#744990]' : 'text-[#744990]/50'}`}
+                style={{
+                  color: isPrivate ? COLORS.ac.darkPurple : COLORS.ac.darkPurple,
+                  opacity: isPrivate ? 1 : 0.5,
+                }}
               >
                 비공개
               </span>
@@ -825,57 +845,52 @@ function CreateIslandModal({ onClose, onCreate }) {
           </div>
         </div>
 
-        {/* 비밀번호 입력 - 32px = 2.96vh mt, 30px = 1.56vw icon, 36px = 3.33vh icon height, 24px = 1.25vw right */}
-        {isPrivate && (
-          <div className="flex items-center pl-[6.46vw] mt-[2.96vh] animate-in fade-in slide-in-from-top-2 duration-300 h-[6.67vh]">
-            {/* Align Spacer (Invisible) */}
-            <div className="opacity-0 flex items-center shrink-0">
-              <LabelIcon iconSrc="/images/roomlist/icon-leaf.webp" />
-              <div className="w-[0.63vw]" />
-              <LabelText text="섬 이름" />
-              <div className="w-[4.79vw]" />
-            </div>
-
-            <div className="relative w-[31.25vw]">
-              <input
-                type="text"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="비밀번호"
-                className="w-full h-[6.67vh] px-[1.25vw] rounded-[1.04vw] bg-white text-[1.67vw] font-bold outline-none placeholder:text-gray-300 shadow-inner"
-                style={{ color: COLORS.ac.darkPurple }}
-                maxLength={8}
-              />
-              <div className="absolute right-[1.25vw] top-1/2 -translate-y-1/2">
-                <div
-                  className="w-[1.56vw] h-[3.33vh]"
-                  style={{
-                    backgroundColor: COLORS.ac.darkPurple,
-                    maskImage: `url("/images/roomlist/icon-lock.svg")`,
-                    WebkitMaskImage: `url("/images/roomlist/icon-lock.svg")`,
-                    maskSize: 'contain',
-                    WebkitMaskSize: 'contain',
-                    maskRepeat: 'no-repeat',
-                    WebkitMaskRepeat: 'no-repeat',
-                    maskPosition: 'center',
-                    WebkitMaskPosition: 'center',
-                  }}
-                />
-              </div>
-            </div>
+        {/* 5. 비밀번호 (비공개일 때만, 인풋박스만 표시) */}
+        {/* Indent: 397px = 20.68cqw */}
+        <div
+          className={`flex items-center mt-[1.85cqh] transition-opacity ${
+            isPrivate ? 'opacity-100' : 'opacity-0 pointer-events-none'
+          }`}
+          style={{ paddingLeft: '20.68cqw' }}
+        >
+          {/* Input W 600px = 31.25cqw, H 72px = 6.67cqh */}
+          <div className="relative w-[31.25cqw]">
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              disabled={!isPrivate}
+              placeholder="비밀번호"
+              className="w-full h-[6.67cqh] px-[1.25cqw] rounded-[1.04cqw] bg-white text-[1.67cqw] font-bold outline-none placeholder:text-gray-300 shadow-inner"
+              style={{ color: COLORS.ac.darkPurple }}
+            />
+            {/* Lock Icon inside input on right */}
+            <div
+              className="absolute right-[1.04cqw] top-1/2 -translate-y-1/2 w-[1.88cqw] h-[1.88cqw]"
+              style={{
+                backgroundColor: COLORS.ac.darkPurple,
+                maskImage: `url("/images/roomlist/icon-lock.svg")`,
+                WebkitMaskImage: `url("/images/roomlist/icon-lock.svg")`,
+                maskSize: 'contain',
+                WebkitMaskSize: 'contain',
+                maskRepeat: 'no-repeat',
+                WebkitMaskRepeat: 'no-repeat',
+                maskPosition: 'center',
+                WebkitMaskPosition: 'center',
+                opacity: 0.5,
+              }}
+            />
           </div>
-        )}
+        </div>
 
-        {/* 하단 버튼 영역 - 112px = 10.37vh mb, 48px = 2.5vw gap, 300px = 15.63vw btn, 100px = 9.26vh btn, 50px = 2.6vw radius, 40px = 2.08vw icon/text, 16px = 0.83vw icon-text gap */}
-        <div className="w-full flex justify-center gap-[2.5vw] mt-auto mb-[10.37vh]">
-          {/* 뒤로가기 */}
+        {/* 하단 버튼 (뒤로가기 / 섬만들기) - 300x100px (15.63cqw x 9.26cqh), 40px gap (2.08cqw) */}
+        <div className="absolute bottom-[8.4cqh] left-0 w-full flex justify-center items-center gap-[2.08cqw]">
           <button
             onClick={onClose}
-            className="w-[15.63vw] h-[9.26vh] rounded-[2.6vw] shadow-xl hover:brightness-105 active:scale-95 transition-all flex items-center justify-center gap-[0.83vw]"
-            style={{ backgroundColor: COLORS.ac.purple }}
+            className="w-[15.63cqw] h-[9.26cqh] rounded-[2.6cqw] bg-[#9984A0] text-white text-[2.08cqw] font-black hover:brightness-105 active:scale-95 transition-all leading-none pt-[0.09cqh] flex items-center justify-center gap-[0.42cqw]"
           >
             <div
-              className={`w-[2.08vw] h-[2.08vw]`}
+              className="w-[2.08cqw] h-[2.5cqh]"
               style={{
                 backgroundColor: 'white',
                 maskImage: `url("/images/roomlist/icon-arrow-back.svg")`,
@@ -888,179 +903,202 @@ function CreateIslandModal({ onClose, onCreate }) {
                 WebkitMaskPosition: 'center',
               }}
             />
-            <span className="text-[2.08vw] font-black text-white pt-[0.09vh]">뒤로가기</span>
+            뒤로가기
           </button>
 
-          {/* 섬만들기 */}
           <button
             onClick={() => {
-              if (!canSubmit) return;
-              onCreate({ title, maxPlayers, totalRounds, isPrivate, password: isPrivate ? password : null });
+              if (canSubmit) {
+                onCreate({ title, maxPlayers, totalRounds, isPrivate, password: isPrivate ? password : null });
+              }
             }}
             disabled={!canSubmit}
-            className={`w-[15.63vw] h-[9.26vh] rounded-[2.6vw] shadow-xl flex items-center justify-center transition-all ${!canSubmit ? 'opacity-50 cursor-not-allowed' : 'hover:brightness-105 active:scale-95'}`}
-            style={{ backgroundColor: COLORS.ac.darkPurple }}
+            className={`w-[15.63cqw] h-[9.26cqh] rounded-[2.6cqw] text-[2.08cqw] font-black transition-all text-center leading-none pt-[0.09cqh] shadow-xl active:scale-95 ${
+              canSubmit
+                ? 'bg-[#744990] text-white hover:brightness-110'
+                : 'bg-[#E0E0E0] text-[#BDBDBD] cursor-not-allowed'
+            }`}
+            style={{ backgroundColor: canSubmit ? COLORS.ac.darkPurple : '#E0E0E0' }}
           >
-            <span className="text-[2.08vw] font-black text-white pt-[0.09vh]">섬 만들기</span>
+            섬만들기
           </button>
         </div>
       </div>
     </div>
   );
 }
+
+// --------------------------------------------------------------------------------------
+// [MODAL 2: Join Island]
+// --------------------------------------------------------------------------------------
 function JoinIslandModal({ room, initialPlayers, onClose, onConfirm }) {
+  // room.title (섬 제목), room.hostNickname (방장 닉네임), room.totalRounds, room.isPrivate 등 사용 가능
+  // initialPlayers: [{nickname, characterId}, ...]
+
   const [password, setPassword] = useState('');
 
-  // 방장 정보 (Host info)
-  const hostPlayer = initialPlayers.find((p) => p.nickname === room.hostNickname);
+  // 방장 정보 (첫 번째 플레이어가 방장이라고 가정, 혹은 room.hostNickname과 일치하는 플레이어 찾기)
+  // 여기서는 단순히 room.hostNickname 사용 + 첫번째 플레이어 아바타 사용 (fallback)
+  const hostPlayer = initialPlayers.find((p) => p.nickname === room.hostNickname) || initialPlayers[0];
   const hostCharInfo = hostPlayer?.characterId ? CHARACTER_BY_ID.get(Number(hostPlayer.characterId)) : null;
-  const hostImgSrc = hostCharInfo ? hostCharInfo.roomListImage || hostCharInfo.selectBasicImage : null;
-
-  // 라벨 헬퍼 - 220px = 11.46vw, 40px = 2.08vw/3.7vh, 36px = 1.88vw, 40px = 3.7vh mb, 20px = 1.04vw pl
-  const DetailRow = ({ iconSrc, label, children }) => (
-    <div className="flex items-center w-full mb-[3.7vh]">
-      <div className="w-[11.46vw] flex items-center gap-[0.63vw] flex-shrink-0">
-        <div className="w-[2.08vw] h-[2.08vw] flex items-center justify-center">
-          {iconSrc && (
-            <div
-              className="w-[1.88vw] h-[1.88vw]"
-              style={{
-                backgroundColor: COLORS.roomList.textSub,
-                maskImage: `url("${iconSrc}")`,
-                WebkitMaskImage: `url("${iconSrc}")`,
-                maskSize: 'contain',
-                WebkitMaskSize: 'contain',
-                maskRepeat: 'no-repeat',
-                WebkitMaskRepeat: 'no-repeat',
-                maskPosition: 'center',
-                WebkitMaskPosition: 'center',
-              }}
-            />
-          )}
-        </div>
-        <span className="text-[1.88vw] font-bold whitespace-nowrap" style={{ color: COLORS.roomList.textSub }}>
-          {label}
-        </span>
-      </div>
-      <div className="flex-1 flex items-center pl-[1.04vw]">{children}</div>
-    </div>
-  );
+  const hostImgSrc = hostCharInfo?.roomListImage || hostCharInfo?.selectBasicImage;
 
   return (
     <div
-      className="fixed inset-0 bg-black/60 z-[200] flex items-center justify-center p-[0.83vw] backdrop-blur-md"
+      className="fixed inset-0 bg-black/60 z-[200] flex items-center justify-center p-[0.83cqw] backdrop-blur-md"
       onMouseDown={onClose}
     >
-      {/* 1132px = 58.96vw, 985px = 91.2vh, 120px = 11.11vh pt */}
+      {/* 
+          Modal Spec from Image 1:
+          W: 1132px -> 58.96cqw
+          H: 985px -> 91.2cqh
+          Padding Top: 104px -> 9.63cqh 
+      */}
       <div
-        className="w-[58.96vw] h-[91.2vh] flex flex-col items-center shadow-none relative shrink-0"
+        className="w-[58.96cqw] h-[91.2cqh] flex flex-col items-center shadow-none relative"
         style={{
-          backgroundImage: "url('/images/roomlist/ui-roomlist-modal-2.webp')",
+          backgroundImage: "url('/images/roomlist/ui-roomlist-modal-1.webp')", // Same cloud background
           backgroundSize: '100% 100%',
           backgroundColor: 'transparent',
-          paddingTop: '11.11vh',
+          paddingTop: '9.63cqh',
         }}
         onMouseDown={(e) => e.stopPropagation()}
       >
-        {/* Title - 56px = 2.92vw, 48px = 2.5vw, 60px = 5.56vh mb */}
-        <div className="text-center mb-[5.56vh]">
-          <h2 className="text-[2.92vw] font-black leading-tight" style={{ color: COLORS.roomList.textSub }}>
-            {room.title}
-            <span className="opacity-80">에</span>
-          </h2>
-          <div
-            className="text-[2.5vw] font-black leading-tight opacity-80 mt-[0.19vh]"
-            style={{ color: COLORS.roomList.textSub }}
-          >
+        {/* Title: "섬제목...에 입장하시겠습니까?" - Font 56px = 2.92cqw */}
+        <div className="w-full text-center px-[2.08cqw] mb-[5.56cqh]">
+          <h2 className="text-[2.92cqw] font-black leading-tight" style={{ color: COLORS.ac.darkPurple }}>
+            <span
+              style={{ color: COLORS.ac.purple }}
+              className="underline-none decoration-[0.21cqw] underline-offset-[0.42cqw]"
+            >
+              {room.title.length > 10 ? room.title.slice(0, 10) + '..' : room.title}
+            </span>
+            에<br />
             입장하시겠습니까?
-          </div>
+          </h2>
         </div>
 
-        {/* White Info Box - 799px = 41.61vw, 436px = 40.37vh, 60px = 3.13vw radius/padding */}
-        <div className="w-[41.61vw] h-[40.37vh] bg-white rounded-[3.13vw] p-[3.13vw] flex flex-col justify-center shadow-lg relative">
-          {/* 1열: 방장 - 80px = 4.17vw avatar, 3px = 0.16vw border, 40px = 2.08vw text, 300px = 15.63vw max-width */}
-          <DetailRow iconSrc="/images/roomlist/icon-leaf.webp" label="방장">
-            <div className="flex items-center gap-[0.83vw]">
-              <div
-                className={`w-[4.17vw] h-[4.17vw] rounded-full border-[0.16vw] border-[#F3E5F5] overflow-hidden flex items-center justify-center ${hostImgSrc ? 'bg-white' : 'bg-[#EAD8F9]'}`}
-              >
+        {/* White Content Box */}
+        {/* W: 799px -> 41.61cqw, H: 436px -> 40.37cqh, Radius: 60px -> 3.13cqw */}
+        <div
+          className="bg-white flex flex-col items-start justify-center shadow-md relative"
+          style={{
+            width: '41.61cqw',
+            height: '40.37cqh',
+            borderRadius: '3.13cqw',
+            paddingLeft: '3.75cqw', // Approx alignment based on image visual
+          }}
+        >
+          {/* Row 1: Host Info -- Gap 148px(7.71cqw) from Label to Value */}
+          <div className="flex items-center mb-[2.22cqh]">
+            {/* Label Icon */}
+            <div
+              className="w-[1.88cqw] h-[1.88cqw]"
+              style={{
+                backgroundColor: COLORS.ac.darkPurple,
+                maskImage: `url("/images/roomlist/icon-leaf.webp")`,
+                WebkitMaskImage: `url("/images/roomlist/icon-leaf.webp")`,
+                maskSize: 'contain',
+                maskRepeat: 'no-repeat',
+              }}
+            />
+            <span className="text-[1.88cqw] font-bold ml-[0.63cqw]" style={{ color: COLORS.ac.darkPurple }}>
+              방장
+            </span>
+
+            <div style={{ width: '7.71cqw' }} />
+
+            {/* Value: Avatar + Nickname */}
+            <div className="flex items-center gap-[0.83cqw]">
+              {/* Avatar 80px = 4.17cqw */}
+              <div className="w-[4.17cqw] h-[4.17cqw] rounded-full overflow-hidden bg-[#EAD8F9] border-[0.1cqw] border-[#8b5a2b]">
                 {hostImgSrc && <img src={hostImgSrc} alt="host" className="w-full h-full object-cover" />}
               </div>
-              <span
-                className="text-[2.08vw] font-bold truncate max-w-[15.63vw]"
-                style={{ color: COLORS.roomList.textSub }}
-              >
-                {room.hostNickname}
-              </span>
+              <span className="text-[1.88cqw] font-bold text-[#594E36]">{room.hostNickname}</span>
             </div>
-          </DetailRow>
+          </div>
 
-          {/* 2열: 라운드 */}
-          <DetailRow iconSrc="/images/roomlist/icon-dice-10.png" label="라운드 수">
-            <span className="text-[2.08vw] font-bold" style={{ color: COLORS.roomList.textSub }}>
-              {room.totalRounds} 라운드
+          {/* Row 2: Rounds -- Gap 72px(3.75cqw) */}
+          <div className="flex items-center mb-[2.22cqh]">
+            <div
+              className="w-[1.88cqw] h-[1.88cqw]"
+              style={{
+                backgroundColor: COLORS.ac.darkPurple,
+                maskImage: `url("/images/roomlist/icon-dice-10.png")`,
+                WebkitMaskImage: `url("/images/roomlist/icon-dice-10.png")`,
+                maskSize: 'contain',
+                maskRepeat: 'no-repeat',
+              }}
+            />
+            <span className="text-[1.88cqw] font-bold ml-[0.63cqw]" style={{ color: COLORS.ac.darkPurple }}>
+              라운드 수
             </span>
-          </DetailRow>
 
-          {/* 3열: 플레이어 - 60px = 3.13vw avatar, 3px = 0.16vw border */}
-          <DetailRow iconSrc="/images/roomlist/icon-people.svg" label="참여 주민">
-            <div className="flex gap-[0.42vw]">
-              {Array.from({ length: room.maxPlayers }).map((_, idx) => {
-                const p = initialPlayers[idx];
+            <div style={{ width: '3.75cqw' }} />
+
+            <span className="text-[1.88cqw] font-bold text-[#594E36]">{room.totalRounds} 라운드</span>
+          </div>
+
+          {/* Row 3: Participants -- Gap 72px(3.75cqw) */}
+          <div className="flex items-center">
+            <div
+              className="w-[1.88cqw] h-[1.88cqw]"
+              style={{
+                backgroundColor: COLORS.ac.darkPurple,
+                maskImage: `url("/images/roomlist/icon-people.svg")`,
+                WebkitMaskImage: `url("/images/roomlist/icon-people.svg")`,
+                maskSize: 'contain',
+                maskRepeat: 'no-repeat',
+              }}
+            />
+            <span className="text-[1.88cqw] font-bold ml-[0.63cqw]" style={{ color: COLORS.ac.darkPurple }}>
+              참여 주민
+            </span>
+
+            <div style={{ width: '3.75cqw' }} />
+
+            <div className="flex gap-[0.63cqw]">
+              {Array.from({ length: room.maxPlayers }).map((_, i) => {
+                const p = initialPlayers[i];
                 const charInfo = p?.characterId ? CHARACTER_BY_ID.get(Number(p.characterId)) : null;
-                const imgSrc = charInfo ? charInfo.roomListImage || charInfo.selectBasicImage : null;
+                const imgSrc = charInfo?.roomListImage || charInfo?.selectBasicImage;
+
                 return (
                   <div
-                    key={idx}
-                    className="w-[3.13vw] h-[3.13vw] rounded-full bg-[#D9D9D9] border-[0.16vw] border-white overflow-hidden shadow-sm"
+                    key={i}
+                    className={`w-[4.17cqw] h-[4.17cqw] rounded-full overflow-hidden flex items-center justify-center border-[0.1cqw] ${
+                      imgSrc ? 'bg-[#EAD8F9] border-[#8b5a2b]' : 'bg-[#D9D9D9] border-transparent'
+                    }`}
                   >
-                    {imgSrc && <img src={imgSrc} alt="player" className="w-full h-full object-cover" />}
+                    {imgSrc && <img src={imgSrc} alt="p" className="w-full h-full object-cover" />}
                   </div>
                 );
               })}
             </div>
-          </DetailRow>
-        </div>
+          </div>
 
-        {/* 비공개 방 비밀번호 입력 - 40px = 3.7vh mt, 600px = 31.25vw, 72px = 6.67vh, 8px = 0.42vw px (32px = 1.67vw), 20px = 1.04vw radius, 32px = 1.67vw text, 6px = 0.31vw (24px = 1.25vw) right, 8px = 0.42vw (32px = 1.67vw) icon */}
-        {room.isPrivate && (
-          <div className="mt-[3.7vh] w-full flex justify-center">
-            <div className="relative">
+          {/* Password Input Overlay (if private) */}
+          {room.isPrivate && (
+            <div className="absolute bottom-[1.48cqh] left-0 w-full flex justify-center">
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="비밀번호를 입력하세요"
-                className="w-[31.25vw] h-[6.67vh] px-[1.67vw] rounded-[1.04vw] bg-white text-[1.67vw] font-bold outline-none placeholder:text-gray-300 shadow-inner"
-                style={{ color: COLORS.roomList.textSub }}
-              />
-              <div
-                className="absolute right-[1.25vw] top-1/2 -translate-y-1/2 w-[1.67vw] h-[1.67vw]"
-                style={{
-                  backgroundColor: COLORS.roomList.btnDisabled,
-                  maskImage: `url("/images/roomlist/icon-lock.svg")`,
-                  WebkitMaskImage: `url("/images/roomlist/icon-lock.svg")`,
-                  maskSize: 'contain',
-                  WebkitMaskSize: 'contain',
-                  maskRepeat: 'no-repeat',
-                  WebkitMaskRepeat: 'no-repeat',
-                  maskPosition: 'center',
-                  WebkitMaskPosition: 'center',
-                }}
+                placeholder="비밀번호 입력"
+                className="w-[20.83cqw] h-[5.56cqh] rounded-[1.04cqw] px-[1.04cqw] text-[1.46cqw] font-bold text-center border-[0.16cqw] border-[#8b5a2b] shadow-inner outline-none"
               />
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
-        {/* 버튼들 - 40px = 2.08vw gap, 80px = 7.41vh mt, 300px = 15.63vw, 100px = 9.26vh, 50px = 2.6vw radius */}
-        <div className="w-full flex justify-center gap-[2.08vw] mt-[7.41vh]">
+        {/* Bottom Buttons */}
+        <div className="absolute bottom-[8.4cqh] left-0 w-full flex justify-center items-center gap-[2.08cqw]">
           <button
             onClick={onClose}
-            className="w-[15.63vw] h-[9.26vh] rounded-[2.6vw] shadow-xl hover:brightness-105 active:scale-95 transition-all flex items-center justify-center gap-[0.83vw]"
-            style={{ backgroundColor: COLORS.ac.purple }}
+            className="w-[15.63cqw] h-[9.26cqh] rounded-[2.6cqw] bg-[#9984A0] text-white text-[2.08cqw] font-black hover:brightness-105 active:scale-95 transition-all leading-none pt-[0.09cqh] flex items-center justify-center gap-[0.42cqw]"
           >
             <div
-              className={`w-[2.08vw] h-[2.08vw]`}
+              className="w-[2.08cqw] h-[2.5cqh]"
               style={{
                 backgroundColor: 'white',
                 maskImage: `url("/images/roomlist/icon-arrow-back.svg")`,
@@ -1073,14 +1111,14 @@ function JoinIslandModal({ room, initialPlayers, onClose, onConfirm }) {
                 WebkitMaskPosition: 'center',
               }}
             />
-            <span className="text-[2.08vw] font-black text-white pt-[0.09vh]">뒤로가기</span>
+            뒤로가기
           </button>
           <button
             onClick={() => onConfirm(password)}
-            className="w-[15.63vw] h-[9.26vh] rounded-[2.6vw] shadow-xl flex items-center justify-center transition-all hover:brightness-105 active:scale-95"
+            className="w-[15.63cqw] h-[9.26cqh] rounded-[2.6cqw] text-[2.08cqw] font-black text-white hover:brightness-110 active:scale-95 transition-all shadow-xl leading-none pt-[0.09cqh]"
             style={{ backgroundColor: COLORS.ac.darkPurple }}
           >
-            <span className="text-[2.08vw] font-black text-white pt-[0.09vh]">입장하기</span>
+            입장하기
           </button>
         </div>
       </div>
@@ -1093,36 +1131,37 @@ function SearchModal({ initialKeyword, onClose, onSearch }) {
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 z-[200] flex items-center justify-center p-[0.83vw] backdrop-blur-sm"
+      className="fixed inset-0 bg-black/60 z-[200] flex items-center justify-center p-[0.83cqw] backdrop-blur-sm"
       onMouseDown={onClose}
     >
-      {/* 500px = 26.04vw, 50px = 2.6vw radius, 8 = 0.42vw (32px = 1.67vw) padding */}
       <div
-        className="w-[26.04vw] bg-white rounded-[2.6vw] p-[1.67vw] flex flex-col items-center shadow-2xl"
+        className="bg-white rounded-[2.08cqw] p-[2.08cqw] shadow-2xl w-[41.67cqw] flex flex-col items-center animate-in fade-in zoom-in-95"
         onMouseDown={(e) => e.stopPropagation()}
       >
-        {/* 32px = 1.67vw text, 6 = 0.56vh (24px = 2.22vh) mb */}
-        <h2 className="text-[1.67vw] font-black text-[#5A4A6F] mb-[2.22vh]">섬 검색</h2>
-        {/* 60px = 5.56vh height, 6 = 1.25vw (24px) px, 30px = 1.56vw radius, 20px = 1.04vw text, 2px = 0.1vw border */}
+        <h2 className="text-[2.5cqw] font-black mb-[1.85cqh]" style={{ color: COLORS.roomList.textMain }}>
+          섬 검색
+        </h2>
         <input
           autoFocus
           value={val}
           onChange={(e) => setVal(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && onSearch(val)}
-          placeholder="찾고 싶은 섬 이름을 입력하세요"
-          className="w-full h-[5.56vh] px-[1.25vw] rounded-[1.56vw] bg-[#F3E5F5] text-[1.04vw] font-bold text-[#5A4A6F] outline-none border-[0.1vw] border-transparent focus:border-[#9B7AD6]"
+          placeholder="방 제목을 검색해봐!"
+          className="w-full h-[7.41cqh] px-[1.25cqw] rounded-[1.04cqw] bg-gray-100 text-[1.67cqw] font-bold outline-none mb-[1.85cqh]"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') onSearch(val);
+          }}
         />
-        {/* 4 = 0.83vw (16px) gap, 8 = 1.48vh (32px) mt, 60px = 5.56vh btn, 30px = 1.56vw radius, 20px = 1.04vw text */}
-        <div className="w-full flex gap-[0.83vw] mt-[1.48vh]">
+        <div className="flex gap-[0.83cqw] w-full">
           <button
             onClick={onClose}
-            className="flex-1 h-[5.56vh] bg-[#E0E0E0] rounded-[1.56vw] text-[1.04vw] font-bold text-[#757575] hover:bg-[#D0D0D0]"
+            className="flex-1 h-[6.48cqh] rounded-[1.25cqw] bg-gray-300 text-white text-[1.46cqw] font-bold hover:brightness-105"
           >
             취소
           </button>
           <button
             onClick={() => onSearch(val)}
-            className="flex-1 h-[5.56vh] bg-[#9B7AD6] rounded-[1.56vw] text-[1.04vw] font-bold text-white hover:bg-[#8A6AC6]"
+            className="flex-1 h-[6.48cqh] rounded-[1.25cqw] text-white text-[1.46cqw] font-bold hover:brightness-105"
+            style={{ backgroundColor: COLORS.roomList.btnMain }}
           >
             검색
           </button>

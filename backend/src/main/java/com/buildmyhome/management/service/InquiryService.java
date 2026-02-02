@@ -107,7 +107,7 @@ public class InquiryService {
       .id(inquiry.getId())
       .title(inquiry.getTitle())
       .status(inquiry.getStatus())
-      .category(inquiry.getCategory()) // 카테고리 추가
+      .category(inquiry.getCategory()) // 카테고리
       .memberNickname(inquiry.getMember().getNickname())
       .createdAt(inquiry.getCreatedAt())
       .hasAnswer(inquiry.getAnswer() != null)
