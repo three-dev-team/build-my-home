@@ -9,21 +9,16 @@ const PlayerSkipped = ({ isMyTurn, player, onExit }) => {
   const handleExit = useExitHandler(isMyTurn, onExit);
   useGameTimer(5, handleExit);
 
-  const CHARACTER_IMG = CHARACTERS.reduce((acc, char) => {
-    acc[Number(char.id)] = char.selectBasicImage;
-    return acc;
-  }, {});
-
-  const charImg = player.characterId ? CHARACTER_IMG[player.characterId] : null;
+  const charKey = CHARACTERS.find((c) => Number(c.id) === Number(player?.characterId))?.key;
+  const charImg = charKey ? `/images/character/char-${charKey}-sleep.webp` : null;
 
   return (
     <div className="player-skipped-container">
-      {/* 상단 메시지 */}
       <div className="top-message">잠시 후 자동으로 이동합니다...</div>
 
       {/* 캐릭터 영역 */}
       <div className="skipped-character-area">
-        <img src={charImg} alt={currentPlayerName} className="skipped-character" />
+        {charImg && <img src={charImg} alt={currentPlayerName} className="skipped-character" draggable="false" />}
         <div className="skipped-character-shadow"></div>
       </div>
 

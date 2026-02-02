@@ -11,7 +11,7 @@ function makeCharacter({ id, name, quote, key, color, ext = {} }) {
     name,
     quote,
     color,
-
+    key,
     selectBasicImage: `${BASE.room}/char-${key}-idle.${idle}`,
     houseImage: `${BASE.room}/char-${key}-house.${house}`,
     roomListImage: `${BASE.roomList}/icon-${key}.${roomList}`,
@@ -19,6 +19,8 @@ function makeCharacter({ id, name, quote, key, color, ext = {} }) {
     iconActive: `${BASE.room}/icon-${key}-active.webp`,
     deliveryImage: `${BASE.character}/char-${key}-delivery.webp`,
     happyImage: `${BASE.character}/char-${key}-happy.webp`,
+    sleepImage: `${BASE.character}/char-${key}-sleep.webp`,
+    stampImage: `${BASE.character}/char-${key}-stamp.webp`,
   };
 }
 

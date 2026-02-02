@@ -2,19 +2,19 @@
     position: absolute;
     left: 0;
     right: 0;
-    top: calc(100vh - 148px - 3rem);
+    top: calc(100vh - 13.7vh - 3rem);
     display: flex;
     justify-content: center;
     z-index: 5;
 }
 
 .instruction-wrapper.two-lines {
-    padding-bottom: 3.75rem;
+    padding-bottom: 5.6vh;
 }
 
 .instruction-text {
     font-family: var(--font-gosanja);
-    font-size: 2.5rem;
+    font-size: clamp(20px, 2.8vw, 40px);
     color: white;
     text-shadow: 0.125rem 0.125rem 0.625rem rgba(0, 0, 0, 0.3);
     white-space: pre-line;
