@@ -708,7 +708,11 @@ function Room() {
         <div className="w-full h-[7.29cqw] px-[2.08cqw] pb-[1.67cqw] flex items-end justify-center relative z-10">
           <div className="flex gap-[0.83cqw] items-end mb-[0.42cqw]">
             <button className="bg-[#78D7B2] w-[13.54cqw] h-[4.17cqw] rounded-[2.08cqw] shadow-lg hover:scale-105 transition flex items-center justify-center gap-[0.63cqw]">
-              <span className="text-white text-[2.08cqw] font-black tracking-widest leading-none pb-[0.21cqw]">✉</span>
+              <img
+                src="/images/room-waiting/icon-mail.svg"
+                alt="invite"
+                className="w-[2.08cqw] h-[2.08cqw] object-contain brightness-0 invert"
+              />
               <span className="text-white text-[1.56cqw] font-black">초대하기</span>
             </button>
 

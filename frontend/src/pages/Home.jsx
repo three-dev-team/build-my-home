@@ -7,6 +7,7 @@ export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [nickname, setNickname] = useState('');
   const [showUI, setShowUI] = useState(true);
+  const [fadeIn, setFadeIn] = useState(false);
   const navigate = useNavigate();
   const audioRef = useRef(null);
 
@@ -51,6 +52,11 @@ export default function Home() {
       setIsLoggedIn(true);
       setNickname(savedNickname || '주민');
     }
+
+    // 페이지 로드 시 페이드인 효과
+    setTimeout(() => {
+      setFadeIn(true);
+    }, 50);
   }, [navigate]);
 
   const uiTransitionClass = `transition-all duration-1000 ease-out ${
@@ -63,7 +69,11 @@ export default function Home() {
 
   return (
     <AspectLayout>
-      <div className="relative w-full h-full bg-cover bg-center flex items-center justify-center overflow-hidden font-gosanja bg-[url('/images/bg-home.png')]">
+      <div
+        className={`relative w-full h-full bg-black bg-cover bg-center flex items-center justify-center overflow-hidden font-gosanja bg-[url('/images/bg-home.png')] transition-opacity duration-1000 ${
+          fadeIn ? 'opacity-100' : 'opacity-0'
+        }`}
+      >
         {/* 2. 상단 우측 메뉴 (TopButtons 컴포넌트 사용) 
             - Top: 3.7cqh
             - Right: 2.08cqw

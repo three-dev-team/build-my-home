@@ -31,9 +31,15 @@ public class AdminController {
   // 전체 문의 목록 조회
   @GetMapping("/inquiries")
   public ResponseEntity<Page<InquiryListResponse>> getAllInquiries(
+    @RequestParam(required = false) String keyword,
     @PageableDefault(size = 20, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
   ) {
-    Page<InquiryListResponse> inquiries = inquiryService.getAllInquiries(pageable);
+    Page<InquiryListResponse> inquiries;
+    if (keyword != null && !keyword.trim().isEmpty()) {
+      inquiries = inquiryService.searchInquiriesByTitle(keyword.trim(), pageable);
+    } else {
+      inquiries = inquiryService.getAllInquiries(pageable);
+    }
     return ResponseEntity.ok(inquiries);
   }
 
@@ -57,9 +63,15 @@ public class AdminController {
   // 전체 회원 목록 조회
   @GetMapping("/members")
   public ResponseEntity<Page<MemberListResponse>> getAllMembers(
+    @RequestParam(required = false) String keyword,
     @PageableDefault(size = 50, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable
   ) {
-    Page<MemberListResponse> members = adminService.getAllMembers(pageable);
+    Page<MemberListResponse> members;
+    if (keyword != null && !keyword.trim().isEmpty()) {
+      members = adminService.searchMembersByNickname(keyword.trim(), pageable);
+    } else {
+      members = adminService.getAllMembers(pageable);
+    }
     return ResponseEntity.ok(members);
   }
 

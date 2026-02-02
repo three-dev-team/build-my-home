@@ -88,6 +88,11 @@ export default function MyPage() {
   const [isUnlinkModalOpen, setIsUnlinkModalOpen] = useState(false);
   const [unlinkProvider, setUnlinkProvider] = useState('');
 
+  // 프로필 이미지 업로드 상태
+  const [isProfileImageModalOpen, setIsProfileImageModalOpen] = useState(false);
+  const [selectedImageFile, setSelectedImageFile] = useState(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState(null);
+
   // 캐릭터 이미지 매핑
   const getCharacterImage = (id) => {
     // TODO: 실제 characterId 기반 이미지 매핑
@@ -175,6 +180,64 @@ export default function MyPage() {
     setEditNickname(userData.nickname);
   };
 
+  // 프로필 이미지 업로드 핸들러
+  const handleImageSelect = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      // 이미지 파일 타입 검증
+      if (!file.type.startsWith('image/')) {
+        alert('이미지 파일만 업로드 가능합니다.');
+        return;
+      }
+      // 파일 크기 검증 (5MB 제한)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('이미지 크기는 5MB 이하여야 합니다.');
+        return;
+      }
+      setSelectedImageFile(file);
+      setImagePreviewUrl(URL.createObjectURL(file));
+    }
+  };
+
+  const handleImageUpload = async () => {
+    if (!selectedImageFile) {
+      alert('이미지를 선택해주세요.');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('profileImage', selectedImageFile);
+
+    try {
+      // TODO: 백엔드 API 준비 시 주석 해제
+      // const response = await axios.post('/api/members/profile-image', formData, {
+      //   headers: {
+      //     'Content-Type': 'multipart/form-data',
+      //     Authorization: `Bearer ${sessionStorage.getItem('token')}`,
+      //   },
+      // });
+      // setUserData(prev => ({ ...prev, profileImageUrl: response.data.profileImageUrl }));
+
+      // 임시: UI 테스트용 (백엔드 API 준비 전)
+      console.log('이미지 업로드 준비:', selectedImageFile.name);
+      alert('프로필 이미지 업로드 기능은 백엔드 API 준비 후 활성화됩니다.');
+
+      handleProfileImageModalClose();
+    } catch (error) {
+      console.error('프로필 이미지 업로드 실패:', error);
+      alert('이미지 업로드에 실패했습니다.');
+    }
+  };
+
+  const handleProfileImageModalClose = () => {
+    setIsProfileImageModalOpen(false);
+    setSelectedImageFile(null);
+    if (imagePreviewUrl) {
+      URL.revokeObjectURL(imagePreviewUrl);
+      setImagePreviewUrl(null);
+    }
+  };
+
   if (isLoading) return null;
 
   return (
@@ -256,13 +319,12 @@ export default function MyPage() {
             {userData.role === 'ADMIN' ? '관리자' : '주민'}
           </div>
 
-          {/* 달력/프로필 사진 변경 버튼 - 60*60px (3.13cqw), Radius 16px (0.83cqw) */}
-          <button
-            className="absolute -bottom-[24%] -right-[2%] w-[3.13cqw] h-[3.13cqw] rounded-[0.83cqw] flex items-center justify-center hover:scale-110 transition"
+          {/* 프로필 사진 변경 아이콘 */}
+          <CameraIcon
+            onClick={() => setIsProfileImageModalOpen(true)}
+            className="absolute -bottom-[23%] -right-[2%] w-[2.5cqw] h-[2.5cqw] text-[#6B5B45] hover:scale-110 transition cursor-pointer drop-shadow-md"
             title="프로필 사진 변경"
-          >
-            <CameraIcon className="w-[80%] h-[80%] text-[#6B5B45]" />
-          </button>
+          />
         </div>
 
         {/* 등록일 
@@ -306,7 +368,7 @@ export default function MyPage() {
           </div>
 
           {/* 이메일 섹션 */}
-          <div className="flex flex-col gap-0 mt-[0.4cqw]">
+          <div className="flex flex-col gap-0 mt-[1.5cqw]">
             <span className="text-[1.04cqw] font-bold text-[#594E36] opacity-80 pl-[0.1cqw]">연결된 이메일</span>
             <span className="text-[1.46cqw] font-black text-[#7A7061] leading-tight pt-[0.2cqw]">
               {userData.email || '이메일 정보 없음'}
@@ -372,28 +434,28 @@ export default function MyPage() {
         {/* 닉네임 변경 모달 */}
         {isModalOpen && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-            <div className="bg-[#FFFCEF] w-[20.8cqw] p-[1.67cqw] rounded-[2cqw] border-[0.3cqw] border-[#8b5a2b]  text-center">
+            <div className="bg-[#FFFCEF] w-[22cqw] p-[2cqw] rounded-[1.5cqw] border-[0.21cqw] border-[#8b5a2b] shadow-2xl text-center">
               {!isConfirmStep ? (
                 <>
-                  <h3 className="text-[1.25cqw] font-black text-[#8b5a2b] mb-[1.1cqw]">이름 변경하기</h3>
+                  <h3 className="text-[1.35cqw] font-black text-[#594E36] mb-[1.5cqh]">이름 변경하기</h3>
                   <input
                     ref={nicknameInputRef}
                     type="text"
                     value={editNickname}
                     onChange={(e) => setEditNickname(e.target.value)}
-                    className="w-full p-[0.83cqw] rounded-[0.83cqw] bg-white border-[0.16cqw] border-[#DED0A6] text-[#5d4037] font-bold text-center text-[1.04cqw] mb-[1.1cqw] outline-none"
+                    className="w-full p-[0.94cqw] rounded-[0.83cqw] bg-white border-[0.16cqw] border-[#8b5a2b] text-[#594E36] font-bold text-center text-[1.04cqw] mb-[1.8cqh] outline-none focus:border-[#594E36] focus:ring-[0.16cqw] focus:ring-[#594E36]/20"
                     placeholder="새 이름을 입력하세요"
                   />
                   <div className="flex gap-[0.83cqw]">
                     <button
                       onClick={closeModal}
-                      className="flex-1 py-[1.1cqw] bg-[#DED0A6] rounded-[0.83cqw] font-bold text-[#5d4037]"
+                      className="flex-1 py-[0.94cqw] bg-[#EEE9DB] hover:bg-[#E5E0D0] rounded-[0.83cqw] font-bold text-[#594E36] text-[1.04cqw] transition-colors"
                     >
                       취소
                     </button>
                     <button
                       onClick={() => setIsConfirmStep(true)}
-                      className="flex-1 py-[1.1cqw] bg-[#8b5a2b] rounded-[0.83cqw] font-bold text-white"
+                      className="flex-1 py-[0.94cqw] bg-[#594E36] hover:bg-[#6d5d43] rounded-[0.83cqw] font-bold text-white text-[1.04cqw] transition-colors shadow-md"
                     >
                       변경
                     </button>
@@ -401,22 +463,22 @@ export default function MyPage() {
                 </>
               ) : (
                 <>
-                  <h3 className="text-[1.25cqw] font-black text-[#8b5a2b] mb-[0.7cqw]">정말 바꿀까요?</h3>
-                  <p className="text-[#5d4037] text-[0.94cqw] font-bold mb-[1.1cqw]">
-                    <span className="text-[#bc8a5f]">"{editNickname}"</span>(으)로
+                  <h3 className="text-[1.35cqw] font-black text-[#594E36] mb-[1cqh]">정말 바꿀까요?</h3>
+                  <p className="text-[#594E36] text-[0.94cqw] font-medium mb-[1.8cqh] leading-relaxed">
+                    <span className="text-[#8b5a2b] font-bold">"{editNickname}"</span>(으)로
                     <br />
                     결정하시겠습니까?
                   </p>
                   <div className="flex gap-[0.83cqw]">
                     <button
                       onClick={() => setIsConfirmStep(false)}
-                      className="flex-1 py-[1.1cqw] bg-[#DED0A6] rounded-[0.83cqw] font-bold text-[#5d4037]"
+                      className="flex-1 py-[0.94cqw] bg-[#EEE9DB] hover:bg-[#E5E0D0] rounded-[0.83cqw] font-bold text-[#594E36] text-[1.04cqw] transition-colors"
                     >
                       아니오
                     </button>
                     <button
                       onClick={handleSaveNickname}
-                      className="flex-1 py-[1.1cqw] bg-[#e2f0a1] border-[0.16cqw] border-[#8b5a2b] rounded-[0.83cqw] font-bold text-[#8b5a2b]"
+                      className="flex-1 py-[0.94cqw] bg-[#594E36] hover:bg-[#6d5d43] rounded-[0.83cqw] font-bold text-white text-[1.04cqw] transition-colors shadow-md"
                     >
                       네!
                     </button>
@@ -492,6 +554,63 @@ export default function MyPage() {
                   className="flex-1 py-[1.1cqw] bg-[#8b5a2b] text-white rounded-[0.83cqw] font-bold text-[0.83cqw]"
                 >
                   해제하기
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 프로필 이미지 업로드 모달 */}
+        {isProfileImageModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+            <div className="bg-[#FFFCEF] w-[26cqw] p-[2cqw] rounded-[1.5cqw] border-[0.21cqw] border-[#8b5a2b] shadow-2xl text-center">
+              <h3 className="text-[1.35cqw] font-black text-[#594E36] mb-[1.5cqh]">프로필 사진 변경</h3>
+
+              {/* 이미지 미리보기 영역 */}
+              <div className="w-full aspect-square max-w-[20cqw] mx-auto mb-[1.5cqh] bg-[#FFD7D7] rounded-[1.5cqw] flex items-center justify-center overflow-hidden border-[0.21cqw] border-[#EAD7B8]">
+                {imagePreviewUrl ? (
+                  <img src={imagePreviewUrl} alt="preview" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="flex flex-col items-center gap-[0.83cqw]">
+                    <CameraIcon className="w-[4.17cqw] h-[4.17cqw] text-[#6B5B45] opacity-30" />
+                    <span className="text-[0.94cqw] text-[#6B5B45] opacity-50 font-bold">이미지를 선택해주세요</span>
+                  </div>
+                )}
+              </div>
+
+              {/* 파일 선택 버튼 */}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageSelect}
+                className="hidden"
+                id="profile-image-input"
+              />
+              <label
+                htmlFor="profile-image-input"
+                className="block w-full py-[0.94cqw] mb-[1.1cqh] bg-[#EEE9DB] hover:bg-[#E0D9C8] rounded-[0.83cqw] font-bold text-[#594E36] text-[1.04cqw] cursor-pointer transition-colors"
+              >
+                📁 이미지 선택
+              </label>
+
+              {/* 버튼 영역 */}
+              <div className="flex gap-[0.83cqw]">
+                <button
+                  onClick={handleProfileImageModalClose}
+                  className="flex-1 py-[0.94cqw] bg-[#EEE9DB] hover:bg-[#E0D9C8] rounded-[0.83cqw] font-bold text-[#8E8E8E] text-[1.04cqw] transition-colors"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={handleImageUpload}
+                  disabled={!selectedImageFile}
+                  className={`flex-1 py-[0.94cqw] rounded-[0.83cqw] font-bold text-white text-[1.04cqw] transition-colors shadow-md ${
+                    selectedImageFile
+                      ? 'bg-[#594E36] hover:bg-[#6d5d43] cursor-pointer'
+                      : 'bg-gray-300 cursor-not-allowed opacity-50'
+                  }`}
+                >
+                  업로드
                 </button>
               </div>
             </div>

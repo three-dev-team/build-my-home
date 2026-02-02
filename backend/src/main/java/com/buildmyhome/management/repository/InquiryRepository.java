@@ -28,4 +28,8 @@ public interface InquiryRepository extends JpaRepository<Inquiry, Long> {
   // 첫 페이지 조회 (커서 없을 때) - 추가
   @Query("SELECT i FROM Inquiry i WHERE i.member.id = :memberId ORDER BY i.id DESC")
   List<Inquiry> findByMemberIdFirstPage(@Param("memberId") Long memberId, Pageable pageable);
+
+  // 제목으로 검색 (관리자용) - 추가
+  @Query("SELECT i FROM Inquiry i WHERE LOWER(i.title) LIKE LOWER(CONCAT('%', :keyword, '%')) ORDER BY i.createdAt DESC")
+  Page<Inquiry> findByTitleContaining(@Param("keyword") String keyword, Pageable pageable);
 }
