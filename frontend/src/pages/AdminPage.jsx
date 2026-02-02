@@ -19,9 +19,28 @@ export default function AdminPage() {
   const [currentPage, setCurrentPage] = useState(0); // 현재 페이지
   const [totalPages, setTotalPages] = useState(0); // 전체 페이지 수
   const [totalElements, setTotalElements] = useState(0); // 전체 문의 개수
+  const [searchKeyword, setSearchKeyword] = useState(''); // 검색 키워드
+
+  // 필터 관련 상태
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [selectedCategories, setSelectedCategories] = useState([]); // ['USER_REPORT', 'BUG_REPORT', 'ETC']
+  const [selectedStatuses, setSelectedStatuses] = useState([]); // ['PENDING', 'ANSWERED']
+
+  // 정렬 관련 상태
+  const [isSortOpen, setIsSortOpen] = useState(false);
+  const [selectedSort, setSelectedSort] = useState('latest'); // 'latest', 'oldest', 'pending'
 
   // 회원 관련 상태
   const [members, setMembers] = useState([]);
+  const [memberSearchKeyword, setMemberSearchKeyword] = useState(''); // 회원 검색 키워드
+  const [memberCurrentPage, setMemberCurrentPage] = useState(0); // 회원 현재 페이지
+  const [memberTotalPages, setMemberTotalPages] = useState(0); // 회원 전체 페이지 수
+
+  // 회원 필터/정렬 상태
+  const [isMemberFilterOpen, setIsMemberFilterOpen] = useState(false);
+  const [selectedRoles, setSelectedRoles] = useState([]); // ['USER', 'ADMIN']
+  const [isMemberSortOpen, setIsMemberSortOpen] = useState(false);
+  const [selectedMemberSort, setSelectedMemberSort] = useState('latest'); // 'latest', 'oldest', 'level', 'bell'
 
   const [loading, setLoading] = useState(false);
 
@@ -64,15 +83,21 @@ export default function AdminPage() {
   }, [activeTab]);
 
   // 문의 목록 가져오기
-  const fetchInquiries = async (page = 0) => {
+  const fetchInquiries = async (page = 0, keyword = '', categories = [], statuses = []) => {
     try {
       setLoading(true);
       setInquiryError(false); // 에러 초기화
       const token = sessionStorage.getItem('token');
-      // 페이지 사이즈 6개로 조정 (디자인 공간 고려)
-      const response = await axios.get(`/api/admin/inquiries?page=${page}&size=6`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      // 페이지 사이즈 4개로 조정
+      const keywordParam = keyword ? `&keyword=${encodeURIComponent(keyword)}` : '';
+      const categoryParam = categories.length > 0 ? `&categories=${categories.join(',')}` : '';
+      const statusParam = statuses.length > 0 ? `&statuses=${statuses.join(',')}` : '';
+      const response = await axios.get(
+        `/api/admin/inquiries?page=${page}&size=4${keywordParam}${categoryParam}${statusParam}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
       setInquiries(response.data.content);
       setCurrentPage(response.data.number);
       setTotalPages(response.data.totalPages);
@@ -90,15 +115,21 @@ export default function AdminPage() {
   };
 
   // 회원 목록 가져오기
-  const fetchMembers = async () => {
+  const fetchMembers = async (page = 0, keyword = '', roles = [], sort = 'latest') => {
     try {
       setLoading(true);
       const token = sessionStorage.getItem('token');
-      // 회원 목록은 한 번에 많이 가져오기 (스크롤)
-      const response = await axios.get('/api/admin/members?page=0&size=50', {
+      // 회원 목록 10개씩 페이지네이션
+      const keywordParam = keyword ? `&keyword=${encodeURIComponent(keyword)}` : '';
+      // TODO: 백엔드 API가 roles와 sort 파라미터를 지원하면 주석 해제
+      // const roleParam = roles.length > 0 ? `&roles=${roles.join(',')}` : '';
+      // const sortParam = `&sort=${sort}`;
+      const response = await axios.get(`/api/admin/members?page=${page}&size=10${keywordParam}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setMembers(response.data.content);
+      setMemberCurrentPage(response.data.number);
+      setMemberTotalPages(response.data.totalPages);
     } catch (error) {
       console.error('회원 목록 조회 실패:', error);
     } finally {
@@ -161,8 +192,207 @@ export default function AdminPage() {
   // 페이지 변경
   const handlePageChange = (newPage) => {
     setCurrentPage(newPage);
-    fetchInquiries(newPage);
+    fetchInquiries(newPage, searchKeyword, selectedCategories, selectedStatuses, selectedSort);
     setSelectedInquiry(null);
+  };
+
+  // 검색 처리
+  const handleSearch = () => {
+    setCurrentPage(0);
+    fetchInquiries(0, searchKeyword, selectedCategories, selectedStatuses, selectedSort);
+    setSelectedInquiry(null);
+  };
+
+  // Enter 키로 검색
+  const handleSearchKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleSearch();
+    }
+  };
+
+  // 필터 토글
+  const toggleFilter = () => {
+    console.log('Filter toggle clicked, current state:', isFilterOpen);
+    setIsFilterOpen(!isFilterOpen);
+    if (!isFilterOpen) {
+      setIsSortOpen(false); // 필터 열 때 정렬 닫기
+    }
+  };
+
+  // 카테고리 필터 변경
+  const handleCategoryFilter = (category) => {
+    const newCategories = selectedCategories.includes(category)
+      ? selectedCategories.filter((c) => c !== category)
+      : [...selectedCategories, category];
+    setSelectedCategories(newCategories);
+    setCurrentPage(0);
+    fetchInquiries(0, searchKeyword, newCategories, selectedStatuses, selectedSort);
+  };
+
+  // 상태 필터 변경
+  const handleStatusFilter = (status) => {
+    const newStatuses = selectedStatuses.includes(status)
+      ? selectedStatuses.filter((s) => s !== status)
+      : [...selectedStatuses, status];
+    setSelectedStatuses(newStatuses);
+    setCurrentPage(0);
+    fetchInquiries(0, searchKeyword, selectedCategories, newStatuses, selectedSort);
+  };
+
+  // 정렬 토글
+  const toggleSort = () => {
+    setIsSortOpen(!isSortOpen);
+    if (!isSortOpen) {
+      setIsFilterOpen(false); // 정렬 열 때 필터 닫기
+    }
+  };
+
+  // 정렬 변경
+  const handleSortChange = (sort) => {
+    setSelectedSort(sort);
+    setIsSortOpen(false);
+    setCurrentPage(0);
+    fetchInquiries(0, searchKeyword, selectedCategories, selectedStatuses, sort);
+  };
+
+  // 회원 검색 처리
+  const handleMemberSearch = () => {
+    setMemberCurrentPage(0);
+    fetchMembers(0, memberSearchKeyword, selectedRoles, selectedMemberSort);
+  };
+
+  // 회원 검색 Enter 키
+  const handleMemberSearchKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      handleMemberSearch();
+    }
+  };
+
+  // 회원 페이지 변경
+  const handleMemberPageChange = (newPage) => {
+    setMemberCurrentPage(newPage);
+    fetchMembers(newPage, memberSearchKeyword, selectedRoles, selectedMemberSort);
+  };
+
+  // 회원 필터 토글
+  const toggleMemberFilter = () => {
+    setIsMemberFilterOpen(!isMemberFilterOpen);
+    if (!isMemberFilterOpen) {
+      setIsMemberSortOpen(false); // 필터 열 때 정렬 닫기
+    }
+  };
+
+  // 역할 필터 변경
+  const handleRoleFilter = (role) => {
+    const newRoles = selectedRoles.includes(role) ? selectedRoles.filter((r) => r !== role) : [...selectedRoles, role];
+    setSelectedRoles(newRoles);
+    setMemberCurrentPage(0);
+    fetchMembers(0, memberSearchKeyword, newRoles, selectedMemberSort);
+  };
+
+  // 회원 정렬 토글
+  const toggleMemberSort = () => {
+    setIsMemberSortOpen(!isMemberSortOpen);
+    if (!isMemberSortOpen) {
+      setIsMemberFilterOpen(false); // 정렬 열 때 필터 닫기
+    }
+  };
+
+  // 회원 정렬 변경
+  const handleMemberSortChange = (sort) => {
+    setSelectedMemberSort(sort);
+    setIsMemberSortOpen(false);
+    setMemberCurrentPage(0);
+    fetchMembers(0, memberSearchKeyword, selectedRoles, sort);
+  };
+
+  // CSV 다운로드
+  const handleExportCSV = () => {
+    if (inquiries.length === 0) {
+      alert('다운로드할 문의 내역이 없습니다.');
+      return;
+    }
+
+    // CSV 헤더
+    const headers = ['문의번호', '제목', '작성자', '작성일', '카테고리', '상태'];
+
+    // 데이터를 CSV 형식으로 변환
+    const csvRows = [
+      headers.join(','),
+      ...inquiries.map((inquiry) =>
+        [
+          inquiry.id,
+          `"${inquiry.title.replace(/"/g, '""')}"`, // 쉼표/따옴표 이스케이프
+          inquiry.memberNickname,
+          new Date(inquiry.createdAt).toLocaleDateString('ko-KR'),
+          inquiry.category,
+          inquiry.status === 'ANSWERED' ? '답변완료' : '답변대기',
+        ].join(','),
+      ),
+    ];
+
+    // CSV 문자열 생성
+    const csvContent = csvRows.join('\n');
+
+    // BOM 추가 (한글 깨짐 방지)
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+
+    // 다운로드 트리거
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    const fileName = `문의목록_${new Date().toISOString().split('T')[0]}.csv`;
+    link.setAttribute('href', url);
+    link.setAttribute('download', fileName);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  // 회원 목록 CSV 다운로드
+  const handleExportMembersCSV = () => {
+    if (members.length === 0) {
+      alert('다운로드할 회원 내역이 없습니다.');
+      return;
+    }
+
+    // CSV 헤더
+    const headers = ['회원ID', '닉네임', '이메일', '권한', '가입일'];
+
+    // 데이터를 CSV 형식으로 변환
+    const csvRows = [
+      headers.join(','),
+      ...members.map((member) =>
+        [
+          member.id,
+          `"${member.nickname.replace(/"/g, '""')}"`,
+          member.email,
+          member.role === 'ADMIN' ? '관리자' : '일반회원',
+          new Date(member.createdAt).toLocaleDateString('ko-KR'),
+        ].join(','),
+      ),
+    ];
+
+    // CSV 문자열 생성
+    const csvContent = csvRows.join('\n');
+
+    // BOM 추가 (한글 깨짐 방지)
+    const BOM = '\uFEFF';
+    const blob = new Blob([BOM + csvContent], { type: 'text/csv;charset=utf-8;' });
+
+    // 다운로드 트리거
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    const fileName = `회원목록_${new Date().toISOString().split('T')[0]}.csv`;
+    link.setAttribute('href', url);
+    link.setAttribute('download', fileName);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   return (
@@ -236,13 +466,22 @@ export default function AdminPage() {
           {activeTab === 'inquiry' && (
             <>
               {/* 왼쪽: 문의 목록 (List) - 통합 컨테이너 */}
-              <div className="w-[27.3cqw] h-full bg-[#FDFBF6] rounded-[2.08cqw] p-[1.56cqw] shadow-lg flex flex-col relative">
+              <div className="w-[32cqw] h-full bg-[#FDFBF6] rounded-[2.08cqw] p-[1.56cqw] shadow-lg flex flex-col relative">
                 {/* 1. 검색바 (Search Bar) - 상단 */}
-                <div className="w-full h-[5.2cqh] bg-white rounded-[1.25cqw] flex items-center justify-end px-[1.04cqw] shadow-sm mb-[0.93cqh]">
+                <div className="w-full h-[5.2cqh] bg-white rounded-[1.25cqw] flex items-center gap-[0.52cqw] px-[1.04cqw] shadow-sm mb-[0.93cqh]">
+                  <input
+                    type="text"
+                    value={searchKeyword}
+                    onChange={(e) => setSearchKeyword(e.target.value)}
+                    onKeyPress={handleSearchKeyPress}
+                    placeholder="문의 제목 검색..."
+                    className="flex-1 text-[1.04cqw] text-[#594E36] font-bold outline-none bg-transparent placeholder:text-[#594E36] placeholder:opacity-30"
+                  />
                   <img
                     src="/images/admin/icon-search.svg"
                     alt="search"
-                    className="w-[1.46cqw] h-[1.46cqw] opacity-50"
+                    onClick={handleSearch}
+                    className="w-[1.46cqw] h-[1.46cqw] opacity-50 cursor-pointer hover:opacity-80"
                   />
                 </div>
 
@@ -250,28 +489,17 @@ export default function AdminPage() {
                 <div className="flex flex-col px-[0.52cqw] mt-[2cqh] gap-[0.5cqh]">
                   {/* 상단: 아이콘 Row (좌: 리스트 / 우: 정렬, 엑셀) */}
                   <div className="flex justify-between items-end">
-                    {/* 왼쪽: 리스트 아이콘 (Color matched) */}
-                    <div
-                      className="w-[1.88cqw] h-[1.88cqw] bg-[#594E36] opacity-80"
-                      style={{
-                        maskImage: 'url("/images/admin/icon-list.svg")',
-                        WebkitMaskImage: 'url("/images/admin/icon-list.svg")',
-                        maskSize: 'contain',
-                        WebkitMaskSize: 'contain',
-                        backgroundRepeat: 'no-repeat',
-                        maskRepeat: 'no-repeat',
-                        WebkitMaskRepeat: 'no-repeat',
-                      }}
-                    />
-
-                    {/* 오른쪽: 정렬, 엑셀 아이콘 */}
-                    <div className="flex items-end gap-[0.83cqw]">
-                      {/* Sort Icon (Color matched) */}
+                    {/* 왼쪽: 리스트 아이콘 + 필터 드롭다운 */}
+                    <div className="relative">
                       <div
-                        className="w-[2.08cqw] h-[2.08cqw] bg-[#594E36] cursor-pointer hover:opacity-80"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleFilter();
+                        }}
+                        className="w-[2.08cqw] h-[2.08cqw] bg-[#594E36] opacity-80 cursor-pointer hover:opacity-100"
                         style={{
-                          maskImage: 'url("/images/admin/icon-sort.svg")',
-                          WebkitMaskImage: 'url("/images/admin/icon-sort.svg")',
+                          maskImage: 'url("/images/admin/icon-list.svg")',
+                          WebkitMaskImage: 'url("/images/admin/icon-list.svg")',
                           maskSize: 'contain',
                           WebkitMaskSize: 'contain',
                           backgroundRepeat: 'no-repeat',
@@ -280,9 +508,110 @@ export default function AdminPage() {
                         }}
                       />
 
+                      {/* 필터 드롭다운 */}
+                      {isFilterOpen && (
+                        <div className="absolute top-[2.5cqw] left-0 w-[15cqw] bg-white rounded-[1.04cqw] shadow-xl border-[0.1cqw] border-[#594E36]/20 p-[1.04cqw] z-50">
+                          {/* 카테고리 필터 */}
+                          <div className="mb-[1cqh]">
+                            <h4 className="text-[0.83cqw] font-bold text-[#594E36] mb-[0.5cqh]">카테고리</h4>
+                            <div className="flex flex-col gap-[0.3cqh]">
+                              {[
+                                { value: 'USER_REPORT', label: '유저신고' },
+                                { value: 'BUG_REPORT', label: '버그신고' },
+                                { value: 'ETC', label: '기타' },
+                              ].map((category) => (
+                                <label
+                                  key={category.value}
+                                  className="flex items-center gap-[0.42cqw] cursor-pointer hover:bg-[#F9F3F9] p-[0.31cqw] rounded-[0.52cqw]"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={selectedCategories.includes(category.value)}
+                                    onChange={() => handleCategoryFilter(category.value)}
+                                    className="w-[0.83cqw] h-[0.83cqw] cursor-pointer"
+                                  />
+                                  <span className="text-[0.73cqw] font-medium text-[#594E36]">{category.label}</span>
+                                </label>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* 상태 필터 */}
+                          <div>
+                            <h4 className="text-[0.83cqw] font-bold text-[#594E36] mb-[0.5cqh]">상태</h4>
+                            <div className="flex flex-col gap-[0.3cqh]">
+                              {[
+                                { value: 'PENDING', label: '답변대기' },
+                                { value: 'ANSWERED', label: '답변완료' },
+                              ].map((status) => (
+                                <label
+                                  key={status.value}
+                                  className="flex items-center gap-[0.42cqw] cursor-pointer hover:bg-[#F9F3F9] p-[0.31cqw] rounded-[0.52cqw]"
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={selectedStatuses.includes(status.value)}
+                                    onChange={() => handleStatusFilter(status.value)}
+                                    className="w-[0.83cqw] h-[0.83cqw] cursor-pointer"
+                                  />
+                                  <span className="text-[0.73cqw] font-medium text-[#594E36]">{status.label}</span>
+                                </label>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 오른쪽: 정렬, 엑셀 아이콘 */}
+                    <div className="flex items-end gap-[0.83cqw]">
+                      {/* Sort Icon + Dropdown */}
+                      <div className="relative">
+                        <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleSort();
+                          }}
+                          className="w-[2.08cqw] h-[2.08cqw] bg-[#594E36] cursor-pointer hover:opacity-80"
+                          style={{
+                            maskImage: 'url("/images/admin/icon-sort.svg")',
+                            WebkitMaskImage: 'url("/images/admin/icon-sort.svg")',
+                            maskSize: 'contain',
+                            WebkitMaskSize: 'contain',
+                            backgroundRepeat: 'no-repeat',
+                            maskRepeat: 'no-repeat',
+                            WebkitMaskRepeat: 'no-repeat',
+                          }}
+                        />
+
+                        {/* 정렬 드롭다운 */}
+                        {isSortOpen && (
+                          <div className="absolute top-[2.5cqw] right-0 w-[12cqw] bg-white rounded-[1.04cqw] shadow-xl border-[0.1cqw] border-[#594E36]/20 p-[0.83cqw] z-50">
+                            {[
+                              { value: 'latest', label: '최신순' },
+                              { value: 'oldest', label: '오래된순' },
+                              { value: 'pending', label: '답변대기 우선' },
+                            ].map((option) => (
+                              <div
+                                key={option.value}
+                                onClick={() => handleSortChange(option.value)}
+                                className={`p-[0.52cqw] rounded-[0.52cqw] cursor-pointer text-[0.73cqw] font-medium ${
+                                  selectedSort === option.value
+                                    ? 'bg-[#594E36] text-white'
+                                    : 'text-[#594E36] hover:bg-[#F9F3F9]'
+                                }`}
+                              >
+                                {option.label}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+
                       {/* Excel Icon (Color matched) */}
                       <div
-                        className="w-[1.67cqw] h-[1.67cqw] bg-[#594E36] cursor-pointer hover:opacity-80"
+                        onClick={handleExportCSV}
+                        className="w-[2.08cqw] h-[2.08cqw] bg-[#594E36] cursor-pointer hover:opacity-80"
                         style={{
                           maskImage: 'url("/images/admin/icon-excel.svg")',
                           WebkitMaskImage: 'url("/images/admin/icon-excel.svg")',
@@ -303,7 +632,7 @@ export default function AdminPage() {
                 </div>
 
                 {/* 3. 목록 리스트 영역 (List Area) */}
-                <div className="flex-1 overflow-y-auto pr-[0.5cqw] -mr-[0.5cqw]">
+                <div className="flex-1 overflow-y-auto mt-[2cqh] pr-[0.5cqw] -mr-[0.5cqw]">
                   <div className="flex flex-col gap-[0.73cqh]">
                     {loading ? (
                       <div className="text-center py-[2cqh] text-[#594E36]">로딩중...</div>
@@ -320,7 +649,7 @@ export default function AdminPage() {
                           className={`relative w-full rounded-[1.25cqw] p-[0.83cqw] cursor-pointer transition-all hover:brightness-95 ${selectedInquiry?.id === inquiry.id ? 'bg-white border-[0.1cqw] border-[#EB5757]' : 'bg-white/50'}`}
                         >
                           <div className="flex justify-between items-start mb-[0.21cqh]">
-                            <span className="text-[0.83cqw] font-bold text-[#9165AA]">[문의번호] {inquiry.id}</span>
+                            <span className="text-[0.83cqw] font-bold text-[#594E36]">[문의번호] {inquiry.id}</span>
                             <span className="text-[0.83cqw] text-[#594E36] opacity-60">
                               {new Date(inquiry.createdAt).toLocaleDateString()}
                             </span>
@@ -337,16 +666,12 @@ export default function AdminPage() {
                             <div className="flex gap-[0.31cqw]">
                               <CategoryBadge category={inquiry.category} />
                               <span
-                                className={`px-[0.63cqw] py-[0.1cqw] rounded-full font-bold text-[0.63cqw] ${inquiry.status === 'ANSWERED' ? 'bg-[#594E36] text-white' : 'bg-[#D9C5F8] text-[#594E36]'}`}
+                                className={`px-[0.63cqw] py-[0.1cqw] rounded-full font-bold text-[0.63cqw] bg-[#594E36] text-white`}
                               >
                                 {inquiry.status === 'ANSWERED' ? '답변완료' : '답변대기'}
                               </span>
                             </div>
                           </div>
-                          {/* 선택 표시 바 */}
-                          {selectedInquiry?.id === inquiry.id && (
-                            <div className="absolute left-0 top-[15%] bottom-[15%] w-[0.21cqw] bg-[#EB5757] rounded-r-full" />
-                          )}
                         </div>
                       ))
                     ) : (
@@ -388,13 +713,10 @@ export default function AdminPage() {
               >
                 {selectedInquiry ? (
                   <>
-                    {/* 상단 라인 데코 */}
-                    <div className="absolute top-[1.39cqh] left-[1.56cqw] w-[1.88cqw] h-[0.26cqh] bg-[#EB5757]" />
-
                     <div className="mt-[0.93cqh] mb-[1.85cqh]">
                       <div className="flex justify-between items-start">
                         <div>
-                          <span className="text-[1.04cqw] font-bold text-[#EB5757] block mb-[0.46cqh]">
+                          <span className="text-[1.04cqw] font-bold text-[#594E36] block mb-[0.46cqh]">
                             [문의번호] {selectedInquiry.id}
                           </span>
                           <h1 className="text-[1.46cqw] font-black text-[#594E36] leading-tight mb-[0.46cqh]">
@@ -419,8 +741,7 @@ export default function AdminPage() {
 
                     {/* 본문 */}
                     <div className="flex-1 bg-white rounded-[0.83cqw] p-[1.25cqw] mb-[1.39cqh] overflow-y-auto shadow-inner border-[0.1cqw] border-[#594E36]/10">
-                      <div className="pl-[0.52cqw] border-l-[0.21cqw] border-[#9165AA]">
-                        <p className="text-[1.25cqw] font-bold text-[#594E36] mb-[0.93cqh]">{selectedInquiry.title}</p>
+                      <div className="pl-[0.52cqw]">
                         <p className="text-[1.04cqw] text-[#594E36] leading-relaxed whitespace-pre-wrap">
                           {selectedInquiry.content}
                         </p>
@@ -436,17 +757,19 @@ export default function AdminPage() {
                       </div>
 
                       {selectedInquiry.answer ? (
-                        <div className="bg-[#F9F3F9] rounded-[0.83cqw] p-[1.25cqw] border-l-[0.21cqw] border-[#34C4D3]">
-                          <div className="flex items-center gap-[0.52cqw] mb-[0.46cqh]">
+                        <>
+                          <div className="flex items-center gap-[0.52cqw] mb-[0.93cqh]">
                             <span className="bg-[#34C4D3] text-white px-[0.63cqw] py-[0.1cqw] rounded-full text-[0.63cqw] font-bold">
                               감사인사
                             </span>
                             <span className="text-[1.04cqw] font-bold text-[#594E36]">감사합니다!</span>
                           </div>
-                          <p className="text-[0.83cqw] text-[#594E36] whitespace-pre-wrap">
-                            {selectedInquiry.answer.content}
-                          </p>
-                        </div>
+                          <div className="bg-[#F9F3F9] rounded-[0.83cqw] p-[1.25cqw]">
+                            <p className="text-[0.83cqw] text-[#594E36] whitespace-pre-wrap">
+                              {selectedInquiry.answer.content}
+                            </p>
+                          </div>
+                        </>
                       ) : (
                         <div className="flex flex-col items-center gap-[1.39cqh]">
                           <textarea
@@ -483,49 +806,117 @@ export default function AdminPage() {
                 {/* 검색바 (Search Bar) */}
                 {/* 검색 영역 (리스트 아이콘 - 검색바 - 정렬/엑셀 아이콘) */}
                 <div className="flex items-center justify-between mb-[2cqh] w-full">
-                  {/* 왼쪽: Funnel Icon (Image in design matches funnel, user said 'list' before but 'funnel' in design. Using sort rotated as placeholder or list if preferred. User asked for 'left right icons outside'. I will use the Funnel placeholder style if list is not desired, but user specifically said 'left list icon' in previous turn. However, the image shows a funnel. I will use the funnel placeholder style I used before, but OUTSIDE the bar.) 
-                       Wait, I'll use a mask for funnel if icon-filter is missing. 
-                       Actually, let's use the 'icon-sort' rotated trick for Funnel on the left, as per previous implementation attempts, but OUTSIDE. */}
-                  <div
-                    className="w-[3.13cqw] h-[3.13cqw] bg-[#594E36]"
-                    style={{
-                      maskImage: 'url("/images/admin/icon-list.svg")',
-                      WebkitMaskImage: 'url("/images/admin/icon-list.svg")',
-                      maskSize: 'contain',
-                      WebkitMaskSize: 'contain',
-                      cursor: 'pointer',
-                    }}
-                  />
+                  {/* 왼쪽: 필터 아이콘 + 드롭다운 */}
+                  <div className="relative">
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleMemberFilter();
+                      }}
+                      className="w-[3.13cqw] h-[3.13cqw] bg-[#594E36] cursor-pointer hover:opacity-80"
+                      style={{
+                        maskImage: 'url("/images/admin/icon-list.svg")',
+                        WebkitMaskImage: 'url("/images/admin/icon-list.svg")',
+                        maskSize: 'contain',
+                        WebkitMaskSize: 'contain',
+                      }}
+                    />
+
+                    {/* 필터 드롭다운 */}
+                    {isMemberFilterOpen && (
+                      <div className="absolute top-[3.5cqw] left-0 w-[12cqw] bg-white rounded-[1.04cqw] shadow-xl border-[0.1cqw] border-[#594E36]/20 p-[1.04cqw] z-50">
+                        <h4 className="text-[0.83cqw] font-bold text-[#594E36] mb-[0.5cqh]">역할</h4>
+                        <div className="flex flex-col gap-[0.3cqh]">
+                          {[
+                            { value: 'USER', label: '일반 회원' },
+                            { value: 'ADMIN', label: '관리자' },
+                          ].map((role) => (
+                            <label
+                              key={role.value}
+                              className="flex items-center gap-[0.42cqw] cursor-pointer hover:bg-[#F9F3F9] p-[0.31cqw] rounded-[0.52cqw]"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={selectedRoles.includes(role.value)}
+                                onChange={() => handleRoleFilter(role.value)}
+                                className="w-[0.83cqw] h-[0.83cqw] cursor-pointer"
+                              />
+                              <span className="text-[0.73cqw] font-medium text-[#594E36]">{role.label}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
 
                   {/* 중앙: 검색바 (Search Bar) - 내부엔 Search Icon만 존재 */}
-                  <div className="w-[71.04cqw] h-[6.3cqh] bg-white rounded-[1.25cqw] flex items-center justify-end px-[1.56cqw] shadow-sm">
+                  <div className="w-[71.04cqw] h-[6.3cqh] bg-white rounded-[1.25cqw] flex items-center gap-[0.52cqw] px-[1.56cqw] shadow-sm">
+                    <input
+                      type="text"
+                      value={memberSearchKeyword}
+                      onChange={(e) => setMemberSearchKeyword(e.target.value)}
+                      onKeyPress={handleMemberSearchKeyPress}
+                      placeholder="회원 닉네임 검색..."
+                      className="flex-1 text-[1.25cqw] text-[#594E36] font-bold outline-none bg-transparent placeholder:text-[#594E36] placeholder:opacity-30"
+                    />
                     <img
                       src="/images/admin/icon-search.svg"
                       alt="search"
-                      className="w-[1.67cqw] h-[1.67cqw] opacity-50"
+                      onClick={handleMemberSearch}
+                      className="w-[1.67cqw] h-[1.67cqw] opacity-50 cursor-pointer hover:opacity-80"
                     />
                   </div>
 
-                  {/* 오른쪽: Sort (Person?), Excel (Table) Icon */}
+                  {/* 오른쪽: Sort, Excel Icon */}
                   <div className="flex items-center gap-[0.83cqw]">
-                    {/* Sort Icon (Color matched) */}
-                    <div
-                      className="w-[3.13cqw] h-[3.13cqw] bg-[#594E36] cursor-pointer hover:opacity-80"
-                      style={{
-                        maskImage: 'url("/images/admin/icon-sort.svg")',
-                        WebkitMaskImage: 'url("/images/admin/icon-sort.svg")',
-                        maskSize: 'contain',
-                        WebkitMaskSize: 'contain',
-                        backgroundRepeat: 'no-repeat',
-                        maskRepeat: 'no-repeat',
-                        WebkitMaskRepeat: 'no-repeat',
-                      }}
-                    />
+                    {/* Sort Icon + Dropdown */}
+                    <div className="relative">
+                      <div
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleMemberSort();
+                        }}
+                        className="w-[3.13cqw] h-[3.13cqw] bg-[#594E36] cursor-pointer hover:opacity-80"
+                        style={{
+                          maskImage: 'url("/images/admin/icon-sort.svg")',
+                          WebkitMaskImage: 'url("/images/admin/icon-sort.svg")',
+                          maskSize: 'contain',
+                          WebkitMaskSize: 'contain',
+                          backgroundRepeat: 'no-repeat',
+                          maskRepeat: 'no-repeat',
+                          WebkitMaskRepeat: 'no-repeat',
+                        }}
+                      />
+
+                      {/* 정렬 드롭다운 */}
+                      {isMemberSortOpen && (
+                        <div className="absolute top-[3.5cqw] right-0 w-[12cqw] bg-white rounded-[1.04cqw] shadow-xl border-[0.1cqw] border-[#594E36]/20 p-[0.83cqw] z-50">
+                          {[
+                            { value: 'latest', label: '최신 가입순' },
+                            { value: 'oldest', label: '오래된 가입순' },
+                            { value: 'level', label: '레벨 높은순' },
+                            { value: 'bell', label: '벨 많은순' },
+                          ].map((option) => (
+                            <div
+                              key={option.value}
+                              onClick={() => handleMemberSortChange(option.value)}
+                              className={`p-[0.52cqw] rounded-[0.52cqw] cursor-pointer text-[0.73cqw] font-medium ${
+                                selectedMemberSort === option.value
+                                  ? 'bg-[#594E36] text-white'
+                                  : 'text-[#594E36] hover:bg-[#F9F3F9]'
+                              }`}
+                            >
+                              {option.label}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
 
                     {/* Excel Icon (Color matched) */}
                     <div
                       className="w-[3.13cqw] h-[3.13cqw] bg-[#594E36] cursor-pointer hover:opacity-80"
-                      onClick={() => alert('엑셀 다운로드 준비중')}
+                      onClick={handleExportMembersCSV}
                       style={{
                         maskImage: 'url("/images/admin/icon-excel.svg")',
                         WebkitMaskImage: 'url("/images/admin/icon-excel.svg")',
@@ -586,16 +977,31 @@ export default function AdminPage() {
 
                 {/* 페이지네이션 */}
                 <div className="flex justify-center gap-[0.42cqw] mb-[1.5cqh]">
-                  <button className="w-[2.08cqw] h-[2.08cqw] rounded-[0.63cqw] bg-[#EEE9DB] flex items-center justify-center text-[#594E36] font-bold text-[1.25cqw] hover:bg-[#E5E0D0]">
+                  <button
+                    onClick={() => handleMemberPageChange(memberCurrentPage - 1)}
+                    disabled={memberCurrentPage === 0}
+                    className="w-[2.08cqw] h-[2.08cqw] rounded-[0.63cqw] bg-[#EEE9DB] flex items-center justify-center text-[#594E36] font-bold text-[1.25cqw] hover:bg-[#E5E0D0] disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
                     &lt;
                   </button>
-                  <div className="w-[2.08cqw] h-[2.08cqw] rounded-[0.63cqw] bg-[#594E36] flex items-center justify-center text-white font-bold text-[1.25cqw] shadow-md">
-                    1
-                  </div>
-                  <div className="w-[2.08cqw] h-[2.08cqw] rounded-[0.63cqw] bg-[#EEE9DB] flex items-center justify-center text-[#594E36] font-bold text-[1.25cqw] hover:bg-[#E5E0D0] cursor-pointer">
-                    2
-                  </div>
-                  <button className="w-[2.08cqw] h-[2.08cqw] rounded-[0.63cqw] bg-[#EEE9DB] flex items-center justify-center text-[#594E36] font-bold text-[1.25cqw] hover:bg-[#E5E0D0]">
+                  {Array.from({ length: memberTotalPages }, (_, i) => i).map((page) => (
+                    <button
+                      key={page}
+                      onClick={() => handleMemberPageChange(page)}
+                      className={`w-[2.08cqw] h-[2.08cqw] rounded-[0.63cqw] flex items-center justify-center font-bold text-[1.25cqw] ${
+                        memberCurrentPage === page
+                          ? 'bg-[#594E36] text-white shadow-md'
+                          : 'bg-[#EEE9DB] text-[#594E36] hover:bg-[#E5E0D0] cursor-pointer'
+                      }`}
+                    >
+                      {page + 1}
+                    </button>
+                  ))}
+                  <button
+                    onClick={() => handleMemberPageChange(memberCurrentPage + 1)}
+                    disabled={memberCurrentPage >= memberTotalPages - 1}
+                    className="w-[2.08cqw] h-[2.08cqw] rounded-[0.63cqw] bg-[#EEE9DB] flex items-center justify-center text-[#594E36] font-bold text-[1.25cqw] hover:bg-[#E5E0D0] disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
                     &gt;
                   </button>
                 </div>

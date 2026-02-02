@@ -2,34 +2,27 @@ import React from 'react';
 
 export default function LogoutModal({ onConfirm }) {
   return (
-    <div className="fixed inset-0 bg-black/35 flex items-center justify-center px-6 z-[9999]">
-      <div
-        className={[
-          'w-full max-w-sm rounded-[32px] p-8',
-          'bg-[#f7f0e4] border-[5px] border-[#d6b98a]',
-          'shadow-[0_30px_80px_rgba(0,0,0,0.35)]',
-          'flex flex-col items-center text-center',
-        ].join(' ')}
-      >
-        <div className="w-16 h-16 rounded-full bg-[#efe2c8] border-[3px] border-[#e2cfae] flex items-center justify-center text-3xl mb-4 shadow-sm">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center px-6 z-[9999]">
+      <div className="w-full max-w-[22cqw] rounded-[1.5cqw] p-[2cqw] bg-[#FFFCEF] border-[0.21cqw] border-[#8b5a2b] shadow-2xl flex flex-col items-center text-center">
+        {/* Warning Icon */}
+        <div className="w-[4.17cqw] h-[4.17cqw] rounded-full bg-[#FFF9E6] border-[0.21cqw] border-[#8b5a2b] flex items-center justify-center text-[2.5cqw] mb-[1.5cqh] shadow-sm">
           ⚠️
         </div>
 
-        <h2 className="text-xl font-black text-[#5b4636] mb-3">연결이 끊어졌어요!</h2>
+        {/* Title */}
+        <h2 className="text-[1.35cqw] font-black text-[#594E36] mb-[1cqh]">연결이 끊어졌어요!</h2>
 
-        <p className="text-[#6a5342] font-bold leading-relaxed mb-8 break-keep">
+        {/* Message */}
+        <p className="text-[#594E36] font-medium text-[0.94cqw] leading-relaxed mb-[2cqh] break-keep">
           다른 기기에서 접속하여 로그아웃 되었습니다.
           <br />
           다시 로그인해 주세요.
         </p>
 
+        {/* Confirm Button */}
         <button
           onClick={onConfirm}
-          className={[
-            'w-full py-3.5 rounded-full font-black text-white text-lg',
-            'bg-[#7bb46b] hover:bg-[#6aa65a] border-2 border-[#5a8f4e]',
-            'shadow-[0_4px_0_#4a7f40] active:shadow-none active:translate-y-[2px] transition-all',
-          ].join(' ')}
+          className="w-full py-[0.94cqw] rounded-[0.83cqw] font-bold text-white text-[1.04cqw] bg-[#594E36] hover:bg-[#6d5d43] shadow-md transition-colors active:translate-y-[0.1cqw]"
         >
           확인
         </button>

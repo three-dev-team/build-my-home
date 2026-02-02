@@ -63,6 +63,12 @@ public class InquiryService {
     return inquiryRepository.findAll(pageable).map(this::toListResponse);
   }
 
+  // 3-1. 제목으로 검색 (관리자) - 추가
+  @Transactional(readOnly = true)
+  public Page<InquiryListResponse> searchInquiriesByTitle(String keyword, Pageable pageable) {
+    return inquiryRepository.findByTitleContaining(keyword, pageable).map(this::toListResponse);
+  }
+
   // 4. 상세 조회 (공통)
   @Transactional(readOnly = true)
   public InquiryResponse getInquiry(Long id) {

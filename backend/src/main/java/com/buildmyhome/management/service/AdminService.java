@@ -22,6 +22,12 @@ public class AdminService {
     return members.map(this::toListResponse);
   }
 
+  // 닉네임으로 검색 (관리자용) - 추가
+  public Page<MemberListResponse> searchMembersByNickname(String nickname, Pageable pageable) {
+    Page<Member> members = memberRepository.findByNicknameContainingIgnoreCase(nickname, pageable);
+    return members.map(this::toListResponse);
+  }
+
   // 변환 메서드
   private MemberListResponse toListResponse(Member member) {
     return MemberListResponse.builder()
