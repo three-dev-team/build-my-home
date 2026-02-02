@@ -16,6 +16,7 @@ import com.buildmyhome.loan.service.LoanService;
 import com.buildmyhome.machurilla.service.MachurillaService;
 import com.buildmyhome.mupani.service.MupaniService;
 import com.buildmyhome.reward.service.RewardService;
+import com.buildmyhome.reward.service.GatherFlowService;
 import com.buildmyhome.room.dto.RoomPlayerState;
 import com.buildmyhome.room.dto.RoomState;
 import com.buildmyhome.room.service.RoomStateService;
@@ -52,6 +53,7 @@ public class GameWsController {
     private final MupaniService mupaniService;
     private final MoveService moveService;
     private final RewardService rewardService;
+    private final GatherFlowService gatherFlowService;
     private final MachurillaService machurillaService;
     private final SwapService swapService;
     private final ItemService itemService;
@@ -359,6 +361,7 @@ public class GameWsController {
             RewardService.RewardResult reward = rewardService.grantRewardsForStatus(nextStatus, player);
             Map<ResourceType, Integer> gainedResources = reward.gainedResources();
             Map<HarvestType, Integer> gainedHarvests = reward.gainedHarvests();
+            gatherFlowService.enter(nextStatus, player, gainedResources, gainedHarvests);
 
             if (nextStatus == GameStatus.WAITING_SHOP) {
                 shopService.startShopSession(roomId, memberId);
@@ -388,9 +391,6 @@ public class GameWsController {
 
 
             GameMessage response = defaultGameResponse("MOVE_COMPLETE", gameState);
-            // 이번에 얻은 보상을 메시지에 실어 보냄(프론트에서 토스트/연출 가능)
-            response.setGainedResources(gainedResources);
-            response.setGainedHarvests(gainedHarvests);
             simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
         }
     }
@@ -464,6 +464,20 @@ public class GameWsController {
                     case "SWAP_CONFIRM":
                         swapService.confirm(roomId, memberId);
                         return;
+                    case "GATHER_CONFIRM":
+                        if (gameState.getStatus() == GameStatus.WAITING_RESOURCES
+                                || gameState.getStatus() == GameStatus.WAITING_HARVEST) {
+                            player.setUiStep(1); // Get
+                            response.setType("GATHER_CONFIRMED");
+                        }
+                        break;
+                    case "GATHER_NEXT":
+                        if (gameState.getStatus() == GameStatus.WAITING_RESOURCES
+                                || gameState.getStatus() == GameStatus.WAITING_HARVEST) {
+                            player.setUiStep(2); // Complete
+                            response.setType("GATHER_NEXT");
+                        }
+                        break;
                     case "BUILD_HOUSE":
                         player.setUiStep(0);
                         houseService.updateHouseInfo(player);
@@ -538,6 +552,7 @@ public class GameWsController {
                     case "GET_RANDOM_ITEM":
                         ItemType item = itemService.getRandomItem(player);
                         player.setActionDataStr(item.name());
+                        gameState.setStatus(GameStatus.WAITING_ITEMS);
 
                         if (player.getItems().size() < 3) {
                             itemService.addItem(player, item);

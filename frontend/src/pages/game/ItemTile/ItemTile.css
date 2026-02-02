@@ -1,0 +1,333 @@
+/* src/pages/game/ItemTile/ItemTile.css */
+
+:root{
+    --safeW: min(100vw, calc(100vh * 16 / 9));
+    --safeH: min(100vh, calc(100vw * 9 / 16));
+    --u: calc(var(--safeW) / 1920);
+    --v: calc(var(--safeH) / 1080);
+}
+
+.itemtile-root{
+    position: fixed;
+    inset: 0;
+    z-index: 2147483647;
+    overflow: hidden;
+}
+
+.itemtile-bg{
+    position: absolute;
+    inset: 0;
+    background: center/cover no-repeat;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.itemtile-safe{
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    z-index: 1;
+}
+
+.itemtile-screen{
+    position: relative;
+    width: var(--safeW);
+    height: var(--safeH);
+    overflow: hidden;
+}
+
+.itemtile-layer{
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    pointer-events: auto;
+}
+
+/* ✅ InstructionText는 수정 안 하고, 이 래퍼로 "캐릭터 앞"에 올림 */
+.itemtile-instruction-front{
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: calc(120 * var(--v));
+    z-index: 140;
+    display: flex;
+    justify-content: center;
+    pointer-events: none;
+}
+
+/* ✅ 상단 pill */
+.itemtile-top-pill{
+    position: absolute;
+    left: 50%;
+    top: calc(72 * var(--v));
+    transform: translateX(-50%);
+
+    width: calc(400 * var(--u));
+    height: calc(80 * var(--v));
+    border-radius: 999px;
+
+    background: rgba(12, 32, 48, 0.55);
+    color: #fff;
+
+    font-family: var(--font-gosanja, "Gosanja", system-ui, sans-serif);
+    font-size: calc(24 * var(--u));
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    z-index: 200;
+    pointer-events: none;
+}
+
+/* ✅ 캐릭터 박스: 360×660 */
+.itemtile-character-box{
+    position: absolute;
+    left: 50%;
+    bottom: calc(var(--charBottom, 200) * var(--v));
+    transform: translateX(-50%);
+
+    width: calc(360 * var(--u));
+    height: calc(660 * var(--v));
+
+    pointer-events: none;
+    z-index: 20;
+}
+
+/* ✅ 캐릭터+아이템 같은 좌표계 */
+.itemtile-character-inner{
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: grid;
+    place-items: center;
+}
+
+.itemtile-character-inner > img{
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transform: scale(var(--charScale, 1));
+    transform-origin: 50% 100%;
+}
+
+/* ✅ 아이템 박스: 160×160 (원래 그대로) */
+.itemtile-held-item{
+    position: absolute;
+    left: calc((360 - var(--overlapX, 116) + 80) * var(--u));
+    top: var(--handTop, 52%);
+
+    width: calc(160 * var(--u));
+    height: calc(160 * var(--u));
+
+    transform: translate(-50%, -50%);
+    z-index: 5;
+    pointer-events: none;
+}
+
+.itemtile-held-item img{
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+/* ======================================
+   ✅ Select UI: 분홍 가이드(픽셀) 준수
+   ====================================== */
+
+.itemtile-select-area{
+    position: absolute;
+    left: 50%;
+    bottom: calc(304 * var(--v));     /* ✅ mb=304 */
+    transform: translateX(-50%);
+    width: calc(1724 * var(--u));     /* ✅ w=1724 */
+    height: calc(560 * var(--v));     /* ✅ h=560 */
+    z-index: 200;
+}
+
+/* 버튼 줄: 카드 줄과 동일 grid */
+.itemtile-confirm-row{
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    height: calc(64 * var(--v)); /* 버튼 높이 */
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: calc(32 * var(--u));    /* 카드 gap과 동일 */
+    align-items: start;
+}
+
+.itemtile-confirm-cell{
+    position: relative;
+    height: 100%;
+}
+
+/* 선택하기 버튼 */
+.itemtile-floating-confirm{
+    position: relative;
+    width: calc(240 * var(--u));
+    height: calc(64 * var(--v));
+    border-radius: 999px;
+    border: none;
+
+    background: #34c4d3;
+    color: #fff;
+
+    font-family: var(--font-gosanja, "Gosanja", system-ui, sans-serif);
+    font-size: calc(36 * var(--u));
+    line-height: 1;
+
+    cursor: pointer;
+    box-shadow: 0 calc(10 * var(--u)) calc(24 * var(--u)) rgba(0,0,0,0.18);
+
+    /* ✅ 셀 중앙 */
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.itemtile-floating-confirm::after{
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: calc(64 * var(--v));
+    transform: translateX(-50%);
+    width: calc(4 * var(--u));
+    height: calc(120 * var(--v));
+    background: rgba(52, 196, 211, 0.95);
+    border-radius: 999px;
+}
+
+.itemtile-floating-confirm.is-disabled{
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+/* 카드 4개 */
+.itemtile-select-wrap{
+    position: absolute;
+    left: 0;
+    right: 0;
+
+    /* ✅ 버튼(64) + gap(20) */
+    top: calc((64 + 20) * var(--v));
+    bottom: 0;
+
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: calc(32 * var(--u));
+    align-items: stretch;
+}
+
+/* 카드 패널 */
+.itemtile-card{
+    position: relative;
+    border: none;
+    border-radius: calc(84 * var(--u));
+    cursor: pointer;
+
+    background: rgba(255, 255, 255, 0.55);
+    box-shadow: 0 calc(10 * var(--u)) calc(24 * var(--u)) rgba(0,0,0,0.14);
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    padding-top: calc(48 * var(--v));
+    padding-bottom: calc(48 * var(--v));
+}
+
+.itemtile-card:disabled{
+    cursor: not-allowed;
+    opacity: 0.85;
+}
+
+.itemtile-card.is-selected{
+    background: rgba(255, 255, 255, 0.72);
+    outline: calc(12 * var(--u)) solid rgba(52, 196, 211, 0.95);
+    outline-offset: 0;
+}
+
+/* pill */
+.itemtile-new-pill{
+    position: absolute;
+    left: 50%;
+    top: calc(12 * var(--v));
+    transform: translateX(-50%);
+    z-index: 5;
+
+    width: calc(240 * var(--u));
+    height: calc(60 * var(--v));
+    border-radius: 999px;
+
+    background: rgba(235, 87, 87, 0.9);
+    color: #fff;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-family: var(--font-gosanja, "Gosanja", system-ui, sans-serif);
+    font-size: calc(32 * var(--u));
+    line-height: 1;
+}
+
+/* 이미지 박스 240x240 + mt 48 */
+.itemtile-card-image{
+    width: calc(240 * var(--u));
+    height: calc(240 * var(--u));
+    display: grid;
+    place-items: center;
+    margin-top: calc(48 * var(--v));
+}
+
+.itemtile-itembox{
+    width: calc(240 * var(--u));
+    height: calc(240 * var(--u));
+    background: transparent;  /* ✅ 분홍 제거 */
+    display: grid;
+    place-items: center;
+}
+
+.itemtile-itembox img{
+    width: 100%;
+    height: 100%;
+    object-fit: contain;      /* ✅ 절대 안 잘림 */
+}
+
+.itemtile-card-title{
+    margin-top: calc(48 * var(--v));
+    width: 100%;
+    text-align: center;
+
+    color: rgba(89, 78, 54, 0.92);
+    font-family: var(--font-gosanja, "Gosanja", system-ui, sans-serif);
+    font-size: calc(40 * var(--u));
+    line-height: 1.1;
+    word-break: keep-all;
+}
+
+/* ======================================
+   ✅ 하단 안내(대사) - 누락됐던 필수
+   ====================================== */
+
+/* 대사(주머니가 가득...)는 Select 컨테이너랑 별개로 "화면 아래 120px"에 고정 */
+.itemtile-bottom-guide{
+    position: absolute;
+    left: 50%;
+    bottom: calc(120 * var(--v));
+    transform: translateX(-50%);
+    z-index: 210;
+
+    width: calc(1400 * var(--u));
+    text-align: center;
+
+    color: rgba(255,255,255,0.96);
+    font-family: var(--font-gosanja, "Gosanja", system-ui, sans-serif);
+    font-size: calc(44 * var(--u));
+    line-height: 1.28;
+
+    text-shadow: 0 calc(4 * var(--u)) calc(12 * var(--u)) rgba(0,0,0,0.35);
+    pointer-events: none;
+}

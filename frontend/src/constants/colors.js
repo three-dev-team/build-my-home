@@ -43,6 +43,43 @@ export const COLORS = {
     woodDark: '#4E3B24',
   },
 
+  subtitle: {
+    contentBox: '#fffae4',
+    contentText: '#5b4d33',
+    arrow: '#ffb700',
+    optionBox: '#fcec9e',
+    optionText: '#5b4d33',
+  },
+
+  // 캐릭터별 자막 색상
+  characters: {
+    // 여울 (시청 사무소)
+    yeoul: {
+      nameBox: '#fcfe8f', // 파란색
+      nameText: '#dfaa19',
+    },
+    // 너굴 (상점)
+    naugul: {
+      nameBox: '#e38a40', // 민트
+      nameText: '#50100e',
+    },
+    // 마추릴라
+    machurilla: {
+      nameBox: '#9B59B6', // 보라
+      nameText: '#FFFFFF',
+    },
+    // KK
+    kk: {
+      nameBox: '#F2C94C', // 노랑
+      nameText: '#5b4d33',
+    },
+    // 기본값
+    default: {
+      nameBox: '#9B59B6',
+      nameText: '#FFFFFF',
+    },
+  },
+
   // RoomList 페이지 전용 (라벤더 테마)
   roomList: {
     textMain: '#6A4F9C',
