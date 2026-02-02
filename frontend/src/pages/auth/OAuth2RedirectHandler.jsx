@@ -26,10 +26,12 @@ export default function OAuth2RedirectHandler() {
         const base64Payload = token.split('.')[1];
         const payload = JSON.parse(atob(base64Payload));
         const memberId = payload.memberId;
+        const role = payload.role;
 
         // 4. 세션 스토리지 저장 (로그인 정보 유지)
         sessionStorage.setItem('token', token);
         sessionStorage.setItem('memberId', memberId);
+        sessionStorage.setItem('role', role);
         try {
           sessionStorage.setItem('nickname', decodeURIComponent(nickname || '주민'));
         } catch (e) {

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { ExclamationTriangleIcon } from '@heroicons/react/24/solid';
 import { COLORS } from '../../constants/colors';
+import AspectLayout from '../../components/layout/AspectLayout';
 
 // --- 소셜 아이콘 컴포넌트 ---
 const GoogleIcon = () => (
@@ -167,7 +168,7 @@ export default function Login() {
 
       if (response.status === 200) {
         // 1. id(memberId)를 추가로 받습니다.
-        const { token, nickname, bell, level, id } = response.data;
+        const { token, nickname, bell, level, id, role } = response.data;
 
         if (rememberId) {
           localStorage.setItem('savedMemberId', memberId);
@@ -179,6 +180,7 @@ export default function Login() {
         sessionStorage.setItem('nickname', nickname);
         sessionStorage.setItem('bell', bell);
         sessionStorage.setItem('level', level);
+        sessionStorage.setItem('role', role);
 
         openAlert(`${nickname}님 환영합니다!`);
         setTimeout(() => navigate('/home'), 1500);
@@ -252,17 +254,8 @@ export default function Login() {
   };
 
   return (
-    <div className="w-full h-screen bg-black flex items-center justify-center overflow-hidden font-gosanja">
-      {/* 16:9 비율 컨테이너 */}
-      <div
-        className="relative w-full aspect-video max-h-screen overflow-hidden flex items-center justify-center"
-        style={{
-          backgroundImage: "url('/images/bg-pattern-1.png')",
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          containerType: 'size',
-        }}
-      >
+    <AspectLayout>
+      <div className="relative w-full h-full bg-cover bg-center flex items-center justify-center overflow-hidden font-gosanja bg-[url('/images/bg-pattern-1.png')]">
         {/* --- 커스텀 알림 모달 (에러 모달 디자인 적용) --- */}
         {modal.isOpen && (
           <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/60 backdrop-blur-sm">
@@ -724,6 +717,6 @@ export default function Login() {
           style={{ backgroundImage: "url('/images/isabelle.png')" }}
         ></div>
       </div>
-    </div>
+    </AspectLayout>
   );
 }

@@ -4,6 +4,7 @@ import { getMemberInfo, updateNickname, withdraw, unlinkSocialAccount } from '..
 import ExitButton from '../components/common/ExitButton';
 import TopButtons from '../components/common/TopButtons';
 import { CameraIcon } from '@heroicons/react/24/solid';
+import AspectLayout from '../components/layout/AspectLayout';
 
 // --- 소셜 아이콘 컴포넌트 - 크기는 부모에서 제어하므로 w/h는 100%로 설정하거나 상속받음 ---
 const GoogleIcon = () => (
@@ -177,26 +178,33 @@ export default function MyPage() {
   if (isLoading) return null;
 
   return (
-    // 전체 뷰포트를 채우는 배경색 (보통 배경 이미지의 주색상이나 어두운 색)
-    <div className="w-full h-screen bg-black flex items-center justify-center overflow-hidden">
-      {/* 16:9 비율 유지 컨테이너
-          - w-full aspect-video: 가로 꽉 채우고 16:9 비율 유지 (높이 자동)
-          - max-h-screen: 높이가 화면보다 커지면 안됨 (이 경우 가로가 줄어듦)
-          - container-type: size -> 내부에서 cqw 단위 사용 가능
-      */}
-      <div
-        className="relative w-full aspect-video max-h-screen  overflow-hidden"
-        style={{
-          backgroundImage: "url('/images/mypage/bg-mypage.jpg')",
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          containerType: 'size',
-        }}
-      >
+    <AspectLayout>
+      <div className="relative w-full h-full bg-cover bg-center flex items-center justify-center overflow-hidden bg-[url('/images/mypage/bg-mypage.jpg')]">
+        {/* TopButtons (우측 상단) 
+            - Moved inside aspect-ratio container
+            - top-[3.7cqh] (~40px on 1080h), right-[2.08cqw] (~40px on 1920w)
+        */}
+        <div className="absolute top-[3.7cqh] right-[2.08cqw] z-50">
+          <div style={{ transform: 'scale(1)', transformOrigin: 'top right' }}>
+            <TopButtons
+              nickname={userData.nickname || '주민'}
+              onProfileClick={() => {}}
+              onBellClick={() => navigate('/notifications')}
+              onConfigClick={() => navigate('/config')}
+              showShadow={false}
+              colors={{
+                text: '#594E36',
+                badgeBg: '#FDFBF6',
+                badgeText: '#594E36',
+              }}
+            />
+          </div>
+        </div>
+
         {/* --- 상단 아이콘 영역 --- */}
 
-        {/* 홈 버튼 (좌측 상단) - Top 40px, Left 40px (1920x1080 기준) -> Top 3.7%, Left 2.08% */}
-        <div className="absolute top-[3.7%] left-[2.08%] z-50">
+        {/* 홈 버튼 (좌측 상단) - Top 3.7cqh, Left 2.08cqw */}
+        <div className="absolute top-[3.7cqh] left-[2.08cqw] z-50">
           <button
             onClick={() => navigate('/home')}
             className="w-[4.17cqw] h-[4.17cqw] bg-white rounded-full flex items-center justify-center  hover:scale-105 transition-transform cursor-pointer border-[0.16cqw] border-white"
@@ -217,71 +225,53 @@ export default function MyPage() {
           </button>
         </div>
 
-        {/* TopButtons (우측 상단) - Top 40px, Right 40px -> Top 3.7%, Right 2.08% */}
-        <div className="absolute top-[3.7%] right-[2.08%] z-50">
-          {/* TopButtons 스케일링을 위해 div로 감쌈 */}
-          <div style={{ transform: 'scale(1)', transformOrigin: 'top right' }}>
-            <TopButtons
-              nickname={userData.nickname || '주민'}
-              onProfileClick={() => {}}
-              onBellClick={() => navigate('/notifications')}
-              onConfigClick={() => navigate('/config')}
-              showShadow={false}
-              colors={{
-                text: '#594E36',
-                badgeBg: '#FDFBF6',
-                badgeText: '#594E36',
-              }}
-            />
-          </div>
-        </div>
-
         {/* --- 주민증 카드 (메인 영역) --- */}
 
         {/* 1. 캐릭터 이미지 영역 
-            - Top 36% (388px), Left 22% (422px) -> Top 36%, Left 22%
-            - Width 292px (15.2%), Height 292px
-            - Radius 64px (3.3%)
+            - Left: 420px -> 21.875cqw
+            - Width: 292px -> 15.21cqw
+            - Radius: 64px -> 3.33cqw
         */}
-        <div className="absolute top-[36.5%] left-[22%] w-[15.21%] aspect-square bg-[#FFD7D7] rounded-[22%] flex items-center justify-center group relative">
+        <div
+          className="absolute aspect-square bg-[#FFD7D7] flex items-center justify-center group shadow-inner"
+          style={{
+            top: '36.5%',
+            left: '21.875cqw',
+            width: '15.21cqw',
+            borderRadius: '3.33cqw',
+          }}
+        >
           <img
             src={getCharacterImage(userData.characterId)}
             alt="character"
-            className="w-[82%] h-[82%] object-contain"
+            className="w-[85%] h-[85%] object-contain drop-shadow-md"
           />
 
-          {/* 역할 배지 (좌측 하단 외부) 
-              - Bottom -12% (outside), Left 5%
-              - Background Color: #00C73C (Jumin), #FF4F4F (Admin)
-          */}
+          {/* 역할 배지 - 100*40px (5.21cqw * 3.7cqh), Radius 20px (1.04cqw), Font 24px (1.25cqw) */}
           <div
-            className={`absolute -bottom-[24%] left-[5%] px-[0.8cqw] py-[0.3cqw] rounded-full text-white text-[0.9cqw] font-bold z-10 ${
+            className={`absolute -bottom-[22%] -left-[2%] w-[5.21cqw] h-[3.7cqh] rounded-[1.04cqw] flex items-center justify-center text-white text-[1.25cqw] font-bold z-10 shadow-md ${
               userData.role === 'ADMIN' ? 'bg-[#FF4F4F]' : 'bg-[#00C73C]'
             }`}
           >
-            {userData.role === 'ADMIN' ? 'admin' : '주민'}
+            {userData.role === 'ADMIN' ? '관리자' : '주민'}
           </div>
 
-          {/* 프로필 사진 변경 버튼 (우측 하단 외부)
-              - Bottom -12% (outside), Right 5%
-          */}
+          {/* 달력/프로필 사진 변경 버튼 - 60*60px (3.13cqw), Radius 16px (0.83cqw) */}
           <button
-            className="absolute -bottom-[24%] right-[5%] w-[12%] aspect-square bg-[#6B5B45] rounded-[0.5cqw] flex items-center justify-center hover:scale-110 transition"
+            className="absolute -bottom-[24%] -right-[2%] w-[3.13cqw] h-[3.13cqw] rounded-[0.83cqw] flex items-center justify-center hover:scale-110 transition"
             title="프로필 사진 변경"
           >
-            <CameraIcon className="w-[60%] h-[60%] text-[#FDFBF6]" />
+            <CameraIcon className="w-[80%] h-[80%] text-[#6B5B45]" />
           </button>
         </div>
 
         {/* 등록일 
             - Top 80.4%, Left 30%
-            - Font 28px -> 1.46cqw
         */}
         <div className="absolute top-[80.4%] left-[30%] text-[1.46cqw] font-bold text-[#8B7D6B]">2026년 01월 28일</div>
 
         {/* 2. 우측 정보 영역 
-            - Top 34%, Left 43%
-            - Gap 32px -> 1.67cqw
+            - Top 33%, Left 43%
         */}
         <div className="absolute top-[33%] left-[43%] flex flex-col items-start gap-[1.67cqw]">
           {/* 닉네임 섹션 */}
@@ -292,9 +282,7 @@ export default function MyPage() {
                 {userData.nickname}
               </span>
 
-              {/* 닉네임 수정 버튼 
-                  - Size 38px -> 1.98cqw 
-              */}
+              {/* 닉네임 수정 버튼 */}
               <button
                 onClick={() => setIsModalOpen(true)}
                 className="w-[1.98cqw] h-[1.98cqw] bg-[#7A7061] rounded-full flex items-center justify-center hover:scale-110 transition mt-[0.2cqw]"
@@ -335,7 +323,7 @@ export default function MyPage() {
             </div>
 
             <div className="flex gap-[0.83cqw]">
-              {/* Google - Size 56px -> 2.92cqw */}
+              {/* Google */}
               <button
                 onClick={() => (userData.googleId ? handleUnlinkClick('google') : handleLinkAccount('google'))}
                 className={`w-[2.92cqw] h-[2.92cqw] transition hover:scale-110 ${userData.googleId ? '' : 'opacity-40 grayscale hover:grayscale-0 hover:opacity-100'}`}
@@ -363,9 +351,7 @@ export default function MyPage() {
         </div>
 
         {/* --- 좌측 하단 탈퇴하기 버튼 --- 
-            - Bottom 32px (3%), Left 32px (1.67%)
-            - Padding 16px 32px
-            - Font 24px
+            - Bottom 3%, Left 1.67%
         */}
         <button
           onClick={() => setIsWithdrawModalOpen(true)}
@@ -375,144 +361,143 @@ export default function MyPage() {
         </button>
 
         {/* --- 우측 하단 나가기 버튼 --- 
-            - Bottom 32px (3%), Right 32px (1.67%)
-            - ExitButton 내부 스타일도 확인 필요하지만 일단 위치 잡기
+            - Bottom 3%, Right 1.67%
         */}
         <div className="absolute bottom-[3%] right-[1.67%]">
           <ExitButton onClick={() => navigate('/home')} showShadow={false} />
         </div>
-      </div>
 
-      {/* --- 모달들 (z-index 최상위로 뷰포트 전체 커버) --- */}
+        {/* --- 모달들 --- */}
 
-      {/* 닉네임 변경 모달 */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-[#FFFCEF] w-[20.8cqw] p-[1.67cqw] rounded-[2cqw] border-[0.3cqw] border-[#8b5a2b]  text-center">
-            {!isConfirmStep ? (
-              <>
-                <h3 className="text-[1.25cqw] font-black text-[#8b5a2b] mb-[1.1cqw]">이름 변경하기</h3>
-                <input
-                  ref={nicknameInputRef}
-                  type="text"
-                  value={editNickname}
-                  onChange={(e) => setEditNickname(e.target.value)}
-                  className="w-full p-[0.83cqw] rounded-[0.83cqw] bg-white border-[0.16cqw] border-[#DED0A6] text-[#5d4037] font-bold text-center text-[1.04cqw] mb-[1.1cqw] outline-none"
-                  placeholder="새 이름을 입력하세요"
-                />
-                <div className="flex gap-[0.83cqw]">
-                  <button
-                    onClick={closeModal}
-                    className="flex-1 py-[1.1cqw] bg-[#DED0A6] rounded-[0.83cqw] font-bold text-[#5d4037]"
-                  >
-                    취소
-                  </button>
-                  <button
-                    onClick={() => setIsConfirmStep(true)}
-                    className="flex-1 py-[1.1cqw] bg-[#8b5a2b] rounded-[0.83cqw] font-bold text-white"
-                  >
-                    변경
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                <h3 className="text-[1.25cqw] font-black text-[#8b5a2b] mb-[0.7cqw]">정말 바꿀까요?</h3>
-                <p className="text-[#5d4037] text-[0.94cqw] font-bold mb-[1.1cqw]">
-                  <span className="text-[#bc8a5f]">"{editNickname}"</span>(으)로
-                  <br />
-                  결정하시겠습니까?
-                </p>
-                <div className="flex gap-[0.83cqw]">
-                  <button
-                    onClick={() => setIsConfirmStep(false)}
-                    className="flex-1 py-[1.1cqw] bg-[#DED0A6] rounded-[0.83cqw] font-bold text-[#5d4037]"
-                  >
-                    아니오
-                  </button>
-                  <button
-                    onClick={handleSaveNickname}
-                    className="flex-1 py-[1.1cqw] bg-[#e2f0a1] border-[0.16cqw] border-[#8b5a2b] rounded-[0.83cqw] font-bold text-[#8b5a2b]"
-                  >
-                    네!
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* 탈퇴 모달 */}
-      {isWithdrawModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-[#FFFCEF] w-[20.8cqw] p-[1.67cqw] rounded-[2cqw] border-[0.3cqw] border-[#D32F2F]  text-center">
-            {!isWithdrawConfirmStep ? (
-              <>
-                <h3 className="text-[1.25cqw] font-black text-[#D32F2F] mb-[0.7cqw]">마이홈을 떠나시나요?</h3>
-                <p className="text-[#5d4037] mb-[1.1cqw] font-bold text-[0.83cqw]">모든 데이터가 삭제됩니다.</p>
-                <div className="flex gap-[0.83cqw]">
-                  <button
-                    onClick={() => setIsWithdrawModalOpen(false)}
-                    className="flex-1 py-[1.1cqw] bg-gray-200 rounded-[0.83cqw] font-bold text-[0.83cqw]"
-                  >
-                    취소
-                  </button>
-                  <button
-                    onClick={() => setIsWithdrawConfirmStep(true)}
-                    className="flex-1 py-[1.1cqw] bg-[#D32F2F] text-white rounded-[0.83cqw] font-bold text-[0.83cqw]"
-                  >
-                    탈퇴하기
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                <h3 className="text-[1.25cqw] font-black text-[#D32F2F] mb-[0.7cqw]">마지막 확인!</h3>
-                <p className="text-[#5d4037] mb-[1.1cqw] font-bold text-[0.83cqw]">정말로 탈퇴하시겠습니까?</p>
-                <div className="flex gap-[0.83cqw]">
-                  <button
-                    onClick={() => setIsWithdrawConfirmStep(false)}
-                    className="flex-1 py-[1.1cqw] bg-gray-200 rounded-[0.83cqw] font-bold text-[0.83cqw]"
-                  >
-                    아니오
-                  </button>
-                  <button
-                    onClick={handleWithdraw}
-                    className="flex-1 py-[1.1cqw] bg-[#FFB3B3] text-[#D32F2F] border-[0.16cqw] border-[#D32F2F] rounded-[0.83cqw] font-bold text-[0.83cqw]"
-                  >
-                    네, 탈퇴합니다
-                  </button>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* 연동 해제 모달 */}
-      {isUnlinkModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-[#FFFCEF] w-[20.8cqw] p-[1.67cqw] rounded-[2cqw] border-[0.3cqw] border-[#8b5a2b] text-center">
-            <h3 className="text-[1.25cqw] font-black text-[#8b5a2b] mb-[0.7cqw]">{unlinkProvider} 연동 해제</h3>
-            <p className="text-[#5d4037] mb-[1.1cqw] font-bold text-[0.83cqw]">연동을 해제하시겠습니까?</p>
-            <div className="flex gap-[0.83cqw]">
-              <button
-                onClick={() => setIsUnlinkModalOpen(false)}
-                className="flex-1 py-[1.1cqw] bg-gray-200 rounded-[0.83cqw] font-bold text-[0.83cqw]"
-              >
-                취소
-              </button>
-              <button
-                onClick={confirmUnlink}
-                className="flex-1 py-[1.1cqw] bg-[#8b5a2b] text-white rounded-[0.83cqw] font-bold text-[0.83cqw]"
-              >
-                해제하기
-              </button>
+        {/* 닉네임 변경 모달 */}
+        {isModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+            <div className="bg-[#FFFCEF] w-[20.8cqw] p-[1.67cqw] rounded-[2cqw] border-[0.3cqw] border-[#8b5a2b]  text-center">
+              {!isConfirmStep ? (
+                <>
+                  <h3 className="text-[1.25cqw] font-black text-[#8b5a2b] mb-[1.1cqw]">이름 변경하기</h3>
+                  <input
+                    ref={nicknameInputRef}
+                    type="text"
+                    value={editNickname}
+                    onChange={(e) => setEditNickname(e.target.value)}
+                    className="w-full p-[0.83cqw] rounded-[0.83cqw] bg-white border-[0.16cqw] border-[#DED0A6] text-[#5d4037] font-bold text-center text-[1.04cqw] mb-[1.1cqw] outline-none"
+                    placeholder="새 이름을 입력하세요"
+                  />
+                  <div className="flex gap-[0.83cqw]">
+                    <button
+                      onClick={closeModal}
+                      className="flex-1 py-[1.1cqw] bg-[#DED0A6] rounded-[0.83cqw] font-bold text-[#5d4037]"
+                    >
+                      취소
+                    </button>
+                    <button
+                      onClick={() => setIsConfirmStep(true)}
+                      className="flex-1 py-[1.1cqw] bg-[#8b5a2b] rounded-[0.83cqw] font-bold text-white"
+                    >
+                      변경
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <h3 className="text-[1.25cqw] font-black text-[#8b5a2b] mb-[0.7cqw]">정말 바꿀까요?</h3>
+                  <p className="text-[#5d4037] text-[0.94cqw] font-bold mb-[1.1cqw]">
+                    <span className="text-[#bc8a5f]">"{editNickname}"</span>(으)로
+                    <br />
+                    결정하시겠습니까?
+                  </p>
+                  <div className="flex gap-[0.83cqw]">
+                    <button
+                      onClick={() => setIsConfirmStep(false)}
+                      className="flex-1 py-[1.1cqw] bg-[#DED0A6] rounded-[0.83cqw] font-bold text-[#5d4037]"
+                    >
+                      아니오
+                    </button>
+                    <button
+                      onClick={handleSaveNickname}
+                      className="flex-1 py-[1.1cqw] bg-[#e2f0a1] border-[0.16cqw] border-[#8b5a2b] rounded-[0.83cqw] font-bold text-[#8b5a2b]"
+                    >
+                      네!
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+
+        {/* 탈퇴 모달 */}
+        {isWithdrawModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+            <div className="bg-[#FFFCEF] w-[20.8cqw] p-[1.67cqw] rounded-[2cqw] border-[0.3cqw] border-[#D32F2F]  text-center">
+              {!isWithdrawConfirmStep ? (
+                <>
+                  <h3 className="text-[1.25cqw] font-black text-[#D32F2F] mb-[0.7cqw]">마이홈을 떠나시나요?</h3>
+                  <p className="text-[#5d4037] mb-[1.1cqw] font-bold text-[0.83cqw]">모든 데이터가 삭제됩니다.</p>
+                  <div className="flex gap-[0.83cqw]">
+                    <button
+                      onClick={() => setIsWithdrawModalOpen(false)}
+                      className="flex-1 py-[1.1cqw] bg-gray-200 rounded-[0.83cqw] font-bold text-[0.83cqw]"
+                    >
+                      취소
+                    </button>
+                    <button
+                      onClick={() => setIsWithdrawConfirmStep(true)}
+                      className="flex-1 py-[1.1cqw] bg-[#D32F2F] text-white rounded-[0.83cqw] font-bold text-[0.83cqw]"
+                    >
+                      탈퇴하기
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <h3 className="text-[1.25cqw] font-black text-[#D32F2F] mb-[0.7cqw]">마지막 확인!</h3>
+                  <p className="text-[#5d4037] mb-[1.1cqw] font-bold text-[0.83cqw]">정말로 탈퇴하시겠습니까?</p>
+                  <div className="flex gap-[0.83cqw]">
+                    <button
+                      onClick={() => setIsWithdrawConfirmStep(false)}
+                      className="flex-1 py-[1.1cqw] bg-gray-200 rounded-[0.83cqw] font-bold text-[0.83cqw]"
+                    >
+                      아니오
+                    </button>
+                    <button
+                      onClick={handleWithdraw}
+                      className="flex-1 py-[1.1cqw] bg-[#FFB3B3] text-[#D32F2F] border-[0.16cqw] border-[#D32F2F] rounded-[0.83cqw] font-bold text-[0.83cqw]"
+                    >
+                      네, 탈퇴합니다
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* 연동 해제 모달 */}
+        {isUnlinkModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+            <div className="bg-[#FFFCEF] w-[20.8cqw] p-[1.67cqw] rounded-[2cqw] border-[0.3cqw] border-[#8b5a2b] text-center">
+              <h3 className="text-[1.25cqw] font-black text-[#8b5a2b] mb-[0.7cqw]">{unlinkProvider} 연동 해제</h3>
+              <p className="text-[#5d4037] mb-[1.1cqw] font-bold text-[0.83cqw]">연동을 해제하시겠습니까?</p>
+              <div className="flex gap-[0.83cqw]">
+                <button
+                  onClick={() => setIsUnlinkModalOpen(false)}
+                  className="flex-1 py-[1.1cqw] bg-gray-200 rounded-[0.83cqw] font-bold text-[0.83cqw]"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={confirmUnlink}
+                  className="flex-1 py-[1.1cqw] bg-[#8b5a2b] text-white rounded-[0.83cqw] font-bold text-[0.83cqw]"
+                >
+                  해제하기
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </AspectLayout>
   );
 }

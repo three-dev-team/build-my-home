@@ -1,6 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { COLORS } from '../../constants/colors';
+import AspectLayout from '../../components/layout/AspectLayout';
 
 export default function Join() {
   const [email, setEmail] = useState('');
@@ -134,16 +136,8 @@ export default function Join() {
   };
 
   return (
-    <div className="w-full h-screen bg-black flex items-center justify-center overflow-hidden font-gosanja">
-      <div
-        className="relative w-full aspect-video max-h-screen overflow-hidden flex items-center justify-center"
-        style={{
-          backgroundImage: "url('/images/bg-pattern-1.png')",
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          containerType: 'size',
-        }}
-      >
+    <AspectLayout>
+      <div className="w-full h-full bg-cover bg-center flex items-center justify-center overflow-hidden font-gosanja bg-[url('/images/bg-pattern-1.png')]">
         {/* 커스텀 모달 */}
         {modal.isOpen && (
           <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/50 backdrop-blur-sm">
@@ -398,6 +392,6 @@ export default function Join() {
           style={{ backgroundImage: "url('/images/isabelle.png')" }}
         ></div>
       </div>
-    </div>
+    </AspectLayout>
   );
 }

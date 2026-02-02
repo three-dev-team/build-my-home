@@ -5,10 +5,8 @@ import { CHARACTERS } from '../../constants/characters.js';
 import { COLORS } from '../../constants/colors.js'; // COLORS import
 import { leaveRoom } from '../../utils/roomUtils.js';
 import { getBrokerURL } from '../../utils/ws.js';
-
-// Icons
-// import { CheckCircleIcon } from '@heroicons/react/24/solid';
 import ExitButton from '../../components/common/ExitButton';
+import AspectLayout from '../../components/layout/AspectLayout';
 
 const CharacterSelect = () => {
   const { roomId } = useParams();
@@ -92,16 +90,8 @@ const CharacterSelect = () => {
   };
 
   return (
-    <div className="w-full h-screen bg-black flex items-center justify-center overflow-hidden font-gosanja">
-      <div
-        className="relative w-full aspect-video max-h-screen overflow-hidden flex"
-        style={{
-          backgroundImage: "url('/images/room/bg-character-select.jpg')",
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          containerType: 'size',
-        }}
-      >
+    <AspectLayout>
+      <div className="relative w-full h-full bg-cover bg-center flex overflow-hidden font-gosanja bg-[url('/images/room/bg-character-select.jpg')]">
         {/* --- LEFT SECTION (Preview) (50%) --- */}
         <div className="w-1/2 h-full flex flex-col items-center justify-center relative">
           {/* 집 이미지 (완쪽 섹션 절대 위치 상단 좌측) */}
@@ -221,7 +211,7 @@ const CharacterSelect = () => {
           </div>
         </div>
       </div>
-    </div>
+    </AspectLayout>
   );
 };
 

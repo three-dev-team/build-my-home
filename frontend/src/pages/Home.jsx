@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import TopButtons from '../components/common/TopButtons';
+import AspectLayout from '../components/layout/AspectLayout';
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -61,32 +62,11 @@ export default function Home() {
     'w-[80px] h-[80px] bg-white rounded-full flex items-center justify-center shadow-[0_4px_4px_rgba(0,0,0,0.1)] hover:scale-105 transition-transform cursor-pointer';
 
   return (
-    <div className="w-full h-screen bg-black flex items-center justify-center overflow-hidden font-sans">
-      {/* 16:9 비율 컨테이너 */}
-      <div
-        className="relative w-full aspect-video max-h-screen overflow-hidden bg-[url('/images/bg-home.png')] bg-cover bg-center"
-        style={{ containerType: 'size' }}
-      >
-        {/*<audio ref={audioRef} src="/sounds/home_bgm.mp3" loop />*/}
-
-        {/* 1. 상단 좌측 로고 (위치/크기 조정) 
-            - Top: 20px -> 1.04cqw
-            - Left: 56px -> 2.92cqw
-            - Width: 360px -> 18.75cqw
-            - Height: 180px -> 9.38cqw
-            - Image Width: 634px -> 33cqw (컨테이너보다 큼. 원본 유지 위해 w-[33cqw] 사용하거나 컨테이너에 맞춤)
-            * 원본 코드에서 w-[360px] 컨테이너 안에 w-[634px] 이미지가 있었으므로
-              이미지 크기를 우선시하여 w-[33cqw]로 설정하고 컨테이너 크기는 제거하거나 맞춤.
-        */}
-        <header className={`absolute top-[1.04cqw] left-[2.92cqw] z-10 ${uiTransitionClass}`}>
-          <Link to="/home" className="inline-block hover:scale-105 transition-transform">
-            <img src="/images/ui-logo.png" alt="지어봐요 마이홈 로고" className="w-[20cqw] drop-shadow-md" />
-          </Link>
-        </header>
-
+    <AspectLayout>
+      <div className="relative w-full h-full bg-cover bg-center flex items-center justify-center overflow-hidden font-gosanja bg-[url('/images/bg-home.png')]">
         {/* 2. 상단 우측 메뉴 (TopButtons 컴포넌트 사용) 
-            - Top: 40px -> 2.08cqw
-            - Right: 40px -> 2.08cqw
+            - Top: 3.7cqh
+            - Right: 2.08cqw
         */}
         <TopButtons
           nickname={isLoggedIn ? nickname : '로그인'}
@@ -98,8 +78,23 @@ export default function Home() {
             badgeBg: '#FDFBF6',
             badgeText: '#594E36',
           }}
-          className={`absolute top-[2.08cqw] right-[2.08cqw] z-20 ${uiTransitionClass}`}
+          className={`absolute top-[3.7cqh] right-[2.08cqw] z-50 ${uiTransitionClass}`}
         />
+
+        {/*<audio ref={audioRef} src="/sounds/home_bgm.mp3" loop />*/}
+
+        {/* 1. 상단 좌측 로고 (위치/크기 조정) 
+            - Top: 20px -> 1.04cqw
+            - Left: 56px -> 2.92cqw
+            - Width: 360px -> 18.75cqw
+            - Height: 180px -> 9.38cqw
+            - Image Width: 634px -> 33cqw (컨테이너보다 큼. 원본 유지 위해 w-[33cqw] 사용하거나 컨테이너에 맞춤)
+        */}
+        <header className={`absolute top-[1.04cqw] left-[2.92cqw] z-10 ${uiTransitionClass}`}>
+          <Link to="/home" className="inline-block hover:scale-105 transition-transform">
+            <img src="/images/ui-logo.png" alt="지어봐요 마이홈 로고" className="w-[20cqw] drop-shadow-md" />
+          </Link>
+        </header>
 
         {/* 3. 우측 하단 게임 시작 버튼 (540*190) 
             - Bottom: 24px -> 1.25cqw (bottom-6 approx)
@@ -117,6 +112,6 @@ export default function Home() {
           </Link>
         </div>
       </div>
-    </div>
+    </AspectLayout>
   );
 }

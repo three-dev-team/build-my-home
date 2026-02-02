@@ -56,7 +56,7 @@ public class MemberServiceImpl implements MemberService {
       throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
     }
 
-    String token = jwtTokenProvider.createToken(member.getEmail(), "USER", member.getId());
+    String token = jwtTokenProvider.createToken(member.getEmail(), member.getRole().name(), member.getId());
     userSessionStore.registerToken(member.getId(), token);
 
     return MemberResponse.builder()
@@ -67,6 +67,7 @@ public class MemberServiceImpl implements MemberService {
       .level(member.getLevel())
       .bell(member.getBell())
       .playCount(member.getPlayCount())
+      .role(member.getRole().name())
       .kakaoId(member.getKakaoId())
       .naverId(member.getNaverId())
       .googleId(member.getGoogleId())

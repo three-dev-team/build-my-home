@@ -17,6 +17,7 @@ import {
   ExclamationTriangleIcon,
 } from '@heroicons/react/24/solid';
 import ExitButton from '../../components/common/ExitButton';
+import AspectLayout from '../../components/layout/AspectLayout';
 
 // 캐릭터 ID -> 이미지 매핑 (전신 이미지 사용)
 const CHARACTER_IMG_MAP = CHARACTERS.reduce((acc, char) => {
@@ -269,16 +270,8 @@ function Room() {
   if (loading) return <div className="min-h-screen bg-gray-100 flex items-center justify-center">Loading...</div>;
 
   return (
-    <div className="w-full h-screen bg-black flex items-center justify-center overflow-hidden font-gosanja">
-      <div
-        className="relative w-full aspect-video max-h-screen overflow-hidden flex flex-col items-center"
-        style={{
-          backgroundImage: "url('/images/room-waiting/bg-room.jpg')",
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          containerType: 'size',
-        }}
-      >
+    <AspectLayout>
+      <div className="relative w-full h-full bg-cover bg-center flex flex-col items-center overflow-hidden font-gosanja bg-[url('/images/room-waiting/bg-room.jpg')]">
         {/* --- 오버레이 (강퇴, 카운트다운) --- */}
         {showKickConfirm && (
           <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
@@ -751,7 +744,7 @@ function Room() {
           </div>
         )}
       </div>
-    </div>
+    </AspectLayout>
   );
 }
 

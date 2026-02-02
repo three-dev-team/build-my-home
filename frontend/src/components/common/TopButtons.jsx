@@ -43,14 +43,14 @@ const TopButtons = ({
   const dropdownHoverBg = colors.dropdownHoverBg || '#FFF8EA';
   const dropdownText = colors.dropdownText || '#594E36';
 
-  // 80px = 4.17vw, 4px = 0.37vh shadow, 3px = 0.16vw border
-  const iconBoxStyle = `w-[4.17vw] h-[4.17vw] bg-white rounded-full flex items-center justify-center ${showShadow ? 'shadow-[0_0.37vh_0.37vh_rgba(0,0,0,0.1)]' : ''} hover:scale-105 transition-transform cursor-pointer border-[0.16vw] border-white relative z-20`;
+  // 80px = 4.17cqw, 4px = 0.37cqh shadow, 3px = 0.16cqw border
+  const iconBoxStyle = `w-[4.17cqw] h-[4.17cqw] bg-white rounded-full flex items-center justify-center ${showShadow ? 'shadow-[0_0.37cqh_0.37cqh_rgba(0,0,0,0.1)]' : ''} hover:scale-105 transition-transform cursor-pointer border-[0.16cqw] border-white relative z-20`;
 
   const handleLogout = () => {
     // 로그아웃 로직
     sessionStorage.removeItem('token');
     sessionStorage.removeItem('nickname');
-    navigate('/login');
+    navigate('/');
   };
 
   const handleInquiry = () => {
@@ -64,22 +64,22 @@ const TopButtons = ({
   };
 
   return (
-    // gap-6 = 24px = 1.25vw
-    <div className={`flex gap-[1.25vw] items-start ${className}`}>
-      {/* 프로필 (아이콘 + 닉네임) - gap-1 = 4px = 0.37vh */}
-      <button onClick={onProfileClick} className="flex flex-col items-center gap-[0.37vh] group relative z-20">
+    // gap-6 = 24px = 1.25cqw
+    <div className={`flex gap-[1.25cqw] items-start ${className}`}>
+      {/* 프로필 (아이콘 + 닉네임) - gap-1 = 4px = 0.37cqh */}
+      <button onClick={onProfileClick} className="flex flex-col items-center gap-[0.37cqh] group relative z-20">
         <div className={`${iconBoxStyle} overflow-hidden p-0`}>
-          {/* w-10 h-10 = 40px = 2.08vw */}
-          <UserIcon className="w-[2.08vw] h-[2.08vw]" style={{ color: colors.text }} />
+          {/* w-10 h-10 = 40px = 2.08cqw */}
+          <UserIcon className="w-[2.08cqw] h-[2.08cqw]" style={{ color: colors.text }} />
         </div>
-        {/* 닉네임 뱃지 - 80px = 4.17vw, 40px = 3.7vh, 20px = 1.04vw radius, px-3 = 12px = 0.63vw */}
+        {/* 닉네임 뱃지 - 80px = 4.17cqw, 40px = 3.7cqh, 20px = 1.04cqw radius, px-3 = 12px = 0.63cqw */}
         <div
-          className="flex items-center justify-center min-w-[4.17vw] h-[3.7vh] rounded-[1.04vw] shadow-sm px-[0.63vw]"
+          className="flex items-center justify-center min-w-[4.17cqw] h-[3.7cqh] rounded-[1.04cqw] shadow-sm px-[0.63cqw]"
           style={{ backgroundColor: colors.badgeBg }}
         >
-          {/* 24px = 1.25vw text, pb-1 = 4px = 0.37vh */}
+          {/* 24px = 1.25cqw text, pb-1 = 4px = 0.37cqh */}
           <span
-            className="text-[1.25vw] font-black leading-none pb-[0.37vh]"
+            className="text-[1.25cqw] font-black leading-none pb-[0.37cqh]"
             style={{ color: colors.badgeText || colors.text }}
           >
             {nickname}
@@ -89,7 +89,7 @@ const TopButtons = ({
 
       {/* 알림 */}
       <button onClick={onBellClick} className={`${iconBoxStyle} relative z-20`}>
-        <BellIcon className="w-[2.08vw] h-[2.08vw]" style={{ color: colors.text }} />
+        <BellIcon className="w-[2.08cqw] h-[2.08cqw]" style={{ color: colors.text }} />
       </button>
 
       {/* 설정 (드롭다운 트리거) */}
@@ -98,18 +98,18 @@ const TopButtons = ({
           onClick={() => setIsDropdownOpen(!isDropdownOpen)}
           className={`${iconBoxStyle} ${isDropdownOpen ? 'bg-gray-100' : ''}`}
         >
-          <Cog6ToothIcon className="w-[2.08vw] h-[2.08vw]" style={{ color: colors.text }} />
+          <Cog6ToothIcon className="w-[2.08cqw] h-[2.08cqw]" style={{ color: colors.text }} />
         </button>
 
         {/* 드롭다운 메뉴 */}
         {isDropdownOpen && (
           <div
-            className="absolute top-[5.21vw] right-0 w-[10.42vw] bg-white rounded-[1.04vw] shadow-lg border-[0.16vw] overflow-hidden flex flex-col z-30 animate-fade-in-up"
+            className="absolute top-[5.21cqw] right-0 w-[10.42cqw] bg-white rounded-[1.04cqw] shadow-lg border-[0.16cqw] overflow-hidden flex flex-col z-30 animate-fade-in-up"
             style={{ borderColor: dropdownBorder }}
           >
             <button
               onClick={handleConfigSelect}
-              className="w-full py-[0.83vw] font-bold text-[1.04vw] transition-colors border-b-[0.05vw]"
+              className="w-full py-[0.83cqw] font-bold text-[1.04cqw] transition-colors border-b-[0.05cqw]"
               style={{
                 color: dropdownText,
                 borderColor: dropdownBorder,
@@ -119,21 +119,39 @@ const TopButtons = ({
             >
               환경설정
             </button>
-            <button
-              onClick={handleInquiry}
-              className="w-full py-[0.83vw] font-bold text-[1.04vw] transition-colors border-b-[0.05vw]"
-              style={{
-                color: dropdownText,
-                borderColor: dropdownBorder,
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = dropdownHoverBg)}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-            >
-              문의하기
-            </button>
+            {sessionStorage.getItem('role') === 'ADMIN' ? (
+              <button
+                onClick={() => {
+                  navigate('/admin');
+                  setIsDropdownOpen(false);
+                }}
+                className="w-full py-[0.83cqw] font-bold text-[1.04cqw] transition-colors border-b-[0.05cqw]"
+                style={{
+                  color: dropdownText,
+                  borderColor: dropdownBorder,
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = dropdownHoverBg)}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+              >
+                ADMIN
+              </button>
+            ) : (
+              <button
+                onClick={handleInquiry}
+                className="w-full py-[0.83cqw] font-bold text-[1.04cqw] transition-colors border-b-[0.05cqw]"
+                style={{
+                  color: dropdownText,
+                  borderColor: dropdownBorder,
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = dropdownHoverBg)}
+                onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+              >
+                문의하기
+              </button>
+            )}
             <button
               onClick={handleLogout}
-              className="w-full py-[0.83vw] hover:bg-[#FFF0F0] text-[#EB5757] font-bold text-[1.04vw] transition-colors"
+              className="w-full py-[0.83cqw] hover:bg-[#FFF0F0] text-[#EB5757] font-bold text-[1.04cqw] transition-colors"
             >
               로그아웃
             </button>
