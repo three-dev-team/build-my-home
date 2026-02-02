@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Client } from '@stomp/stompjs';
 import { getBrokerURL } from '../../utils/ws.js';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import AspectLayout from '../../components/layout/AspectLayout.jsx';
 import Loading from '../../components/common/Loading.jsx';
 import MenuButton from '../../components/common/MenuButton.jsx';
 import ChatToggle from '../../components/common/ChatToggle.jsx';
@@ -20,7 +21,7 @@ import TurnCounter from './TurnCounter.jsx';
 import House from './House.jsx';
 import Fishing from './Fishing.jsx';
 import Inventory from './Inventory.jsx';
-import GatherTile from './rewardTile/GatherTile.jsx';
+import RewardTile from './rewardTile/RewardTile.jsx';
 import Start from './Start.jsx';
 import Result from './Result.jsx';
 import Mupani from './Mupani.jsx';
@@ -59,11 +60,13 @@ const GamePage = () => {
   const [shopRelay, setShopRelay] = useState(null);
 
   // 현재 턴 플레이어 / 내 턴 여부
-  const currentPlayer = gameState?.players?.find((p) => p.memberId === gameState.currentPlayerId) || null;
+  const currentPlayer =
+    gameState?.players?.find((p) => p.memberId === gameState.currentPlayerId) || null;
   const isMyTurn = gameState ? myId === gameState.currentPlayerId : false;
 
   // 내 무 보유 개수/썩는 턴 안내용
-  const myPlayerState = gameState?.players?.find((p) => Number(p?.memberId) === Number(myId)) || null;
+  const myPlayerState =
+    gameState?.players?.find((p) => Number(p?.memberId) === Number(myId)) || null;
 
   // 무 썩는 턴 안내 문구(radishRemoveRound 기준)
   const getRadishDecayGuide = (player, currentRound) => {
@@ -133,7 +136,8 @@ const GamePage = () => {
 
           // 낚시: ROOM_EVENT_* 및 낚시 ERROR는 gameState로 덮어쓰지 않고 분리 저장
           const isRoomEvent = typeof t === 'string' && t.startsWith('ROOM_EVENT_');
-          const isFishingError = t === 'ERROR' && typeof data?.eventType === 'string' && data.eventType === 'FISHING';
+          const isFishingError =
+            t === 'ERROR' && typeof data?.eventType === 'string' && data.eventType === 'FISHING';
 
           if (isRoomEvent || isFishingError) {
             setFishingEventMessage(data);
@@ -152,8 +156,10 @@ const GamePage = () => {
 
           // 보상 데이터(MOVE_COMPLETE로 들어오는 것으로 가정)
           if (t === 'MOVE_COMPLETE') {
-            const hasRes = data?.gainedResources && Object.keys(data.gainedResources).length > 0;
-            const hasHar = data?.gainedHarvests && Object.keys(data.gainedHarvests).length > 0;
+            const hasRes =
+              data?.gainedResources && Object.keys(data.gainedResources).length > 0;
+            const hasHar =
+              data?.gainedHarvests && Object.keys(data.gainedHarvests).length > 0;
 
             if (hasRes || hasHar) {
               setRewardToast({
@@ -226,7 +232,8 @@ const GamePage = () => {
 
     // 무파니: BUY/SKIP은 턴 무관(전원 동시 결정)
     const allowAnyPlayerAction =
-      gameState?.status === 'WAITING_MUPANI' && ['RADISH_BUY', 'RADISH_SKIP'].includes(actionType);
+      gameState?.status === 'WAITING_MUPANI' &&
+      ['RADISH_BUY', 'RADISH_SKIP'].includes(actionType);
 
     // 내 턴이 아니면 차단(단, 무파니 BUY/SKIP 예외) / MOVING 중에는 항상 차단
     if ((!isMyTurn && !allowAnyPlayerAction) || gameState.status === 'MOVING') {
@@ -311,17 +318,25 @@ const GamePage = () => {
     });
   };
 
-  if (!gameState) return <Loading />;
+  if (!gameState) {
+    return (
+      <AspectLayout>
+        <div className="game-root">
+          <Loading />
+        </div>
+      </AspectLayout>
+    );
+  }
 
   // 낚시 렌더링 상태(새로고침/재접속 대비)
-  const isFishingPhase = ['WAITING_FISHING', 'FISHING_IN_PROGRESS'].includes(gameState.status) && stompClient;
+  const isFishingPhase =
+    ['WAITING_FISHING', 'FISHING_IN_PROGRESS'].includes(gameState.status) && stompClient;
 
   return (
-    <div className="game-viewport">
-      <div className="game-bg" aria-hidden="true" />
+    <AspectLayout>
+      <div className="game-root">
+        <div className="game-bg" aria-hidden="true" />
 
-      {/* vw/vh 스테이지 래퍼 */}
-      <div className="game-stage-wrap">
         <div className="game-stage">
           {/* 공통 UI 오버레이(현재는 비활성 상태) */}
           {/* {showCommonUI && (
@@ -381,7 +396,11 @@ const GamePage = () => {
                 <div className="left-hud-action-spacer" aria-hidden="true" />
               )}
 
-              <MyCharacterPanel players={gameState.players || []} myId={myId} currentPlayer={currentPlayer} />
+              <MyCharacterPanel
+                players={gameState.players || []}
+                myId={myId}
+                currentPlayer={currentPlayer}
+              />
             </div>
           )}
 
@@ -477,7 +496,7 @@ const GamePage = () => {
 
             {/* WAITING_RESOURCES / WAITING_HARVEST */}
             {(gameState.status === 'WAITING_RESOURCES' || gameState.status === 'WAITING_HARVEST') && (
-              <GatherTile
+              <RewardTile
                 roomId={roomId}
                 stompClient={stompClient}
                 gameState={gameState}
@@ -625,15 +644,11 @@ const GamePage = () => {
 
           {/* 보드에서만 하단 플레이어 상태 패널 */}
           {shouldShowHud && (
-            <PlayerStatusPanel
-              players={gameState.players || []}
-              currentPlayerId={gameState.currentPlayerId}
-              myId={myId}
-            />
+            <PlayerStatusPanel players={gameState.players || []} currentPlayerId={gameState.currentPlayerId} myId={myId} />
           )}
         </div>
       </div>
-    </div>
+    </AspectLayout>
   );
 };
 

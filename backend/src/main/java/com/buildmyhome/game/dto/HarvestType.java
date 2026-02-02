@@ -16,7 +16,8 @@ public enum HarvestType {
   // 생선
   FISH_SMALL(50),
   FISH_MEDIUM(150),
-  FISH_LARGE(300);
+  FISH_LARGE(300),
+  FISH_RARE(1000);
 
   private final int price;
 }

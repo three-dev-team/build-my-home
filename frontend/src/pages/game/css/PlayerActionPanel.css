@@ -1,132 +1,98 @@
-/* 16:9(1920x1080) 기준 safe 영역 스케일
-   - --safeW: 화면에서 16:9로 들어갈 수 있는 최대 너비
-   - --u: 1920px 기준 1px 스케일(calc(px * var(--u))) */
-:root {
-    --safeW: min(100vw, calc(100vh * 16 / 9));
-    --u: calc(var(--safeW) / 1920);
-
-    /* COLORS.ac 기준 색상 */
-    --paa-creamWhite: #FDFBF6;
-    --paa-darkBrown: #594E36;
-}
-
-/* 액션 패널(좌측 고정 + 세로 가운데 정렬) */
 .player-action-panel {
     position: absolute;
-    left: calc(20 * var(--u));
+    left: 1.0417cqw; /* 20px */
     top: 50%;
     transform: translateY(-50%);
-
-    width: calc(300 * var(--u));
-    height: calc(420 * var(--u));
-
-    padding: calc(28 * var(--u)) calc(20 * var(--u)) calc(48 * var(--u));
-    border-radius: calc(80 * var(--u));
-
-    background: var(--paa-creamWhite);
-
+    width: 15.625cqw; /* 300px */
+    height: 38.8889cqh; /* 420px */
+    padding: 2.5926cqh 1.0417cqw 4.4444cqh; /* 28px 20px 48px */
+    border-radius: 4.1667cqw; /* 80px */
+    background: #FDFBF6;
     display: flex;
     flex-direction: column;
     align-items: center;
-
     font-family: var(--font-gosanja), system-ui, -apple-system, "Segoe UI", sans-serif;
-    color: var(--paa-darkBrown);
+    color: #594E36;
     box-sizing: border-box;
 }
 
-/* 상단 시간 영역(가운데 정렬 + 좌측 LTE 아이콘 포함) */
 .paa-time {
     width: 100%;
     position: relative;
-
     display: flex;
     align-items: center;
     justify-content: center;
-
     color: rgba(89, 78, 54, 0.2);
-    margin-bottom: calc(32 * var(--u));
+    margin-bottom: 2.9630cqh; /* 32px */
     user-select: none;
-
-    min-height: calc(20 * var(--u));
+    min-height: 1.8519cqh; /* 20px */
 }
 
-/* LTE 아이콘(좌측 고정 배치) */
 .paa-lte {
     position: absolute;
-    left: calc(12 * var(--u));
+    left: 0.625cqw; /* 12px */
     top: 50%;
     transform: translateY(-50%);
-
-    height: calc(20 * var(--u));
+    height: 1.8519cqh; /* 20px */
     width: auto;
     opacity: 0.2;
 }
 
-/* 시간 텍스트 */
 .paa-time-text {
-    font-size: calc(16 * var(--u));
+    font-size: 0.8333cqw; /* 16px */
     line-height: 1;
     text-align: center;
 }
 
-/* 타이틀 */
 .paa-title {
-    font-size: calc(24 * var(--u));
+    font-size: 1.25cqw; /* 24px */
     line-height: 1.2;
-    margin: 0 0 calc(16 * var(--u));
+    margin: 0 0 1.4815cqh; /* 16px */
     text-align: center;
     font-weight: 600;
 }
 
-/* 설명(2줄 고정 라인 높이 포함) */
 .paa-desc {
-    font-size: calc(16 * var(--u));
-    line-height: calc(28 * var(--u));
-    margin: 0 0 calc(24 * var(--u));
+    font-size: 0.8333cqw; /* 16px */
+    line-height: 1.75;
+    margin: 0 0 2.2222cqh; /* 24px */
     text-align: center;
 }
 
-/* 버튼 그리드(3x2) */
 .paa-grid {
     width: 100%;
     display: grid;
-    grid-template-columns: repeat(3, calc(80 * var(--u)));
+    grid-template-columns: repeat(3, 4.1667cqw); /* 80px */
     justify-content: space-between;
-    row-gap: calc(12 * var(--u));
+    row-gap: 0.625cqw; /* 12px */
 }
 
-/* 개별 버튼(배경 없음, 이미지만 클릭) */
 .paa-btn {
-    width: calc(80 * var(--u));
-    height: calc(80 * var(--u));
-
+    width: 4.1667cqw; /* 80px */
+    height: 4.1667cqw; /* 80px */
     border: 0;
     padding: 0;
     background: transparent;
-
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
-/* 버튼 이미지 */
 .paa-btn-img {
-    width: calc(80 * var(--u));
-    height: calc(80 * var(--u));
+    width: 4.1667cqw; /* 80px */
+    height: 4.1667cqw; /* 80px */
     object-fit: contain;
-    border-radius: calc(24 * var(--u));
+    border-radius: 1.25cqw; /* 24px */
 }
 
-/* 비활성 버튼 */
 .paa-btn.is-disabled {
     opacity: 0.35;
     cursor: not-allowed;
 }
 
-/* 키보드 포커스 표시 */
 .paa-btn:focus-visible {
-    outline: calc(2 * var(--u)) solid rgba(89, 78, 54, 0.25);
-    outline-offset: calc(4 * var(--u));
-    border-radius: calc(20 * var(--u));
+    outline: 0.1042cqw solid rgba(89, 78, 54, 0.25); /* 2px */
+    outline-offset: 0.2083cqw; /* 4px */
+    border-radius: 1.0417cqw; /* 20px */
 }
