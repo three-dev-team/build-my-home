@@ -29,10 +29,51 @@ export const ITEMS = [
   makeItem({ id: 10, serverKey: 'WATERING',       assetKey: 'watering',       name: '물뿌리개' }),
 ];
 
-// 서버가 enum("CUSTOM_DICE")을 보내든, 파일키("custom_dice")를 보내든 동일 아이템으로 조회
+// ✅ 서버가 enum("CUSTOM_DICE")을 보내든,
+// ✅ 파일키("custom_dice")를 보내든,
+// ✅ id(3) / "3"을 보내든,
+// ✅ 파일명("item-double_dice.webp")을 보내든 동일 아이템으로 조회
 export const ITEM_INFO_BY_KEY = Object.fromEntries(
   ITEMS.flatMap((it) => [
+    // 기존
     [it.serverKey, it],
     [it.assetKey, it],
+
+    // ✅ id도 매칭
+    [it.id, it],
+    [String(it.id), it],
+
+    // ✅ 파일명/프리픽스 형태도 매칭
+    [`item-${it.assetKey}`, it],
+    [`item_${it.assetKey}`, it],
+    [`item-${it.assetKey}.webp`, it],
+    [`item_${it.assetKey}.webp`, it],
+    [`${BASE.item}/item-${it.assetKey}.webp`, it],
   ])
 );
+
+// ✅ (선택) 어떤 값이 와도 최대한 맞춰주는 헬퍼
+export function resolveItemKey(raw) {
+  if (raw === null || raw === undefined) return null;
+
+  // 숫자면 id로
+  if (typeof raw === 'number') return ITEM_INFO_BY_KEY[raw] || null;
+
+  const s = String(raw).trim();
+  if (!s) return null;
+
+  // 1) 그대로
+  if (ITEM_INFO_BY_KEY[s]) return ITEM_INFO_BY_KEY[s];
+
+  // 2) 대문자(ENUM) 시도
+  const upper = s.toUpperCase();
+  if (ITEM_INFO_BY_KEY[upper]) return ITEM_INFO_BY_KEY[upper];
+
+  // 3) 경로/확장자 제거해서 assetKey 뽑기
+  const file = s.split('/').pop() || s;
+  const noExt = file.replace(/\.(webp|png|jpg|jpeg)$/i, '');
+  const noPrefix = noExt.replace(/^item[-_]/i, '');
+  if (ITEM_INFO_BY_KEY[noPrefix]) return ITEM_INFO_BY_KEY[noPrefix];
+
+  return null;
+}
