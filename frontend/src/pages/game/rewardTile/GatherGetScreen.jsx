@@ -54,6 +54,18 @@ export default function GatherGetScreen({
   const aName = useMemo(() => koName(k1), [k1]);
   const bName = useMemo(() => koName(k2), [k2]);
 
+
+  // 메인라인: "야호 (플레이어) (보상들)을 획득했다!"
+  const mainLine = useMemo(() => {
+    const prefix = '야호';
+
+    // 드랍 2개
+    if (aName && bName) {
+      return `${prefix} ${aName}${waGwa(aName)} ${bName}를 획득했다!`;
+    }
+    return `${prefix} 보상을 획득했다!`;
+  }, [aName, bName]);
+
   // 자막 2번째 줄 + 하이라이트용 토큰(집 이름/관전자 이름)
   const { subLine, nextLevelNameForHighlight, viewerNameForHighlight } = useMemo(() => {
     const viewerName = safeText(viewerNameText, nickname) || '나';

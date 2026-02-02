@@ -20,7 +20,6 @@ export const RESOURCES = [
   makeItem({ key: 'WALLPAPER', name: '벽지', file: 'resource-wallpaper' }),
   makeItem({ key: 'CLAY', name: '점토', file: 'resource-clay' }),
   makeItem({ key: 'FLOORING', name: '바닥재', file: 'resource-floor' }),
-  makeItem({ key: 'STONE', name: '돌', file: 'resource-stone' }),
 ];
 
 // 과일(수확물) 정의(표시 순서 유지)
@@ -33,7 +32,7 @@ export const FRUITS = [
 ];
 
 // RewardDrop에서 사용하는 드랍/표시 순서(서버 key 기준)
-export const RESOURCE_ORDER = ['STONE', 'WOOD', 'IRON', 'CLOTH', 'BRICK', 'WALLPAPER', 'CLAY', 'FLOORING'];
+export const RESOURCE_ORDER = ['WOOD', 'IRON', 'CLOTH', 'BRICK', 'WALLPAPER', 'CLAY', 'FLOORING'];
 export const FRUIT_ORDER = ['APPLE', 'ORANGE', 'PEAR', 'PEACH', 'CHERRY'];
 
 // key -> 한글 이름 매핑
