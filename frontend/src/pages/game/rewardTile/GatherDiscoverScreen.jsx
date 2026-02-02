@@ -13,7 +13,6 @@ export default function GatherDiscoverScreen({ kind, isMyTurn, characterImage })
 
   return (
     <>
-      // 캐릭터 영역(다른 단계와 동일한 wrapper/클래스를 사용)
       <div className="gather-character-wrap" aria-hidden="true">
         <div className="gather-character-box">
           {characterImage ? (
@@ -26,8 +25,6 @@ export default function GatherDiscoverScreen({ kind, isMyTurn, characterImage })
           ) : null}
         </div>
       </div>
-
-      // 하단 안내 텍스트(InstructionText가 위치/스타일 담당)
       <InstructionText>{text}</InstructionText>
     </>
   );
