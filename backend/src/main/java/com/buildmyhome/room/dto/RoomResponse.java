@@ -11,11 +11,8 @@ public class RoomResponse {
   private Long id;
   private String title;
   private Integer maxPlayers;
-  private Integer currentPlayers;
   private String status;
   private Integer totalRounds;
-  private Long hostId;
-  private String hostNickname;
 
   // convert Room entity to RoomResponse DTO
   public static RoomResponse fromEntity(Room room) {

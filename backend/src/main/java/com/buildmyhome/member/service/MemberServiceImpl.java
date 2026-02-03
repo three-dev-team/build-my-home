@@ -15,6 +15,14 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.UUID;
+import org.springframework.util.StringUtils;
 
 @Slf4j
 @Service
@@ -71,6 +79,7 @@ public class MemberServiceImpl implements MemberService {
       .kakaoId(member.getKakaoId())
       .naverId(member.getNaverId())
       .googleId(member.getGoogleId())
+      .profileImage(member.getProfileImage())
       .build();
   }
 
@@ -117,6 +126,7 @@ public class MemberServiceImpl implements MemberService {
       .kakaoId(member.getKakaoId())
       .naverId(member.getNaverId())
       .googleId(member.getGoogleId())
+      .profileImage(member.getProfileImage())
       .build();
   }
 
@@ -215,5 +225,57 @@ public class MemberServiceImpl implements MemberService {
         throw new IllegalArgumentException("지원하지 않는 소셜 서비스입니다: " + provider);
     }
     log.info("Social Account Unlinked: User={}, Provider={}", email, provider);
+  }
+  @Override
+  @Transactional
+  public MemberResponse updateProfileImage(String email, MultipartFile file) {
+    if (file.isEmpty()) {
+      throw new IllegalArgumentException("업로드할 파일이 없습니다.");
+    }
+
+    try {
+      // 1. 저장 디렉토리 생성
+      String uploadDir = "uploads/profiles/";
+      Path uploadPath = Paths.get(uploadDir);
+      if (!Files.exists(uploadPath)) {
+        Files.createDirectories(uploadPath);
+      }
+
+      // 2. 파일명 생성 (UUID)
+      String originalFilename = StringUtils.cleanPath(file.getOriginalFilename());
+      String extension = "";
+      int dotIndex = originalFilename.lastIndexOf('.');
+      if (dotIndex >= 0) {
+        extension = originalFilename.substring(dotIndex);
+      }
+      String fileName = UUID.randomUUID().toString() + extension;
+
+      // 3. 파일 저장
+      Path filePath = uploadPath.resolve(fileName);
+      Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+      // 4. 유저 정보 업데이트
+      Member member = memberRepository.findByEmail(email)
+          .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+      
+      String profileImageUrl = "/uploads/profiles/" + fileName;
+      member.setProfileImage(profileImageUrl);
+      
+      return MemberResponse.builder()
+          .id(member.getId())
+          .email(member.getEmail())
+          .nickname(member.getNickname())
+          .level(member.getLevel())
+          .bell(member.getBell())
+          .role(member.getRole().name())
+          .kakaoId(member.getKakaoId())
+          .naverId(member.getNaverId())
+          .googleId(member.getGoogleId())
+          .profileImage(profileImageUrl)
+          .build();
+
+    } catch (IOException e) {
+      throw new RuntimeException("파일 저장 중 오류가 발생했습니다.", e);
+    }
   }
 }

@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/member")
@@ -98,5 +99,12 @@ public class MemberController {
     String email = authentication.getName();
     memberService.unlinkSocialAccount(email, provider);
     return ResponseEntity.ok().build();
+  }
+
+  @PostMapping("/profile-image")
+  public ResponseEntity<MemberResponse> uploadProfileImage(@RequestParam("file") MultipartFile file, Authentication authentication) {
+    String email = authentication.getName();
+    MemberResponse response = memberService.updateProfileImage(email, file);
+    return ResponseEntity.ok(response);
   }
 }

@@ -45,6 +45,7 @@ public class RoomWsController {
           message.setMemberId(memberId);
 
           message.setPlayers(room.getPlayers().values().stream().toList());
+          message.setTotalRounds(room.getTotalRounds()); // 판수 전달
 
           messagingTemplate.convertAndSend("/topic/rooms/" + message.getRoomId(), message);
         }
@@ -62,6 +63,7 @@ public class RoomWsController {
       message.setPlayers(room.getPlayers().values().stream().toList());
       message.setAutoStartTime(room.getAutoStartTime());
       message.setMaxPlayers(room.getMaxPlayers());
+      message.setTotalRounds(room.getTotalRounds()); // 판수 전달
     } else {
       message.setPlayers(new ArrayList<>());
     }
@@ -104,6 +106,7 @@ public class RoomWsController {
       
       message.setPlayers(updatedRoom.getPlayers().values().stream().toList());
       message.setAutoStartTime(updatedRoom.getAutoStartTime()); // 갱신된 시간(null) 전송
+      message.setTotalRounds(updatedRoom.getTotalRounds()); // 판수 전달
     } else {
       message.setPlayers(new ArrayList<>());
     }
@@ -147,6 +150,7 @@ public class RoomWsController {
           message.setMemberId(memberId);
           message.setAutoStartTime(room.getAutoStartTime()); // 메시지에 담아서 전송
           message.setPlayers(room.getPlayers().values().stream().toList());
+          message.setTotalRounds(room.getTotalRounds()); // 판수 전달
 
           messagingTemplate.convertAndSend("/topic/rooms/" + roomId, message);
         }
@@ -168,6 +172,7 @@ public class RoomWsController {
       if (room != null) {
         message.setType("HOST_DELEGATED");
         message.setPlayers(room.getPlayers().values().stream().toList());
+        message.setTotalRounds(room.getTotalRounds()); // 판수 전달
         messagingTemplate.convertAndSend("/topic/rooms/" + roomId, message);
       }
     } catch (IllegalStateException e) {
@@ -192,6 +197,7 @@ public class RoomWsController {
         // getPlayers와 동일한 포맷으로 전송
         message.setPlayers(room.getPlayers().values().stream().toList());
         message.setAutoStartTime(room.getAutoStartTime());
+        message.setTotalRounds(room.getTotalRounds()); // 판수 전달
         
         messagingTemplate.convertAndSend("/topic/rooms/" + roomId, message);
         System.out.println(">>> ⏳ Force Start Timer: 5 seconds");
@@ -203,20 +209,29 @@ public class RoomWsController {
   public void updateSettings(RoomMessage message, Principal principal) {
     Long roomId = message.getRoomId();
     Integer newMax = message.getMaxPlayers();
+    Integer newRounds = message.getTotalRounds();
 
-    if (newMax == null) return;
+    // 둘 다 없으면 리턴
+    if (newMax == null && newRounds == null) return;
 
     RoomState room = roomStateService.getRoom(roomId);
     if (room == null) return;
 
     synchronized (room) {
         try {
-          // DB 업데이트 & 유효성 검사
-          roomListService.updateMaxPlayers(roomId, newMax);
+          // maxPlayers 업데이트
+          if (newMax != null) {
+            roomListService.updateMaxPlayers(roomId, newMax);
+          }
+          
+          // totalRounds 업데이트 (새로 추가)
+          if (newRounds != null) {
+            roomListService.updateTotalRounds(roomId, newRounds);
+          }
 
           // 브로드캐스트
           // [Modified] 설정 변경 시에도 자동 시작 조건 재확인 (설정 변경으로 인원수 조건이 깨질 수 있음)
-          boolean isFull = room.getPlayers().size() >= newMax;
+          boolean isFull = room.getPlayers().size() >= room.getMaxPlayers();
           boolean allReady = room.getPlayers().values().stream()
               .filter(p -> p.getNickname() != null)
               .allMatch(RoomPlayerState::isReady);
@@ -231,10 +246,11 @@ public class RoomWsController {
           message.setType("ROOM_SETTINGS_UPDATE");
           message.setPlayers(room.getPlayers().values().stream().toList());
           message.setAutoStartTime(room.getAutoStartTime());
-          message.setMaxPlayers(newMax);
+          message.setMaxPlayers(room.getMaxPlayers());
+          message.setTotalRounds(room.getTotalRounds()); // 추가
 
           messagingTemplate.convertAndSend("/topic/rooms/" + roomId, message);
-          System.out.println(">>> ⚙️ Room Settings Updated: MaxPlayers=" + newMax);
+          System.out.println(">>> ⚙️ Room Settings Updated: MaxPlayers=" + newMax + ", TotalRounds=" + newRounds);
         } catch (Exception e) {
           System.err.println("Failed to update settings: " + e.getMessage());
           // 에러 메시지 전송 로직 추가 가능
@@ -283,6 +299,7 @@ public class RoomWsController {
 
         message.setPlayers(updatedRoom.getPlayers().values().stream().toList());
         message.setAutoStartTime(updatedRoom.getAutoStartTime());
+        message.setTotalRounds(updatedRoom.getTotalRounds()); // 판수 전달
       } else {
         message.setPlayers(new ArrayList<>());
       }
@@ -303,6 +320,12 @@ public class RoomWsController {
     // 보낸 사람 정보 세팅
     message.setMemberId(memberId);
     message.setType("CHAT");
+
+    // [Added] 판수 정보 유지
+    RoomState room = roomStateService.getRoom(message.getRoomId());
+    if (room != null) {
+        message.setTotalRounds(room.getTotalRounds());
+    }
     
     // 방에 있는 모든 사람에게 전송
     messagingTemplate.convertAndSend("/topic/rooms/" + message.getRoomId(), message);

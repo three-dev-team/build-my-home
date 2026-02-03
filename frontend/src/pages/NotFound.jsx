@@ -115,7 +115,7 @@ const NotFound = () => {
 
         {/* 선택지 (타이핑 완료 후 표시) */}
         {showOptions && (
-          <div className="absolute bottom-[40%] right-[8%] z-[2001]">
+          <div className="absolute bottom-[30%] right-[8%] z-[2001]">
             <div className="bg-[#FFFACD] rounded-[2.08cqw] px-[2.08cqw] py-[1.04cqw] shadow-lg">
               <div className="flex items-center gap-[1.04cqw]">
                 <img

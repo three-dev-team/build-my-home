@@ -273,6 +273,28 @@ public class RoomListService {
     // roomRepository.save(room); // Transactional handles save
   }
 
+  @Transactional
+  public void updateTotalRounds(Long roomId, int newTotalRounds) {
+    // 유효성 검증: 10, 20, 30, 40만 허용
+    if (!List.of(10, 20, 30, 40).contains(newTotalRounds)) {
+      throw new IllegalArgumentException("라운드는 10, 20, 30, 40 중 하나여야 합니다.");
+    }
+
+    Room room = roomRepository.findById(roomId)
+        .orElseThrow(() -> new IllegalArgumentException("Room not found: " + roomId));
+
+    RoomState roomState = roomStateService.getRoom(roomId);
+    
+    // 메모리 상태 업데이트
+    if (roomState != null) {
+      roomState.setTotalRounds(newTotalRounds);
+    }
+    
+    // DB 업데이트
+    room.setTotalRounds(newTotalRounds);
+    // roomRepository.save(room); // Transactional handles save
+  }
+
   @Transactional(readOnly = true)
   public boolean verifyPassword(Long roomId, String password) {
     Room room = roomRepository.findById(roomId)

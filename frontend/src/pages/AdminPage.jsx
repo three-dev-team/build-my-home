@@ -83,7 +83,7 @@ export default function AdminPage() {
   }, [activeTab]);
 
   // 문의 목록 가져오기
-  const fetchInquiries = async (page = 0, keyword = '', categories = [], statuses = []) => {
+  const fetchInquiries = async (page = 0, keyword = '', categories = [], statuses = [], sort = 'latest') => {
     try {
       setLoading(true);
       setInquiryError(false); // 에러 초기화
@@ -92,8 +92,9 @@ export default function AdminPage() {
       const keywordParam = keyword ? `&keyword=${encodeURIComponent(keyword)}` : '';
       const categoryParam = categories.length > 0 ? `&categories=${categories.join(',')}` : '';
       const statusParam = statuses.length > 0 ? `&statuses=${statuses.join(',')}` : '';
+      const sortParam = `&sort=${sort}`;
       const response = await axios.get(
-        `/api/admin/inquiries?page=${page}&size=4${keywordParam}${categoryParam}${statusParam}`,
+        `/api/admin/inquiries?page=${page}&size=4${keywordParam}${categoryParam}${statusParam}${sortParam}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },
@@ -121,12 +122,14 @@ export default function AdminPage() {
       const token = sessionStorage.getItem('token');
       // 회원 목록 10개씩 페이지네이션
       const keywordParam = keyword ? `&keyword=${encodeURIComponent(keyword)}` : '';
-      // TODO: 백엔드 API가 roles와 sort 파라미터를 지원하면 주석 해제
-      // const roleParam = roles.length > 0 ? `&roles=${roles.join(',')}` : '';
-      // const sortParam = `&sort=${sort}`;
-      const response = await axios.get(`/api/admin/members?page=${page}&size=10${keywordParam}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const roleParam = roles.length > 0 ? `&roles=${roles.join(',')}` : '';
+      const sortParam = `&sort=${sort}`;
+      const response = await axios.get(
+        `/api/admin/members?page=${page}&size=10${keywordParam}${roleParam}${sortParam}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
       setMembers(response.data.content);
       setMemberCurrentPage(response.data.number);
       setMemberTotalPages(response.data.totalPages);
@@ -489,12 +492,12 @@ export default function AdminPage() {
                 <div className="flex flex-col px-[0.52cqw] mt-[2cqh] gap-[0.5cqh]">
                   {/* 상단: 아이콘 Row (좌: 리스트 / 우: 정렬, 엑셀) */}
                   <div className="flex justify-between items-end">
-                    {/* 왼쪽: 리스트 아이콘 + 필터 드롭다운 */}
+                    {/* 왼쪽: 리스트 아이콘 + 정렬 드롭다운 */}
                     <div className="relative">
                       <div
                         onClick={(e) => {
                           e.stopPropagation();
-                          toggleFilter();
+                          toggleSort();
                         }}
                         className="w-[2.08cqw] h-[2.08cqw] bg-[#594E36] opacity-80 cursor-pointer hover:opacity-100"
                         style={{
@@ -508,69 +511,37 @@ export default function AdminPage() {
                         }}
                       />
 
-                      {/* 필터 드롭다운 */}
-                      {isFilterOpen && (
-                        <div className="absolute top-[2.5cqw] left-0 w-[15cqw] bg-white rounded-[1.04cqw] shadow-xl border-[0.1cqw] border-[#594E36]/20 p-[1.04cqw] z-50">
-                          {/* 카테고리 필터 */}
-                          <div className="mb-[1cqh]">
-                            <h4 className="text-[0.83cqw] font-bold text-[#594E36] mb-[0.5cqh]">카테고리</h4>
-                            <div className="flex flex-col gap-[0.3cqh]">
-                              {[
-                                { value: 'USER_REPORT', label: '유저신고' },
-                                { value: 'BUG_REPORT', label: '버그신고' },
-                                { value: 'ETC', label: '기타' },
-                              ].map((category) => (
-                                <label
-                                  key={category.value}
-                                  className="flex items-center gap-[0.42cqw] cursor-pointer hover:bg-[#F9F3F9] p-[0.31cqw] rounded-[0.52cqw]"
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={selectedCategories.includes(category.value)}
-                                    onChange={() => handleCategoryFilter(category.value)}
-                                    className="w-[0.83cqw] h-[0.83cqw] cursor-pointer"
-                                  />
-                                  <span className="text-[0.73cqw] font-medium text-[#594E36]">{category.label}</span>
-                                </label>
-                              ))}
+                      {/* 정렬 드롭다운 */}
+                      {isSortOpen && (
+                        <div className="absolute top-[2.5cqw] left-0 w-[12cqw] bg-white rounded-[1.04cqw] shadow-xl border-[0.1cqw] border-[#594E36]/20 p-[0.83cqw] z-50">
+                          {[
+                            { value: 'latest', label: '최신순' },
+                            { value: 'oldest', label: '오래된순' },
+                          ].map((option) => (
+                            <div
+                              key={option.value}
+                              onClick={() => handleSortChange(option.value)}
+                              className={`p-[0.52cqw] rounded-[0.52cqw] cursor-pointer text-[0.73cqw] font-medium ${
+                                selectedSort === option.value
+                                  ? 'bg-[#594E36] text-white'
+                                  : 'text-[#594E36] hover:bg-[#F9F3F9]'
+                              }`}
+                            >
+                              {option.label}
                             </div>
-                          </div>
-
-                          {/* 상태 필터 */}
-                          <div>
-                            <h4 className="text-[0.83cqw] font-bold text-[#594E36] mb-[0.5cqh]">상태</h4>
-                            <div className="flex flex-col gap-[0.3cqh]">
-                              {[
-                                { value: 'PENDING', label: '답변대기' },
-                                { value: 'ANSWERED', label: '답변완료' },
-                              ].map((status) => (
-                                <label
-                                  key={status.value}
-                                  className="flex items-center gap-[0.42cqw] cursor-pointer hover:bg-[#F9F3F9] p-[0.31cqw] rounded-[0.52cqw]"
-                                >
-                                  <input
-                                    type="checkbox"
-                                    checked={selectedStatuses.includes(status.value)}
-                                    onChange={() => handleStatusFilter(status.value)}
-                                    className="w-[0.83cqw] h-[0.83cqw] cursor-pointer"
-                                  />
-                                  <span className="text-[0.73cqw] font-medium text-[#594E36]">{status.label}</span>
-                                </label>
-                              ))}
-                            </div>
-                          </div>
+                          ))}
                         </div>
                       )}
                     </div>
 
-                    {/* 오른쪽: 정렬, 엑셀 아이콘 */}
+                    {/* 오른쪽: 필터, 엑셀 아이콘 */}
                     <div className="flex items-end gap-[0.83cqw]">
-                      {/* Sort Icon + Dropdown */}
+                      {/* Sort Icon + Filter Dropdown */}
                       <div className="relative">
                         <div
                           onClick={(e) => {
                             e.stopPropagation();
-                            toggleSort();
+                            toggleFilter();
                           }}
                           className="w-[2.08cqw] h-[2.08cqw] bg-[#594E36] cursor-pointer hover:opacity-80"
                           style={{
@@ -584,26 +555,57 @@ export default function AdminPage() {
                           }}
                         />
 
-                        {/* 정렬 드롭다운 */}
-                        {isSortOpen && (
-                          <div className="absolute top-[2.5cqw] right-0 w-[12cqw] bg-white rounded-[1.04cqw] shadow-xl border-[0.1cqw] border-[#594E36]/20 p-[0.83cqw] z-50">
-                            {[
-                              { value: 'latest', label: '최신순' },
-                              { value: 'oldest', label: '오래된순' },
-                              { value: 'pending', label: '답변대기 우선' },
-                            ].map((option) => (
-                              <div
-                                key={option.value}
-                                onClick={() => handleSortChange(option.value)}
-                                className={`p-[0.52cqw] rounded-[0.52cqw] cursor-pointer text-[0.73cqw] font-medium ${
-                                  selectedSort === option.value
-                                    ? 'bg-[#594E36] text-white'
-                                    : 'text-[#594E36] hover:bg-[#F9F3F9]'
-                                }`}
-                              >
-                                {option.label}
+                        {/* 필터 드롭다운 */}
+                        {isFilterOpen && (
+                          <div className="absolute top-[2.5cqw] right-0 w-[15cqw] bg-white rounded-[1.04cqw] shadow-xl border-[0.1cqw] border-[#594E36]/20 p-[1.04cqw] z-50">
+                            {/* 카테고리 필터 */}
+                            <div className="mb-[1cqh]">
+                              <h4 className="text-[0.83cqw] font-bold text-[#594E36] mb-[0.5cqh]">카테고리</h4>
+                              <div className="flex flex-col gap-[0.3cqh]">
+                                {[
+                                  { value: 'USER_REPORT', label: '유저신고' },
+                                  { value: 'BUG_REPORT', label: '버그신고' },
+                                  { value: 'ETC', label: '기타' },
+                                ].map((category) => (
+                                  <label
+                                    key={category.value}
+                                    className="flex items-center gap-[0.42cqw] cursor-pointer hover:bg-[#F9F3F9] p-[0.31cqw] rounded-[0.52cqw]"
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={selectedCategories.includes(category.value)}
+                                      onChange={() => handleCategoryFilter(category.value)}
+                                      className="w-[0.83cqw] h-[0.83cqw] cursor-pointer"
+                                    />
+                                    <span className="text-[0.73cqw] font-medium text-[#594E36]">{category.label}</span>
+                                  </label>
+                                ))}
                               </div>
-                            ))}
+                            </div>
+
+                            {/* 상태 필터 */}
+                            <div>
+                              <h4 className="text-[0.83cqw] font-bold text-[#594E36] mb-[0.5cqh]">상태</h4>
+                              <div className="flex flex-col gap-[0.3cqh]">
+                                {[
+                                  { value: 'OPEN', label: '답변대기' },
+                                  { value: 'ANSWERED', label: '답변완료' },
+                                ].map((status) => (
+                                  <label
+                                    key={status.value}
+                                    className="flex items-center gap-[0.42cqw] cursor-pointer hover:bg-[#F9F3F9] p-[0.31cqw] rounded-[0.52cqw]"
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={selectedStatuses.includes(status.value)}
+                                      onChange={() => handleStatusFilter(status.value)}
+                                      className="w-[0.83cqw] h-[0.83cqw] cursor-pointer"
+                                    />
+                                    <span className="text-[0.73cqw] font-medium text-[#594E36]">{status.label}</span>
+                                  </label>
+                                ))}
+                              </div>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -806,12 +808,12 @@ export default function AdminPage() {
                 {/* 검색바 (Search Bar) */}
                 {/* 검색 영역 (리스트 아이콘 - 검색바 - 정렬/엑셀 아이콘) */}
                 <div className="flex items-center justify-between mb-[2cqh] w-full">
-                  {/* 왼쪽: 필터 아이콘 + 드롭다운 */}
+                  {/* 왼쪽: 리스트 아이콘 + 정렬 드롭다운 */}
                   <div className="relative">
                     <div
                       onClick={(e) => {
                         e.stopPropagation();
-                        toggleMemberFilter();
+                        toggleMemberSort();
                       }}
                       className="w-[3.13cqw] h-[3.13cqw] bg-[#594E36] cursor-pointer hover:opacity-80"
                       style={{
@@ -822,29 +824,27 @@ export default function AdminPage() {
                       }}
                     />
 
-                    {/* 필터 드롭다운 */}
-                    {isMemberFilterOpen && (
-                      <div className="absolute top-[3.5cqw] left-0 w-[12cqw] bg-white rounded-[1.04cqw] shadow-xl border-[0.1cqw] border-[#594E36]/20 p-[1.04cqw] z-50">
-                        <h4 className="text-[0.83cqw] font-bold text-[#594E36] mb-[0.5cqh]">역할</h4>
-                        <div className="flex flex-col gap-[0.3cqh]">
-                          {[
-                            { value: 'USER', label: '일반 회원' },
-                            { value: 'ADMIN', label: '관리자' },
-                          ].map((role) => (
-                            <label
-                              key={role.value}
-                              className="flex items-center gap-[0.42cqw] cursor-pointer hover:bg-[#F9F3F9] p-[0.31cqw] rounded-[0.52cqw]"
-                            >
-                              <input
-                                type="checkbox"
-                                checked={selectedRoles.includes(role.value)}
-                                onChange={() => handleRoleFilter(role.value)}
-                                className="w-[0.83cqw] h-[0.83cqw] cursor-pointer"
-                              />
-                              <span className="text-[0.73cqw] font-medium text-[#594E36]">{role.label}</span>
-                            </label>
-                          ))}
-                        </div>
+                    {/* 정렬 드롭다운 */}
+                    {isMemberSortOpen && (
+                      <div className="absolute top-[3.5cqw] left-0 w-[12cqw] bg-white rounded-[1.04cqw] shadow-xl border-[0.1cqw] border-[#594E36]/20 p-[0.83cqw] z-50">
+                        {[
+                          { value: 'latest', label: '최신 가입순' },
+                          { value: 'oldest', label: '오래된 가입순' },
+                          { value: 'level', label: '레벨 높은순' },
+                          { value: 'bell', label: '벨 많은순' },
+                        ].map((option) => (
+                          <div
+                            key={option.value}
+                            onClick={() => handleMemberSortChange(option.value)}
+                            className={`p-[0.52cqw] rounded-[0.52cqw] cursor-pointer text-[0.73cqw] font-medium ${
+                              selectedMemberSort === option.value
+                                ? 'bg-[#594E36] text-white'
+                                : 'text-[#594E36] hover:bg-[#F9F3F9]'
+                            }`}
+                          >
+                            {option.label}
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>
@@ -867,14 +867,14 @@ export default function AdminPage() {
                     />
                   </div>
 
-                  {/* 오른쪽: Sort, Excel Icon */}
+                  {/* 오른쪽: 필터, Excel Icon */}
                   <div className="flex items-center gap-[0.83cqw]">
-                    {/* Sort Icon + Dropdown */}
+                    {/* Sort Icon + Filter Dropdown */}
                     <div className="relative">
                       <div
                         onClick={(e) => {
                           e.stopPropagation();
-                          toggleMemberSort();
+                          toggleMemberFilter();
                         }}
                         className="w-[3.13cqw] h-[3.13cqw] bg-[#594E36] cursor-pointer hover:opacity-80"
                         style={{
@@ -888,27 +888,29 @@ export default function AdminPage() {
                         }}
                       />
 
-                      {/* 정렬 드롭다운 */}
-                      {isMemberSortOpen && (
-                        <div className="absolute top-[3.5cqw] right-0 w-[12cqw] bg-white rounded-[1.04cqw] shadow-xl border-[0.1cqw] border-[#594E36]/20 p-[0.83cqw] z-50">
-                          {[
-                            { value: 'latest', label: '최신 가입순' },
-                            { value: 'oldest', label: '오래된 가입순' },
-                            { value: 'level', label: '레벨 높은순' },
-                            { value: 'bell', label: '벨 많은순' },
-                          ].map((option) => (
-                            <div
-                              key={option.value}
-                              onClick={() => handleMemberSortChange(option.value)}
-                              className={`p-[0.52cqw] rounded-[0.52cqw] cursor-pointer text-[0.73cqw] font-medium ${
-                                selectedMemberSort === option.value
-                                  ? 'bg-[#594E36] text-white'
-                                  : 'text-[#594E36] hover:bg-[#F9F3F9]'
-                              }`}
-                            >
-                              {option.label}
-                            </div>
-                          ))}
+                      {/* 필터 드롭다운 */}
+                      {isMemberFilterOpen && (
+                        <div className="absolute top-[3.5cqw] right-0 w-[12cqw] bg-white rounded-[1.04cqw] shadow-xl border-[0.1cqw] border-[#594E36]/20 p-[1.04cqw] z-50">
+                          <h4 className="text-[0.83cqw] font-bold text-[#594E36] mb-[0.5cqh]">역할</h4>
+                          <div className="flex flex-col gap-[0.3cqh]">
+                            {[
+                              { value: 'MEMBER', label: '일반 회원' },
+                              { value: 'ADMIN', label: '관리자' },
+                            ].map((role) => (
+                              <label
+                                key={role.value}
+                                className="flex items-center gap-[0.42cqw] cursor-pointer hover:bg-[#F9F3F9] p-[0.31cqw] rounded-[0.52cqw]"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={selectedRoles.includes(role.value)}
+                                  onChange={() => handleRoleFilter(role.value)}
+                                  className="w-[0.83cqw] h-[0.83cqw] cursor-pointer"
+                                />
+                                <span className="text-[0.73cqw] font-medium text-[#594E36]">{role.label}</span>
+                              </label>
+                            ))}
+                          </div>
                         </div>
                       )}
                     </div>

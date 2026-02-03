@@ -3,6 +3,7 @@ package com.buildmyhome.management.service;
 import com.buildmyhome.management.dto.*;
 import com.buildmyhome.management.entity.Answer;
 import com.buildmyhome.management.entity.Inquiry;
+import com.buildmyhome.management.entity.InquiryCategory;
 import com.buildmyhome.management.entity.InquiryStatus;
 import com.buildmyhome.management.repository.AnswerRepository;
 import com.buildmyhome.management.repository.InquiryRepository;
@@ -67,6 +68,22 @@ public class InquiryService {
   @Transactional(readOnly = true)
   public Page<InquiryListResponse> searchInquiriesByTitle(String keyword, Pageable pageable) {
     return inquiryRepository.findByTitleContaining(keyword, pageable).map(this::toListResponse);
+  }
+
+  // 3-2. 필터/정렬 검색 (관리자) - 추가
+  @Transactional(readOnly = true)
+  public Page<InquiryListResponse> searchInquiries(
+      String keyword,
+      List<InquiryCategory> categories,
+      List<InquiryStatus> statuses,
+      Pageable pageable) {
+    // 빈 리스트는 null로 변환 (쿼리에서 IS NULL 조건 사용)
+    List<InquiryCategory> categoryFilter = (categories == null || categories.isEmpty()) ? null : categories;
+    List<InquiryStatus> statusFilter = (statuses == null || statuses.isEmpty()) ? null : statuses;
+    String keywordFilter = (keyword == null || keyword.trim().isEmpty()) ? null : keyword.trim();
+    
+    return inquiryRepository.searchInquiries(keywordFilter, categoryFilter, statusFilter, pageable)
+        .map(this::toListResponse);
   }
 
   // 4. 상세 조회 (공통)

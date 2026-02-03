@@ -21,6 +21,7 @@ import { Cog6ToothIcon, BellIcon, UserIcon } from '@heroicons/react/24/solid';
  */
 const TopButtons = ({
   nickname = '주민',
+  profileImage = null,
   onProfileClick,
   onBellClick,
   onConfigClick,
@@ -72,9 +73,9 @@ const TopButtons = ({
           {/* w-10 h-10 = 40px = 2.08cqw */}
           <UserIcon className="w-[2.08cqw] h-[2.08cqw]" style={{ color: colors.text }} />
         </div>
-        {/* 닉네임 뱃지 - 80px = 4.17cqw, 40px = 3.7cqh, 20px = 1.04cqw radius, px-3 = 12px = 0.63cqw */}
+        {/* 닉네임 뱃지 - hover 시에만 표시 */}
         <div
-          className="flex items-center justify-center min-w-[4.17cqw] h-[3.7cqh] rounded-[1.04cqw] shadow-sm px-[0.63cqw]"
+          className="flex items-center justify-center min-w-[4.17cqw] h-[3.7cqh] rounded-[1.04cqw] shadow-sm px-[0.63cqw] opacity-0 group-hover:opacity-100 transition-opacity duration-200"
           style={{ backgroundColor: colors.badgeBg }}
         >
           {/* 24px = 1.25cqw text, pb-1 = 4px = 0.37cqh */}

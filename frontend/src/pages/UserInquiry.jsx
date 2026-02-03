@@ -204,6 +204,7 @@ export default function UserInquiryPage() {
         <div className="absolute top-[3.7cqh] right-[2.08cqw] z-50">
           <TopButtons
             nickname={sessionStorage.getItem('nickname') || '주민'}
+            profileImage={sessionStorage.getItem('profileImage')}
             onProfileClick={() => navigate('/mypage')}
             onBellClick={() => navigate('/notifications')}
             onConfigClick={() => navigate('/config')}

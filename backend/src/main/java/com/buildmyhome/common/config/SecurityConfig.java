@@ -93,7 +93,7 @@ public class SecurityConfig {
           // OAuth2 로그인 관련 경로
           .requestMatchers("/oauth2/**", "/login/oauth2/**")
           .permitAll()
-          .requestMatchers("/ws/**")
+          .requestMatchers("/ws/**", "/uploads/**")
           .permitAll()
           // 내 정보 조회는 인증 필수
           .requestMatchers("/api/member/me")

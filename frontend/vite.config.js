@@ -25,6 +25,10 @@ export default defineConfig({
         changeOrigin: true,
         ws: true,
       },
+      '/uploads': {
+        target: 'http://localhost:8088',
+        changeOrigin: true,
+      },
     },
   }, // server 설정 끝
   build: {

@@ -36,6 +36,7 @@ export default function Config() {
         <div className="absolute top-[3.7cqh] right-[2.08cqw] z-50">
           <TopButtons
             nickname={sessionStorage.getItem('nickname') || '주민'}
+            profileImage={sessionStorage.getItem('profileImage')}
             onProfileClick={() => navigate('/mypage')}
             onBellClick={() => navigate('/notifications')}
             onConfigClick={() => {}} // 이미 설정 페이지

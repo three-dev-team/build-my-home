@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Client } from '@stomp/stompjs';
 import { leaveRoom } from '../../utils/roomUtils.js';
@@ -36,7 +36,7 @@ function Room() {
   const [roomTitle, setRoomTitle] = useState('');
   const [players, setPlayers] = useState([]);
   const [maxPlayers, setMaxPlayers] = useState(4);
-  const [totalRounds, setTotalRounds] = useState(10);
+  const [totalRounds, setTotalRounds] = useState(null);
   const [stompClient, setStompClient] = useState(null);
 
   // 상태 (States)
@@ -57,7 +57,14 @@ function Room() {
   const [reportTarget, setReportTarget] = useState(null);
   const [reportReason, setReportReason] = useState('');
 
-  const currentPlayer = players.find((player) => player.memberId === myId);
+  // [New] 준비 상태 경고 모달
+  const [showReadyWarning, setShowReadyWarning] = useState(false);
+  const [readyWarningMessage, setReadyWarningMessage] = useState('준비 완료 상태에서는\n판수를 변경할 수 없습니다.');
+
+  // [New] 드롭다운 닫기 타이머 Ref
+  const closeTimeoutRef = useRef(null);
+
+  const currentPlayer = players.find((player) => Number(player.memberId) === Number(myId));
   // 방장 여부 판별 로직 수정: 서버에서 주는 host 플래그가 정확하지 않을 수 있으므로, 인덱스 0번이거나 player.host 값 확인
   const isHost = currentPlayer?.isHost;
   const allReady = players.filter((player) => player.nickname).every((player) => player.isReady);
@@ -144,6 +151,7 @@ function Room() {
           const data = JSON.parse(message.body);
           if (data.type === 'GAME_START') navigate(`/games/${roomId}`, { state: { initialGameData: data } });
           if (data.maxPlayers) setMaxPlayers(data.maxPlayers);
+          if (data.totalRounds !== undefined) setTotalRounds(data.totalRounds); // 판수 업데이트
           if (data.players) {
             const updated = Array.from({ length: 4 }, (_, idx) => ({
               index: idx + 1,
@@ -364,10 +372,10 @@ function Room() {
                 backgroundSize: '100% 100%',
               }}
             >
-              <span className="text-[2.08cqw] font-black text-[#594E36] drop-shadow-sm pt-[0.42cqw]">
+              <span className="text-[2.08cqw] font-black text-[#594E36] drop-shadow-sm pt-[0.2cqw]">
                 목적지 &gt;&gt;
               </span>
-              <span className="text-[2.08cqw] font-black text-[#594E36] drop-shadow-sm pt-[0.42cqw] overflow-hidden text-ellipsis whitespace-nowrap max-w-[19.79cqw]">
+              <span className="text-[2.08cqw] font-black text-[#594E36] drop-shadow-sm pt-[0.2cqw] overflow-hidden text-ellipsis whitespace-nowrap max-w-[19.79cqw]">
                 {roomTitle}
               </span>
             </div>
@@ -382,27 +390,29 @@ function Room() {
           </div>
 
           {/* 라운드 배지 */}
-          <div
-            className="w-[5.21cqw] h-[5.21cqw] flex items-center justify-center bg-center bg-no-repeat"
-            style={{
-              backgroundImage: "url('/images/room-waiting/ui-room-dicebox.webp')",
-              backgroundSize: 'contain',
-            }}
-          >
+          {totalRounds && (
             <div
-              className="w-[3.33cqw] h-[3.33cqw] bg-[#594E36]"
+              className="w-[5.21cqw] h-[5.21cqw] flex items-center justify-center bg-center bg-no-repeat"
               style={{
-                maskImage: `url(/images/room-waiting/icon-dice-${totalRounds}.png)`,
-                maskSize: 'contain',
-                maskRepeat: 'no-repeat',
-                maskPosition: 'center',
-                WebkitMaskImage: `url(/images/room-waiting/icon-dice-${totalRounds}.png)`,
-                WebkitMaskSize: 'contain',
-                WebkitMaskRepeat: 'no-repeat',
-                WebkitMaskPosition: 'center',
+                backgroundImage: "url('/images/room-waiting/ui-room-dicebox.webp')",
+                backgroundSize: 'contain',
               }}
-            />
-          </div>
+            >
+              <div
+                className="w-[3.33cqw] h-[3.33cqw] bg-[#594E36]"
+                style={{
+                  maskImage: `url(/images/room-waiting/icon-dice-${totalRounds}.png)`,
+                  maskSize: 'contain',
+                  maskRepeat: 'no-repeat',
+                  maskPosition: 'center',
+                  WebkitMaskImage: `url(/images/room-waiting/icon-dice-${totalRounds}.png)`,
+                  WebkitMaskSize: 'contain',
+                  WebkitMaskRepeat: 'no-repeat',
+                  WebkitMaskPosition: 'center',
+                }}
+              />
+            </div>
+          )}
         </div>
 
         {/* --- 메인 콘텐츠 (플레이어 카드) --- */}
@@ -436,7 +446,18 @@ function Room() {
                 )}
                 {/* 카드 Area */}
                 <div
-                  onClick={() => handleSlotClick(player.index - 1, isEmpty)}
+                  onClick={() => {
+                    if (isMySlot) {
+                      if (player.isReady) {
+                        setReadyWarningMessage('준비 완료 상태에서는\n캐릭터를 변경할 수 없습니다.');
+                        setShowReadyWarning(true);
+                      } else {
+                        navigate(`/rooms/${roomId}/select`);
+                      }
+                    } else {
+                      handleSlotClick(player.index - 1, isEmpty);
+                    }
+                  }}
                   className={`
                      relative w-[17.5cqw] h-[23.96cqw] rounded-[1.88cqw] transition-all duration-300 overflow-hidden
                      ${
@@ -463,7 +484,7 @@ function Room() {
 
                       <div className="absolute inset-0 z-10 flex flex-col items-center p-[0.83cqw]">
                         {/* 인덱스 */}
-                        <div className="absolute top-[0.83cqw] left-[0.83cqw] min-w-[1.67cqw] h-[1.67cqw] flex items-center justify-center text-white font-black text-[0.94cqw] z-20">
+                        <div className="absolute top-[1.2cqw] left-[1.1cqw] min-w-[1.67cqw] h-[1.67cqw] flex items-center justify-center text-white font-black text-[0.94cqw] z-20">
                           {player.index}
                         </div>
 
@@ -507,7 +528,7 @@ function Room() {
                         </div>
 
                         {/* 준비 상태 */}
-                        <div className="w-full flex justify-center mb-[0.42cqw] z-20 translate-y-[0.63cqw]">
+                        <div className="w-full flex justify-center mb-[0.9cqw] z-20 translate-y-[0.63cqw]">
                           {isReady ? (
                             <div className="w-[80%] py-[0.63cqw] rounded-full bg-[#78D7B2] text-white font-black text-[1.04cqw] text-center shadow-md">
                               ✔ 준비완료
@@ -541,7 +562,7 @@ function Room() {
                         className="absolute inset-0 w-full h-full object-cover"
                       />
                       <div className="absolute inset-0 z-10 flex flex-col items-center justify-center">
-                        <div className="absolute top-[0.83cqw] left-[0.83cqw] min-w-[1.67cqw] h-[1.67cqw] flex items-center justify-center text-white font-black text-[0.94cqw] opacity-50 z-20">
+                        <div className="absolute top-[1.2cqw] left-[1.1cqw] min-w-[1.67cqw] h-[1.67cqw] flex items-center justify-center text-white font-black text-[0.94cqw] opacity-50 z-20">
                           {player.index}
                         </div>
                         <span
@@ -627,7 +648,14 @@ function Room() {
 
                     {/* 다시 선택 */}
                     <button
-                      onClick={() => navigate(`/rooms/${roomId}/select`)}
+                      onClick={() => {
+                        if (player.isReady) {
+                          setReadyWarningMessage('준비 완료 상태에서는\n캐릭터를 변경할 수 없습니다.');
+                          setShowReadyWarning(true);
+                        } else {
+                          navigate(`/rooms/${roomId}/select`);
+                        }
+                      }}
                       className="w-[4.17cqw] h-[4.17cqw] bg-white rounded-[1.25cqw] shadow-lg flex items-center justify-center hover:scale-105 transition"
                     >
                       <img
@@ -638,10 +666,32 @@ function Room() {
                     </button>
 
                     {/* 라운드 선택 */}
-                    {isHost && (
-                      <div className="relative">
+                    {isHost && totalRounds && (
+                      <div
+                        className="relative"
+                        onMouseLeave={() => {
+                          // 드롭다운 영역을 벗어나면 닫기 (300ms 지연)
+                          closeTimeoutRef.current = setTimeout(() => {
+                            if (activeDropdown === 'rounds') setActiveDropdown(null);
+                          }, 1000);
+                        }}
+                        onMouseEnter={() => {
+                          // 다시 들어오면 닫기 취소
+                          if (closeTimeoutRef.current) {
+                            clearTimeout(closeTimeoutRef.current);
+                            closeTimeoutRef.current = null;
+                          }
+                        }}
+                      >
                         <button
-                          onClick={() => setActiveDropdown(activeDropdown === 'rounds' ? null : 'rounds')}
+                          onClick={() => {
+                            if (currentPlayer?.isReady) {
+                              setReadyWarningMessage('준비 완료 상태에서는\n판수를 변경할 수 없습니다.');
+                              setShowReadyWarning(true);
+                            } else {
+                              setActiveDropdown(activeDropdown === 'rounds' ? null : 'rounds');
+                            }
+                          }}
                           className="w-[4.17cqw] h-[4.17cqw] bg-white rounded-[1.25cqw] shadow-lg flex items-center justify-center hover:scale-105 transition relative"
                         >
                           <div
@@ -745,6 +795,26 @@ function Room() {
         {isHost && (
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
             {/* 필요 시 중앙 십자선 또는 장식 */}
+          </div>
+        )}
+
+        {/* 준비 상태 경고 모달 */}
+        {showReadyWarning && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 animate-fade-in">
+            <div className="bg-white rounded-[1.04cqw] p-[1.67cqw] shadow-xl flex flex-col items-center gap-[1.25cqw] min-w-[20cqw] animate-scale-up">
+              <div className="flex flex-col items-center gap-[0.42cqw]">
+                <ExclamationTriangleIcon className="w-[3.13cqw] h-[3.13cqw] text-[#EB5757]" />
+                <span className="text-[#594E36] font-bold text-[1.25cqw] text-center whitespace-pre-line">
+                  {readyWarningMessage}
+                </span>
+              </div>
+              <button
+                onClick={() => setShowReadyWarning(false)}
+                className="bg-[#594E36] text-white px-[2.08cqw] py-[0.63cqw] rounded-[0.63cqw] font-bold text-[1.04cqw] hover:bg-[#453C2A] hover:scale-105 transition shadow-md"
+              >
+                확인
+              </button>
+            </div>
           </div>
         )}
       </div>
