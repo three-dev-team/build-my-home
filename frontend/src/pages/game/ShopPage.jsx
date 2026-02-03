@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useGameTimer } from '../../hooks/useGameTimer.js';
 import './css/ShopPage.css';
+import BellPanel from '../../components/common/BellPanel.jsx';
 
 const shopItems = [
   { type: 'FISHING_CHANCE', name: '낚시 떡밥', price: 300, category: 'shopItem' },
@@ -13,7 +14,7 @@ const resources = [
   { type: 'WOOD', name: '목재', buyPrice: 120, sellPrice: 60, category: 'resource' },
   { type: 'IRON', name: '철광석', buyPrice: 80, sellPrice: 40, category: 'resource' },
   { type: 'CLOTH', name: '천', buyPrice: 60, sellPrice: 30, category: 'resource' },
-  { type: 'BRICK', name: '벽돌', buyPrice: 140, sellPrice: 70, category: 'resource'},
+  { type: 'BRICK', name: '벽돌', buyPrice: 140, sellPrice: 70, category: 'resource' },
   { type: 'WALLPAPER', name: '벽지', buyPrice: 200, sellPrice: 100, category: 'resource' },
   { type: 'CLAY', name: '점토', buyPrice: 100, sellPrice: 50, category: 'resource' },
   { type: 'FLOORING', name: '바닥', buyPrice: 160, sellPrice: 80, category: 'resource' },
@@ -67,24 +68,23 @@ const ShopPage = ({ gameState, myId, currentPlayer, shopType, handleAction, onEx
   // ✅ 관전자 하이라이트/패널용: relay 선택 정보 파싱
   const relaySelectedType =
     shopRelay?.type === 'SHOP_SELECT_RELAY'
-      ? (shopRelay.shopItemType || shopRelay.resourceType || shopRelay.harvestType)
+      ? shopRelay.shopItemType || shopRelay.resourceType || shopRelay.harvestType
       : null;
 
   const relayQuantity =
-    shopRelay?.type === 'SHOP_SELECT_RELAY' && Number.isFinite(shopRelay.quantity)
-      ? shopRelay.quantity
-      : 1;
+    shopRelay?.type === 'SHOP_SELECT_RELAY' && Number.isFinite(shopRelay.quantity) ? shopRelay.quantity : 1;
 
-  const getOwnedItems = (player) => {  // ✅ () → (player) 변경!
-    if (!player) return [];  // ✅ 추가!
+  const getOwnedItems = (player) => {
+    // ✅ () → (player) 변경!
+    if (!player) return []; // ✅ 추가!
 
     const owned = [];
     resources.forEach((r) => {
-      const count = player.resources?.[r.type] || 0;  // ✅ currentPlayer → player
+      const count = player.resources?.[r.type] || 0; // ✅ currentPlayer → player
       if (count > 0) owned.push({ ...r, owned: count, category: 'resource' });
     });
     harvests.forEach((h) => {
-      const count = player.harvests?.[h.type] || 0;  // ✅ currentPlayer → player
+      const count = player.harvests?.[h.type] || 0; // ✅ currentPlayer → player
       if (count > 0) owned.push({ ...h, owned: count, category: 'harvest' });
     });
     return owned;
@@ -266,21 +266,8 @@ const ShopPage = ({ gameState, myId, currentPlayer, shopType, handleAction, onEx
         </div>
       )}
 
-      <div className="shop-header">
-        <h2>🏪 너굴 상점</h2>
-
-        <div className="header-center-group">
-          <div className={`shop-header-timer ${isUrgent ? 'urgent' : ''}`}>
-            <span className="timer-label">TIME LEFT</span>
-            <span className="timer-value">{timeLeft}s</span>
-          </div>
-
-          <div className="current-user-badge">
-            <span className="user-icon">🎮</span>
-            <span className="user-name"> {currentPlayer?.nickname || '플레이어'}님이 쇼핑 중 </span>
-          </div>
-        </div>
-        <div className="bell-display">💰 {currentPlayer?.bell ?? 0} Bell</div>
+      <div>
+        <BellPanel amount={currentPlayer?.bell ?? 0} />
       </div>
 
       <div className="shop-tabs">
@@ -302,8 +289,7 @@ const ShopPage = ({ gameState, myId, currentPlayer, shopType, handleAction, onEx
 
       <div className="items-grid">
         {gridList.map((item) => {
-          const selected =
-            isMyTurn ? selectedItem?.type === item.type : relaySelectedType === item.type;
+          const selected = isMyTurn ? selectedItem?.type === item.type : relaySelectedType === item.type;
 
           const disabledShopItem = activeTab === 'buy' && item.category === 'shopItem' && isPurchasedShopItem(item);
 
@@ -332,9 +318,7 @@ const ShopPage = ({ gameState, myId, currentPlayer, shopType, handleAction, onEx
                 </div>
               )}
               <div className="item-image" />
-              <div className="item-name">
-                {item.name}
-              </div>
+              <div className="item-name">{item.name}</div>
 
               <div className="item-price">
                 🔔{' '}
@@ -366,10 +350,7 @@ const ShopPage = ({ gameState, myId, currentPlayer, shopType, handleAction, onEx
               <>
                 {((activeTab === 'buy' && displaySelected.category !== 'shopItem') || activeTab === 'sell') && (
                   <div className="quantity-selector">
-                    <button
-                      onClick={() => changeQuantity(quantity - 1)}
-                      disabled={!isMyTurn || quantity <= 1}
-                    >
+                    <button onClick={() => changeQuantity(quantity - 1)} disabled={!isMyTurn || quantity <= 1}>
                       -
                     </button>
 
@@ -425,9 +406,7 @@ const ShopPage = ({ gameState, myId, currentPlayer, shopType, handleAction, onEx
                 disabled={
                   !isMyTurn ||
                   !selectedItem ||
-                  (activeTab === 'buy' &&
-                    selectedItem?.category === 'shopItem' &&
-                    isPurchasedShopItem(selectedItem)) ||
+                  (activeTab === 'buy' && selectedItem?.category === 'shopItem' && isPurchasedShopItem(selectedItem)) ||
                   (activeTab === 'buy' && !canAfford)
                 }
               >
