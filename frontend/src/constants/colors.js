@@ -74,6 +74,21 @@ export const COLORS = {
       nameBox: '#F2C94C', // 노랑
       nameText: '#5b4d33',
     },
+    // 갑돌이 (갑돌섬)
+    gapdol: {
+      nameBox: '#5baa32',
+      nameText: '#F2C94C',
+    },
+    // 부엉이 (박물관)
+    bueong: {
+      nameBox: '#725639',
+      nameText: '#FFFEE0',
+    },
+    // 모리 (비행장)
+    mori: {
+      nameBox: '#F2C94C',
+      nameText: '#2D9CDB',
+    },
     // 기본값
     default: {
       nameBox: '#9B59B6',

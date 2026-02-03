@@ -10,10 +10,10 @@
 }
 
 @font-face {
-    font-family: 'Formula';
-    src: url('/fonts/Formula1-Bold_web_0.ttf') format('truetype');
-    font-weight: 700;
-    font-style: normal;
+  font-family: 'Formula';
+  src: url('/fonts/Formula1-Bold_web_0.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
 }
 
 /* 3. Tailwind v4 임포트 */
@@ -29,14 +29,20 @@
 /* 4. 전역 스타일 */
 @layer base {
   body {
-    @apply m-0 p-0 overflow-hidden;
+    @apply m-0 p-0 overflow-hidden bg-black;
     font-family: var(--font-gosanja);
   }
 }
 
-.font-gosanja { font-family: var(--font-gosanja); }
-.font-formula { font-family: var(--font-formula); }
-.font-gaegu   { font-family: var(--font-gaegu); }
+.font-gosanja {
+  font-family: var(--font-gosanja);
+}
+.font-formula {
+  font-family: var(--font-formula);
+}
+.font-gaegu {
+  font-family: var(--font-gaegu);
+}
 
 /* 5. 커스텀 유틸리티 */
 .wood-panel {
