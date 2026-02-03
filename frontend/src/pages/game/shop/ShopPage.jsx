@@ -1,13 +1,13 @@
 import { useState, useEffect, useMemo } from 'react';
-import './css/ShopPage.css';
-import BellPanel from '../../components/common/BellPanel.jsx';
-import { COLORS } from '../../constants/colors.js';
+import './ShopPage.css';
+import BellPanel from '../../../components/common/BellPanel.jsx';
+import { COLORS } from '../../../constants/colors.js';
 
-import { rewardImageSrc, RESOURCES, FRUITS, FISHES } from '../../constants/reward.js';
-import { SHOP_ITEMS, shopItemImageSrc } from '../../constants/shopItems.js';
-import ExitButton from '../../components/common/ExitButton.jsx';
-import OkButton from '../../components/common/OkButton.jsx';
-import Subtitle from '../../components/common/Subtitle.jsx';
+import { rewardImageSrc, RESOURCES, FRUITS, FISHES } from '../../../constants/reward.js';
+import { SHOP_ITEMS, shopItemImageSrc } from '../../../constants/shopItems.js';
+import ExitButton from '../../../components/common/ExitButton.jsx';
+import OkButton from '../../../components/common/OkButton.jsx';
+import Subtitle from '../../../components/common/Subtitle.jsx';
 
 const shopItems = SHOP_ITEMS.map((item) => ({
   type: item.key,
@@ -357,7 +357,7 @@ const ShopPage = ({ gameState, myId, currentPlayer, handleAction, onExit, shopRe
                         </div>
                       )}
                       <div
-                        className="item-image"
+                        className="shop-item-image"
                         style={{
                           backgroundImage: `url(${
                             item.category === 'shopItem' ? shopItemImageSrc(item.type) : rewardImageSrc(item.type)

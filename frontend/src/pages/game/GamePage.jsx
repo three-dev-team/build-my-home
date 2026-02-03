@@ -16,7 +16,7 @@ import Stamp from './Stamp.jsx';
 import PlayerActionPanel from './PlayerActionPanel.jsx';
 import RollDicePage from './RollDicePage.jsx';
 import KK from './KK.jsx';
-import ShopPage from './ShopPage.jsx';
+import ShopPage from './shop/ShopPage.jsx';
 import TurnCounter from './TurnCounter.jsx';
 import House from './house/House.jsx';
 import Fishing from './Fishing.jsx';
@@ -627,10 +627,7 @@ const GamePage = () => {
 
             {/* WAITING_INVENTORY */}
             {gameState.status === 'WAITING_INVENTORY' && (
-              <Inventory
-                player={currentPlayer}
-                onClose={() => handleAction('CLOSE_INVENTORY', {})}
-              />
+              <Inventory player={currentPlayer} onClose={() => handleAction('CLOSE_INVENTORY', {})} />
             )}
 
             {/* 메인 보드(WAITING_PLAYER_ACTION, MOVING) */}
