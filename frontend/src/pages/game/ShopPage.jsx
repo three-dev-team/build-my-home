@@ -49,6 +49,7 @@ const ShopPage = ({ gameState, myId, currentPlayer, handleAction, onExit, shopRe
   const shopSession = gameState.shopSession;
   const isMyTurn = gameState.currentPlayerId === myId;
 
+  // 탭 동기화
   useEffect(() => {
     if (currentPlayer?.uiStep === 0) {
       setActiveTab('buy');
@@ -57,6 +58,7 @@ const ShopPage = ({ gameState, myId, currentPlayer, handleAction, onExit, shopRe
     }
   }, [currentPlayer?.uiStep]);
 
+  // 에러 메시지 자동 숨김
   useEffect(() => {
     if (errorMsg) {
       const timer = setTimeout(() => setErrorMsg(''), 3000);
@@ -64,12 +66,20 @@ const ShopPage = ({ gameState, myId, currentPlayer, handleAction, onExit, shopRe
     }
   }, [errorMsg]);
 
+  // 서버 에러 메시지 표시
   useEffect(() => {
     if (gameState?.errorMessage) {
-      console.error(gameState.errorMessage); //
+      console.error(gameState.errorMessage);
       setErrorMsg(gameState.errorMessage);
     }
   }, [gameState?.errorMessage]);
+
+  // 내 턴이면 마운트 시 선택 초기화 (새로고침 대응)
+  useEffect(() => {
+    if (isMyTurn) {
+      handleAction('SHOP_SELECT_CLEAR', {});
+    }
+  }, []);
 
   // ✅ 관전자 하이라이트/패널용: relay 선택 정보 파싱
   const relaySelectedType =
@@ -388,7 +398,7 @@ const ShopPage = ({ gameState, myId, currentPlayer, handleAction, onExit, shopRe
           nameText="콩돌이"
           nameColor={COLORS.characters.naugul.nameBox}
           nameTextColor={COLORS.characters.naugul.nameText}
-          contentText="오늘은 이런 상품을 판매하고 있습니다-! 있습니다-!"
+          contentText={`오늘은 이런 상품을\n판매하고 있습니다-! 있습니다-!`}
           showTriangle={isMyTurn}
           clickTriangle={isMyTurn ? () => handleAction('SHOP_INTRO_DONE', {}) : undefined}
         />
