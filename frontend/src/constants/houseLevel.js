@@ -19,10 +19,10 @@ const getHouseImageFromCharacter = (characterId) => {
 export const HOUSE_LEVEL_MAP = [
   { level: 0, key: 'NONE', name: '없음', bell: 0, icon: null },
   { level: 1, key: 'LAND', name: '땅', bell: 300, icon: `${BASE.board}/land.webp` },
-  { level: 2, key: 'TENT', name: '텐트', bell: 400, cloth: 1, iron: 1, icon: `${BASE.board}/tent.webp` },
-  { level: 3, key: 'HOUSE_1', name: '작은집', bell: 1000, iron: 1, clay: 1, icon: `${BASE.board}/house_1.webp` },
+  { level: 2, key: 'TENT', name: '텐트', bell: 500, cloth: 1, iron: 1, icon: `${BASE.board}/tent.webp` },
+  { level: 3, key: 'HOUSE_1', name: '작은집', bell: 1000, iron: 2, clay: 2, wood: 2,icon: `${BASE.board}/house_1.webp` },
   { level: 4, key: 'HOUSE_2', name: '큰집', bell: 1800, iron: 3, clay: 3, wood: 3, brick: 3, icon: `${BASE.board}/house_2.webp` },
-  { level: 5, key: 'MYHOME', name: '마이홈', bell: 3000, iron: 5, clay: 5, wood: 5, brick: 5, cloth: 5, wallpaper: 5, flooring: 5, icon: null },
+  { level: 5, key: 'MYHOME', name: '마이홈', bell: 3000, iron: 5, clay: 5, brick: 5, cloth: 5, wallpaper: 5, flooring: 5, icon: null },
 ];
 
 export const HOUSE_DETAILS = HOUSE_LEVEL_MAP.reduce((acc, curr) => {

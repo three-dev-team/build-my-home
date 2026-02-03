@@ -7,6 +7,7 @@ const IMG = {
   bell: '/images/board/icon-bell.webp',
 };
 
+// 레벨 객체에서 "필요 재화 목록"을 [{key,count}] 형태로 뽑기(0개는 제외)
 const buildReqs = (levelObj) => {
   if (!levelObj) return [];
   return RESOURCE_ORDER
@@ -19,17 +20,17 @@ const buildReqs = (levelObj) => {
 };
 
 export default function HouseStep2Materials({ px, player }) {
-  // ✅ level 1~5만 렌더링
+  // level 1~5만 표시(안내서 카드 5개)
   const levels = useMemo(
     () => (HOUSE_LEVEL_MAP || []).filter((x) => Number(x.level) >= 1 && Number(x.level) <= 5),
     [],
   );
 
-  // ✅ 색상: black/white만 사용 + withAlpha
-  const PANEL_BG = withAlpha(COLORS.ac.black, 0.55);
-  const CARD_BG = withAlpha(COLORS.ac.black, 0.35);
-  const TEXT = COLORS.ac.white;
+  // 패널/카드 배경색(스펙 색상 + 알파 적용)
+  const PANEL_BG = withAlpha(COLORS.house.panelBrown, 0.9);
+  const CARD_BG = withAlpha(COLORS.house.cardBrown, 0.6);
 
+  const TEXT = COLORS.ac.white;
   const characterId = player?.characterId;
 
   return (
@@ -47,7 +48,7 @@ export default function HouseStep2Materials({ px, player }) {
         pointerEvents: 'none',
       }}
     >
-      {/* 제목: w=1604, h=46, f=44, mt=44 */}
+      {/* 상단 제목 */}
       <div
         style={{
           position: 'absolute',
@@ -58,18 +59,18 @@ export default function HouseStep2Materials({ px, player }) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
+          color: TEXT,
           fontFamily: 'var(--font-gosanja)',
           fontSize: px(44),
-          color: TEXT,
           lineHeight: 1,
-          textAlign: 'center',
           whiteSpace: 'nowrap',
+          textAlign: 'center',
         }}
       >
         집 재료 안내서
       </div>
 
-      {/* 등급 컨테이너: w=1604, h=600, top=128, gap=36 */}
+      {/* 레벨 카드 5개(가로 정렬) */}
       <div
         style={{
           position: 'absolute',
@@ -84,7 +85,7 @@ export default function HouseStep2Materials({ px, player }) {
         {levels.map((lv) => {
           const levelNum = Number(lv.level);
 
-          // ✅ level 5는 characterId 넘겨서 캐릭터별 houseImage
+          // 레벨별 집 아이콘(레벨 5는 캐릭터별 houseImage도 고려)
           const houseIcon =
             lv.icon ||
             getHouseIconByLevel(lv.key, characterId) ||
@@ -102,11 +103,7 @@ export default function HouseStep2Materials({ px, player }) {
                 height: px(600),
                 borderRadius: px(60),
                 background: CARD_BG,
-
-                // ✅ 여기 중요: 296px 이미지가 292px 카드보다 커서,
-                // overflow hidden이면 스펙대로 그려도 잘림.
-                overflow: 'visible',
-
+                overflow: 'hidden',
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: 'center',
@@ -117,7 +114,7 @@ export default function HouseStep2Materials({ px, player }) {
                 lineHeight: 1,
               }}
             >
-              {/* 레벨 박스: h=32 f=32 */}
+              {/* 레벨 표시 */}
               <div
                 style={{
                   height: px(32),
@@ -131,18 +128,17 @@ export default function HouseStep2Materials({ px, player }) {
                 {`level ${levelNum}`}
               </div>
 
-              {/* 이미지박스: h=152, mt/mb=24 */}
+              {/* 집 이미지(고정 박스 안에 중앙 정렬) */}
               <div
                 style={{
+                  width: '100%',
                   height: px(152),
                   marginTop: px(24),
                   marginBottom: px(24),
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-
-                  // ✅ 이미지가 296px라 카드보다 넓어도 “스펙 그대로” 보이게
-                  overflow: 'visible',
+                  overflow: 'hidden',
                 }}
               >
                 {houseIcon ? (
@@ -151,7 +147,7 @@ export default function HouseStep2Materials({ px, player }) {
                     alt={`house-${levelNum}`}
                     draggable={false}
                     style={{
-                      width: px(296),
+                      width: px(196),
                       height: px(152),
                       objectFit: 'contain',
                       display: 'block',
@@ -162,7 +158,7 @@ export default function HouseStep2Materials({ px, player }) {
                 ) : null}
               </div>
 
-              {/* 집 이름 박스: h=40 f=36 mb=28 */}
+              {/* 집 이름 */}
               <div
                 style={{
                   height: px(40),
@@ -177,7 +173,7 @@ export default function HouseStep2Materials({ px, player }) {
                 {lv.name || ''}
               </div>
 
-              {/* 재화박스: h=212 gap=12 */}
+              {/* 필요 재화(벨 + 재료들) */}
               <div
                 style={{
                   height: px(212),
@@ -187,7 +183,7 @@ export default function HouseStep2Materials({ px, player }) {
                   gap: px(12),
                 }}
               >
-                {/* 벨 row: icon 36x44, text f=28 */}
+                {/* 벨 비용 */}
                 <div
                   style={{
                     height: px(44),
@@ -215,7 +211,7 @@ export default function HouseStep2Materials({ px, player }) {
                   <span>{`x${bell}`}</span>
                 </div>
 
-                {/* 재료 rows: row gap=12, column gap=28 */}
+                {/* 재료 목록(2줄 이상이면 자동 줄바꿈) */}
                 <div
                   style={{
                     width: '100%',

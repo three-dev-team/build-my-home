@@ -152,6 +152,11 @@ export const COLORS = {
     darkPurple: '#744990',
     purple: '#9165AA',
   },
+
+  house: {
+    panelBrown: '#301e08',
+    cardBrown: '#1f1203',
+  },
 };
 
 // 예: 검정 35% -> withAlpha(COLORS.ac.black, 0.35)
