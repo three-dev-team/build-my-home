@@ -26,27 +26,31 @@ const RollDicePage = ({ currentPlayer, isMyTurn, diceValue, isRolling, onRollCom
   const charImg = currentPlayer?.characterId ? CHARACTER_IMG[currentPlayer.characterId] : null;
 
   return (
-      <div className="roll-dice-container">
-        {/* 주사위 영역 */}
-        <div className="dice-area">
-          {isRolling && diceValue ? (
-            <Dice3D value={diceValue} onAnimationEnd={onAnimationEnd} />
-          ) : (
-            <img src="" alt="" />
-            // <img src="/images/dice/dice-idle.webp" alt="주사위" className="w-32 h-32 object-contain" />
-          )}
-        </div>
-
-        {/* 사용자 캐릭터 + 안내 문구 */}
-        <div className="character-area">
-          <img src={charImg} alt={currentPlayer?.nickname} className="current-character" />
-          <div className="character-shadow"></div>
-        </div>
-
-        <InstructionText>
-          {isRolling ? `` : isMyTurn ? '스페이스바를 눌러 주사위를 굴리기' : `${currentPlayer?.nickname}의 차례입니다...`}
-        </InstructionText>
+    <div className="roll-dice-container">
+      {/* 주사위 영역 */}
+      <div className="dice-area">
+        {isRolling && diceValue ? (
+          <Dice3D value={diceValue} onAnimationEnd={onAnimationEnd} />
+        ) : (
+          <img src="" alt="" />
+          // <img src="/images/dice/dice-idle.webp" alt="주사위" className="w-32 h-32 object-contain" />
+        )}
       </div>
+
+      {/* 사용자 캐릭터 + 안내 문구 */}
+      <div className="character-area">
+        <img src={charImg} alt={currentPlayer?.nickname} className="current-character" />
+        <div className="character-shadow"></div>
+      </div>
+
+      <InstructionText>
+        {isRolling
+          ? ``
+          : isMyTurn
+            ? '스페이스바를 눌러 주사위를 굴리기'
+            : `${currentPlayer?.nickname}이 주사위를 굴리고 있어요`}
+      </InstructionText>
+    </div>
   );
 };
 

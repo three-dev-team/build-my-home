@@ -120,7 +120,7 @@ const GamePage = () => {
           const data = JSON.parse(message.body);
           console.log('>>> 🔔 메시지 수신:', data);
 
-          // TODO: 리팩토링 필요 - Tiffany
+          // TODO: 리팩토링 필요 추가 - Tiffany
           const t = data?.type;
 
           // 낚시: ROOM_EVENT_* 및 낚시 ERROR는 gameState로 덮어쓰지 않고 분리 저장
