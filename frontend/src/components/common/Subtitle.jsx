@@ -70,6 +70,7 @@ const Subtitle = ({
 
   // 삼각형
   showTriangle = false,
+  clickTriangle,
 
   // 텍스트 애니메이션
   typingSpeed = 30,
@@ -241,7 +242,19 @@ const Subtitle = ({
       )}
 
       {/* 삼각형 (타이핑 끝나면 표시) */}
-      {showTriangle && !isTyping && <div className="triangle" style={{ backgroundColor: COLORS.subtitle.arrow }}></div>}
+      {showTriangle && !isTyping && (
+        <div className="triangle"
+             style={{
+               backgroundColor: COLORS.subtitle.arrow,
+               cursor: clickTriangle ? 'pointer' : 'default'}}
+             onClick={()=>{
+               if(clickTriangle){
+                 clickTriangle();
+               }
+             }}
+        ></div>
+        )
+      }
     </>
   );
 };

@@ -9,8 +9,8 @@ const PlayerSkipped = ({ isMyTurn, player, onExit }) => {
   const handleExit = useExitHandler(isMyTurn, onExit);
   useGameTimer(5, handleExit);
 
-  const charKey = CHARACTERS.find((c) => Number(c.id) === Number(player?.characterId))?.key;
-  const charImg = charKey ? `/images/character/char-${charKey}-sleep.webp` : null;
+  const character = CHARACTERS.find((c) => Number(c.id) === Number(player?.characterId));
+  const charImg = character?.sleepImage ?? null;
 
   return (
     <div className="player-skipped-container">
