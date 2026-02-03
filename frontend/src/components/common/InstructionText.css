@@ -2,21 +2,22 @@
     position: absolute;
     left: 0;
     right: 0;
-    top: calc(100vh - 148px - 3rem);
+    --u: calc(100cqw / 1920);
+    bottom: calc(148 * var(--u));
     display: flex;
     justify-content: center;
     z-index: 5;
 }
 
 .instruction-wrapper.two-lines {
-    padding-bottom: 3.75rem;
+    padding-bottom: calc(60 * var(--u));
 }
 
 .instruction-text {
     font-family: var(--font-gosanja);
-    font-size: 2.5rem;
-    color: white;
-    text-shadow: 0.125rem 0.125rem 0.625rem rgba(0, 0, 0, 0.3);
+    font-size: calc(40 * var(--u));
+    color: #fff;
+    text-shadow: 0 calc(2 * var(--u)) calc(40 * var(--u)) rgba(0, 0, 0, 0.35);
     white-space: pre-line;
     line-height: 1.2;
     text-align: center;

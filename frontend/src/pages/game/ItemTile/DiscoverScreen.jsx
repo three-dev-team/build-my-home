@@ -1,39 +1,25 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import InstructionText from '../../../components/common/InstructionText.jsx';
 import useSpaceKey from '../../../components/common/useSpaceKey.js';
+import InstructionText from '../../../components/common/InstructionText.jsx';
 
 const toBool = (v) => v === true || v === 'true';
 
-// 프리뷰(획득 버튼 누른 직후 잠깐 보여줄 이미지)
-const PREVIEW_SRC = '/images/item/item-custom_dice.webp';
-
 export default function DiscoverScreen({ isMyTurn, onAction, characterDeliveryImage, characterHappyImage }) {
   const myTurn = toBool(isMyTurn);
-  const [pressed, setPressed] = useState(false);
-  const timerRef = useRef(null);
 
-  const runNext = useCallback(() => {
+  // Discover에서 스페이스로 아이템 획득
+  const handleNext = useCallback(() => {
     if (!myTurn) return;
-    if (pressed) return;
+    onAction?.('GET_RANDOM_ITEM', {});
+  }, [myTurn, onAction]);
 
-    setPressed(true);
+  useSpaceKey(handleNext, { enabled: myTurn });
 
-    if (timerRef.current) window.clearTimeout(timerRef.current);
-    timerRef.current = window.setTimeout(() => {
-      onAction('GET_RANDOM_ITEM', {});
-    }, 120);
-  }, [myTurn, pressed, onAction]);
-
-  useSpaceKey(runNext, { enabled: myTurn });
-
-  useEffect(() => {
-    return () => {
-      if (timerRef.current) window.clearTimeout(timerRef.current);
-    };
-  }, []);
-
-  const img = pressed ? characterHappyImage : characterDeliveryImage;
+  const img = useMemo(() => characterDeliveryImage || characterHappyImage || null, [
+    characterDeliveryImage,
+    characterHappyImage,
+  ]);
 
   return (
     <motion.div
@@ -44,39 +30,14 @@ export default function DiscoverScreen({ isMyTurn, onAction, characterDeliveryIm
       onPointerDown={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}
     >
-      <div className="itemtile-character-box" aria-hidden>
-        <div className="itemtile-character-inner">
-          {img ? <img src={img} alt="" draggable={false} /> : null}
-
-          {pressed && (
-            <motion.div
-              className="itemtile-held-item"
-              aria-hidden
-              initial={{ scale: 0.6, opacity: 0, y: `calc(16 * var(--v))` }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              transition={{ duration: 0.2, ease: [0.2, 0.8, 0.2, 1] }}
-            >
-              <img src={PREVIEW_SRC} alt="" draggable={false} />
-            </motion.div>
-          )}
-        </div>
-      </div>
-
-      {/* 클릭 영역 */}
-      <div
-        aria-hidden
-        style={{
-          position: 'absolute',
-          inset: 0,
-          cursor: myTurn ? 'pointer' : 'default',
-          zIndex: 5,
-        }}
-        onClick={runNext}
-      />
-
-      {/* ✅ reward 칸처럼 안내 문구 */}
+      {/* Discover에서만 안내 문구 노출 */}
       <div className="itemtile-instruction-front">
         <InstructionText>스페이스바를 눌러 아이템 획득하기</InstructionText>
+      </div>
+
+      {/* Discover 캐릭터 박스(368x600 / bottom 264) */}
+      <div className="itemtile-character-box itemtile-char-discover" aria-hidden>
+        <div className="itemtile-character-inner">{img ? <img src={img} alt="" draggable={false} /> : null}</div>
       </div>
     </motion.div>
   );

@@ -1,15 +1,13 @@
-/* src/pages/game/ItemTile/ItemTile.css */
-
-/* ✅ 루트 오버레이: portal에서도 안전하게 fixed 유지 */
+/* 루트 오버레이 */
 .itemtile-root {
     position: fixed;
     inset: 0;
     z-index: 24000;
     overflow: hidden;
-    background: transparent; /* 검은띠 보이게 */
+    background: transparent;
 }
 
-/* ✅ 진짜 16:9 기준 컨테이너 (cqw/cqh 기준 강제) */
+/* 16:9 프레임(캔버스)*/
 .itemtile-frame {
     position: absolute;
     left: 50%;
@@ -23,79 +21,74 @@
     container-type: size;
 }
 
-/* 배경 */
+/* 배경(있으면 사용) */
 .itemtile-bg {
     position: absolute;
     inset: 0;
     background: center / cover no-repeat;
 }
 
-/* 프레임 내부 full */
+/* 프레임 내부 full + 스케일(1회) */
 .itemtile-safe {
     position: absolute;
     inset: 0;
     width: 100cqw;
     height: 100cqh;
+
+    /* 기본 팔레트(안전 fallback) */
+    --creamWhite: #fdfbf6;
+    --nookCyan: #34c4d3;
+    --darkBrown: #594e36;
+    --red: #eb5757;
+
+    /* 스케일(한 번만) */
+    --s: min(calc(100cqw / 1920), calc(100cqh / 1080));
 }
 
-/* 화면 레이어 */
 .itemtile-screen {
     position: relative;
     width: 100%;
     height: 100%;
 }
 
-/* 각 step 레이어 */
 .itemtile-layer {
     position: absolute;
     inset: 0;
 }
 
-/* =========================
-   (1) 상단 pill
-   PSD: top=72 / w=400 / h=80 / radius=40%(=32) / f=24
-========================= */
+/* Complete 상단 pill
+   - PSD top=72
+   - w=400, h=80
+   - radius=32
+   - background: rgba(0,0,0,0.4) */
 .itemtile-top-pill {
     position: absolute;
-    left: 50cqw;
-    top: 6.67cqh;            /* 72px */
+    left: 50%;
+    top: calc(72 * var(--s));
     transform: translateX(-50%);
 
-    width: 20.83cqw;         /* 400px */
-    height: 7.41cqh;         /* 80px */
-    border-radius: 1.67cqw;  /* 32px */
+    width: calc(400 * var(--s));
+    height: calc(80 * var(--s));
+    border-radius: calc(32 * var(--s));
 
     display: flex;
     align-items: center;
     justify-content: center;
 
-    background: rgba(60, 88, 114, 0.85);
-    color: #ffffff;
-    font-weight: 800;
-    font-size: 1.25cqw;      /* 24px */
-    line-height: 1;
-    letter-spacing: 0;
-    text-align: center;
-    white-space: nowrap;
+    background: rgba(0, 0, 0, 0.4);
+    color: var(--white);
 
-    box-shadow: 0 0.74cqh 0.94cqh rgba(0, 0, 0, 0.18);
-    backdrop-filter: blur(0.56cqh);
-    -webkit-backdrop-filter: blur(0.56cqh);
+    font-weight: 800;
+    font-size: calc(24 * var(--s));
+    line-height: 1;
+    white-space: nowrap;
 }
 
-/* =========================
-   (3) 캐릭터 박스 공통: 맨 위 기준 240px
-   top=240px -> 22.22cqh
-   w=360px -> 18.75cqw
-   h=660px -> 61.11cqh
-========================= */
+/* 캐릭터 공통 */
 .itemtile-character-box {
     position: absolute;
-    left: 50cqw;
-    top: 22.22cqh;      /* ✅ 240px */
+    left: 50%;
     transform: translateX(-50%);
-    width: 18.75cqw;    /* 360px */
-    height: 61.11cqh;   /* 660px */
     pointer-events: none;
 }
 
@@ -104,7 +97,6 @@
     inset: 0;
     z-index: 10;
     display: flex;
-    align-items: flex-end;
     justify-content: center;
 }
 
@@ -112,187 +104,131 @@
     width: 100%;
     height: 100%;
     object-fit: contain;
-    transform: translateY(0cqh) scale(var(--charScale, 1));
-    transform-origin: center bottom;
+    display: block;
     user-select: none;
     -webkit-user-drag: none;
 }
 
-/* =========================
-   (2) Discover 전용: 발바닥 기준 bottom 264px
-   h=600px -> 55.56cqh
-   bottom=264px -> 24.44cqh
-========================= */
+/* Discover 캐릭터
+   - 368x600
+   - bottom=264
+   - 발 기준 바닥 정렬 */
 .itemtile-char-discover {
-    height: 55.56cqh;      /* 600px */
-    top: auto !important;
-    bottom: 24.44cqh;      /* ✅ 264px */
+    width: calc(368 * var(--s));
+    height: calc(600 * var(--s));
+    top: auto;
+    bottom: calc(264 * var(--s));
 }
 
-.itemtile-char-select {}
-.itemtile-char-complete {}
+.itemtile-char-discover .itemtile-character-inner {
+    align-items: flex-end;
+}
 
-/* 결과 아이템 박스: 영역만 */
-.itemtile-result-item {
+.itemtile-char-discover .itemtile-character-inner > img {
+    object-position: bottom;
+    transform-origin: center bottom;
+}
+
+/* Complete 캐릭터
+   - 360x660
+   - top=180
+   - 상단 정렬 */
+.itemtile-char-complete {
+    width: calc(360 * var(--s));
+    height: calc(660 * var(--s));
+    top: calc(180 * var(--s));
+}
+
+.itemtile-char-complete .itemtile-character-inner {
+    align-items: flex-start;
+}
+
+.itemtile-char-complete .itemtile-character-inner > img {
+    object-position: top;
+    transform-origin: center top;
+}
+
+/* Complete 결과 아이템
+   - 160x160
+   - top=116
+   - right=-44 */
+.itemtile-complete-item {
     position: absolute;
-    left: calc(100% + 2.29cqw); /* 44px */
-    top: 10.74cqh;              /* 116px */
-    width: 8.33cqw;             /* 160px */
-    height: 8.33cqw;
+    width: calc(160 * var(--s));
+    height: calc(160 * var(--s));
+    top: calc(116 * var(--s));
+    right: calc(-44 * var(--s));
 
     display: flex;
     align-items: center;
     justify-content: center;
 
-    background: transparent !important;
-    background-color: transparent !important;
-    box-shadow: none !important;
-    border: 0 !important;
-    outline: 0 !important;
-    filter: none !important;
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    border-radius: 0 !important;
+    z-index: 20;
+    pointer-events: none;
 }
 
-.itemtile-result-item > img {
+.itemtile-complete-item > img {
     width: 100%;
     height: 100%;
     object-fit: contain;
+
+    transform: scale(1.18);
+    transform-origin: center;
+
     user-select: none;
     -webkit-user-drag: none;
 }
 
-/* Subtitle 영역 */
+/* Subtitle 스코프
+   - width=1724
+   - bottom=24 */
 .itemtile-subtitle-scope {
     position: absolute;
-    left: 50cqw;
-    bottom: 2.22cqh; /* 24px */
+    left: 50%;
+    bottom: calc(24 * var(--s));
     transform: translateX(-50%);
-    width: 89.79cqw; /* 1724px */
+    width: calc(1724 * var(--s));
     pointer-events: auto;
 }
 
-/* 펑/연기 */
-.itemtile-puff {
-    position: absolute;
-    left: 50%;
-    top: 48%;
-    transform: translate(-50%, -50%);
-    width: 42.71cqw; /* 820px */
-    height: 42.71cqw;
-    pointer-events: none;
-    z-index: 30;
-    opacity: 1;
-}
-
-.itemtile-puff.done {
-    opacity: 0;
-    transition: opacity 0.22s ease;
-}
-
-.puff-core {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    width: 27.08cqw; /* 520px */
-    height: 27.08cqw;
-    transform: translate(-50%, -50%);
-    border-radius: 50%;
-    background: radial-gradient(
-            circle,
-            rgba(235, 235, 235, 0.95) 0%,
-            rgba(235, 235, 235, 0.55) 28%,
-            rgba(240, 210, 225, 0.28) 52%,
-            rgba(255, 255, 255, 0) 74%
-    );
-    filter: blur(0.20cqw) drop-shadow(0 0.74cqh 0.94cqh rgba(0, 0, 0, 0.18));
-    animation: puffPopStrong 0.9s ease-out forwards;
-}
-
-.puff-ring {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    width: 37.50cqw; /* 720px */
-    height: 37.50cqw;
-    transform: translate(-50%, -50%);
-    border-radius: 50%;
-    background: radial-gradient(
-            circle,
-            rgba(255, 255, 255, 0) 42%,
-            rgba(235, 235, 235, 0.55) 50%,
-            rgba(255, 255, 255, 0) 62%
-    );
-    filter: blur(0.22cqw) drop-shadow(0 0.93cqh 1.04cqh rgba(0, 0, 0, 0.16));
-    animation: puffRingStrong 0.9s ease-out forwards;
-}
-
-.puff-ring.r2 {
-    width: 43.75cqw; /* 840px */
-    height: 43.75cqw;
-    opacity: 0.95;
-    animation-delay: 0.07s;
-}
-
-@keyframes puffPopStrong {
-    0% { transform: translate(-50%, -50%) scale(0.78); opacity: 0.25; }
-    18% { opacity: 1; }
-    100% { transform: translate(-50%, -50%) scale(1.14); opacity: 0; }
-}
-
-@keyframes puffRingStrong {
-    0% { transform: translate(-50%, -50%) scale(0.82); opacity: 0.15; }
-    20% { opacity: 0.95; }
-    100% { transform: translate(-50%, -50%) scale(1.2); opacity: 0; }
-}
-
-/* =========================
-   Select 컨테이너 (핑크 스펙)
-   w=1724px / h=560px / mb=304px
-========================= */
+/* Select 컨테이너
+   - 1724x560
+   - bottom=304 */
 .itemtile-select-wrap {
     position: absolute;
-    left: 50cqw;
-    bottom: 28.15cqh; /* 304px */
+    left: 50%;
     transform: translateX(-50%);
-    width: 89.79cqw;  /* 1724px */
-    height: 51.85cqh; /* 560px */
+    bottom: calc(304 * var(--s));
+    width: calc(1724 * var(--s));
+    height: calc(560 * var(--s));
     pointer-events: auto;
 }
 
-/* 4장 카드 */
+/* Select 카드 그리드
+   - 카드 4개
+   - gap=25 */
 .itemtile-select-cards {
     width: 100%;
     height: 100%;
     display: grid;
-    grid-template-columns: repeat(4, 12.50cqw); /* 240px */
-    gap: 1.25cqw; /* 24px */
-    justify-content: center;
+
+    --gap: calc(25 * var(--s));
+    gap: var(--gap);
+
+    grid-template-columns: repeat(4, calc((100% - (var(--gap) * 3)) / 4));
     align-items: center;
+    justify-content: space-between;
 }
 
-/* 카드 공통: w=240 h=560 r=48 border=12 */
+/* 카드 버튼 */
 .itemtile-card {
     position: relative;
-    width: 12.50cqw;    /* 240px */
-    height: 51.85cqh;   /* 560px */
-    border-radius: 2.50cqw; /* 48px */
-    border: 0.63cqw solid rgba(255, 255, 255, 0); /* 12px, 비활성은 투명 */
-
-    background: rgba(255, 255, 255, 0.26);
-    box-shadow: 0 1.30cqh 1.56cqh rgba(0, 0, 0, 0.18);
-    backdrop-filter: blur(0.93cqh);
-    -webkit-backdrop-filter: blur(0.93cqh);
-
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-
-    /* ✅ 스펙에 padding-top 없음: 아이콘 박스 mt/mb로만 잡는다 */
-    justify-content: flex-start;
-    padding-top: 0;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    overflow: visible;
+    display: block;
     cursor: pointer;
 }
 
@@ -301,18 +237,49 @@
     opacity: 0.92;
 }
 
-/* 활성 카드 테두리 (원하는 색이면 교체 가능) */
-.itemtile-card.active {
-    border-color: rgba(0, 201, 211, 0.95);
-    background: rgba(255, 255, 255, 0.32);
+/* 카드 패널
+   - radius=100
+   - border=12 (선택 시 cyan)
+   - background=creamWhite(불투명 100%) */
+.itemtile-card-inner {
+    position: relative;
+    height: 100%;
+    border-radius: calc(100 * var(--s));
+    border: calc(12 * var(--s)) solid transparent;
+    background: var(--creamWhite);
+    overflow: hidden;
+
 }
 
-/* ✅ 아이콘 박스: w=240 h=240 / mt=48 / mb=48 / 가운데정렬 */
+/* 선택 카드 */
+.itemtile-card.active .itemtile-card-inner {
+    border-color: var(--nookCyan);
+}
+
+/* Select 내부 정렬
+   - itemtile-card-body에서 중앙정렬
+   - itemtile-card-img에 mt/mb 48 적용 */
+.itemtile-card-body {
+    position: relative;
+    height: 100%;
+    width: 100%;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 아이콘 박스
+   - 240x240
+   - mt=48, mb=48 */
 .itemtile-card-img {
-    width: 12.50cqw;   /* 240px */
-    height: 12.50cqw;  /* 240px */
-    margin-top: 4.44cqh;    /* 48px */
-    margin-bottom: 4.44cqh; /* 48px */
+    width: calc(240 * var(--s));
+    height: calc(240 * var(--s));
+
+    margin-top: calc(48 * var(--s));
+    margin-bottom: calc(48 * var(--s));
+
     display: flex;
     align-items: center;
     justify-content: center;
@@ -322,159 +289,108 @@
     width: 100%;
     height: 100%;
     object-fit: contain;
+
+    transform: scale(1.08);
+    transform-origin: center;
+
     user-select: none;
     -webkit-user-drag: none;
 }
 
-/* ✅ 이름 텍스트: f=40 */
-.itemtile-card-name {
-    font-size: 2.08cqw; /* 40px */
-    font-weight: 900;
-    color: rgba(76, 64, 52, 0.92);
-    text-align: center;
-    line-height: 1.1;
-}
-
-/* ✅ 선택하기 버튼: w=240 h=64 f=36 / 위로 20px 뜸 (= -84px) */
-.itemtile-pick-pill {
-    position: absolute;
-    left: 50%;
-    top: -7.78cqh; /* -84px */
-    transform: translateX(-50%);
-
-    width: 12.50cqw;  /* 240px */
-    height: 5.93cqh;  /* 64px */
-    border-radius: 1.67cqw; /* 32px */
-
-    display: flex;
-    align-items: center;
-    justify-content: center;
-
-    background: rgba(0, 201, 211, 0.95);
-    color: #ffffff;
-    font-weight: 900;
-    font-size: 1.88cqw; /* ✅ 36px */
-    box-shadow: 0 0.93cqh 1.04cqh rgba(0, 0, 0, 0.18);
-    pointer-events: none;
-}
-
-/* ✅ 새로운 아이템 태그: w=240 h=60 f=32 / top=48px */
+/* 새 아이템 태그
+   - 240x60
+   - top=32
+   - font=32 */
 .itemtile-new-pill {
     position: absolute;
     left: 50%;
-    top: 4.44cqh; /* 48px */
+    top: calc(32 * var(--s));
     transform: translateX(-50%);
 
-    width: 12.50cqw; /* 240px */
-    height: 5.56cqh; /* 60px */
-    border-radius: 1.56cqw; /* 30px */
+    width: calc(240 * var(--s));
+    height: calc(60 * var(--s));
+    border-radius: calc(36 * var(--s));
 
     display: flex;
     align-items: center;
     justify-content: center;
 
-    background: rgba(255, 95, 95, 0.92);
-    color: #ffffff;
+    background: var(--red);
+    color: var(--white);
+
     font-weight: 900;
-    font-size: 1.67cqw; /* 32px */
-    box-shadow: 0 0.93cqh 1.04cqh rgba(0, 0, 0, 0.16);
+    font-size: calc(32 * var(--s));
+    line-height: 1;
+
+    z-index: 40;
     pointer-events: none;
+
 }
 
-/* 하단 안내 문구(유지) */
+/* 이름
+   - font=40 */
+.itemtile-card-name {
+    font-size: calc(40 * var(--s));
+    font-weight: 900;
+    color: var(--darkBrown);
+    text-align: center;
+    line-height: 1.1;
+    word-break: keep-all;
+    padding: 0 calc(18 * var(--s));
+}
+
+/* 선택하기 버튼
+   - w=240, h=64
+   - top=-(64+20)=-84 */
+.itemtile-pick-pill {
+    position: absolute;
+    left: 50%;
+    top: calc(-84 * var(--s));
+    transform: translateX(-50%);
+
+    width: calc(240 * var(--s));
+    height: calc(64 * var(--s));
+    border-radius: calc(40 * var(--s));
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: var(--nookCyan);
+    color: var(--white);
+
+    font-weight: 900;
+    font-size: calc(36 * var(--s));
+    line-height: 1;
+
+    z-index: 50;
+    pointer-events: auto;
+}
+
+.itemtile-pick-pill.is-disabled {
+    opacity: 0.72;
+}
+
+/* Select 하단 안내(현재 구조 유지) */
 .itemtile-select-bottom {
     position: absolute;
-    left: 50cqw;
-    bottom: 6.67cqh; /* 72px */
+    left: 50%;
+    bottom: calc(72 * var(--s));
     transform: translateX(-50%);
-    width: 89.79cqw;
+    width: calc(1724 * var(--s));
     text-align: center;
     pointer-events: none;
 
     font-weight: 900;
     color: rgba(255, 255, 255, 0.92);
-    text-shadow: 0 0.56cqh 0.74cqh rgba(0, 0, 0, 0.28);
 }
 
 .itemtile-select-bottom .line1,
 .itemtile-select-bottom .line2 {
-    font-size: 1.77cqw; /* 34px */
+    font-size: calc(34 * var(--s));
     line-height: 1.15;
 }
 
 .itemtile-select-bottom .line2 {
-    margin-top: 0.93cqh; /* 10px */
-}
-
-/* 숨김 confirm */
-.itemtile-hidden-confirm {
-    position: absolute;
-    left: -9999px;
-    top: -9999px;
-    width: 0.05cqw;
-    height: 0.05cqh;
-    opacity: 0;
-    pointer-events: none;
-}
-/* =========================
-   SELECT 화면 핑크 스펙 강제 오버라이드
-   - 컨테이너: 1724x560, mb 304
-   - 카드: 240x560, r48, border 12
-   - 아이콘: 240x240, mt 48, mb 48
-   - 이름: f40
-   - 선택하기: 240x64, f36, 위로 20px(= -84px)
-   - 새로운 아이템: 240x60, f32, top 48
-========================= */
-
-.itemtile-select-wrap {
-    width: 89.79cqw !important;   /* 1724px */
-    height: 51.85cqh !important;  /* 560px */
-    bottom: 28.15cqh !important;  /* 304px */
-}
-
-.itemtile-select-cards {
-    grid-template-columns: repeat(4, 12.50cqw) !important; /* 240px */
-    gap: 1.25cqw !important; /* 24px */
-}
-
-.itemtile-card {
-    width: 12.50cqw !important;   /* 240px */
-    height: 51.85cqh !important;  /* 560px */
-    border-radius: 2.50cqw !important; /* 48px */
-    border-width: 0.63cqw !important;  /* 12px */
-    padding-top: 0 !important;
-}
-
-.itemtile-card-img {
-    width: 12.50cqw !important;   /* 240px */
-    height: 12.50cqw !important;  /* 240px */
-    margin-top: 4.44cqh !important;    /* 48px */
-    margin-bottom: 4.44cqh !important; /* 48px */
-}
-
-.itemtile-card-img > img {
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: contain !important;
-}
-
-.itemtile-card-name {
-    font-size: 2.08cqw !important; /* 40px */
-    line-height: 1.1 !important;
-    white-space: normal !important;
-    word-break: keep-all !important;
-}
-
-.itemtile-pick-pill {
-    width: 12.50cqw !important;  /* 240px */
-    height: 5.93cqh !important;  /* 64px */
-    top: -7.78cqh !important;    /* -84px */
-    font-size: 1.88cqw !important; /* 36px */
-}
-
-.itemtile-new-pill {
-    width: 12.50cqw !important;  /* 240px */
-    height: 5.56cqh !important;  /* 60px */
-    top: 4.44cqh !important;     /* 48px */
-    font-size: 1.67cqw !important; /* 32px */
+    margin-top: calc(10 * var(--s));
 }

@@ -29,6 +29,7 @@ export const COLORS = {
     green: '#57B47C',
     darkPurple: '#744990',
     purple: '#9165AA',
+    white: '#FFFFFF',
 
     // [기존 및 레거시 별칭]
     mint: '#78D7B2', // nookMint의 별칭
