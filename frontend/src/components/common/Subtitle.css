@@ -1,178 +1,245 @@
-.name-box {
-  position: fixed;
-  left: calc(50% - (66.042cqw / 2) + 1.875cqw);
-  bottom: 38cqh;
-  width: 12.7cqw;
-  height: 8.89cqh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 120;
-  pointer-events: none;
+/* Subtitle.css
+   ✅ AspectLayout 내부 16:9 컨테이너 기준
+   ✅ --s 한 번만 계산해서 PSD px -> 스케일 변환
+*/
 
-  /* CSS Mask로 SVG 모양 적용 */
-  -webkit-mask-image: url('/images/common/ui-bubble-name.svg');
-  mask-image: url('/images/common/ui-bubble-name.svg');
-  -webkit-mask-size: contain;
-  mask-size: contain;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-  mask-position: center;
+.subtitle-root {
+    position: absolute;
+    inset: 0;
+    z-index: 120;
+    pointer-events: none;
+
+    /* 1920 기준 1px 스케일 */
+    --s: calc(1cqw / 19.2);
+}
+
+/* =========================
+   이름 박스 (PSD: w244 h96 / text w144 h60 / font 36 / rotate -8)
+========================= */
+.name-box {
+    position: absolute;
+    width: calc(244 * var(--s));
+    height: calc(96 * var(--s));
+    z-index: 121;
+    pointer-events: none;
+
+    /* ⚠️ 여기 좌표는 너가 기존에 쓰던 값 유지 (필요하면 PSD 값으로 다시 잡자) */
+    left: calc(50% - calc(634 * var(--s)) + calc(36 * var(--s)));
+    bottom: calc(410 * var(--s));
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    -webkit-mask-image: url('/images/common/ui-bubble-name.svg');
+    mask-image: url('/images/common/ui-bubble-name.svg');
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
 }
 
 .name-text {
-  position: relative;
-  z-index: 121;
-  font-family: 'Gosanja', sans-serif;
-  font-size: 1.875cqw;
-  text-align: center;
-  word-break: keep-all;
-  width: 7.5cqw;
-  height: 5.56cqh;
-  box-sizing: border-box;
-  display: flex;
-  align-content: center;
-  justify-content: center;
-  transform: translateY(0.37cqh) rotate(-8deg);
+    position: relative;
+    z-index: 122;
+    font-family: 'Gosanja', sans-serif;
+    font-size: calc(36 * var(--s));
+    text-align: center;
+    word-break: keep-all;
+
+    width: calc(144 * var(--s));
+    height: calc(60 * var(--s));
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    transform: translateY(calc(4 * var(--s))) rotate(-8deg);
+    box-sizing: border-box;
 }
 
+/* =========================
+   메인 박스 (PSD: w1268 h398 / text w1044 h208 / top 120 / font 48 / line 80)
+========================= */
 .content-box {
-  position: fixed;
-  left: 50%;
-  bottom: 7.41cqh;
-  transform: translateX(-50%);
-  width: 66.04cqw;
-  height: 36.85cqh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-  pointer-events: auto;
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: calc(80 * var(--s));
 
-  -webkit-mask-image: url('/images/common/ui-bubble-content.svg');
-  mask-image: url('/images/common/ui-bubble-content.svg');
-  -webkit-mask-size: contain;
-  mask-size: contain;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-  mask-position: center;
+    width: calc(1268 * var(--s));
+    height: calc(398 * var(--s));
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    z-index: 110;
+    pointer-events: auto;
+
+    -webkit-mask-image: url('/images/common/ui-bubble-content.svg');
+    mask-image: url('/images/common/ui-bubble-content.svg');
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
 }
 
 .content-text {
-  position: absolute;
-  top: 11.11cqh;
-  z-index: 10;
-  font-family: 'Gosanja', sans-serif;
-  font-size: 2.5cqw;
-  line-height: 7.41cqh;
-  text-align: center;
-  word-break: keep-all;
-  width: 54.38cqw;
-  height: 19.26cqh;
-  white-space: pre-line;
+    position: absolute;
+    top: calc(120 * var(--s));
+    z-index: 111;
+
+    font-family: 'Gosanja', sans-serif;
+    font-size: calc(48 * var(--s));
+    line-height: calc(80 * var(--s));
+    text-align: center;
+    word-break: keep-all;
+
+    width: calc(1044 * var(--s));
+    height: calc(208 * var(--s));
+
+    white-space: pre-line;
+    box-sizing: border-box;
 }
 
+.typing-cursor {
+    display: inline-block;
+    margin-left: calc(6 * var(--s));
+    opacity: 0.9;
+}
+
+/* =========================
+   옵션 박스 (PSD)
+   3줄: outer 480x340 / text 320x204 / font 42 / line 80
+   2줄: outer 480x284 / text 320x124 / font 42 / line 80
+========================= */
 .option-box {
-  position: fixed;
-  right: 5cqw;
-  bottom: 33.33cqh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 100;
-  pointer-events: auto;
+    position: absolute;
 
-  -webkit-mask-size: contain;
-  mask-size: contain;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-  mask-position: center;
+    /* ⚠️ 기존 위치 유지. PSD대로 다시 잡고 싶으면 px 값 주면 바로 맞춰줄게 */
+    right: calc(96 * var(--s));
+    bottom: calc(360 * var(--s));
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    z-index: 115;
+    pointer-events: auto;
+
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
 }
 
-/* 2줄용 옵션 박스 */
 .option-box-small {
-  width: 25cqw;
-  height: 26.3cqh;
-  -webkit-mask-image: url('/images/common/ui-bubble-choice-2.svg');
-  mask-image: url('/images/common/ui-bubble-choice-2.svg');
+    width: calc(480 * var(--s));
+    height: calc(284 * var(--s));
+    -webkit-mask-image: url('/images/common/ui-bubble-choice-2.svg');
+    mask-image: url('/images/common/ui-bubble-choice-2.svg');
 }
 
-/* 3줄용 옵션 박스 */
 .option-box-large {
-  width: 25cqw;
-  height: 31.48cqh;
-  -webkit-mask-image: url('/images/common/ui-bubble-choice-3.svg');
-  mask-image: url('/images/common/ui-bubble-choice-3.svg');
+    width: calc(480 * var(--s));
+    height: calc(340 * var(--s));
+    -webkit-mask-image: url('/images/common/ui-bubble-choice-3.svg');
+    mask-image: url('/images/common/ui-bubble-choice-3.svg');
 }
 
 .option-text {
-  position: relative;
-  z-index: 10;
-  font-family: 'Gosanja', sans-serif;
-  font-size: 2.19cqw;
-  line-height: 7.41cqh;
-  text-align: center;
-  word-break: keep-all;
-  width: 16.67cqcw;
-  padding: 3.7cqh 2.08cqw;
+    width: calc(320 * var(--s));
+    box-sizing: border-box;
+
+    font-family: 'Gosanja', sans-serif;
+    font-size: calc(42 * var(--s));
+    line-height: calc(80 * var(--s)); /* ✅ PSD 글자간격(줄간격) */
+
+    text-align: center;
+    word-break: keep-all;
+
     display: flex;
     flex-direction: column;
-    justify-content: center;
+    justify-content: center; /* ✅ 텍스트박스 안에서 수직 중앙 */
     align-items: center;
+
+    overflow: visible;
+    padding: 0;
 }
 
 .option-box-small .option-text {
-    height: 11.48cqh;
+    height: calc(124 * var(--s));
 }
 
 .option-box-large .option-text {
-    height: 18.89cqh;
+    height: calc(204 * var(--s));
 }
 
-.option-text span {
-  pointer-events: auto;
-  cursor: pointer;
-  position: relative;
-  transition: all 0.2s ease;
+.option-row {
+    display: block;
+    width: 100%;
+    white-space: nowrap;
+    pointer-events: auto;
+    position: relative;
+    transition: all 0.2s ease;
 }
 
-.option-text span::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 50%; /* 중간 위치 */
-  transform: translateY(-50%); /* 정확히 중앙 */
-  width: 100%;
-  height: 1.48cqh; /* 두께 */
-  background-color: #ffd700;
-  z-index: -1;
-  opacity: 0;
-  transition: opacity 0.2s ease;
+/* (선택) hover 하이라이트: 필요 없으면 지워도 됨 */
+.option-row::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 100%;
+    height: calc(16 * var(--s));
+    background-color: #ffd700;
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.2s ease;
 }
 
-.option-text span:hover::after {
-  opacity: 1;
+.option-row:hover::after {
+    opacity: 1;
 }
 
-.triangle {
-  position: fixed;
-  width: 2.71cqw;
-  height: 2.96cqh;
-  z-index: 120;
-  pointer-events: auto;
-  bottom: 7.93cqh;
-  left: 50%;
-  transform: translateX(-50%);
+/* =========================
+   ✅ 버튼(화살표)
+   PSD: 버튼영역 w52 h32
+   위치: 메인박스 bottom 80 + 16
+========================= */
+.triangle-btn {
+    position: absolute;
+    width: calc(52 * var(--s));
+    height: calc(32 * var(--s));
 
-  -webkit-mask-image: url('/images/common/ui-bubble-arrow.svg');
-  mask-image: url('/images/common/ui-bubble-arrow.svg');
-  -webkit-mask-size: contain;
-  mask-size: contain;
-  -webkit-mask-repeat: no-repeat;
-  mask-repeat: no-repeat;
-  -webkit-mask-position: center;
-  mask-position: center;
+    left: 50%;
+    transform: translateX(-50%);
+
+    bottom: calc((80 + 16) * var(--s));
+
+    z-index: 120;
+    pointer-events: auto;
+
+    border: none;
+    padding: 0;
+    margin: 0;
+
+    /* background-color는 JSX에서 COLORS.subtitle.arrow로 주입 */
+
+    -webkit-mask-image: url('/images/common/ui-bubble-arrow.svg');
+    mask-image: url('/images/common/ui-bubble-arrow.svg');
+    -webkit-mask-size: contain;
+    mask-size: contain;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
 }
