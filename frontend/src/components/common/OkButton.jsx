@@ -1,7 +1,7 @@
 import React from 'react';
 import { COLORS } from '../../constants/colors.js';
 
-const ExitButton = ({ onClick, className = '', label = '나가기', disabled = false }) => {
+const OkButton = ({ onClick, className = '', label = '확인', disabled = false, style = {} }) => {
   const s = 'calc(100cqw / 1920)';
 
   return (
@@ -11,36 +11,36 @@ const ExitButton = ({ onClick, className = '', label = '나가기', disabled = f
       className={className}
       style={{
         position: 'absolute',
-        right: '20px',
+        right: `calc(20px + 204 * ${s} + 12px)`,
         bottom: '20px',
         zIndex: 9999,
-        width: `calc(204 * ${s})`,
+        width: `calc(220 * ${s})`,
         height: `calc(62 * ${s})`,
         borderRadius: `calc(32 * ${s})`,
-        background: COLORS.ac.creamIvory,
+        background: COLORS.ac.nookCyan,
         border: 'none',
         overflow: 'hidden',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: `calc(20 * ${s})`,
+        gap: `calc(12 * ${s})`,
         padding: 0,
         opacity: disabled ? 0.5 : 1,
         cursor: disabled ? 'not-allowed' : 'pointer',
+        ...style,
       }}
     >
       <svg
-        viewBox="0 0 16 16"
-        fill={COLORS.ac.darkBrown}
-        style={{ width: `calc(40 * ${s})`, height: 'auto', flex: '0 0 auto' }}
+        viewBox="0 0 70 70"
+        fill={COLORS.ac.creamWhite}
+        style={{ width: `calc(32 * ${s})`, height: 'auto', flex: '0 0 auto' }}
       >
-        <path d="M8,4.809V2.25c0-0.256-0.098-0.512-0.293-0.708C7.512,1.347,7.256,1.25,7,1.25S6.488,1.347,6.293,1.542L0,7.75l6.293,6.207C6.488,14.152,6.744,14.25,7,14.25s0.512-0.098,0.707-0.293S8,13.505,8,13.25v-2.489c2.75,0.068,5.755,0.566,8,3.989v-1C16,9.117,12.5,5.307,8,4.809z" />
+        <path d="M26.474,70c-2.176,0-4.234-1.018-5.557-2.764L3.049,43.639C0.725,40.57,1.33,36.2,4.399,33.875c3.074-2.326,7.441-1.717,9.766,1.35l11.752,15.518L55.474,3.285c2.035-3.265,6.332-4.264,9.604-2.232c3.268,2.034,4.266,6.334,2.23,9.602l-34.916,56.06c-1.213,1.949-3.307,3.175-5.6,3.279C26.685,69.998,26.58,70,26.474,70z" />
       </svg>
       <span
         style={{
-          color: COLORS.ac.darkBrown,
+          color: COLORS.ac.creamWhite,
           fontSize: `calc(32 * ${s})`,
-          fontWeight: 700,
           lineHeight: 1,
           userSelect: 'none',
           whiteSpace: 'nowrap',
@@ -52,4 +52,4 @@ const ExitButton = ({ onClick, className = '', label = '나가기', disabled = f
   );
 };
 
-export default ExitButton;
+export default OkButton;
