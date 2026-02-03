@@ -97,13 +97,9 @@ export default function House({ player, isMyTurn, onClose, onAction, onInventory
               {/* TODO: step 2~4 */}
             </div>
           )}
-
-          {/* ✅ ExitButton = 뒤로가기 버튼으로만 사용 + shadow 항상 OFF */}
           <ExitButton
             onClick={handleBack}
-            label="뒤로가기"
             showShadow={false}
-            className=""
             disabled={!isMyTurn}
             style={{
               position: 'absolute',

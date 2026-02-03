@@ -1,81 +1,66 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import './Subtitle.css';
-import { COLORS } from '../../constants/colors.js';
+import { COLORS as _COLORS } from '../../constants/colors.js';
 
 /**
- * @param {string} nameText - 이름 박스 텍스트
- * @param {string} nameColor - 이름 박스 색상
- * @param {string} nameTextColor - 이름 텍스트 색상
+ * Subtitle
  *
- * @param {string} contentText - 메인 박스 텍스트
- * @param {string} contentColor - 메인 박스 색상
- * @param {string} contentTextColor - 메인 텍스트 색상
- *
- * @param {array} options - 옵션 배열 [{ text: '텍스트', onClick: 핸들러 }, ...]
- * @param {string} optionColor - 옵션 박스 색상
- * @param {string} optionTextColor - 옵션 텍스트 색상
- * @param {boolean} optionDisabled - 옵션 클릭 비활성화
- *
- * @param {boolean} showTriangle - 삼각형 표시 여부 (true: 표시, false: 숨김)
- *
- * @param {number} typingSpeed - 타이핑 애니메이션 속도 (ms per char)
- * @param {function} onTypingComplete - 타이핑 애니메이션 완료 시 호출되는 콜백 함수
- *
- * 사용 예시 (2개 옵션 - option-box-small):
- * <Subtitle
- *   nameText="여울"
- *   contentText="정산할래?"
- *   options={[
- *     { text: '응! 지금 할게', onClick: handleExchange },
- *     { text: '다음에 할게', onClick: handleSkip },
- *   ]}
- *   optionDisabled={!isMyTurn}
- * />
- *
- * 사용 예시 (3개 옵션 - option-box-large):
- * <Subtitle
- *   nameText="너굴"
- *   contentText="뭘 도와줄까?"
- *   options={[
- *     { text: '대출받기', onClick: handleBorrow },
- *     { text: '대출갚기', onClick: handleRepay },
- *     { text: '나가기', onClick: handleExit },
- *   ]}
- * />
- *
- * 사용 예시 (클릭 없는 단일 텍스트):
- * <Subtitle
- *   nameText="여울"
- *   contentText="알겠어!"
- *   options={[{ text: '잠시 후 자동으로 닫힙니다...' }]}
- * />
+ * - 기본 색상은 무조건 colors.js의 COLORS.subtitle.* 사용(= default 유지)
+ * - props로 색을 넘기면 해당 색으로 덮어쓸 수 있음(= 색만 바꾸기/내용만 바꾸기)
+ * - showTriangle=true면 PSD 버튼 영역(52x32) + ui-bubble-arrow.svg 마스크로 표시
  */
-const Subtitle = ({
-  // 이름 박스
-  nameText,
-  nameColor = '#9B59B6',
-  nameTextColor = '#FFFFFF',
+function Subtitle({
+                    // 이름 박스
+                    nameText,
+                    nameColor,
+                    nameTextColor,
 
-  // 메인 박스
-  contentText,
-  contentColor = COLORS.subtitle.contentBox,
-  contentTextColor = COLORS.subtitle.contentText,
-  highlights = [],
+                    // 메인 박스
+                    contentText,
+                    contentColor,
+                    contentTextColor,
+                    highlights = [],
 
-  // 옵션 박스
-  options, // [{ text, onClick }, ...]
-  optionColor = COLORS.subtitle.optionBox,
-  optionTextColor = COLORS.subtitle.optionText,
-  optionDisabled = false,
+                    // 옵션 박스
+                    options,
+                    optionColor,
+                    optionTextColor,
+                    optionDisabled = false,
 
-  // 삼각형
-  showTriangle = false,
-  clickTriangle,
+                    // 삼각형
+                    showTriangle = false,
+                    clickTriangle,
 
-  // 텍스트 애니메이션
-  typingSpeed = 30,
-  onTypingComplete,
-}) => {
+                    // 타이핑
+                    typingSpeed = 30,
+                    onTypingComplete,
+                  }) {
+  // ✅ colors.js 기반 default 색 (import 실패해도 런타임에서 안 죽게 fallback)
+  const COLORS = _COLORS ?? {
+    subtitle: {
+      contentBox: '#fffae4',
+      contentText: '#5b4d33',
+      arrow: '#ffb700',
+      optionBox: '#fcec9e',
+      optionText: '#5b4d33',
+    },
+    characters: {
+      default: { nameBox: '#9B59B6', nameText: '#FFFFFF' },
+    },
+  };
+
+  // ✅ “default 색은 유지” = props가 없으면 COLORS.subtitle.* 그대로
+  const resolvedNameColor = nameColor ?? COLORS.characters?.default?.nameBox ?? '#9B59B6';
+  const resolvedNameTextColor = nameTextColor ?? COLORS.characters?.default?.nameText ?? '#FFFFFF';
+
+  const resolvedContentColor = contentColor ?? COLORS.subtitle?.contentBox ?? '#fffae4';
+  const resolvedContentTextColor = contentTextColor ?? COLORS.subtitle?.contentText ?? '#5b4d33';
+
+  const resolvedOptionColor = optionColor ?? COLORS.subtitle?.optionBox ?? '#fcec9e';
+  const resolvedOptionTextColor = optionTextColor ?? COLORS.subtitle?.optionText ?? '#5b4d33';
+
+  const resolvedArrowColor = COLORS.subtitle?.arrow ?? '#ffb700';
+
   const [characterCount, setCharacterCount] = useState(0);
   const [isTyping, setIsTyping] = useState(false);
   const prevTextRef = useRef('');
@@ -84,10 +69,10 @@ const Subtitle = ({
   useEffect(() => {
     if (!contentText) {
       setIsTyping(false);
+      setCharacterCount(0);
+      prevTextRef.current = '';
       return;
     }
-
-    // 텍스트가 달라졌을 때만 리셋
     if (prevTextRef.current === contentText) return;
 
     prevTextRef.current = contentText;
@@ -100,17 +85,13 @@ const Subtitle = ({
     if (!isTyping || !contentText) return;
 
     const targetLength = contentText.length;
-
     const timer = setInterval(() => {
       setCharacterCount((prev) => {
-        if (prev < targetLength) {
-          return prev + 1;
-        } else {
-          setIsTyping(false);
-          clearInterval(timer);
-          onTypingComplete?.();
-          return prev;
-        }
+        if (prev < targetLength) return prev + 1;
+        setIsTyping(false);
+        clearInterval(timer);
+        onTypingComplete?.();
+        return prev;
       });
     }, typingSpeed);
 
@@ -129,7 +110,7 @@ const Subtitle = ({
   // 표시할 텍스트
   const displayText = contentText ? contentText.slice(0, characterCount) : '';
 
-  // displayText에서 highlights 단어만 색칠해서 렌더
+  // displayText에서 highlights 단어만 색칠
   const highlightedNodes = useMemo(() => {
     if (!displayText) return null;
 
@@ -151,7 +132,7 @@ const Subtitle = ({
         ranges.push({
           start: idx,
           end: idx + needle.length,
-          color: rule.color || contentTextColor,
+          color: rule.color || resolvedContentTextColor,
         });
         startIndex = idx + needle.length;
       }
@@ -161,6 +142,7 @@ const Subtitle = ({
 
     ranges.sort((a, b) => a.start - b.start);
 
+    // 겹침 방지(앞에서부터 하나씩만)
     const merged = [];
     let lastEnd = 0;
     for (const r of ranges) {
@@ -173,9 +155,7 @@ const Subtitle = ({
     let cursor = 0;
 
     merged.forEach((r, i) => {
-      if (cursor < r.start) {
-        nodes.push(<span key={`t-${i}-pre`}>{displayText.slice(cursor, r.start)}</span>);
-      }
+      if (cursor < r.start) nodes.push(<span key={`t-${i}-pre`}>{displayText.slice(cursor, r.start)}</span>);
       nodes.push(
         <span key={`t-${i}-hi`} style={{ color: r.color }}>
           {displayText.slice(r.start, r.end)}
@@ -184,52 +164,47 @@ const Subtitle = ({
       cursor = r.end;
     });
 
-    if (cursor < displayText.length) {
-      nodes.push(<span key="t-last">{displayText.slice(cursor)}</span>);
-    }
-
+    if (cursor < displayText.length) nodes.push(<span key="t-last">{displayText.slice(cursor)}</span>);
     return nodes;
-  }, [displayText, highlights, contentTextColor]);
+  }, [displayText, highlights, resolvedContentTextColor]);
 
-  // 옵션 개수에 따라 클래스 결정 (2개 이하: small, 3개 이상: large)
   const optionBoxClass = options?.length >= 3 ? 'option-box-large' : 'option-box-small';
 
   return (
-    <>
+    <div className="subtitle-root">
       {/* 이름 박스 */}
       {nameText && (
-        <div className="name-box" style={{ backgroundColor: nameColor }}>
-          <div className="name-text" style={{ color: nameTextColor }}>
+        <div className="name-box" style={{ backgroundColor: resolvedNameColor }}>
+          <div className="name-text" style={{ color: resolvedNameTextColor }}>
             {nameText}
           </div>
         </div>
       )}
 
-      {/* 메인 박스 (클릭하면 타이핑 스킵) */}
+      {/* 메인 박스 */}
       <div
         className="content-box"
-        style={{ backgroundColor: contentColor, cursor: isTyping ? 'pointer' : 'default' }}
+        style={{ backgroundColor: resolvedContentColor, cursor: isTyping ? 'pointer' : 'default' }}
         onClick={handleClick}
       >
-        <div className="content-text" style={{ color: contentTextColor, whiteSpace: 'pre-wrap' }}>
+        <div className="content-text" style={{ color: resolvedContentTextColor, whiteSpace: 'pre-wrap' }}>
           {highlightedNodes}
           {isTyping && <span className="typing-cursor">|</span>}
         </div>
       </div>
 
-      {/* 옵션 박스 (타이핑 끝나면 표시) */}
+      {/* 옵션 박스 */}
       {options && options.length > 0 && !isTyping && (
-        <div className={`option-box ${optionBoxClass}`} style={{ backgroundColor: optionColor }}>
-          <div className="option-text" style={{ color: optionTextColor }}>
+        <div className={`option-box ${optionBoxClass}`} style={{ backgroundColor: resolvedOptionColor }}>
+          <div className="option-text" style={{ color: resolvedOptionTextColor }}>
             {options.map((option, idx) => (
               <span
                 key={idx}
+                className="option-row"
                 style={{
-                  display: 'block',
                   cursor: option.onClick && !optionDisabled ? 'pointer' : 'default',
                 }}
                 onClick={() => {
-                  console.log('클릭됨:', option.text, 'disabled:', optionDisabled);
                   if (optionDisabled) return;
                   option.onClick?.();
                 }}
@@ -241,22 +216,22 @@ const Subtitle = ({
         </div>
       )}
 
-      {/* 삼각형 (타이핑 끝나면 표시) */}
+      {/* ✅ PSD 버튼 영역: w52 h32 / 메인박스 bottom(80) + 16 */}
       {showTriangle && !isTyping && (
-        <div className="triangle"
-             style={{
-               backgroundColor: COLORS.subtitle.arrow,
-               cursor: clickTriangle ? 'pointer' : 'default'}}
-             onClick={()=>{
-               if(clickTriangle){
-                 clickTriangle();
-               }
-             }}
-        ></div>
-        )
-      }
-    </>
+        <button
+          type="button"
+          className="triangle-btn"
+          onClick={() => clickTriangle?.()}
+          disabled={!clickTriangle}
+          aria-label="다음"
+          style={{
+            backgroundColor: resolvedArrowColor, // ✅ colors.js의 COLORS.subtitle.arrow
+            cursor: clickTriangle ? 'pointer' : 'default',
+          }}
+        />
+      )}
+    </div>
   );
-};
+}
 
 export default Subtitle;
