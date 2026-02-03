@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import useSpaceKey from '../../../components/common/useSpaceKey.js';
+import useSpaceKey from '../../../hooks/useSpaceKey.js';
 import InstructionText from '../../../components/common/InstructionText.jsx';
 
 const toBool = (v) => v === true || v === 'true';
@@ -16,10 +16,10 @@ export default function DiscoverScreen({ isMyTurn, onAction, characterDeliveryIm
 
   useSpaceKey(handleNext, { enabled: myTurn });
 
-  const img = useMemo(() => characterDeliveryImage || characterHappyImage || null, [
-    characterDeliveryImage,
-    characterHappyImage,
-  ]);
+  const img = useMemo(
+    () => characterDeliveryImage || characterHappyImage || null,
+    [characterDeliveryImage, characterHappyImage],
+  );
 
   return (
     <motion.div

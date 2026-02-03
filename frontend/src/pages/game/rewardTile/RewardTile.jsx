@@ -7,7 +7,7 @@ import RewardDiscoverScreen from './RewardDiscoverScreen.jsx';
 import RewardGetScreen from './RewardGetScreen.jsx';
 
 import AspectLayout from '../../../components/layout/AspectLayout.jsx';
-import useSpaceKey from '../../../components/common/useSpaceKey.js';
+import useSpaceKey from '../../../hooks/useSpaceKey.js';
 import { CHARACTERS } from '../../../constants/characters.js';
 import { getMyIdFromToken } from '../../../utils/auth.js';
 
@@ -48,13 +48,7 @@ const pickViewerInfo = (gameState, myId) => {
 
   const viewerNameText = (me?.nickname && String(me.nickname).trim()) || ssNick || '';
 
-  const rawLevel =
-    me?.houseLevel ??
-    me?.houseLevelNumber ??
-    me?.houseLevelValue ??
-    me?.houseLv ??
-    me?.house ??
-    null;
+  const rawLevel = me?.houseLevel ?? me?.houseLevelNumber ?? me?.houseLevelValue ?? me?.houseLv ?? me?.house ?? null;
 
   const n = Number(rawLevel);
   const viewerHouseLevel = Number.isFinite(n) ? n : null;
@@ -78,10 +72,7 @@ export default function RewardTile({ roomId, stompClient, gameState, isMyTurn })
   }, [cp]);
   const uiStep = uiStepRaw === 1 ? 2 : uiStepRaw;
 
-  const rawActionStr = useMemo(
-    () => (cp?.actionDataStr ? String(cp.actionDataStr) : ''),
-    [cp?.actionDataStr]
-  );
+  const rawActionStr = useMemo(() => (cp?.actionDataStr ? String(cp.actionDataStr) : ''), [cp?.actionDataStr]);
   const parsed = useMemo(() => safeParseJson(rawActionStr), [rawActionStr]);
 
   // 내 id: 세션 우선, 없으면 토큰
@@ -162,11 +153,9 @@ export default function RewardTile({ roomId, stompClient, gameState, isMyTurn })
     const hasHar = gameState?.gainedHarvests && Object.keys(gameState.gainedHarvests).length > 0;
 
     const gainedFallback =
-      kind === 'fruit'
-        ? (hasHar ? gameState.gainedHarvests : null)
-        : (hasRes ? gameState.gainedResources : null);
+      kind === 'fruit' ? (hasHar ? gameState.gainedHarvests : null) : hasRes ? gameState.gainedResources : null;
 
-    const gained = hasAnyPositive(gainedFromServer) ? gainedFromServer : (gainedFallback || {});
+    const gained = hasAnyPositive(gainedFromServer) ? gainedFromServer : gainedFallback || {};
 
     let dropKeys = Array.isArray(parsed?.dropKeys) ? parsed.dropKeys.filter(Boolean) : [];
     if (!dropKeys.length && gained && typeof gained === 'object') {
@@ -202,7 +191,7 @@ export default function RewardTile({ roomId, stompClient, gameState, isMyTurn })
         body: JSON.stringify({ roomId, type }),
       });
     },
-    [stompClient, roomId]
+    [stompClient, roomId],
   );
 
   // Complete 화면에서 일정 시간 뒤 이벤트 종료(다음 상태로 진행)
@@ -285,8 +274,8 @@ export default function RewardTile({ roomId, stompClient, gameState, isMyTurn })
   const showSubtitle = uiStep === 2;
   const characterImage = showSubtitle ? happyCharacterImage : idleCharacterImage;
 
-  const dialogViewerName = dialogNameRef.current || (viewerInfo.viewerNameText || '나');
-  const dialogViewerColor = dialogColorRef.current || (viewerInfo.viewerNameColor || '#FFFFFF');
+  const dialogViewerName = dialogNameRef.current || viewerInfo.viewerNameText || '나';
+  const dialogViewerColor = dialogColorRef.current || viewerInfo.viewerNameColor || '#FFFFFF';
 
   return (
     <div className="rewardtile-root" role="dialog" aria-modal="true">
@@ -303,11 +292,7 @@ export default function RewardTile({ roomId, stompClient, gameState, isMyTurn })
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
               >
-                <RewardDiscoverScreen
-                  kind={kind}
-                  isMyTurn={myTurn}
-                  characterImage={idleCharacterImage}
-                />
+                <RewardDiscoverScreen kind={kind} isMyTurn={myTurn} characterImage={idleCharacterImage} />
               </motion.div>
             )}
 
