@@ -168,7 +168,7 @@ export default function Login() {
 
       if (response.status === 200) {
         // 1. id(memberId)를 추가로 받습니다.
-        const { token, nickname, bell, level, id, role } = response.data;
+        const { token, nickname, bell, level, id, role, profileImage } = response.data;
 
         if (rememberId) {
           localStorage.setItem('savedMemberId', memberId);
@@ -181,6 +181,9 @@ export default function Login() {
         sessionStorage.setItem('bell', bell);
         sessionStorage.setItem('level', level);
         sessionStorage.setItem('role', role);
+        if (profileImage) {
+          sessionStorage.setItem('profileImage', profileImage);
+        }
 
         openAlert(`${nickname}님 환영합니다!`);
         setTimeout(() => navigate('/home'), 1500);

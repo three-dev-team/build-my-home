@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getMemberInfo, updateNickname, withdraw, unlinkSocialAccount } from '../api/memberApi';
 import ExitButton from '../components/common/ExitButton';
 import TopButtons from '../components/common/TopButtons';
 import { CameraIcon } from '@heroicons/react/24/solid';
 import AspectLayout from '../components/layout/AspectLayout';
+import Cropper from 'react-easy-crop';
 
 // --- 소셜 아이콘 컴포넌트 - 크기는 부모에서 제어하므로 w/h는 100%로 설정하거나 상속받음 ---
 const GoogleIcon = () => (
@@ -31,33 +32,32 @@ const GoogleIcon = () => (
 );
 
 const KakaoIcon = () => (
-  <svg width="100%" height="100%" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <g filter="url(#filter0_d_1_3)">
-      <path
-        d="M28 50C40.1503 50 50 40.1503 50 28C50 15.8497 40.1503 6 28 6C15.8497 6 6 15.8497 6 28C6 40.1503 15.8497 50 28 50Z"
-        fill="#FAE100"
-        stroke="#E3CD12"
-        strokeWidth="3"
-      />
-      <path
-        fillRule="evenodd"
-        clipRule="evenodd"
-        d="M28 15C19.1634 15 12 20.7622 12 27.871C12 32.4842 14.9388 36.561 19.3891 38.8687C19.1416 40.4074 18.2435 44.2045 18.0667 44.8962C17.9252 45.5413 18.6675 45.9298 19.2042 45.5539C20.4777 44.6644 24.5772 41.8398 26.6997 40.354C27.1272 40.3952 27.5606 40.4187 28 40.4187C36.8366 40.4187 44 34.6565 44 27.5478C44 20.439 36.8366 15 28 15Z"
-        fill="#371D1E"
-      />
-    </g>
+  <svg width="100%" height="100%" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M12 3C6.477 3 2 6.918 2 11.75C2 14.932 4.062 17.729 7.16 19.16L5.972 23.362C5.875 23.704 6.297 23.951 6.578 23.714L11.516 19.553C11.676 19.563 11.837 19.568 12 19.568C17.523 19.568 22 15.65 22 10.818C22 5.986 17.523 3 12 3Z"
+      fill="#371D1E"
+    />
+    <text
+      x="12"
+      y="12.5"
+      textAnchor="middle"
+      dominantBaseline="middle"
+      fill="#FAE100"
+      fontSize="6.5"
+      fontWeight="900"
+      fontFamily="sans-serif"
+      style={{ letterSpacing: '-0.5px' }}
+    >
+      TALK
+    </text>
   </svg>
 );
 
 const NaverIcon = () => (
   <svg width="100%" height="100%" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
     <g filter="url(#filter0_d_1_4)">
-      <path
-        d="M28 50C40.1503 50 50 40.1503 50 28C50 15.8497 40.1503 6 28 6C15.8497 6 6 15.8497 6 28C6 40.1503 15.8497 50 28 50Z"
-        fill="#03C75A"
-        stroke="#02A449"
-        strokeWidth="3"
-      />
       <path d="M16.4 16H24.8L33.2 28.5V16H39.6V40H31.2L22.8 27.5V40H16.4V16Z" fill="white" />
     </g>
   </svg>
@@ -92,6 +92,47 @@ export default function MyPage() {
   const [isProfileImageModalOpen, setIsProfileImageModalOpen] = useState(false);
   const [selectedImageFile, setSelectedImageFile] = useState(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState(null);
+
+  // 이미지 크롭 상태
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1.3);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+
+  const onCropComplete = useCallback((croppedArea, croppedAreaPixels) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  }, []);
+
+  // 크롭된 이미지 생성 함수
+  const getCroppedImg = async (imageSrc, pixelCrop) => {
+    const image = new Image();
+    image.src = imageSrc;
+    await new Promise((resolve) => {
+      image.onload = resolve;
+    });
+
+    const canvas = document.createElement('canvas');
+    canvas.width = pixelCrop.width;
+    canvas.height = pixelCrop.height;
+    const ctx = canvas.getContext('2d');
+
+    ctx.drawImage(
+      image,
+      pixelCrop.x,
+      pixelCrop.y,
+      pixelCrop.width,
+      pixelCrop.height,
+      0,
+      0,
+      pixelCrop.width,
+      pixelCrop.height,
+    );
+
+    return new Promise((resolve) => {
+      canvas.toBlob((blob) => {
+        resolve(blob);
+      }, 'image/png');
+    });
+  };
 
   // 캐릭터 이미지 매핑
   const getCharacterImage = (id) => {
@@ -200,28 +241,34 @@ export default function MyPage() {
   };
 
   const handleImageUpload = async () => {
-    if (!selectedImageFile) {
-      alert('이미지를 선택해주세요.');
+    if (!imagePreviewUrl || !croppedAreaPixels) {
+      alert('이미지를 선택하고 영역을 조정해주세요.');
       return;
     }
 
-    const formData = new FormData();
-    formData.append('profileImage', selectedImageFile);
-
     try {
-      // TODO: 백엔드 API 준비 시 주석 해제
-      // const response = await axios.post('/api/members/profile-image', formData, {
-      //   headers: {
-      //     'Content-Type': 'multipart/form-data',
-      //     Authorization: `Bearer ${sessionStorage.getItem('token')}`,
-      //   },
-      // });
-      // setUserData(prev => ({ ...prev, profileImageUrl: response.data.profileImageUrl }));
+      // 크롭된 이미지 생성
+      const croppedBlob = await getCroppedImg(imagePreviewUrl, croppedAreaPixels);
 
-      // 임시: UI 테스트용 (백엔드 API 준비 전)
-      console.log('이미지 업로드 준비:', selectedImageFile.name);
-      alert('프로필 이미지 업로드 기능은 백엔드 API 준비 후 활성화됩니다.');
+      const formData = new FormData();
+      formData.append('file', croppedBlob, 'profile.png');
 
+      const token = sessionStorage.getItem('token');
+      const response = await fetch('/api/member/profile-image', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error('업로드 실패');
+
+      const updatedMember = await response.json();
+      console.log('UPLOAD SUCCESS:', updatedMember);
+
+      setUserData(updatedMember);
+      alert('프로필 이미지가 변경되었습니다.');
       handleProfileImageModalClose();
     } catch (error) {
       console.error('프로필 이미지 업로드 실패:', error);
@@ -251,6 +298,7 @@ export default function MyPage() {
           <div style={{ transform: 'scale(1)', transformOrigin: 'top right' }}>
             <TopButtons
               nickname={userData.nickname || '주민'}
+              profileImage={userData.profileImage || sessionStorage.getItem('profileImage')}
               onProfileClick={() => {}}
               onBellClick={() => navigate('/notifications')}
               onConfigClick={() => navigate('/config')}
@@ -305,9 +353,9 @@ export default function MyPage() {
           }}
         >
           <img
-            src={getCharacterImage(userData.characterId)}
-            alt="character"
-            className="w-[85%] h-[85%] object-contain drop-shadow-md"
+            src={userData.profileImage || '/images/default-profile.png'}
+            alt="character or profile"
+            className="w-full h-full rounded-[3.33cqw] object-cover object-contain drop-shadow-md"
           />
 
           {/* 역할 배지 - 100*40px (5.21cqw * 3.7cqh), Radius 20px (1.04cqw), Font 24px (1.25cqw) */}
@@ -388,25 +436,43 @@ export default function MyPage() {
               {/* Google */}
               <button
                 onClick={() => (userData.googleId ? handleUnlinkClick('google') : handleLinkAccount('google'))}
-                className={`w-[2.92cqw] h-[2.92cqw] transition hover:scale-110 ${userData.googleId ? '' : 'opacity-40 grayscale hover:grayscale-0 hover:opacity-100'}`}
+                className={`w-[2.92cqw] h-[2.92cqw] rounded-[0.73cqw] flex items-center justify-center transition hover:scale-110 ${userData.googleId ? '' : 'opacity-40 grayscale hover:grayscale-0 hover:opacity-100'}`}
+                style={{
+                  backgroundColor: '#FFFFFF',
+                  boxShadow: '0 0.15cqw 0.25cqw rgba(0,0,0,0.1)',
+                }}
               >
-                <GoogleIcon />
+                <div className="w-[70%] h-[70%]">
+                  <GoogleIcon />
+                </div>
               </button>
 
               {/* Kakao */}
               <button
                 onClick={() => (userData.kakaoId ? handleUnlinkClick('kakao') : handleLinkAccount('kakao'))}
-                className={`w-[2.92cqw] h-[2.92cqw] transition hover:scale-110 ${userData.kakaoId ? '' : 'opacity-40 grayscale hover:grayscale-0 hover:opacity-100'}`}
+                className={`w-[2.92cqw] h-[2.92cqw] rounded-[0.73cqw] flex items-center justify-center transition hover:scale-110 ${userData.kakaoId ? '' : 'opacity-40 grayscale hover:grayscale-0 hover:opacity-100'}`}
+                style={{
+                  backgroundColor: '#FAE100',
+                  boxShadow: '0 0.15cqw 0.25cqw rgba(0,0,0,0.1)',
+                }}
               >
-                <KakaoIcon />
+                <div className="w-[70%] h-[70%]">
+                  <KakaoIcon />
+                </div>
               </button>
 
               {/* Naver */}
               <button
                 onClick={() => (userData.naverId ? handleUnlinkClick('naver') : handleLinkAccount('naver'))}
-                className={`w-[2.92cqw] h-[2.92cqw] transition hover:scale-110 ${userData.naverId ? '' : 'opacity-40 grayscale hover:grayscale-0 hover:opacity-100'}`}
+                className={`w-[2.92cqw] h-[2.92cqw] rounded-[0.73cqw] flex items-center justify-center transition hover:scale-110 ${userData.naverId ? '' : 'opacity-40 grayscale hover:grayscale-0 hover:opacity-100'}`}
+                style={{
+                  backgroundColor: '#03C75A',
+                  boxShadow: '0 0.15cqw 0.25cqw rgba(0,0,0,0.1)',
+                }}
               >
-                <NaverIcon />
+                <div className="w-[70%] h-[70%]">
+                  <NaverIcon />
+                </div>
               </button>
             </div>
           </div>
@@ -417,7 +483,7 @@ export default function MyPage() {
         */}
         <button
           onClick={() => setIsWithdrawModalOpen(true)}
-          className="absolute bottom-[3%] left-[1.67%] bg-[#FFFBF0] w-[10.6cqw] h-[3.2cqw] rounded-[1.6cqw] flex items-center justify-center text-[1.6cqw] font-black text-[#6B5B45] hover:bg-[#F2E8D5] transition active:scale-95 pt-[0.5cqw]"
+          className="absolute bottom-[3%] left-[1.67%] bg-[#FFFBF0] w-[10.6cqw] h-[3.2cqw] rounded-[1.6cqw] flex items-center justify-center text-[1.6cqw] font-black text-[#6B5B45] hover:bg-[#F2E8D5] transition active:scale-95 pt-[0.2cqw]"
         >
           탈퇴하기
         </button>
@@ -566,12 +632,32 @@ export default function MyPage() {
             <div className="bg-[#FFFCEF] w-[26cqw] p-[2cqw] rounded-[1.5cqw] border-[0.21cqw] border-[#8b5a2b] shadow-2xl text-center">
               <h3 className="text-[1.35cqw] font-black text-[#594E36] mb-[1.5cqh]">프로필 사진 변경</h3>
 
-              {/* 이미지 미리보기 영역 */}
-              <div className="w-full aspect-square max-w-[20cqw] mx-auto mb-[1.5cqh] bg-[#FFD7D7] rounded-[1.5cqw] flex items-center justify-center overflow-hidden border-[0.21cqw] border-[#EAD7B8]">
+              {/* 이미지 크롭 영역 */}
+              <div className="relative w-full aspect-square max-w-[20cqw] mx-auto mb-[1.5cqh] bg-[#FFD7D7] rounded-[1.5cqw] overflow-hidden border-[0.21cqw] border-[#EAD7B8]">
                 {imagePreviewUrl ? (
-                  <img src={imagePreviewUrl} alt="preview" className="w-full h-full object-cover" />
+                  <Cropper
+                    image={imagePreviewUrl}
+                    crop={crop}
+                    zoom={zoom}
+                    minZoom={0.5}
+                    maxZoom={3}
+                    aspect={1}
+                    cropShape="rect"
+                    showGrid={false}
+                    onCropChange={setCrop}
+                    onCropComplete={onCropComplete}
+                    onZoomChange={setZoom}
+                    onWheelRequest={(e) => e.ctrlKey}
+                    restrictPosition={false}
+                    objectFit="cover"
+                    style={{
+                      cropAreaStyle: {
+                        border: 'none',
+                      },
+                    }}
+                  />
                 ) : (
-                  <div className="flex flex-col items-center gap-[0.83cqw]">
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-[0.83cqw]">
                     <CameraIcon className="w-[4.17cqw] h-[4.17cqw] text-[#6B5B45] opacity-30" />
                     <span className="text-[0.94cqw] text-[#6B5B45] opacity-50 font-bold">이미지를 선택해주세요</span>
                   </div>
@@ -603,9 +689,9 @@ export default function MyPage() {
                 </button>
                 <button
                   onClick={handleImageUpload}
-                  disabled={!selectedImageFile}
+                  disabled={!imagePreviewUrl}
                   className={`flex-1 py-[0.94cqw] rounded-[0.83cqw] font-bold text-white text-[1.04cqw] transition-colors shadow-md ${
-                    selectedImageFile
+                    imagePreviewUrl
                       ? 'bg-[#594E36] hover:bg-[#6d5d43] cursor-pointer'
                       : 'bg-gray-300 cursor-not-allowed opacity-50'
                   }`}

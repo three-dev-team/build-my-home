@@ -321,6 +321,7 @@ export default function RoomList() {
         <div className="absolute top-[3.7cqh] right-[2.08cqw] z-50">
           <TopButtons
             nickname={sessionStorage.getItem('nickname') || '주민'}
+            profileImage={sessionStorage.getItem('profileImage')}
             onProfileClick={() => navigate('/mypage')}
             onConfigClick={() => navigate('/config')}
             colors={{
@@ -369,9 +370,9 @@ export default function RoomList() {
               }`}
             >
               {rooms.length === 0 && !loading ? (
-                <div className="flex flex-col items-center opacity-60 pb-[3.7cqh]">
-                  <span className="text-[1.67cqw] font-bold text-[#594E36]">아직 만들어진 섬이 없어!</span>
-                  <span className="text-[1.25cqw] text-[#594E36] mt-[0.19cqh]">직접 새로운 섬을 만들어볼까? 🏝️</span>
+                <div className="flex flex-col items-center opacity-60 mt-[15cqh] pb-[3.7cqh]">
+                  <span className="text-[1.67cqw] font-bold text-[#7B5EA7]">아직 만들어진 섬이 없어!</span>
+                  <span className="text-[1.25cqw] text-[#9B7EC4] mt-[0.19cqh]">직접 새로운 섬을 만들어볼까? 🏝️</span>
                 </div>
               ) : (
                 <div className="flex flex-col items-center pb-[1.85cqh] pt-[3.7cqh]">
@@ -417,13 +418,15 @@ export default function RoomList() {
                           <div className="absolute left-[50%] -translate-x-1/2 flex items-center gap-[2.71cqw]">
                             {/* 주사위 */}
                             <div
-                              className="w-[2.5cqw] h-[2.5cqw]"
+                              className="w-[2.5cqw] h-[2.5cqw] bg-[#8B5E83]"
                               style={{
-                                backgroundColor: '#8B5E83',
-                                maskImage: `url("/images/icon-dice-${room.totalRounds}.png")`,
-                                WebkitMaskImage: `url("/images/icon-dice-${room.totalRounds}.png")`,
+                                maskImage: `url("/images/room-waiting/icon-dice-${room.totalRounds}.png")`,
+                                WebkitMaskImage: `url("/images/room-waiting/icon-dice-${room.totalRounds}.png")`,
                                 maskSize: 'contain',
                                 maskRepeat: 'no-repeat',
+                                maskPosition: 'center',
+                                WebkitMaskRepeat: 'no-repeat',
+                                WebkitMaskPosition: 'center',
                               }}
                             />
                             {/* 방장/인원 정보 - 24px = 1.25cqw, 120px = 6.25cqw max-width */}
@@ -619,6 +622,7 @@ function RoomCharacterImages({ players, maxSlots }) {
       {Array.from({ length: 4 }).map((_, idx) => {
         const p = players[idx];
         const charInfo = p?.characterId ? CHARACTER_BY_ID.get(Number(p.characterId)) : null;
+        // [Modified] 캐릭터 이미지 우선순위 변경: roomListImage(얼굴 아이콘) 우선
         const imgSrc = charInfo?.roomListImage || charInfo?.selectBasicImage;
 
         return (
@@ -626,7 +630,7 @@ function RoomCharacterImages({ players, maxSlots }) {
             key={idx}
             className={`w-[3.13cqw] h-[3.13cqw] rounded-full overflow-hidden flex items-center justify-center ${idx < maxSlots ? 'bg-[#EAD8F9]' : 'bg-[#D9D9D9] opacity-40'}`}
           >
-            {imgSrc && <img src={imgSrc} alt="char" className="w-full h-full object-cover" />}
+            {imgSrc && <img src={imgSrc} alt="char" className="w-[80%] h-[80%] object-contain" />}
           </div>
         );
       })}
@@ -762,7 +766,7 @@ function CreateIslandModal({ onClose, onCreate }) {
 
         {/* 3. 라운드 수 - mt 40px(3.7cqh) */}
         <div className="flex items-center pl-[6.46cqw] mt-[3.7cqh]">
-          <LabelIcon iconSrc="/images/roomlist/icon-dice-10.png" />
+          <LabelIcon iconSrc="/images/roomlist/icon-dice-10.webp" />
           <div className="w-[0.63cqw]" />
           <LabelText text="라운드 수" />
           {/* Gap 60px = 3.13cqw */}
@@ -1011,8 +1015,8 @@ function JoinIslandModal({ room, initialPlayers, onClose, onConfirm }) {
             {/* Value: Avatar + Nickname */}
             <div className="flex items-center gap-[0.83cqw]">
               {/* Avatar 80px = 4.17cqw */}
-              <div className="w-[4.17cqw] h-[4.17cqw] rounded-full overflow-hidden bg-[#EAD8F9] border-[0.1cqw] border-[#8b5a2b]">
-                {hostImgSrc && <img src={hostImgSrc} alt="host" className="w-full h-full object-cover" />}
+              <div className="w-[4.17cqw] h-[4.17cqw] rounded-full overflow-hidden bg-[#EAD8F9] border-[0.1cqw] border-[#8b5a2b] flex items-center justify-center">
+                {hostImgSrc && <img src={hostImgSrc} alt="host" className="w-[80%] h-[80%] object-contain" />}
               </div>
               <span className="text-[1.88cqw] font-bold text-[#594E36]">{room.hostNickname}</span>
             </div>
@@ -1021,13 +1025,16 @@ function JoinIslandModal({ room, initialPlayers, onClose, onConfirm }) {
           {/* Row 2: Rounds -- Gap 72px(3.75cqw) */}
           <div className="flex items-center mb-[2.22cqh]">
             <div
-              className="w-[1.88cqw] h-[1.88cqw]"
+              className="w-[1.88cqw] h-[1.88cqw] bg-[#8B5E83]"
               style={{
                 backgroundColor: COLORS.ac.darkPurple,
-                maskImage: `url("/images/roomlist/icon-dice-10.png")`,
-                WebkitMaskImage: `url("/images/roomlist/icon-dice-10.png")`,
+                maskImage: `url("/images/room-waiting/icon-dice-${room.totalRounds}.png")`,
+                WebkitMaskImage: `url("/images/room-waiting/icon-dice-${room.totalRounds}.png")`,
                 maskSize: 'contain',
                 maskRepeat: 'no-repeat',
+                maskPosition: 'center',
+                WebkitMaskRepeat: 'no-repeat',
+                WebkitMaskPosition: 'center',
               }}
             />
             <span className="text-[1.88cqw] font-bold ml-[0.63cqw]" style={{ color: COLORS.ac.darkPurple }}>
@@ -1070,7 +1077,7 @@ function JoinIslandModal({ room, initialPlayers, onClose, onConfirm }) {
                       imgSrc ? 'bg-[#EAD8F9] border-[#8b5a2b]' : 'bg-[#D9D9D9] border-transparent'
                     }`}
                   >
-                    {imgSrc && <img src={imgSrc} alt="p" className="w-full h-full object-cover" />}
+                    {imgSrc && <img src={imgSrc} alt="p" className="w-[80%] h-[80%] object-contain" />}
                   </div>
                 );
               })}

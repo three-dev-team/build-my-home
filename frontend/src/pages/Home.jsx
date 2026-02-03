@@ -80,6 +80,7 @@ export default function Home() {
         */}
         <TopButtons
           nickname={isLoggedIn ? nickname : '로그인'}
+          profileImage={sessionStorage.getItem('profileImage')}
           onProfileClick={() => navigate(isLoggedIn ? '/myPage' : '/login')}
           onBellClick={() => navigate('/notifications')}
           onConfigClick={() => navigate('/config')}

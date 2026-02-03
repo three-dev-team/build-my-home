@@ -20,4 +20,5 @@ public class MemberResponse {
   private String kakaoId;
   private String naverId;
   private String googleId;
+  private String profileImage;
 }

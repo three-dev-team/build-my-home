@@ -96,7 +96,7 @@ const CharacterSelect = () => {
         <div className="w-1/2 h-full flex flex-col items-center justify-center relative">
           {/* 집 이미지 (완쪽 섹션 절대 위치 상단 좌측) */}
           {previewChar && previewChar.houseImage && (
-            <div className="absolute top-[8.7%] left-[12%] z-0 animate-fade-in">
+            <div className="absolute top-[9.2%] left-[12%] z-0 animate-fade-in">
               <img
                 src={previewChar.houseImage}
                 alt={`${previewChar.name}'s House`}
@@ -115,7 +115,7 @@ const CharacterSelect = () => {
                 <img
                   src={getPreviewImage(previewChar)}
                   alt={previewChar.name}
-                  className="w-[15.52cqw] h-[22.76cqw] object-contain"
+                  className="mt-[2.08cqw] w-[15.52cqw] h-[22.76cqw] object-contain"
                 />
               </div>
 

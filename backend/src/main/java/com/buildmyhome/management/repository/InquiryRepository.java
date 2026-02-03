@@ -1,6 +1,8 @@
 package com.buildmyhome.management.repository;
 
 import com.buildmyhome.management.entity.Inquiry;
+import com.buildmyhome.management.entity.InquiryCategory;
+import com.buildmyhome.management.entity.InquiryStatus;
 import java.util.List;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -32,4 +34,19 @@ public interface InquiryRepository extends JpaRepository<Inquiry, Long> {
   // 제목으로 검색 (관리자용) - 추가
   @Query("SELECT i FROM Inquiry i WHERE LOWER(i.title) LIKE LOWER(CONCAT('%', :keyword, '%')) ORDER BY i.createdAt DESC")
   Page<Inquiry> findByTitleContaining(@Param("keyword") String keyword, Pageable pageable);
+
+  // ========== 관리자용 필터/정렬 쿼리 ==========
+  
+  // 필터 + 검색 (동적 쿼리)
+  @Query("SELECT i FROM Inquiry i WHERE " +
+         "(:keyword IS NULL OR LOWER(i.title) LIKE LOWER(CONCAT('%', :keyword, '%'))) AND " +
+         "(:categories IS NULL OR i.category IN :categories) AND " +
+         "(:statuses IS NULL OR i.status IN :statuses)")
+  Page<Inquiry> searchInquiries(
+    @Param("keyword") String keyword,
+    @Param("categories") List<InquiryCategory> categories,
+    @Param("statuses") List<InquiryStatus> statuses,
+    Pageable pageable
+  );
 }
+

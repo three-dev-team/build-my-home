@@ -37,4 +37,6 @@ public interface MemberService {
   void withdraw(String email);
 
   void unlinkSocialAccount(String email, String provider);
+
+  MemberResponse updateProfileImage(String email, org.springframework.web.multipart.MultipartFile file);
 }

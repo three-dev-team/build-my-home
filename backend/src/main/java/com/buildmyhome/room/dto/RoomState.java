@@ -9,7 +9,6 @@ import lombok.Setter;
 public class RoomState {
 
   private final Long roomId;
-  // TODO : 판수 바꾸는 옵션 추가 (final X)
   private int totalRounds;
   
   @Setter
@@ -29,6 +28,11 @@ public class RoomState {
     this.roomId = roomId;
     this.totalRounds = totalRounds;
     this.maxPlayers = maxPlayers;
+  }
+
+  // totalRounds setter 추가 (판수 변경 기능)
+  public void setTotalRounds(int totalRounds) {
+    this.totalRounds = totalRounds;
   }
 
   public void addPlayer(RoomPlayerState player) {

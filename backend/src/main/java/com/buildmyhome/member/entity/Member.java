@@ -41,6 +41,9 @@ public class Member extends BaseTimeEntity {
   @Column
   private String googleId;
 
+  @Column
+  private String profileImage;
+
   @Builder.Default
   private Integer level = 1; // 유저 레벨
 
