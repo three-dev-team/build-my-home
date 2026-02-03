@@ -1,3 +1,4 @@
+// src/pages/game/PlayerActionPanel.jsx
 import { useEffect, useMemo, useState } from 'react';
 import './css/PlayerActionPanel.css';
 
@@ -32,8 +33,9 @@ export default function PlayerActionPanel({
                                             onBuildHouse,
                                             onATM,
                                             onInventory,
-                                            onMupani,
+                                            onMupaniPanel,
                                             items,
+                                            radishQty = 0,
                                             isMyTurn,
                                             itemUsed,
                                           }) {
@@ -48,8 +50,8 @@ export default function PlayerActionPanel({
   }, []);
 
   const hasItem = useMemo(() => Array.isArray(items) && items.length > 0, [items]);
+  const hasRadish = Number(radishQty ?? 0) > 0;
 
-  // 버튼 정의를 "필수 정보만" 남기기
   const BTN = useMemo(
     () => ({
       dice: {
@@ -62,37 +64,46 @@ export default function PlayerActionPanel({
         title: '마을회관',
         desc: '집을 업그레이드 할 수 있어 (재화, 벨 보유시)',
         onClick: onBuildHouse,
-        disabled: !!itemUsed,
+        disabled: !!itemUsed || typeof onBuildHouse !== 'function',
       },
       item: {
         title: '아이템',
         desc: '아이템을 사용할 수 있어 (아이템 소유시)',
         onClick: onSelectItem,
-        disabled: !hasItem || !!itemUsed,
+        disabled: !hasItem || !!itemUsed || typeof onSelectItem !== 'function',
       },
       inventory: {
         title: '인벤토리',
         desc: '소지품을 확인할 수 있어 (재화, 과일)',
         onClick: onInventory,
-        disabled: !!itemUsed,
+        disabled: !!itemUsed || typeof onInventory !== 'function',
       },
       atm: {
         title: 'ATM',
         desc: '대출을 받을 수 있어 (수수료 10%)',
         onClick: onATM,
-        disabled: !!itemUsed,
+        disabled: !!itemUsed || typeof onATM !== 'function',
       },
       mupani: {
         title: '무파니',
-        desc: '무를 팔 수 있어 (현재 시세 반영)',
-        onClick: onMupani,
-        disabled: !!itemUsed || typeof onMupani !== 'function',
+        desc: '무파니 패널을 열 수 있어 (판매/보유 수량 확인)',
+        onClick: onMupaniPanel,
+        // disabled: !!itemUsed || !hasRadish || typeof onMupaniPanel !== 'function',
       },
     }),
-    [onSelectDice, onBuildHouse, onSelectItem, onInventory, onATM, onMupani, hasItem, itemUsed]
+    [
+      onSelectDice,
+      onBuildHouse,
+      onSelectItem,
+      onInventory,
+      onATM,
+      onMupaniPanel,
+      hasItem,
+      hasRadish,
+      itemUsed,
+    ]
   );
 
-  // 화면에 그릴 순서만 배열로
   const order = ['dice', 'naugul', 'item', 'inventory', 'atm', 'mupani'];
 
   const activeBtn = activeKey ? BTN[activeKey] : null;

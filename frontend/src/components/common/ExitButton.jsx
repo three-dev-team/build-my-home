@@ -1,34 +1,53 @@
 import React from 'react';
+import { COLORS } from '../../constants/colors.js';
 
-/**
- * 공통 나가기 버튼 컴포넌트
- *
- * @param {Function} onClick - 클릭 핸들러
- * @param {string} className - 추가 스타일 클래스 (위치 잡기용 등)
- * @param {string} label - 버튼 텍스트 (기본값: "나가기")
- * @param {boolean} disabled - 비활성화 여부
- */
-const ExitButton = ({ onClick, className = '', label = '나가기', disabled = false, showShadow = true }) => {
+const ExitButton = ({ onClick, className = '', label = '나가기', disabled = false }) => {
+  // 16:9 캔버스 기준 스케일(1920px 기준)
+  const s = 'calc(100cqw / 1920)';
+
   return (
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`
-        bg-[#FFFBF0] w-[10.6cqw] h-[3.2cqw] rounded-[1.6cqw] ${showShadow ? 'shadow-sm' : ''} 
-        flex items-center justify-center gap-[0.3cqw]
-        transition-all hover:scale-105 active:scale-95 hover:brightness-105
-        border-none
-        ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
-        ${className}
-      `}
+      className={className}
+      style={{
+        position: 'absolute',
+        right: '20px',
+        bottom: '20px',
+        zIndex: 9999,
+        width: `calc(204 * ${s})`,
+        height: `calc(62 * ${s})`,
+        borderRadius: `calc(32 * ${s})`,
+        background: COLORS.ac.creamIvory,
+        border: 'none',
+        overflow: 'hidden',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: `calc(20 * ${s})`,
+        padding: 0,
+        opacity: disabled ? 0.5 : 1,
+        cursor: disabled ? 'not-allowed' : 'pointer',
+      }}
     >
-      {/* 
-        아이콘: 60px -> 3.1cqw
-      */}
-      <img src="/images/room/icon-arrow-back.svg" alt="back" className="w-[3.1cqw] h-[3.1cqw]" />
-
-      {/* 텍스트: 32px -> 1.6cqw */}
-      <span className="text-[#6B5B45] text-[1.6cqw] font-black leading-none pt-[0.5cqw]">{label}</span>
+      <img
+        src="/images/room/icon-arrow-back.svg"
+        alt="back"
+        draggable={false}
+        style={{ width: `calc(40 * ${s})`, height: `auto`, flex: '0 0 auto' }}
+      />
+      <span
+        style={{
+          color: COLORS.ac.darkBrown,
+          fontSize: `calc(32 * ${s})`,
+          fontWeight: 700,
+          lineHeight: 1,
+          userSelect: 'none',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {label}
+      </span>
     </button>
   );
 };

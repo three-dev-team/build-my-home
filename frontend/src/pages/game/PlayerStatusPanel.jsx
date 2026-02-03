@@ -1,6 +1,6 @@
 import './css/PlayerStatusPanel.css';
 import { CHARACTERS } from '../../constants/characters.js';
-import { getHouseIconByLevel } from '../../constants/houseLevel.js';
+import { getHouseIconByLevel, HOUSE_DETAILS, HOUSE_LEVEL_MAP } from '../../constants/houseLevel.js';
 import { ITEM_INFO_BY_KEY, resolveItemKey } from '../../constants/items.js';
 
 const IMG = {
@@ -29,12 +29,33 @@ const toItemMeta = (raw) => {
   return ITEM_INFO_BY_KEY[key] || null;
 };
 
+const normalizeHouseLevelNumber = (levelOrKey) => {
+  if (levelOrKey === null || levelOrKey === undefined) return 0;
+
+  if (typeof levelOrKey === 'number') {
+    return Number.isFinite(levelOrKey) ? levelOrKey : 0;
+  }
+
+  const s = String(levelOrKey).trim();
+  if (!s) return 0;
+
+  // 키로 온 경우
+  const byKey = HOUSE_DETAILS[s];
+  if (byKey && typeof byKey.level === 'number') return byKey.level;
+
+  // "2" 같은 숫자 문자열
+  const asNum = Number(s);
+  if (Number.isFinite(asNum)) return asNum;
+
+  return 0;
+};
+
 export default function PlayerStatusPanel({ players = [], currentPlayerId, myId }) {
   const sortedPlayers = [...players].sort((a, b) => {
-    const ah = Number(a.houseLevel);
-    const bh = Number(b.houseLevel);
+    const ah = normalizeHouseLevelNumber(a.houseLevel);
+    const bh = normalizeHouseLevelNumber(b.houseLevel);
     if (bh !== ah) return bh - ah;
-    return Number(b.bell) - Number(a.bell);
+    return Number(b.bell ?? 0) - Number(a.bell ?? 0);
   });
 
   return (
@@ -49,9 +70,7 @@ export default function PlayerStatusPanel({ players = [], currentPlayerId, myId 
 
           const bell = Number(player.bell ?? 0);
           const loan = Number(player.loan ?? 0);
-          const houseLevel = Number(player.houseLevel ?? 0);
-
-          const houseIcon = getHouseIconByLevel(houseLevel);
+          const houseIcon = getHouseIconByLevel(player.houseLevel);
 
           const rawItems = Array.isArray(player.items) ? player.items.slice(0, 3) : [];
           const itemMetas = rawItems.map(toItemMeta);
