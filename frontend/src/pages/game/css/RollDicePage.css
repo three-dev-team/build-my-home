@@ -1,46 +1,49 @@
 .roll-dice-container {
     width: 100%;
-    height: 100vh;
+    height: 100%;
     position: relative;
     overflow: hidden;
     background-image: url("/images/bg-rolldice.jpg");
     background-size: cover;
-    background-position: center;
+    background-position: center center;
     background-repeat: no-repeat;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* 주사위 영역 */
 .dice-area {
     position: absolute;
-    top: 20vh;
+    top: 20cqh;
     left: 50%;
     transform: translateX(-50%);
-    width: 11.5vw;
-    height: 20.4vh;
+    width: 11.5cqw;
+    height: 20.4cqh;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
 .dice-idle {
-    width: 11.5vw;
-    height: 11.5vw;
+    width: 11.5cqw;
+    height: 11.5cqh;
     object-fit: contain;
-    filter: drop-shadow(0 1vh 2vh rgba(0, 0, 0, 0.3));
+    filter: drop-shadow(0 1cqh 2cqh rgba(0, 0, 0, 0.3));
 }
 
 .dice-block {
-  width: 120px;
-  height: 120px;
+  width: 6.25cqw;
+  height: 11.11cqh;
   background: linear-gradient(145deg, #4ecdc4, #44a08d);
-  border-radius: 20px;
+  border-radius: 1.04cqw;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 48px;
+  font-size: 2.5cqw;
   font-weight: bold;
   color: white;
-  box-shadow: 0 10px 30px rgba(78, 205, 196, 0.3);
+  box-shadow: 0 0.93cqh 2.78cqh rgba(78, 205, 196, 0.3);
 }
 
 .dice-block.spinning {
@@ -62,11 +65,11 @@
 /* 캐릭터 영역 */
 .character-area {
     position: absolute;
-    bottom: 16.1vh;
+    bottom: 16.1cqh;
     left: 50%;
     transform: translateX(-50%);
-    width: 11.5vw;
-    height: 38.9vh;
+    width: 11.5cqw;
+    height: 38.9cqh;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -82,7 +85,7 @@
 
 .character-shadow {
     width: 80%;
-    height: 3vh;
+    height: 3cqh;
     background: rgba(0, 0, 0, 0.3);
     border-radius: 50%;
     position: absolute;
@@ -90,23 +93,5 @@
     left: 45%;
     transform: translateX(-45%);
     z-index: -1;
-    filter: blur(0.28vh);
-}
-
-.player-name {
-  margin-top: 10px;
-  font-size: 18px;
-  font-weight: bold;
-  color: #4ecdc4;
-}
-
-/* 하단 힌트 */
-.roll-dice-container .bottom-hint {
-  position: fixed;
-  bottom: 40px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 16px;
-  color: #888;
+    filter: blur(0.28cqh);
 }

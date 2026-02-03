@@ -1,6 +1,6 @@
 .order-scene-container {
-  width: 100%;
-  height: 100vh;
+  width: 100cqw;
+  height: 100cqh;
   position: relative;
   overflow: hidden;
     background-image: url("/images/bg-rollfordice.jpg");
@@ -12,16 +12,16 @@
 .player-lineup {
     position: absolute;
     left: 50%;
-    bottom: 11.1vh;
+    bottom: 11.1cqh;
     transform: translateX(-50%);
     display: flex;
     align-items: flex-end;
     justify-content: center;
-    gap: 8.3vw;
+    gap: 8.3cqw;
 }
 
 .player-unit {
-    width: 11.5vw;
+    width: 11.5cqw;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -29,8 +29,8 @@
 }
 
 .character-box {
-    width: 11.5vw;
-    height: 38.9vh;
+    width: 11.5cqw;
+    height: 38.9cqh;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -47,7 +47,7 @@
 
 .character-shadow {
     width: 80%;
-    height: 2.85vh;
+    height: 2.85cqh;
     background: rgba(0, 0, 0, 0.3);
     border-radius: 50%;
     position: absolute;
@@ -55,7 +55,7 @@
     left: 45%;
     transform: translateX(-45%);
     z-index: -1;
-    filter: blur(0.28vh);
+    filter: blur(0.28cqh);
 }
 
 .nickname-tag{
@@ -64,27 +64,27 @@
 
 /* 주사위 스타일 및 애니메이션 */
 .dice-wrapper {
-  height: 20.4vh;
+  height: 20.4cqh;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
 .dice-wrapper img {
-    width: 11.5vw;
-    height: 20.4vh;
-    margin-bottom: 9.3vh;
+    width: 11.5cqw;
+    height: 20.4cqh;
+    margin-bottom: 9.3cqh;
 }
 
 .dice-result-img {
-    height: 20.4vh;
+    height: 20.4cqh;
     object-fit: contain;
-    filter: drop-shadow(0 0.56vh 1.2vh rgba(0, 0, 0, 0.3));
+    filter: drop-shadow(0 0.56vqh 1.2cqh rgba(0, 0, 0, 0.3));
 }
 
 .dice-obj {
   font-size: 4rem;
-  filter: drop-shadow(0 0.28vh 0.83vh rgba(0, 0, 0, 0.2));
+  filter: drop-shadow(0 0.28cqh 0.83cqh rgba(0, 0, 0, 0.2));
 }
 
 .floating {
@@ -103,7 +103,7 @@
     transform: translateY(0);
   }
   50% {
-    transform: translateY(-1.85vh);
+    transform: translateY(-1.85cqh);
   }
 }
 

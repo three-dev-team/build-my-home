@@ -93,8 +93,10 @@ const Stamp = ({ isMyTurn = false, player, currentPlayerName = '익명의 주민
     }[config.npcName] || 'default';
 
   // 현재 플레이어의 캐릭터 정보 가져오기
-  const charKey = CHARACTERS.find((c) => Number(c.id) === Number(player?.characterId))?.key;
-  const charImg = charKey ? `/images/character/char-${charKey}-stamp.webp` : null;
+  const character = CHARACTERS.find(
+    (c) => Number(c.id) === Number(player?.characterId)
+  );
+  const charImg = character?.backImage ?? null;
 
   return (
     <motion.div
@@ -127,7 +129,7 @@ const Stamp = ({ isMyTurn = false, player, currentPlayerName = '익명의 주민
           />
 
           {/* 현재 플레이어 캐릭터 */}
-          {charKey && (
+          {charImg && (
             <div className="stamp-player-character">
               {charImg && (
                 <img src={charImg} alt={currentPlayerName} className="stamp-character-img" draggable="false" />
@@ -172,8 +174,7 @@ const Stamp = ({ isMyTurn = false, player, currentPlayerName = '익명의 주민
 
             {/* 스페이스바 안내 메시지 */}
             <InstructionText>
-              {isMyTurn ? '스페이스바를 눌러 도장 찍기'
-                  : `${currentPlayerName}이 도장을 찍는 중입니다...`}
+              {isMyTurn ? '스페이스바를 눌러 도장 찍기' : `${currentPlayerName}이 도장을 찍는 중입니다...`}
             </InstructionText>
           </div>
         </div>
@@ -183,7 +184,6 @@ const Stamp = ({ isMyTurn = false, player, currentPlayerName = '익명의 주민
       {step === 2 && (
         <>
           {/* 상단 Subtitle */}
-          <div className="stamp-result-subtitle">
             <Subtitle
               nameText={config.npcName}
               nameColor={COLORS.characters[npcColorKey]?.nameBox || COLORS.characters.default.nameBox}
@@ -192,7 +192,6 @@ const Stamp = ({ isMyTurn = false, player, currentPlayerName = '익명의 주민
               contentColor={COLORS.subtitle.contentBox}
               contentTextColor={COLORS.subtitle.contentText}
             />
-          </div>
 
           {/* 중앙 스탬프 카드 */}
           <div className="stamp-result-card">

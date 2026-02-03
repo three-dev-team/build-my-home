@@ -1,9 +1,9 @@
 /* 배경 컨테이너 */
 .stamp-container {
-    position: fixed;
+    position: absolute;
     inset: 0;
-    width: 100vw;
-    height: 100vh;
+    width: 100cqw;
+    height: 100cqh;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -13,11 +13,11 @@
 }
 
 .stamp-player-character {
-    position: fixed;
-    left: 35vw;
-    bottom: 31.48vh;
-    width: 14.58vw;
-    height: 44.44vh;
+    position: absolute;
+    left: 40cqw;
+    bottom: 31.48cqh;
+    width: 14.58cqw;
+    height: 44.44cqh;
     pointer-events: none;
 }
 
@@ -30,7 +30,7 @@
 
 /* Step 1: 방문카드 화면 */
 .stamp-card-wrapper {
-    position: fixed;
+    position: absolute;
     inset: 0;
     display: flex;
     align-items: center;
@@ -40,7 +40,7 @@
 
 .stamp-card-container {
     position: relative;
-    width: 85vw;
+    width: 85cqw;
     height: auto;
 }
 
@@ -55,7 +55,7 @@
     top: 10%;
     left: 50%;
     transform: translateX(-50%);
-    font-size: 2.08vw;
+    font-size: 2.08cqw;
     color: #594e36;
     text-align: center;
     white-space: nowrap;
@@ -74,23 +74,23 @@
 }
 
 .stamp-position-airport {
-    left: 12.06vw;
-    bottom: 37.06vh;
-    width: 16.26vw;
+    left: 12.06cqw;
+    bottom: 37.06cqh;
+    width: 16.26cqw;
     aspect-ratio: 1 / 1;
 }
 
 .stamp-position-gapdol {
-    left: 35vw;
-    bottom: 19.04vh;
-    width: 16.26vw;
+    left: 35cqw;
+    bottom: 19.04cqh;
+    width: 16.26cqw;
     aspect-ratio: 1 / 1;
 }
 
 .stamp-position-museum {
-    right: 10.05vw;
-    bottom: 46.5vh;
-    width: 16.26vw;
+    right: 10.05cqw;
+    bottom: 46.5cqh;
+    width: 16.26cqw;
     aspect-ratio: 1 / 1;
 }
 
@@ -138,26 +138,18 @@
 
 .stamp-instruction-wrapper {
     position: absolute;
-    bottom: 15.04vh;
+    bottom: 15.04cqh;
     left: 25%;
     transform: translateX(-50%);
     z-index: 150;
 }
 
 /* Step 2: 결과 화면 */
-.stamp-result-subtitle {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 110;
-}
-
 .stamp-result-card {
     position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 83.33vw;
-    z-index: 105;
+    width: 83.33cqw;
+    z-index: 50;
 }
