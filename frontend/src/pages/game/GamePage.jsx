@@ -18,7 +18,7 @@ import RollDicePage from './RollDicePage.jsx';
 import KK from './KK.jsx';
 import ShopPage from './ShopPage.jsx';
 import TurnCounter from './TurnCounter.jsx';
-import House from './House.jsx';
+import House from './house/House.jsx';
 import Fishing from './Fishing.jsx';
 import Inventory from './Inventory.jsx';
 import RewardTile from './rewardTile/RewardTile.jsx';
@@ -32,6 +32,7 @@ import ItemTile from './ItemTile/ItemTile.jsx';
 import ItemInventory from './ItemInventory.jsx';
 import Pipe from './itemEffect/Pipe.jsx';
 import Mirror from './itemEffect/Mirror.jsx';
+import RadishSell from './RadishSell.jsx';
 
 import './css/GamePage.css';
 import MyCharacterPanel from './MyCharacterPanel.jsx';
@@ -300,7 +301,8 @@ const GamePage = () => {
   // 인벤 열기(내 턴 + WAITING_PLAYER_ACTION에서만)
   const handleOpenInventory = () => {
     if (!isMyTurn) return;
-    if (!gameState || gameState.status !== 'WAITING_PLAYER_ACTION') return;
+    const okStatuses = ['WAITING_PLAYER_ACTION', 'WAITING_HOUSE'];
+    if (!okStatuses.includes(gameState.status)) return;
     setShowInventory(true);
   };
 
@@ -387,6 +389,12 @@ const GamePage = () => {
                     stompClient.publish({
                       destination: '/app/games/action',
                       body: JSON.stringify({ roomId, type: 'BUILD_HOUSE' }),
+                    });
+                  }}
+                  onMupaniPanel={() => {
+                    stompClient.publish({
+                      destination: '/app/games/action',
+                      body: JSON.stringify({ roomId, type: 'OPEN_MUPANI' }),
                     });
                   }}
                   onInventory={handleOpenInventory}
@@ -609,7 +617,14 @@ const GamePage = () => {
 
             {/* WAITING_HOUSE */}
             {gameState.status === 'WAITING_HOUSE' && (
-              <House player={currentPlayer} isMyTurn={isMyTurn} onAction={handleAction} onClose={handleCloseAction} />
+              <House
+                player={currentPlayer}
+                isMyTurn={isMyTurn}
+                onAction={handleAction}
+                onClose={handleCloseAction}
+                onInventory={handleOpenInventory}
+                onATM={() => handleAction('OPEN_ATM', {})}
+              />
             )}
 
             {/* WAITING_ATM */}

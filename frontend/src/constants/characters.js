@@ -20,6 +20,7 @@ function makeCharacter({ id, name, quote, habit, key, color }) {
     happyImage: `${BASE.character}/char-${key}-happy.webp`,
     backImage: `${BASE.character}/char-${key}-back.webp`,
     seatImage: `${BASE.character}/char-${key}-seat.webp`,
+    seatbackImage: `${BASE.character}/char-${key}-seat-backward.webp`,
     sleepImage: `${BASE.character}/char-${key}-sleep.webp`,
   };
 }

@@ -85,9 +85,6 @@ export default function Inventory({ player, onClose }) {
 
   const slotItems = entries.slice(0, 40);
 
-  const CLOSE_X = 1248;
-  const CLOSE_Y = 285;
-
   const BG_SRC = '/images/inventory/ui-inventory.svg';
 
   const numFill = COLORS.ac.darkBrown;
@@ -97,8 +94,15 @@ export default function Inventory({ player, onClose }) {
     <div
       ref={overlayRef}
       onMouseDown={handleOverlayMouseDown}
-      className="fixed inset-0 z-[10000] bg-black/25"
+      className="absolute inset-0 z-[24000]"
+      style={{
+        background: 'rgba(0,0,0,0.22)',
+        position: 'absolute',
+        containerType: 'size',
+      }}
     >
+      <ExitButton onClick={onClose} />
+
       <div className="absolute inset-0">
         <div
           className="absolute left-1/2 -translate-x-1/2"
@@ -125,23 +129,10 @@ export default function Inventory({ player, onClose }) {
               display: 'block',
               userSelect: 'none',
               pointerEvents: 'none',
-              filter: 'drop-shadow(0 12px 28px rgba(0,0,0,0.18))',
+              filter: 'none',
             }}
           />
 
-          <div
-            style={{
-              position: 'absolute',
-              left: leftPct(CLOSE_X),
-              top: topPct(CLOSE_Y),
-              transform: 'translate(-100%, -50%)',
-              zIndex: 5,
-            }}
-          >
-            <ExitButton onClick={onClose} label="닫기" />
-          </div>
-
-          {/* 슬롯 배경 원 */}
           {BOX_CENTERS.map(([cx, cy], idx) => (
             <div
               key={`slot_${idx}`}
@@ -170,7 +161,6 @@ export default function Inventory({ player, onClose }) {
             </div>
           ))}
 
-          {/* 아이콘 + 수량 */}
           {slotItems.map((it, idx) => {
             const [cx, cy] = BOX_CENTERS[idx];
             return (
@@ -200,7 +190,7 @@ export default function Inventory({ player, onClose }) {
                     height: '100%',
                     objectFit: 'contain',
                     userSelect: 'none',
-                    filter: 'drop-shadow(0 2px 2px rgba(0,0,0,0.25))',
+                    filter: 'none',
                   }}
                 />
 

@@ -166,22 +166,6 @@ export default function TurnCounter({
           {radishText}
         </div>
 
-        {/* 보유 */}
-        {typeof radishQty === 'number' && (
-          <div
-            style={{
-              marginTop: '0.3704cqh',
-              fontFamily: 'var(--font-gosanja)',
-              fontSize: '0.7292cqw',
-              color: 'rgba(255,255,255,0.92)',
-              textAlign: 'center',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {`보유: ${radishQty}개`}
-          </div>
-        )}
-
         {/* 가이드 */}
         {radishGuideText ? (
           <div

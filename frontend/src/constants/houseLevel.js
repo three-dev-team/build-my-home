@@ -47,8 +47,29 @@ export const isAnyRewardNeededForNextLevel = (viewerHouseLevel, dropKeys = []) =
   return { nextLevel: next, isNeeded };
 };
 
-export const getHouseIconByLevel = (level) => {
-  const lv = Number(level);
+export const getHouseIconByLevel = (levelOrKey) => {
+  if (levelOrKey === null || levelOrKey === undefined) return null;
+
+  // 1) 문자열 키로 온 경우: "LAND", "TENT", ...
+  if (typeof levelOrKey === 'string') {
+    const key = levelOrKey.trim();
+    if (!key) return null;
+
+    const byKey = HOUSE_DETAILS[key];
+    if (byKey?.icon) return byKey.icon;
+
+    // 문자열인데 숫자처럼 온 경우("2" 등)도 처리
+    const asNum = Number(key);
+    if (Number.isFinite(asNum)) {
+      const obj = HOUSE_LEVEL_MAP.find((x) => x.level === asNum) || null;
+      return obj?.icon || null;
+    }
+
+    return null;
+  }
+
+  // 2) 숫자 레벨로 온 경우: 0~4
+  const lv = Number(levelOrKey);
   if (!Number.isFinite(lv)) return null;
 
   const obj = HOUSE_LEVEL_MAP.find((x) => x.level === lv) || null;
