@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { Client } from '@stomp/stompjs';
 import { getBrokerURL } from '../../utils/ws.js';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
@@ -33,36 +33,56 @@ import ItemInventory from './ItemInventory.jsx';
 import Pipe from './itemEffect/Pipe.jsx';
 import Mirror from './itemEffect/Mirror.jsx';
 import RadishSell from './RadishSell.jsx';
-
 import './css/GamePage.css';
-import MyCharacterPanel from './MyCharacterPanel.jsx';
+import TurnCharacterPanel from './TurnCharacterPanel.jsx';
 
 const GamePage = () => {
+  // 라우트 파라미터/네비게이션 핸들러
   const { roomId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
+
+  // 로그인 토큰(웹소켓 Authorization 헤더로 사용)
   const token = sessionStorage.getItem('token');
 
+  // 내 memberId(JWT에서 파싱)
   const myId = getMyIdFromToken();
 
+  // 초기 gameState는 라우팅 state로 들어온 값이 있으면 사용(없으면 null)
   const [gameState, setGameState] = useState(location.state?.initialGameData || null);
+
+  // STOMP client 인스턴스 저장(연결 후 set)
   const [stompClient, setStompClient] = useState(null);
 
-  // 낚시: ROOM_EVENT_* 메시지를 gameState와 분리 저장
+  // 인벤토리 “어디서 열었는지” 기억해서(예: HOUSE) 배경을 고정하는 용도
+  const inventoryOriginRef = useRef(null); // 'HOUSE' | null
+
+  // 낚시: ROOM_EVENT_* 메시지는 gameState와 분리해서 저장(상태 덮어쓰기 방지)
   const [fishingEventMessage, setFishingEventMessage] = useState(null);
 
-  // 재화/과일 드롭 이펙트 트리거 데이터
+  // 보상(재화/과일) 획득 시 토스트 트리거 데이터
   const [rewardToast, setRewardToast] = useState(null);
 
-  // 상점 relay 메시지 저장
+  // 상점: 선택 relay 메시지 저장(상점 세션 동기화 보조)
   const [shopRelay, setShopRelay] = useState(null);
 
-  // 현재 턴 플레이어 / 내 턴 여부
-  const currentPlayer = gameState?.players?.find((p) => p.memberId === gameState.currentPlayerId) || null;
-  const isMyTurn = gameState ? myId === gameState.currentPlayerId : false;
+  // players가 배열/객체로 올 수 있어서 항상 배열로 정규화
+  const playersArr = useMemo(() => {
+    const p = gameState?.players;
+    if (Array.isArray(p)) return p;
+    if (p && typeof p === 'object') return Object.values(p);
+    return [];
+  }, [gameState?.players]);
 
-  // 내 무 보유 개수/썩는 턴 안내용
-  const myPlayerState = gameState?.players?.find((p) => Number(p?.memberId) === Number(myId)) || null;
+  // 현재 턴 플레이어(현 상태의 currentPlayerId 기준)
+  const currentPlayer =
+    playersArr.find((p) => Number(p?.memberId) === Number(gameState?.currentPlayerId)) || null;
+
+  // 내 턴 여부(현재 턴 플레이어가 나인지)
+  const isMyTurn = gameState ? Number(myId) === Number(gameState.currentPlayerId) : false;
+
+  // 내 상태(무 개수/썩는 턴 가이드 등)
+  const myPlayerState = playersArr.find((p) => Number(p?.memberId) === Number(myId)) || null;
 
   // 무 썩는 턴 안내 문구(radishRemoveRound 기준)
   const getRadishDecayGuide = (player, currentRound) => {
@@ -83,15 +103,41 @@ const GamePage = () => {
 
   const radishGuideText = getRadishDecayGuide(myPlayerState, gameState?.currentRound);
 
-  // 공통 UI(채팅/메뉴 버튼 등) 노출 여부
+  // 공통 UI(채팅/메뉴) 노출 여부(시작 전/종료 화면에서는 숨김)
   const showCommonUI = gameState && !['DETERMINING_ORDER', 'FINISHED'].includes(gameState.status);
 
-  // 보드에서만 HUD 보이기(= WAITING_PLAYER_ACTION / MOVING)
+  // 현재 상태값 편의 변수
   const status = gameState?.status;
-  const isBoardScene = status === 'WAITING_PLAYER_ACTION' || status === 'MOVING';
-  const shouldShowHud = !!gameState && isBoardScene;
 
-  // 로그인 체크
+  // 인벤토리 화면 여부
+  const isInventoryOpen = status === 'WAITING_INVENTORY';
+
+  // 보드 장면(= HUD 노출이 필요한 구간)
+  const isBoardScene = status === 'WAITING_PLAYER_ACTION' || status === 'MOVING';
+
+  // 보드 HUD(턴카운터/좌측 HUD 등) 노출 조건
+  const shouldShowHud = !!gameState && isBoardScene && !isInventoryOpen;
+
+  // 인벤토리를 House에서 열었으면 인벤토리 화면에서도 House 배경 유지
+  const shouldUseHouseBg = isInventoryOpen && inventoryOriginRef.current === 'HOUSE';
+
+  // House 배경은 step(너굴이면 naugul bg, 아니면 main bg)
+  const houseStep = Number(currentPlayer?.uiStep ?? 0);
+  const houseBgUrl =
+    houseStep === 1 ? '/images/board/bg-buildhouse-naugul.webp' : '/images/board/bg-buildhouse-main.webp';
+
+  // 최종 배경 이미지(CSS 변수 --bg-image로 GamePage.css에서 사용)
+  const bgImage = shouldUseHouseBg ? `url('${houseBgUrl}')` : `url('/images/bg-home.png')`;
+
+  // 인벤토리 상태에서 벗어나면 origin 초기화(다음 열기 때 잔상 방지)
+  useEffect(() => {
+    if (!gameState?.status) return;
+    if (gameState.status !== 'WAITING_INVENTORY') {
+      inventoryOriginRef.current = null;
+    }
+  }, [gameState?.status]);
+
+  // 토큰 없으면 로그인 페이지로 이동
   useEffect(() => {
     if (!token) {
       alert('로그인이 필요합니다.');
@@ -99,14 +145,14 @@ const GamePage = () => {
     }
   }, [token, navigate]);
 
-  // 상점 상태가 아니면 relay 초기화
+  // 상점 상태가 아니면 relay 메시지 초기화
   useEffect(() => {
     if (gameState?.status !== 'WAITING_SHOP') {
       setShopRelay(null);
     }
   }, [gameState?.status]);
 
-  // 소켓 연결/구독 및 초기 상태 요청
+  // STOMP 연결 + 구독 + 초기 상태 요청
   useEffect(() => {
     const client = new Client({
       brokerURL: getBrokerURL(),
@@ -115,24 +161,24 @@ const GamePage = () => {
         console.log('>>> ✅ WebSocket 연결됨');
         setStompClient(client);
 
-        // 게임 토픽 구독: 게임 상태 / 이벤트 메시지 수신
+        // 게임 메인 토픽 구독
         client.subscribe(`/topic/games/${roomId}`, (message) => {
           const data = JSON.parse(message.body);
           console.log('>>> 🔔 메시지 수신:', data);
 
-          // TODO: 리팩토링 필요 - Tiffany
           const t = data?.type;
 
-          // 낚시: ROOM_EVENT_* 및 낚시 ERROR는 gameState로 덮어쓰지 않고 분리 저장
+          // 낚시/룸이벤트: gameState를 덮지 않고 분리 저장(UI 전용 처리)
           const isRoomEvent = typeof t === 'string' && t.startsWith('ROOM_EVENT_');
-          const isFishingError = t === 'ERROR' && typeof data?.eventType === 'string' && data.eventType === 'FISHING';
+          const isFishingError =
+            t === 'ERROR' && typeof data?.eventType === 'string' && data.eventType === 'FISHING';
 
           if (isRoomEvent || isFishingError) {
             setFishingEventMessage(data);
             return;
           }
 
-          // 상점: 선택 relay 메시지 저장/초기화
+          // 상점: 선택 relay 메시지(세션 덮어쓰기 최소화)
           if (t === 'SHOP_SELECT_RELAY') {
             setShopRelay(data);
 
@@ -146,7 +192,7 @@ const GamePage = () => {
             return;
           }
 
-          // 보상 데이터(MOVE_COMPLETE로 들어오는 것으로 가정)
+          // MOVE_COMPLETE에서 보상(재화/과일) 토스트 트리거
           if (t === 'MOVE_COMPLETE') {
             const hasRes = data?.gainedResources && Object.keys(data.gainedResources).length > 0;
             const hasHar = data?.gainedHarvests && Object.keys(data.gainedHarvests).length > 0;
@@ -160,10 +206,11 @@ const GamePage = () => {
             }
           }
 
+          // 기본: 서버에서 온 gameState로 동기화
           setGameState(data);
         });
 
-        // 중복 로그인 감지: 킥 메시지 수신 시 강제 로그아웃
+        // 중복 로그인 감지(서버가 /user/queue/kick 보내면 강제 로그아웃)
         client.subscribe('/user/queue/kick', () => {
           console.log('>>> 🚫 중복 로그인 감지: 강제 로그아웃');
           alert('다른 기기에서 접속하여 로그아웃 되었습니다.');
@@ -172,7 +219,7 @@ const GamePage = () => {
           navigate('/');
         });
 
-        // 웹소켓 연결 직후: 현재 게임 상태 요청
+        // 연결 직후 현재 게임 상태 요청(새로고침/재접속 대비)
         client.publish({
           destination: '/app/games/get-state',
           body: JSON.stringify({ roomId: roomId }),
@@ -189,6 +236,7 @@ const GamePage = () => {
 
     client.activate();
 
+    // 언마운트 시 연결 해제
     return () => {
       if (client.active) {
         client.deactivate();
@@ -198,7 +246,7 @@ const GamePage = () => {
     };
   }, [roomId, token, navigate]);
 
-  // 인트로 종료
+  // 인트로 종료 신호(서버에 intro-complete publish)
   const handleIntroComplete = () => {
     if (!stompClient) return;
     stompClient.publish({
@@ -207,7 +255,7 @@ const GamePage = () => {
     });
   };
 
-  // 순서 정하기 주사위
+  // 순서 정하기 주사위 굴리기
   const handleRollDiceForOrder = () => {
     if (!stompClient) return;
     stompClient.publish({
@@ -216,20 +264,31 @@ const GamePage = () => {
     });
   };
 
-  // 공통 액션 전송
+  // 공통 액션 전송(턴 체크/예외 처리 포함)
   const handleAction = (actionType, payload) => {
     if (!stompClient) return;
 
-    // 무파니: BUY/SKIP은 턴 무관(전원 동시 결정)
+    // House에서 인벤 열면 origin=HOUSE 고정(인벤 화면에서도 House bg 유지용)
+    if (actionType === 'OPEN_INVENTORY' && gameState?.status === 'WAITING_HOUSE') {
+      inventoryOriginRef.current = 'HOUSE';
+    }
+
+    // CLOSE_INVENTORY를 직접 쏘는 경우 origin 초기화(안전장치)
+    if (actionType === 'CLOSE_INVENTORY') {
+      inventoryOriginRef.current = null;
+    }
+
+    // 무파니는 전원 동시 결정이라 턴 무관 예외 허용
     const allowAnyPlayerAction =
       gameState?.status === 'WAITING_MUPANI' && ['RADISH_BUY', 'RADISH_SKIP'].includes(actionType);
 
-    // 내 턴이 아니면 차단(단, 무파니 BUY/SKIP 예외) / MOVING 중에는 항상 차단
+    // 내 턴 아니면 차단(무파니 예외) + MOVING 중엔 항상 차단
     if ((!isMyTurn && !allowAnyPlayerAction) || gameState.status === 'MOVING') {
       console.warn('내 턴이 아니거나 캐릭터가 이동 중입니다.');
       return;
     }
 
+    // 실제 publish payload는 roomId/type + 추가 payload 병합
     stompClient.publish({
       destination: '/app/games/action',
       body: JSON.stringify({
@@ -240,7 +299,7 @@ const GamePage = () => {
     });
   };
 
-  // 액션 패널 닫기(WAITING_PLAYER_ACTION)
+  // 액션 패널 닫기(내 턴에서만 CLOSE_ACTION)
   const handleCloseAction = () => {
     if (!stompClient || !isMyTurn) return;
 
@@ -250,7 +309,7 @@ const GamePage = () => {
     });
   };
 
-  // 이벤트 종료(다음 턴으로)
+  // 이벤트 종료(서버에 event-complete publish) + 낚시 이벤트 메시지 초기화
   const handleEventComplete = () => {
     if (!stompClient) return;
 
@@ -259,11 +318,10 @@ const GamePage = () => {
       body: JSON.stringify({ roomId }),
     });
 
-    // 낚시 이벤트 메시지 잔상 방지
     setFishingEventMessage(null);
   };
 
-  // 낚시 시작/액션 전송
+  // 낚시 시작(미니게임 start)
   const handleFishingStart = () => {
     if (!stompClient) return;
 
@@ -273,6 +331,7 @@ const GamePage = () => {
     });
   };
 
+  // 낚시 액션(HIT/REEL_START/REEL_STOP 등)
   const handleFishingAction = (action) => {
     if (!stompClient) return;
 
@@ -282,11 +341,11 @@ const GamePage = () => {
     });
   };
 
-  // 무파니: buy/skip
+  // 무파니: buy/skip 래퍼
   const handleMupaniBuy = (qty) => handleAction('RADISH_BUY', { quantity: qty });
   const handleMupaniSkip = () => handleAction('RADISH_SKIP', {});
 
-  // 방 나가기(룸리스트 leave publish)
+  // 룸 나가기(룸리스트 leave publish)
   const handleLeaveRoom = () => {
     if (!stompClient) return;
     console.log('>>> 🚪 Explicit Leave Room Triggered');
@@ -296,6 +355,7 @@ const GamePage = () => {
     });
   };
 
+  // 초기 상태 로드 전이면 로딩만 표시
   if (!gameState) {
     return (
       <AspectLayout>
@@ -306,16 +366,24 @@ const GamePage = () => {
     );
   }
 
-  // 낚시 렌더링 상태(새로고침/재접속 대비)
-  const isFishingPhase = ['WAITING_FISHING', 'FISHING_IN_PROGRESS'].includes(gameState.status) && stompClient;
+  // 낚시 페이즈인지(상태 + 소켓 연결 확인)
+  const isFishingPhase =
+    ['WAITING_FISHING', 'FISHING_IN_PROGRESS'].includes(gameState.status) && stompClient;
 
   return (
     <AspectLayout>
       <div className="game-root">
-        <div className="game-bg" aria-hidden="true" />
+        {/* 배경: CSS 변수로 상태에 따라 이미지 교체 */}
+        <div
+          className="game-bg"
+          aria-hidden="true"
+          style={{
+            '--bg-image': bgImage,
+          }}
+        />
 
         <div className="game-stage">
-          {/* 공통 UI 오버레이(현재는 비활성 상태) */}
+          {/* 공통 UI(메뉴/채팅) - 필요하면 showCommonUI 조건으로 사용 */}
           {/* {showCommonUI && (
             <div className="game-overlay">
               <MenuButton />
@@ -323,7 +391,7 @@ const GamePage = () => {
             </div>
           )} */}
 
-          {/* 보드에서만 라운드/무 시세 표시 */}
+          {/* 상단 턴 카운터/시세/무 안내(HUD) */}
           {shouldShowHud && (
             <TurnCounter
               currentRound={gameState.currentRound || 1}
@@ -334,10 +402,9 @@ const GamePage = () => {
             />
           )}
 
-          {/* 보드에서만 좌측 HUD */}
+          {/* 좌측 HUD(액션 패널 + 턴 캐릭터) */}
           {shouldShowHud && (
             <div className="left-hud">
-              {/* PlayerActionPanel은 '내 차례 + WAITING_PLAYER_ACTION'일 때만 */}
               {gameState.status === 'WAITING_PLAYER_ACTION' && isMyTurn && stompClient ? (
                 <PlayerActionPanel
                   isMyTurn={isMyTurn}
@@ -373,6 +440,7 @@ const GamePage = () => {
                     });
                   }}
                   onInventory={() => {
+                    // 보드 인벤 열기(하우스 인벤 여부는 handleAction에서 판단)
                     stompClient.publish({
                       destination: '/app/games/action',
                       body: JSON.stringify({ roomId, type: 'OPEN_INVENTORY' }),
@@ -385,28 +453,29 @@ const GamePage = () => {
                 <div className="left-hud-action-spacer" aria-hidden="true" />
               )}
 
-              <MyCharacterPanel players={gameState.players || []} myId={myId} currentPlayer={currentPlayer} />
+              {/* 현재 턴 캐릭터(초상/아이콘) */}
+              <TurnCharacterPanel players={playersArr} currentPlayerId={gameState.currentPlayerId} />
             </div>
           )}
 
-          {/* 무파니 UI(상태에 따라 내부에서 표시/비표시) */}
+          {/* 무파니 UI(턴 무관 선택 구간 포함) */}
           <Mupani gameState={gameState} myId={myId} onBuy={handleMupaniBuy} onSkip={handleMupaniSkip} />
 
           <main className="game-main">
-            {/* INTRO */}
+            {/* 인트로 */}
             {gameState.status === 'INTRO' && stompClient && <GameIntro onSkip={handleIntroComplete} />}
 
-            {/* DETERMINING_ORDER */}
+            {/* 순서 정하기 */}
             {gameState.status === 'DETERMINING_ORDER' && stompClient && (
-              <RollForOrder players={gameState.players} myId={myId} onRoll={handleRollDiceForOrder} />
+              <RollForOrder players={playersArr} myId={myId} onRoll={handleRollDiceForOrder} />
             )}
 
-            {/* PLAYER_SKIPPED */}
+            {/* 스킵 알림 */}
             {gameState.status === 'PLAYER_SKIPPED' && (
               <PlayerSkipped isMyTurn={isMyTurn} player={currentPlayer} onExit={handleEventComplete} />
             )}
 
-            {/* WAITING_LOAN */}
+            {/* 대출(은행 타일) */}
             {gameState.status === 'WAITING_LOAN' && (
               <Loan
                 player={currentPlayer}
@@ -421,7 +490,7 @@ const GamePage = () => {
               />
             )}
 
-            {/* WAITING_STAMP */}
+            {/* 스탬프 */}
             {gameState.status === 'WAITING_STAMP' && (
               <Stamp
                 isMyTurn={isMyTurn}
@@ -433,7 +502,7 @@ const GamePage = () => {
               />
             )}
 
-            {/* WAITING_FISHING / FISHING_IN_PROGRESS */}
+            {/* 낚시 */}
             {isFishingPhase && (
               <Fishing
                 key={`${roomId}-${gameState.currentRound}-${gameState.currentPlayerId}`}
@@ -448,7 +517,7 @@ const GamePage = () => {
               />
             )}
 
-            {/* WAITING_SHOP */}
+            {/* 상점 */}
             {gameState.status === 'WAITING_SHOP' && (
               <ShopPage
                 gameState={gameState}
@@ -461,7 +530,7 @@ const GamePage = () => {
               />
             )}
 
-            {/* WAITING_KK */}
+            {/* KK */}
             {gameState.status === 'WAITING_KK' && (
               <KK
                 isMyTurn={isMyTurn}
@@ -474,7 +543,7 @@ const GamePage = () => {
               />
             )}
 
-            {/* WAITING_RESOURCES / WAITING_HARVEST */}
+            {/* 재화/수확 타일(보상) */}
             {(gameState.status === 'WAITING_RESOURCES' || gameState.status === 'WAITING_HARVEST') && (
               <RewardTile
                 roomId={roomId}
@@ -488,7 +557,7 @@ const GamePage = () => {
               />
             )}
 
-            {/* WAITING_SWAP */}
+            {/* 스왑 */}
             {gameState.status === 'WAITING_SWAP' && (
               <div style={{ pointerEvents: isMyTurn ? 'auto' : 'none' }}>
                 <Swap
@@ -501,7 +570,7 @@ const GamePage = () => {
               </div>
             )}
 
-            {/* WAITING_START */}
+            {/* 스타트(이벤트) */}
             {gameState.status === 'WAITING_START' && (
               <Start
                 isMyTurn={isMyTurn}
@@ -512,7 +581,7 @@ const GamePage = () => {
               />
             )}
 
-            {/* WAITING_MACHURILLA */}
+            {/* 마추릴라 */}
             {gameState.status === 'WAITING_MACHURILLA' && (
               <Machurilla
                 isMyTurn={isMyTurn}
@@ -523,7 +592,7 @@ const GamePage = () => {
               />
             )}
 
-            {/* WAITING_ITEMS */}
+            {/* 아이템 획득 타일 */}
             {gameState.status === 'WAITING_ITEMS' && (
               <ItemTile
                 gameState={gameState}
@@ -534,27 +603,27 @@ const GamePage = () => {
               />
             )}
 
-            {/* FINISHED */}
+            {/* 게임 종료 */}
             {gameState.status === 'FINISHED' && (
               <Result gameState={gameState} myId={myId} roomId={roomId} onLeave={handleLeaveRoom} />
             )}
 
-            {/* WAITING_PIPE */}
+            {/* 파이프 아이템 효과 */}
             {gameState.status === 'WAITING_PIPE' && (
               <Pipe isMyTurn={isMyTurn} actionDataStr={currentPlayer?.actionDataStr} onAction={handleAction} />
             )}
 
-            {/* WAITING_MIRROR */}
+            {/* 미러 아이템 효과 */}
             {gameState.status === 'WAITING_MIRROR' && (
               <Mirror
                 isMyTurn={isMyTurn}
                 actionDataStr={currentPlayer?.actionDataStr}
-                players={gameState.players}
+                players={playersArr}
                 onAction={handleAction}
               />
             )}
 
-            {/* WAITING_DICE / ROLLING_DICE */}
+            {/* 주사위 굴리기 */}
             {(gameState.status === 'WAITING_DICE' || gameState.status === 'ROLLING_DICE') && (
               <RollDicePage
                 currentPlayer={currentPlayer}
@@ -576,7 +645,7 @@ const GamePage = () => {
               />
             )}
 
-            {/* WAITING_USING_ITEM */}
+            {/* 아이템 사용 인벤 */}
             {gameState.status === 'WAITING_USING_ITEM' && (
               <ItemInventory
                 items={currentPlayer?.items}
@@ -587,7 +656,7 @@ const GamePage = () => {
               />
             )}
 
-            {/* WAITING_HOUSE */}
+            {/* 집 짓기(하우스) */}
             {gameState.status === 'WAITING_HOUSE' && (
               <House
                 player={currentPlayer}
@@ -599,7 +668,7 @@ const GamePage = () => {
               />
             )}
 
-            {/* WAITING_RADISH_SELL */}
+            {/* 무 판매 */}
             {gameState.status === 'WAITING_RADISH_SELL' && (
               <RadishSell
                 isMyTurn={isMyTurn}
@@ -611,7 +680,7 @@ const GamePage = () => {
               />
             )}
 
-            {/* WAITING_ATM */}
+            {/* ATM(은행 타일이 아닌 ATM 상태) */}
             {gameState.status === 'WAITING_ATM' && (
               <Loan
                 isMyTurn={isMyTurn}
@@ -625,15 +694,15 @@ const GamePage = () => {
               />
             )}
 
-            {/* WAITING_INVENTORY */}
+            {/* 인벤토리 */}
             {gameState.status === 'WAITING_INVENTORY' && (
               <Inventory player={currentPlayer} onClose={() => handleAction('CLOSE_INVENTORY', {})} />
             )}
 
-            {/* 메인 보드(WAITING_PLAYER_ACTION, MOVING) */}
+            {/* 보드(이동/액션 대기) */}
             {['WAITING_PLAYER_ACTION', 'MOVING'].includes(gameState.status) && (
               <MainBoardPage
-                players={Object.values(gameState.players)}
+                players={playersArr}
                 movePath={currentPlayer?.movePath}
                 currentPlayerId={gameState.currentPlayerId}
                 onMoveComplete={() => {
@@ -646,12 +715,13 @@ const GamePage = () => {
             )}
           </main>
 
-          {/* 보드에서만 하단 플레이어 상태 패널 */}
+          {/* 하단 플레이어 상태 패널(순위/집/돈/아이템) */}
           {shouldShowHud && (
             <PlayerStatusPanel
-              players={gameState.players || []}
+              players={playersArr}
               currentPlayerId={gameState.currentPlayerId}
               myId={myId}
+              turnOrder={gameState.turnOrder || []}
             />
           )}
         </div>

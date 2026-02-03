@@ -1,5 +1,3 @@
-/* 폰트는 전역(index.css)에서만 로드/정의: var(--font-*)만 사용 */
-
 .game-root {
     position: relative;
     width: 100%;
@@ -11,7 +9,7 @@
     position: absolute;
     inset: 0;
     background:
-            url('/images/bg-home.png') center / cover no-repeat,
+            var(--bg-image, url('/images/bg-home.png')) center / cover no-repeat,
             radial-gradient(62.5cqw 55.56cqh at 50% 30%, rgba(255, 255, 255, 0.1), transparent 60%),
             linear-gradient(180deg, rgba(6, 18, 28, 0.55), rgba(6, 18, 28, 0.78));
 }
