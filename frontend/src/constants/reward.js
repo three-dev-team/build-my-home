@@ -4,15 +4,7 @@ const BASE = {
 };
 
 // 공통 메타 생성: 서버 enum KEY 그대로 연결
-function makeItem({
-                    key,
-                    name,
-                    rewardFile,
-                    iconFile,
-                    buyPrice,
-                    sellPrice,
-                    price,
-                  }) {
+function makeItem({ key, name, rewardFile, iconFile, buyPrice, sellPrice, price }) {
   return {
     key,
     name,
@@ -25,13 +17,62 @@ function makeItem({
 }
 
 export const RESOURCES = [
-  makeItem({ key: 'WOOD', name: '목재', rewardFile: 'resource-wood', iconFile: 'icon-wood', buyPrice: 120, sellPrice: 60 }),
-  makeItem({ key: 'IRON', name: '철광석', rewardFile: 'resource-iron', iconFile: 'icon-iron', buyPrice: 80, sellPrice: 40 }),
-  makeItem({ key: 'CLOTH', name: '천', rewardFile: 'resource-cloth', iconFile: 'icon-cloth', buyPrice: 60, sellPrice: 30 }),
-  makeItem({ key: 'BRICK', name: '벽돌', rewardFile: 'resource-brick', iconFile: 'icon-brick', buyPrice: 140, sellPrice: 70 }),
-  makeItem({ key: 'WALLPAPER', name: '벽지', rewardFile: 'resource-wallpaper', iconFile: 'icon-wallpaper', buyPrice: 200, sellPrice: 100 }),
-  makeItem({ key: 'CLAY', name: '점토', rewardFile: 'resource-clay', iconFile: 'icon-clay', buyPrice: 100, sellPrice: 50 }),
-  makeItem({ key: 'FLOORING', name: '바닥재', rewardFile: 'resource-floor', iconFile: 'icon-floor', buyPrice: 160, sellPrice: 80 }),
+  makeItem({
+    key: 'WOOD',
+    name: '목재',
+    rewardFile: 'resource-wood',
+    iconFile: 'icon-wood',
+    buyPrice: 120,
+    sellPrice: 60,
+  }),
+  makeItem({
+    key: 'IRON',
+    name: '철광석',
+    rewardFile: 'resource-iron',
+    iconFile: 'icon-iron',
+    buyPrice: 80,
+    sellPrice: 40,
+  }),
+  makeItem({
+    key: 'CLOTH',
+    name: '천',
+    rewardFile: 'resource-cloth',
+    iconFile: 'icon-cloth',
+    buyPrice: 60,
+    sellPrice: 30,
+  }),
+  makeItem({
+    key: 'BRICK',
+    name: '벽돌',
+    rewardFile: 'resource-brick',
+    iconFile: 'icon-brick',
+    buyPrice: 140,
+    sellPrice: 70,
+  }),
+  makeItem({
+    key: 'WALLPAPER',
+    name: '벽지',
+    rewardFile: 'resource-wallpaper',
+    iconFile: 'icon-wallpaper',
+    buyPrice: 200,
+    sellPrice: 100,
+  }),
+  makeItem({
+    key: 'CLAY',
+    name: '점토',
+    rewardFile: 'resource-clay',
+    iconFile: 'icon-clay',
+    buyPrice: 100,
+    sellPrice: 50,
+  }),
+  makeItem({
+    key: 'FLOORING',
+    name: '바닥재',
+    rewardFile: 'resource-floor',
+    iconFile: 'icon-floor',
+    buyPrice: 160,
+    sellPrice: 80,
+  }),
 ];
 
 export const FRUITS = [
@@ -43,11 +84,36 @@ export const FRUITS = [
 ];
 
 // 물고기: reward 폴더에 이미지가 없으니 rewardSrc는 null
+// TODO: 버전 1인지 버전 2인지 구분 필요
 export const FISHES = [
-  makeItem({ key: 'FISH_SMALL', name: '작은 물고기', iconFile: 'icon-fish-small-1', price: 50 }),
-  makeItem({ key: 'FISH_MEDIUM', name: '중간 물고기', iconFile: 'icon-fish-medium-1', price: 150 }),
-  makeItem({ key: 'FISH_LARGE', name: '큰 물고기', iconFile: 'icon-fish-large', price: 300 }),
-  makeItem({ key: 'FISH_RARE', name: '희귀 물고기', iconFile: 'icon-fish-rare', price: 1000 }),
+  makeItem({
+    key: 'FISH_SMALL',
+    name: '작은 물고기',
+    rewardFile: 'harvest-fish-small-1',
+    iconFile: 'icon-fish-small-1',
+    price: 50,
+  }),
+  makeItem({
+    key: 'FISH_MEDIUM',
+    name: '중간 물고기',
+    rewardFile: 'harvest-fish-medium-1',
+    iconFile: 'icon-fish-medium-1',
+    price: 150,
+  }),
+  makeItem({
+    key: 'FISH_LARGE',
+    name: '큰 물고기',
+    rewardFile: 'harvest-fish-large',
+    iconFile: 'icon-fish-large',
+    price: 300,
+  }),
+  makeItem({
+    key: 'FISH_RARE',
+    name: '희귀 물고기',
+    rewardFile: 'harvest-fish-rare',
+    iconFile: 'icon-fish-rare',
+    price: 1000,
+  }),
 ];
 
 // 표시/정렬 순서(서버 enum KEY 그대로)
