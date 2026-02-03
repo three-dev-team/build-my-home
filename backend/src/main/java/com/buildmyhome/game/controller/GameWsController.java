@@ -96,11 +96,24 @@ public class GameWsController {
                     response = defaultGameResponse("EVENT_TIMEOUT", gameState);
                 }
                 break;
+            case WAITING_ATM: {
+                //  턴 넘기지 말고 ATM만 닫고 원래 상태로 복귀
+                Long cpId = gameState.getCurrentPlayerId();
+                if (cpId != null) {
+                    GameStatus prev = gameState.popUiReturnStatus(cpId);
+                    gameState.setStatus(prev != null ? prev : GameStatus.WAITING_PLAYER_ACTION);
+                } else {
+                    gameState.setStatus(GameStatus.WAITING_PLAYER_ACTION);
+                }
+                response = defaultGameResponse("ATM_TIMEOUT_CLOSED", gameState);
+                break;
+            }
             // 기본은 다음 턴으로 넘어감
             default:
                 gameStateService.turnToNextPlayer(roomId);
                 response = defaultGameResponse("EVENT_TIMEOUT", gameState);
                 break;
+
         }
 
         simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
@@ -459,20 +472,23 @@ public class GameWsController {
                     case "SWAP_CONFIRM":
                         swapService.confirm(roomId, memberId);
                         return;
-                    case "REWARD_CONFIRM":
+                    case "REWARD_CONFIRM": {
                         if (gameState.getStatus() == GameStatus.WAITING_RESOURCES
                                 || gameState.getStatus() == GameStatus.WAITING_HARVEST) {
-                            player.setUiStep(2);
+                            player.setUiStep(1);
                             response.setType("REWARD_CONFIRMED");
                         }
                         break;
-                    case "REWARD_NEXT":
+                    }
+                    case "REWARD_NEXT": {
                         if (gameState.getStatus() == GameStatus.WAITING_RESOURCES
                                 || gameState.getStatus() == GameStatus.WAITING_HARVEST) {
-                            player.setUiStep(2);
+                            player.setUiStep(1);
                             response.setType("REWARD_NEXT");
                         }
                         break;
+                    }
+
                     case "BUILD_HOUSE":
                         player.setUiStep(0);
                         houseService.updateHouseInfo(player);
@@ -484,11 +500,23 @@ public class GameWsController {
                         player.setUiStep(4);
                         response.setType("HOUSE_UPGRADED");
                         break;
+                    case "OPEN_RADISH_SELL":
+                        gameState.setStatus(GameStatus.WAITING_RADISH_SELL);
+                        player.setUiStep(0);
+                        player.setActionData(0);
+                        response.setType("RADISH_SELL_OPENED");
+                        break;
                     case "RADISH_SELL": {
+                        if (gameState.getStatus() != GameStatus.WAITING_RADISH_SELL) {
+                            response.setType("RADISH_SELL_INVALID_STATUS");
+                            break;
+                        }
                         int qty = Math.max(1, message.getQuantity());
                         MupaniService.TradeResult tr = mupaniService.sell(gameState, memberId, qty);
                         applyTradeResult(response, memberId, tr);
-
+                        if ("RADISH_SOLD".equals(tr.type())) {
+                            player.setUiStep(2);
+                        }
                         response.setPlayers(new ArrayList<>(gameState.getPlayers().values()));
                         break;
                     }
@@ -496,29 +524,49 @@ public class GameWsController {
                         int qty = Math.max(1, message.getQuantity());
                         MupaniService.MupaniActionResult ar = mupaniService.buy(roomId, gameState, memberId, qty);
                         applyTradeResult(response, memberId, ar.trade());
-
                         if (ar.becameAllDecided()) {
                             endMupaniAfterSend = true;
                         }
-
                         response.setPlayers(new ArrayList<>(gameState.getPlayers().values()));
                         break;
                     }
                     case "RADISH_SKIP": {
                         MupaniService.MupaniActionResult ar = mupaniService.skip(roomId, gameState, memberId);
                         applyTradeResult(response, memberId, ar.trade());
-
                         if (ar.becameAllDecided()) {
                             endMupaniAfterSend = true;
                         }
-
                         response.setPlayers(new ArrayList<>(gameState.getPlayers().values()));
                         break;
                     }
                     case "OPEN_ATM":
+                        gameState.clearCurrentTimeout();
+                        gameState.saveUiReturnStatus(memberId, gameState.getStatus());
                         gameState.setStatus(GameStatus.WAITING_ATM);
                         response.setType("ATM_OPENED");
+                        // 어디서 열든 타임아웃 자동 닫기 보장
+                        if (GameStatus.WAITING_ATM.isAutoProceed()) {
+                            ScheduledFuture<?> future = scheduler.schedule(
+                                    () -> {
+                                        synchronized (gameState) {
+                                            if (gameState.getStatus() == GameStatus.WAITING_ATM) {
+                                                handleEventTimeout(gameState, GameStatus.WAITING_ATM, roomId);
+                                            }
+                                        }
+                                    },
+                                    GameStatus.WAITING_ATM.getTimeoutSeconds(),
+                                    TimeUnit.SECONDS
+                            );
+                            gameState.setCurrentTimeout(future);
+                        }
                         break;
+                    case "CLOSE_ATM": {
+                        gameState.clearCurrentTimeout();
+                        GameStatus prev = gameState.popUiReturnStatus(memberId);
+                        gameState.setStatus(prev != null ? prev : GameStatus.WAITING_PLAYER_ACTION);
+                        response.setType("ATM_CLOSED");
+                        break;
+                    }
                     case "CLOSE_ACTION":
                         gameState.clearCurrentTimeout();
                         player.setUiStep(0); // UI 스텝 초기화
@@ -545,6 +593,19 @@ public class GameWsController {
                         player.setUiStep(1);
                         response.setType("MACHURILLA_SELECTED");
                         break;
+                    case "OPEN_INVENTORY":
+                        gameState.clearCurrentTimeout();
+                        gameState.saveUiReturnStatus(memberId, gameState.getStatus());
+                        gameState.setStatus(GameStatus.WAITING_INVENTORY);
+                        response.setType("INVENTORY_OPENED");
+                        break;
+                    case "CLOSE_INVENTORY": {
+                        gameState.clearCurrentTimeout();
+                        GameStatus prev = gameState.popUiReturnStatus(memberId);
+                        gameState.setStatus(prev != null ? prev : GameStatus.WAITING_PLAYER_ACTION);
+                        response.setType("INVENTORY_CLOSED");
+                        break;
+                    }
                     case "GET_RANDOM_ITEM": {
                         ItemType item = itemService.getRandomItem(player);
                         player.setActionDataStr(item.name());

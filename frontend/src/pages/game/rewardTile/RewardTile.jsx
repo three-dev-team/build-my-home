@@ -65,12 +65,11 @@ export default function RewardTile({ roomId, stompClient, gameState, isMyTurn })
 
   const cp = useMemo(() => pickCurrentPlayer(gameState), [gameState]);
 
-  // uiStep: 0=Discover, 2=Complete (1이 오면 2로 취급)
-  const uiStepRaw = useMemo(() => {
+  // ✅ uiStep: 0=Discover, 1=Complete (서버도 0/1로 맞춤)
+  const uiStep = useMemo(() => {
     const v = Number(cp?.uiStep ?? 0);
     return Number.isFinite(v) ? v : 0;
   }, [cp]);
-  const uiStep = uiStepRaw === 1 ? 2 : uiStepRaw;
 
   const rawActionStr = useMemo(() => (cp?.actionDataStr ? String(cp.actionDataStr) : ''), [cp?.actionDataStr]);
   const parsed = useMemo(() => safeParseJson(rawActionStr), [rawActionStr]);
@@ -217,7 +216,8 @@ export default function RewardTile({ roomId, stompClient, gameState, isMyTurn })
       return;
     }
 
-    if (uiStep === 2) {
+    // ✅ complete는 1
+    if (uiStep === 1) {
       setFixedKeys([null, null]);
       setDropRunId((v) => v + 1);
       doneCalledRef.current = false;
@@ -243,9 +243,9 @@ export default function RewardTile({ roomId, stompClient, gameState, isMyTurn })
 
   useSpaceKey(onSpaceAtDiscover, { enabled: myTurn && uiStep === 0 });
 
-  // Complete 화면 4초 뒤 자동 종료(내 턴만 서버에 event-complete)
+  // ✅ Complete(1) 화면 4초 뒤 자동 종료(내 턴만 서버에 event-complete)
   useEffect(() => {
-    if (uiStep !== 2) return;
+    if (uiStep !== 1) return;
     if (!myTurn) return;
 
     if (!completeStartedAtRef.current) completeStartedAtRef.current = Date.now();
@@ -270,8 +270,9 @@ export default function RewardTile({ roomId, stompClient, gameState, isMyTurn })
     return arr;
   }, [dropKeys]);
 
-  const showDrop = uiStep === 2;
-  const showSubtitle = uiStep === 2;
+  // ✅ complete는 1
+  const showDrop = uiStep === 1;
+  const showSubtitle = uiStep === 1;
   const characterImage = showSubtitle ? happyCharacterImage : idleCharacterImage;
 
   const dialogViewerName = dialogNameRef.current || viewerInfo.viewerNameText || '나';
@@ -296,7 +297,7 @@ export default function RewardTile({ roomId, stompClient, gameState, isMyTurn })
               </motion.div>
             )}
 
-            {uiStep === 2 && (
+            {uiStep === 1 && (
               <motion.div
                 key={`reward-complete-${dropRunId}`}
                 className="rewardtile-layer"

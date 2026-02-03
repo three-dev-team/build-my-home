@@ -30,6 +30,7 @@ export const COLORS = {
     darkPurple: '#744990',
     purple: '#9165AA',
     white: '#FFFFFF',
+    black:'#000000',
 
     // [기존 및 레거시 별칭]
     mint: '#78D7B2', // nookMint의 별칭
@@ -152,3 +153,26 @@ export const COLORS = {
     purple: '#9165AA',
   },
 };
+
+// 예: 검정 35% -> withAlpha(COLORS.ac.black, 0.35)
+export const hexToRgba = (hex, alpha = 1, fallback = `rgba(0,0,0,${alpha})`) => {
+  if (hex == null) return fallback;
+  let h = String(hex).trim();
+  if (!h) return fallback;
+
+  const lower = h.toLowerCase();
+  if (lower.startsWith('rgba(') || lower.startsWith('rgb(') || lower.startsWith('hsla(') || lower.startsWith('hsl(')) {
+    return h;
+  }
+
+  if (h.startsWith('#')) h = h.slice(1);
+  if (h.length === 3) h = h.split('').map((c) => c + c).join('');
+  if (h.length !== 6) return fallback;
+
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  const a = Math.max(0, Math.min(1, Number(alpha)));
+  return `rgba(${r}, ${g}, ${b}, ${a})`;
+};
+export const withAlpha = (hex, alpha) => hexToRgba(hex, alpha);

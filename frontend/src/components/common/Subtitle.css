@@ -1,36 +1,23 @@
-/* Subtitle.css
-   ✅ AspectLayout 내부 16:9 컨테이너 기준
-   ✅ --s 한 번만 계산해서 PSD px -> 스케일 변환
-*/
-
 .subtitle-root {
     position: absolute;
     inset: 0;
     z-index: 120;
     pointer-events: none;
-
-    /* 1920 기준 1px 스케일 */
     --s: calc(1cqw / 19.2);
+    --bubble-bottom-pad: 28;
 }
-
-/* =========================
-   이름 박스 (PSD: w244 h96 / text w144 h60 / font 36 / rotate -8)
-========================= */
+/* 이름 박스 */
 .name-box {
     position: absolute;
     width: calc(244 * var(--s));
     height: calc(96 * var(--s));
     z-index: 121;
     pointer-events: none;
-
-    /* ⚠️ 여기 좌표는 너가 기존에 쓰던 값 유지 (필요하면 PSD 값으로 다시 잡자) */
     left: calc(50% - calc(634 * var(--s)) + calc(36 * var(--s)));
     bottom: calc(410 * var(--s));
-
     display: flex;
     align-items: center;
     justify-content: center;
-
     -webkit-mask-image: url('/images/common/ui-bubble-name.svg');
     mask-image: url('/images/common/ui-bubble-name.svg');
     -webkit-mask-size: contain;
@@ -40,7 +27,6 @@
     -webkit-mask-position: center;
     mask-position: center;
 }
-
 .name-text {
     position: relative;
     z-index: 122;
@@ -48,37 +34,33 @@
     font-size: calc(36 * var(--s));
     text-align: center;
     word-break: keep-all;
-
     width: calc(144 * var(--s));
     height: calc(60 * var(--s));
-
     display: flex;
     align-items: center;
     justify-content: center;
-
     transform: translateY(calc(4 * var(--s))) rotate(-8deg);
     box-sizing: border-box;
 }
-
-/* =========================
-   메인 박스 (PSD: w1268 h398 / text w1044 h208 / top 120 / font 48 / line 80)
-========================= */
-.content-box {
+/* CONTENT WRAP */
+.content-wrap {
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
     bottom: calc(80 * var(--s));
-
     width: calc(1268 * var(--s));
     height: calc(398 * var(--s));
-
+    z-index: 110;
+    pointer-events: none;
+}
+/* 메인 말풍선 박스 */
+.content-box {
+    position: absolute;
+    inset: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-
-    z-index: 110;
     pointer-events: auto;
-
     -webkit-mask-image: url('/images/common/ui-bubble-content.svg');
     mask-image: url('/images/common/ui-bubble-content.svg');
     -webkit-mask-size: contain;
@@ -88,50 +70,60 @@
     -webkit-mask-position: center;
     mask-position: center;
 }
-
 .content-text {
     position: absolute;
     top: calc(120 * var(--s));
+    left: 50%;
+    transform: translateX(-50%);
     z-index: 111;
-
     font-family: 'Gosanja', sans-serif;
     font-size: calc(48 * var(--s));
     line-height: calc(80 * var(--s));
     text-align: center;
     word-break: keep-all;
-
     width: calc(1044 * var(--s));
     height: calc(208 * var(--s));
-
     white-space: pre-line;
     box-sizing: border-box;
+    overflow: hidden;
 }
-
 .typing-cursor {
     display: inline-block;
     margin-left: calc(6 * var(--s));
     opacity: 0.9;
 }
-
-/* =========================
-   옵션 박스 (PSD)
-   3줄: outer 480x340 / text 320x204 / font 42 / line 80
-   2줄: outer 480x284 / text 320x124 / font 42 / line 80
-========================= */
+/* 삼각형 버튼*/
+.triangle-btn {
+    position: absolute;
+    width: calc(56 * var(--s));
+    height: calc(36 * var(--s));
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: calc((var(--bubble-bottom-pad) - 24) * var(--s));
+    z-index: 120;
+    pointer-events: auto;
+    border: none;
+    padding: 0;
+    margin: 0;
+    -webkit-mask-image: url('/images/common/ui-bubble-arrow.svg');
+    mask-image: url('/images/common/ui-bubble-arrow.svg');
+    -webkit-mask-size: 100% 100%;
+    mask-size: 100% 100%;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    mask-position: center;
+}
+/* 옵션 박스 (선택지 말풍선)*/
 .option-box {
     position: absolute;
-
-    /* ⚠️ 기존 위치 유지. PSD대로 다시 잡고 싶으면 px 값 주면 바로 맞춰줄게 */
     right: calc(96 * var(--s));
     bottom: calc(360 * var(--s));
-
     display: flex;
     align-items: center;
     justify-content: center;
-
     z-index: 115;
     pointer-events: auto;
-
     -webkit-mask-size: contain;
     mask-size: contain;
     -webkit-mask-repeat: no-repeat;
@@ -139,107 +131,45 @@
     -webkit-mask-position: center;
     mask-position: center;
 }
-
 .option-box-small {
     width: calc(480 * var(--s));
     height: calc(284 * var(--s));
     -webkit-mask-image: url('/images/common/ui-bubble-choice-2.svg');
     mask-image: url('/images/common/ui-bubble-choice-2.svg');
 }
-
 .option-box-large {
     width: calc(480 * var(--s));
     height: calc(340 * var(--s));
     -webkit-mask-image: url('/images/common/ui-bubble-choice-3.svg');
     mask-image: url('/images/common/ui-bubble-choice-3.svg');
 }
-
+/* 옵션 텍스트 */
 .option-text {
     width: calc(320 * var(--s));
     box-sizing: border-box;
-
     font-family: 'Gosanja', sans-serif;
     font-size: calc(42 * var(--s));
-    line-height: calc(80 * var(--s)); /* ✅ PSD 글자간격(줄간격) */
-
+    line-height: calc(80 * var(--s));
     text-align: center;
     word-break: keep-all;
-
     display: flex;
     flex-direction: column;
-    justify-content: center; /* ✅ 텍스트박스 안에서 수직 중앙 */
+    justify-content: center;
     align-items: center;
-
     overflow: visible;
     padding: 0;
 }
-
 .option-box-small .option-text {
     height: calc(124 * var(--s));
 }
-
 .option-box-large .option-text {
     height: calc(204 * var(--s));
 }
-
 .option-row {
     display: block;
     width: 100%;
     white-space: nowrap;
     pointer-events: auto;
     position: relative;
-    transition: all 0.2s ease;
-}
-
-/* (선택) hover 하이라이트: 필요 없으면 지워도 됨 */
-.option-row::after {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 100%;
-    height: calc(16 * var(--s));
-    background-color: #ffd700;
-    z-index: -1;
-    opacity: 0;
     transition: opacity 0.2s ease;
-}
-
-.option-row:hover::after {
-    opacity: 1;
-}
-
-/* =========================
-   ✅ 버튼(화살표)
-   PSD: 버튼영역 w52 h32
-   위치: 메인박스 bottom 80 + 16
-========================= */
-.triangle-btn {
-    position: absolute;
-    width: calc(52 * var(--s));
-    height: calc(32 * var(--s));
-
-    left: 50%;
-    transform: translateX(-50%);
-
-    bottom: calc((80 + 16) * var(--s));
-
-    z-index: 120;
-    pointer-events: auto;
-
-    border: none;
-    padding: 0;
-    margin: 0;
-
-    /* background-color는 JSX에서 COLORS.subtitle.arrow로 주입 */
-
-    -webkit-mask-image: url('/images/common/ui-bubble-arrow.svg');
-    mask-image: url('/images/common/ui-bubble-arrow.svg');
-    -webkit-mask-size: contain;
-    mask-size: contain;
-    -webkit-mask-repeat: no-repeat;
-    mask-repeat: no-repeat;
-    -webkit-mask-position: center;
-    mask-position: center;
 }

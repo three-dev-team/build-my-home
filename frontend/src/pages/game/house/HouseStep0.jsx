@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import InstructionText from '../../../components/common/InstructionText.jsx';
 import { COLORS } from '../../../constants/colors.js';
 
 export default function HouseStep0({ isMyTurn, character, px, onInventory, onATM, onOpenNaugul }) {
+  const [isNaugulHover, setIsNaugulHover] = useState(false);
+
   const pillBaseStyle = {
     paddingTop: px(16),
     paddingBottom: px(16),
@@ -27,6 +29,12 @@ export default function HouseStep0({ isMyTurn, character, px, onInventory, onATM
     if (typeof onATM === 'function') onATM();
   };
 
+  const canHover = isMyTurn;
+
+  const naugulActive = canHover && isNaugulHover;
+  const naugulBg = naugulActive ? COLORS.ac.nookCyan : COLORS.ac.creamWhite;
+  const naugulText = naugulActive ? COLORS.ac.white : COLORS.ac.darkBrown;
+
   return (
     <>
       <button
@@ -46,7 +54,9 @@ export default function HouseStep0({ isMyTurn, character, px, onInventory, onATM
 
       <button
         type="button"
-        onClick={onOpenNaugul}
+        onClick={() => isMyTurn && onOpenNaugul?.()}
+        onMouseEnter={() => canHover && setIsNaugulHover(true)}
+        onMouseLeave={() => setIsNaugulHover(false)}
         style={{
           position: 'absolute',
           left: px(706),
@@ -54,8 +64,8 @@ export default function HouseStep0({ isMyTurn, character, px, onInventory, onATM
           width: px(139),
           height: px(65),
           borderRadius: px(999),
-          background: COLORS.ac.nookCyan,
-          color: COLORS.ac.white,
+          background: naugulBg,
+          color: naugulText,
           fontFamily: 'var(--font-gosanja)',
           fontSize: px(36),
           lineHeight: 1,
@@ -65,6 +75,7 @@ export default function HouseStep0({ isMyTurn, character, px, onInventory, onATM
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
+          transition: 'background-color 140ms ease, color 140ms ease',
         }}
       >
         너굴
