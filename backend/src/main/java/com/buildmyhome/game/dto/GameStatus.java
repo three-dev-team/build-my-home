@@ -29,7 +29,7 @@ public enum GameStatus {
     WAITING_STAMP(15), // 스탬프칸 이용 중
     WAITING_RESOURCES(30), // 재화칸 이용 중
     WAITING_HARVEST(30), // 수확물칸 이용 중
-    WAITING_SHOP(40), // 아이템 상점 이용 중
+    WAITING_SHOP(0), // 아이템 상점 이용 중
     WAITING_LOAN(30), // 대출 여부 선택 중
     WAITING_FISHING(10), // 시작하기 버튼/연출 단계
     FISHING_IN_PROGRESS(0), // 실제 미니게임 진행(낚시 내부 타이머로 종료)

@@ -444,7 +444,18 @@ public class GameWsController {
                         player.setUiStep(2);
                         response.setType(canCollectStamp ? "STAMP_ADDED" : "STAMP_DUPLICATE");
                         break;
+                    case "SHOP_INTRO_DONE":
+                        shopService.updateIntroShown(roomId);
+                        response.setType("SHOP_INTRO_DONE");
+                        break;
+                    case "SHOP_TAB_CHANGE":
+                        shopService.updateIntroShown(roomId);
+                        player.setUiStep(message.getUiStep());
+                        response.setType("SHOP_TAB_CHANGED");
+                        break;
                     case "SHOP_SELECT":
+                        shopService.updateIntroShown(roomId);
+                        // relay는 현재 턴 플레이어가 아이템 선택했을 때, 그 정보를 다른 플레이어들에게 전달하는 메시지
                         GameMessage relay = shopService.relayMessage(roomId, memberId, message);
                         response = relay;
                         break;
@@ -674,6 +685,11 @@ public class GameWsController {
                         gameState.setStatus(GameStatus.WAITING_PLAYER_ACTION);
                         response.setType("MIRROR_COMPLETED");
                         break;
+                }
+
+                // 상점 상태 인트로 관련 내용
+                if (gameState.getStatus() == GameStatus.WAITING_SHOP) {
+                    response.setShopSession(gameState.getShopSession());
                 }
 
                 response.setStatus(gameState.getStatus().name());

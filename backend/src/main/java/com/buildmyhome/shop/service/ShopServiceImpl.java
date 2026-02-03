@@ -174,4 +174,13 @@ public class ShopServiceImpl implements ShopService {
         gameState.setStatus(GameStatus.WAITING_PLAYER_ACTION);
     }
 
+    @Override
+    public void updateIntroShown(Long roomId) {
+        GameState gameState = gameStateService.getGame(roomId);
+        ShopSession session = gameState.getShopSession();
+        if (session != null && !session.isIntroShown()) {
+            session.setIntroShown(true);
+        }
+    }
+
 }

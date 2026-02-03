@@ -58,13 +58,11 @@ const GamePage = () => {
   const [shopRelay, setShopRelay] = useState(null);
 
   // 현재 턴 플레이어 / 내 턴 여부
-  const currentPlayer =
-    gameState?.players?.find((p) => p.memberId === gameState.currentPlayerId) || null;
+  const currentPlayer = gameState?.players?.find((p) => p.memberId === gameState.currentPlayerId) || null;
   const isMyTurn = gameState ? myId === gameState.currentPlayerId : false;
 
   // 내 무 보유 개수/썩는 턴 안내용
-  const myPlayerState =
-    gameState?.players?.find((p) => Number(p?.memberId) === Number(myId)) || null;
+  const myPlayerState = gameState?.players?.find((p) => Number(p?.memberId) === Number(myId)) || null;
 
   // 무 썩는 턴 안내 문구(radishRemoveRound 기준)
   const getRadishDecayGuide = (player, currentRound) => {
@@ -122,12 +120,12 @@ const GamePage = () => {
           const data = JSON.parse(message.body);
           console.log('>>> 🔔 메시지 수신:', data);
 
+          // TODO: 리팩토링 필요 - Tiffany
           const t = data?.type;
 
           // 낚시: ROOM_EVENT_* 및 낚시 ERROR는 gameState로 덮어쓰지 않고 분리 저장
           const isRoomEvent = typeof t === 'string' && t.startsWith('ROOM_EVENT_');
-          const isFishingError =
-            t === 'ERROR' && typeof data?.eventType === 'string' && data.eventType === 'FISHING';
+          const isFishingError = t === 'ERROR' && typeof data?.eventType === 'string' && data.eventType === 'FISHING';
 
           if (isRoomEvent || isFishingError) {
             setFishingEventMessage(data);
@@ -137,6 +135,10 @@ const GamePage = () => {
           // 상점: 선택 relay 메시지 저장/초기화
           if (t === 'SHOP_SELECT_RELAY') {
             setShopRelay(data);
+
+            if (data.shopSession) {
+              setGameState((prev) => ({ ...prev, shopSession: data.shopSession }));
+            }
             return;
           }
           if (t === 'SHOP_SELECT_CLEAR') {
@@ -146,10 +148,8 @@ const GamePage = () => {
 
           // 보상 데이터(MOVE_COMPLETE로 들어오는 것으로 가정)
           if (t === 'MOVE_COMPLETE') {
-            const hasRes =
-              data?.gainedResources && Object.keys(data.gainedResources).length > 0;
-            const hasHar =
-              data?.gainedHarvests && Object.keys(data.gainedHarvests).length > 0;
+            const hasRes = data?.gainedResources && Object.keys(data.gainedResources).length > 0;
+            const hasHar = data?.gainedHarvests && Object.keys(data.gainedHarvests).length > 0;
 
             if (hasRes || hasHar) {
               setRewardToast({
@@ -222,8 +222,7 @@ const GamePage = () => {
 
     // 무파니: BUY/SKIP은 턴 무관(전원 동시 결정)
     const allowAnyPlayerAction =
-      gameState?.status === 'WAITING_MUPANI' &&
-      ['RADISH_BUY', 'RADISH_SKIP'].includes(actionType);
+      gameState?.status === 'WAITING_MUPANI' && ['RADISH_BUY', 'RADISH_SKIP'].includes(actionType);
 
     // 내 턴이 아니면 차단(단, 무파니 BUY/SKIP 예외) / MOVING 중에는 항상 차단
     if ((!isMyTurn && !allowAnyPlayerAction) || gameState.status === 'MOVING') {
@@ -308,8 +307,7 @@ const GamePage = () => {
   }
 
   // 낚시 렌더링 상태(새로고침/재접속 대비)
-  const isFishingPhase =
-    ['WAITING_FISHING', 'FISHING_IN_PROGRESS'].includes(gameState.status) && stompClient;
+  const isFishingPhase = ['WAITING_FISHING', 'FISHING_IN_PROGRESS'].includes(gameState.status) && stompClient;
 
   return (
     <AspectLayout>
@@ -387,11 +385,7 @@ const GamePage = () => {
                 <div className="left-hud-action-spacer" aria-hidden="true" />
               )}
 
-              <MyCharacterPanel
-                players={gameState.players || []}
-                myId={myId}
-                currentPlayer={currentPlayer}
-              />
+              <MyCharacterPanel players={gameState.players || []} myId={myId} currentPlayer={currentPlayer} />
             </div>
           )}
 
@@ -657,7 +651,11 @@ const GamePage = () => {
 
           {/* 보드에서만 하단 플레이어 상태 패널 */}
           {shouldShowHud && (
-            <PlayerStatusPanel players={gameState.players || []} currentPlayerId={gameState.currentPlayerId} myId={myId} />
+            <PlayerStatusPanel
+              players={gameState.players || []}
+              currentPlayerId={gameState.currentPlayerId}
+              myId={myId}
+            />
           )}
         </div>
       </div>
