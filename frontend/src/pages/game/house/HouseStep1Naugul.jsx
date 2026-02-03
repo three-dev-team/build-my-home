@@ -1,4 +1,3 @@
-// src/pages/game/house/HouseStep1Naugul.jsx
 import React, { useMemo } from 'react';
 import Subtitle from '../../../components/common/Subtitle.jsx';
 import { COLORS } from '../../../constants/colors.js';
@@ -51,18 +50,6 @@ export default function HouseStep1Naugul({
       </div>
 
       {/* Subtitle 자체는 배치 기능이 없어서 wrapper(absolute 배치용)는 필요함 */}
-      <div
-        style={{
-          position: 'absolute',
-          left: 0,
-          right: 0,
-          bottom: px(60),
-          zIndex: 5,
-          display: 'flex',
-          justifyContent: 'center',
-          pointerEvents: 'auto',
-        }}
-      >
         <Subtitle
           nameText="너굴"
           nameColor={COLORS.characters.naugul.nameBox}
@@ -74,13 +61,7 @@ export default function HouseStep1Naugul({
             { text: '집 재료 알려줘', onClick: () => isMyTurn && onSelectMaterials?.() },
           ]}
           optionDisabled={!isMyTurn}
-          showTriangle
-          clickTriangle={() => {
-            // 예시: 다음 단계로 넘기기
-            onNext?.();
-          }}
         />
-      </div>
     </>
   );
 }

@@ -3,9 +3,13 @@ import { motion } from 'framer-motion';
 import AspectLayout from '../../../components/layout/AspectLayout.jsx';
 import ExitButton from '../../../components/common/ExitButton.jsx';
 import { CHARACTERS } from '../../../constants/characters.js';
+import { COLORS, withAlpha } from '../../../constants/colors.js';
+
+import './HouseCommon.css';
 
 import HouseStep0 from './HouseStep0.jsx';
 import HouseStep1Naugul from './HouseStep1Naugul.jsx';
+import HouseStep2Materials from './HouseStep2Materials.jsx';
 
 const px = (n) => `calc(${n} * var(--s))`;
 
@@ -24,47 +28,40 @@ export default function House({ player, isMyTurn, onClose, onAction, onInventory
 
   const character = useMemo(() => pickCharacter(player?.characterId), [player?.characterId]);
 
-  // ✅ step에 따라 배경 교체
   const BG_BY_STEP = {
-    0: '/images/board/bg-buildhouse-augul.webp',
+    0: '/images/board/bg-buildhouse-main.webp',
     1: '/images/board/bg-buildhouse-naugul.webp',
+    2: '/images/board/bg-buildhouse-naugul.webp',
   };
 
-  const BG_PRIMARY = BG_BY_STEP[step] || '/images/board/bg-buildhouse-augul.webp';
-  const BG_FALLBACK = '/images/board/bg-buildhouse-main.webp';
+  const PANEL_BG = withAlpha(COLORS.ac.black, 0.55);
+  const CARD_BG = withAlpha(COLORS.ac.black, 0.35);
 
-  // ✅ "뒤로가기" 버튼 동작: step>0이면 step0으로, step0이면 House 닫기
   const handleBack = () => {
     if (!isMyTurn) return;
 
-    if (step > 0) {
-      setStep(0);
-      return;
-    }
-
+    if (step >= 2) return setStep(1);
+    if (step === 1) return setStep(0);
     onClose?.();
   };
 
   return (
-    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="fixed inset-0 z-[30000]">
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="houseOverlay">
       <AspectLayout>
         <div
-          className="relative w-full h-full overflow-hidden"
+          className="houseStage"
           style={{
-            containerType: 'size',
             ['--s']: 'calc(100cqw / 1920)',
+            ['--house-panel-bg']: PANEL_BG,
+            ['--house-card-bg']: CARD_BG,
+            ['--house-white']: COLORS.ac.white,
           }}
         >
           <img
-            key={BG_PRIMARY}
-            src={BG_PRIMARY}
-            onError={(e) => {
-              e.currentTarget.onerror = null;
-              e.currentTarget.src = BG_FALLBACK;
-            }}
-            alt="buildhouse-bg"
+            src={BG_BY_STEP[step]}
+            alt="house-bg"
             draggable={false}
-            className="absolute inset-0 w-full h-full object-cover"
+            className="houseBg"
           />
 
           {step === 0 && (
@@ -85,28 +82,23 @@ export default function House({ player, isMyTurn, onClose, onAction, onInventory
               isMyTurn={isMyTurn}
               character={character}
               px={px}
-              onSelectUpgrade={() => setStep(2)}
-              onSelectMaterials={() => setStep(3)}
-              onBack={() => setStep(0)}
+              onSelectMaterials={() => setStep(2)}
             />
           )}
 
-          {/* step 2~4 자리 */}
-          {step !== 0 && step !== 1 && (
-            <div className="absolute inset-0">
-              {/* TODO: step 2~4 */}
-            </div>
+          {step === 2 && (
+            <HouseStep2Materials
+              player={player}
+              isMyTurn={isMyTurn}
+              character={character}
+              px={px}
+            />
           )}
+
           <ExitButton
             onClick={handleBack}
-            showShadow={false}
             disabled={!isMyTurn}
-            style={{
-              position: 'absolute',
-              right: px(30),
-              bottom: px(28),
-              zIndex: 10,
-            }}
+            style={{ position: 'absolute', right: px(30), bottom: px(28) }}
           />
         </div>
       </AspectLayout>

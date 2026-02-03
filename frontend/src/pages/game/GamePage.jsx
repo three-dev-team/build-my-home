@@ -51,9 +51,6 @@ const GamePage = () => {
   // 낚시: ROOM_EVENT_* 메시지를 gameState와 분리 저장
   const [fishingEventMessage, setFishingEventMessage] = useState(null);
 
-  // 인벤토리 오버레이(내 턴에서만 열기)
-  const [showInventory, setShowInventory] = useState(false);
-
   // 재화/과일 드롭 이펙트 트리거 데이터
   const [rewardToast, setRewardToast] = useState(null);
 
@@ -94,7 +91,7 @@ const GamePage = () => {
   // 보드에서만 HUD 보이기(= WAITING_PLAYER_ACTION / MOVING)
   const status = gameState?.status;
   const isBoardScene = status === 'WAITING_PLAYER_ACTION' || status === 'MOVING';
-  const shouldShowHud = !!gameState && isBoardScene && !showInventory;
+  const shouldShowHud = !!gameState && isBoardScene;
 
   // 로그인 체크
   useEffect(() => {
@@ -103,14 +100,6 @@ const GamePage = () => {
       navigate('/login');
     }
   }, [token, navigate]);
-
-  // 턴 종료/상태 변경 시 인벤토리 자동 닫기(잔상 방지)
-  useEffect(() => {
-    if (!isMyTurn) setShowInventory(false);
-    if (gameState && gameState.status !== 'WAITING_PLAYER_ACTION') {
-      setShowInventory(false);
-    }
-  }, [isMyTurn, gameState?.status]);
 
   // 상점 상태가 아니면 relay 초기화
   useEffect(() => {
@@ -298,18 +287,6 @@ const GamePage = () => {
   const handleMupaniBuy = (qty) => handleAction('RADISH_BUY', { quantity: qty });
   const handleMupaniSkip = () => handleAction('RADISH_SKIP', {});
 
-  // 인벤 열기(내 턴 + WAITING_PLAYER_ACTION에서만)
-  const handleOpenInventory = () => {
-    if (!isMyTurn) return;
-    const okStatuses = ['WAITING_PLAYER_ACTION', 'WAITING_HOUSE'];
-    if (!okStatuses.includes(gameState.status)) return;
-    setShowInventory(true);
-  };
-
-  const handleCloseInventory = () => {
-    setShowInventory(false);
-  };
-
   // 방 나가기(룸리스트 leave publish)
   const handleLeaveRoom = () => {
     if (!stompClient) return;
@@ -394,11 +371,17 @@ const GamePage = () => {
                   onMupaniPanel={() => {
                     stompClient.publish({
                       destination: '/app/games/action',
-                      body: JSON.stringify({ roomId, type: 'OPEN_MUPANI' }),
+                      body: JSON.stringify({ roomId, type: 'OPEN_RADISH_SELL' }),
                     });
                   }}
-                  onInventory={handleOpenInventory}
+                  onInventory={() => {
+                    stompClient.publish({
+                      destination: '/app/games/action',
+                      body: JSON.stringify({ roomId, type: 'OPEN_INVENTORY' }),
+                    });
+                  }}
                   itemUsed={currentPlayer?.itemUsed}
+                  radishQty={Number(myPlayerState?.radishQty ?? 0)}
                 />
               ) : (
                 <div className="left-hud-action-spacer" aria-hidden="true" />
@@ -414,11 +397,6 @@ const GamePage = () => {
 
           {/* 무파니 UI(상태에 따라 내부에서 표시/비표시) */}
           <Mupani gameState={gameState} myId={myId} onBuy={handleMupaniBuy} onSkip={handleMupaniSkip} />
-
-          {/* 인벤토리 오버레이 */}
-          {showInventory && isMyTurn && gameState.status === 'WAITING_PLAYER_ACTION' && (
-            <Inventory player={currentPlayer} onClose={handleCloseInventory} />
-          )}
 
           <main className="game-main">
             {/* INTRO */}
@@ -509,10 +487,10 @@ const GamePage = () => {
                 stompClient={stompClient}
                 gameState={gameState}
                 isMyTurn={isMyTurn}
-                onStart={() => {
+                onStart={() => {}}
+                onClose={() => {
                   if (isMyTurn) handleEventComplete();
                 }}
-                onClose={() => {}}
               />
             )}
 
@@ -622,8 +600,20 @@ const GamePage = () => {
                 isMyTurn={isMyTurn}
                 onAction={handleAction}
                 onClose={handleCloseAction}
-                onInventory={handleOpenInventory}
+                onInventory={() => handleAction('OPEN_INVENTORY', {})}
                 onATM={() => handleAction('OPEN_ATM', {})}
+              />
+            )}
+
+            {/* WAITING_RADISH_SELL */}
+            {gameState.status === 'WAITING_RADISH_SELL' && (
+              <RadishSell
+                isMyTurn={isMyTurn}
+                player={currentPlayer}
+                currentPlayerName={currentPlayer?.nickname}
+                radishPrice={gameState?.radishPrice ?? 0}
+                onAction={handleAction}
+                onClose={handleCloseAction}
               />
             )}
 
@@ -634,10 +624,18 @@ const GamePage = () => {
                 currentPlayerName={currentPlayer?.nickname}
                 userBell={currentPlayer?.bell || 0}
                 userLoan={currentPlayer?.loan || 0}
-                timeoutSeconds={60}
-                onClose={handleCloseAction}
+                timeoutSeconds={gameState.timeoutSeconds || 0}
+                onClose={() => handleAction('CLOSE_ATM', {})}
                 onAction={handleAction}
                 isBankTile={false}
+              />
+            )}
+
+            {/* WAITING_INVENTORY */}
+            {gameState.status === 'WAITING_INVENTORY' && (
+              <Inventory
+                player={currentPlayer}
+                onClose={() => handleAction('CLOSE_INVENTORY', {})}
               />
             )}
 

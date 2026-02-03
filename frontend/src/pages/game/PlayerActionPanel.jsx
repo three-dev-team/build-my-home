@@ -1,8 +1,8 @@
-// src/pages/game/PlayerActionPanel.jsx
 import { useEffect, useMemo, useState } from 'react';
 import './css/PlayerActionPanel.css';
 
 const BASE = { board: '/images/board' };
+
 const IMG = {
   lte: `${BASE.board}/ui-remote-lte.svg`,
   btn: (key) => `${BASE.board}/btn-remote-${key}.webp`,
@@ -75,7 +75,7 @@ export default function PlayerActionPanel({
       inventory: {
         title: '인벤토리',
         desc: '소지품을 확인할 수 있어 (재화, 과일)',
-        onClick: onInventory,
+        onClick: onInventory, // ✅ 서버 OPEN_INVENTORY
         disabled: !!itemUsed || typeof onInventory !== 'function',
       },
       atm: {
@@ -85,10 +85,10 @@ export default function PlayerActionPanel({
         disabled: !!itemUsed || typeof onATM !== 'function',
       },
       mupani: {
-        title: '무파니',
-        desc: '무파니 패널을 열 수 있어 (판매/보유 수량 확인)',
+        title: '무 판매',
+        desc: '무를 판매할 수 있어 (무 보유시)',
         onClick: onMupaniPanel,
-        // disabled: !!itemUsed || !hasRadish || typeof onMupaniPanel !== 'function',
+        disabled: !!itemUsed || typeof onMupaniPanel !== 'function',
       },
     }),
     [
@@ -105,8 +105,8 @@ export default function PlayerActionPanel({
   );
 
   const order = ['dice', 'naugul', 'item', 'inventory', 'atm', 'mupani'];
-
   const activeBtn = activeKey ? BTN[activeKey] : null;
+
   const titleText = activeBtn?.title ?? '행동 선택';
 
   const descLines = useMemo(() => {
@@ -119,7 +119,7 @@ export default function PlayerActionPanel({
   const handleClick = (key) => {
     const b = BTN[key];
     if (!b || b.disabled) return;
-    if (typeof b.onClick === 'function') b.onClick();
+    b.onClick?.();
   };
 
   return (
@@ -131,13 +131,13 @@ export default function PlayerActionPanel({
 
       <h2 className="paa-title">{titleText}</h2>
 
-      <p className="paa-desc" aria-label="설명">
+      <p className="paa-desc">
         <span className="paa-desc-line">{descLines[0]}</span>
         <br />
         <span className="paa-desc-line">{descLines[1]}</span>
       </p>
 
-      <div className="paa-grid" role="group" aria-label="행동 버튼">
+      <div className="paa-grid">
         {order.map((key) => {
           const b = BTN[key];
           return (
@@ -145,7 +145,6 @@ export default function PlayerActionPanel({
               key={key}
               type="button"
               className={`paa-btn ${b.disabled ? 'is-disabled' : ''}`}
-              aria-disabled={b.disabled ? 'true' : 'false'}
               onClick={() => handleClick(key)}
               onMouseEnter={() => setActiveKey(key)}
               onMouseLeave={() => setActiveKey(null)}

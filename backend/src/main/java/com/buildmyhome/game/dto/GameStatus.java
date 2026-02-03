@@ -22,6 +22,8 @@ public enum GameStatus {
     WAITING_PIPE(0),
     WAITING_MIRROR(0),
     WAITING_DOUBLE_DICE(0),
+    WAITING_INVENTORY(0), // 인벤토리(재화/과일) 화면
+    WAITING_RADISH_SELL(0), // 무 판매 화면
 
     // --- 칸 이벤트별 유저 입력을 기다리는 상태 ---
     WAITING_STAMP(15), // 스탬프칸 이용 중

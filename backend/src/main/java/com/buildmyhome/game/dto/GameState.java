@@ -50,6 +50,9 @@ public class GameState {
     // 타임아웃 스케줄러 (이벤트 완료 시 취소용)
     private java.util.concurrent.ScheduledFuture<?> currentTimeout;
 
+    // UI 오버레이(인벤/ATM 등) 닫을 때 복귀할 상태 저장소
+    private transient Map<Long, GameStatus> uiReturnStatusByPlayer = new ConcurrentHashMap<>();
+
     public GameState(Long roomId) {
         this.roomId = roomId;
         this.status = GameStatus.INTRO;
@@ -72,5 +75,15 @@ public class GameState {
 
     public void addPlayer(GamePlayerState player) {
         players.put(player.getMemberId(), player);
+    }
+
+    public void saveUiReturnStatus(Long memberId, GameStatus status) {
+        if (memberId == null || status == null) return;
+        uiReturnStatusByPlayer.put(memberId, status);
+    }
+
+    public GameStatus popUiReturnStatus(Long memberId) {
+        if (memberId == null) return null;
+        return uiReturnStatusByPlayer.remove(memberId);
     }
 }
