@@ -4,7 +4,7 @@ import { useGameTimer } from '../../hooks/useGameTimer.js';
 import { boardTiles } from '../../constants/boardData.js';
 import Subtitle from '../../components/common/Subtitle.jsx';
 import InstructionText from '../../components/common/InstructionText.jsx';
-import useSpaceKey from '../../components/common/useSpaceKey.js';
+import useSpaceKey from '../../hooks/useSpaceKey.js';
 import { useExitHandler } from '../../hooks/useExitHandler.js';
 import { COLORS } from '../../constants/colors.js';
 import { CHARACTERS } from '../../constants/characters.js';
@@ -93,9 +93,7 @@ const Stamp = ({ isMyTurn = false, player, currentPlayerName = '익명의 주민
     }[config.npcName] || 'default';
 
   // 현재 플레이어의 캐릭터 정보 가져오기
-  const character = CHARACTERS.find(
-    (c) => Number(c.id) === Number(player?.characterId)
-  );
+  const character = CHARACTERS.find((c) => Number(c.id) === Number(player?.characterId));
   const charImg = character?.backImage ?? null;
 
   return (
@@ -184,14 +182,14 @@ const Stamp = ({ isMyTurn = false, player, currentPlayerName = '익명의 주민
       {step === 2 && (
         <>
           {/* 상단 Subtitle */}
-            <Subtitle
-              nameText={config.npcName}
-              nameColor={COLORS.characters[npcColorKey]?.nameBox || COLORS.characters.default.nameBox}
-              nameTextColor={COLORS.characters[npcColorKey]?.nameText || COLORS.characters.default.nameText}
-              contentText={isDuplicate ? config.duplicate(currentPlayerName) : config.success(currentPlayerName)}
-              contentColor={COLORS.subtitle.contentBox}
-              contentTextColor={COLORS.subtitle.contentText}
-            />
+          <Subtitle
+            nameText={config.npcName}
+            nameColor={COLORS.characters[npcColorKey]?.nameBox || COLORS.characters.default.nameBox}
+            nameTextColor={COLORS.characters[npcColorKey]?.nameText || COLORS.characters.default.nameText}
+            contentText={isDuplicate ? config.duplicate(currentPlayerName) : config.success(currentPlayerName)}
+            contentColor={COLORS.subtitle.contentBox}
+            contentTextColor={COLORS.subtitle.contentText}
+          />
 
           {/* 중앙 스탬프 카드 */}
           <div className="stamp-result-card">
