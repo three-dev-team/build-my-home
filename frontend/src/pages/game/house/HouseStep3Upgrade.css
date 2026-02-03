@@ -1,0 +1,156 @@
+.houseUpgPanel {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+
+    width: calc(1794 * var(--s));
+    height: calc(800 * var(--s));
+    border-radius: calc(80 * var(--s));
+    background: var(--house-panel-bg);
+
+    overflow: hidden;
+    pointer-events: none; /* 패널 자체는 클릭 막기(내부 버튼은 별도 영역에서 처리) */
+}
+
+/* 상단 타이틀 */
+.houseUpgTitle {
+    position: absolute;
+    left: calc(96 * var(--s));
+    top: calc(44 * var(--s));
+
+    width: calc(1604 * var(--s));
+    height: calc(46 * var(--s));
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    color: var(--house-white);
+    font-family: var(--font-gosanja);
+    font-size: calc(44 * var(--s));
+    line-height: 1;
+    white-space: nowrap;
+}
+
+/* 카드 2장 + 가운데 아이콘(화살표/잠금) 배치용 row */
+.houseUpgRow {
+    position: absolute;
+    left: calc(96 * var(--s));
+    top: calc(128 * var(--s));
+
+    width: calc(1604 * var(--s));
+    height: calc(600 * var(--s));
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+/* 좌/우 카드 공통 */
+.houseUpgCard {
+    width: calc(720 * var(--s));
+    height: calc(600 * var(--s));
+    border-radius: calc(60 * var(--s));
+    background: var(--house-card-bg);
+
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    padding-top: calc(52 * var(--s));
+    color: var(--house-white);
+    font-family: var(--font-gosanja);
+    line-height: 1;
+}
+
+/* 카드 상단 레벨 pill(예: level 3 -> level 4) */
+.houseUpgLevelBox {
+    width: calc(520 * var(--s));
+    height: calc(48 * var(--s));
+    border-radius: calc(24 * var(--s));
+    background: rgba(0, 0, 0, 0.18);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-size: calc(40 * var(--s));
+    white-space: nowrap;
+}
+
+/* 카드 중앙 집 이미지 영역(배경 틴트 + 라운드) */
+.houseUpgImgBox {
+    width: calc(520 * var(--s));
+    height: calc(352 * var(--s));
+    border-radius: calc(60 * var(--s));
+    overflow: hidden;
+
+    margin-top: calc(52 * var(--s));
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background: rgba(0, 0, 0, 0.12);
+}
+
+/* 집 이미지(원본 비율 유지) */
+.houseUpgHouseImg {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+/* ===== SVG 마스크 아이콘 공통(색은 background로 칠함) ===== */
+.maskIcon {
+    display: block;
+    user-select: none;
+    -webkit-user-drag: none;
+
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    -webkit-mask-size: contain;
+
+    mask-repeat: no-repeat;
+    mask-position: center;
+    mask-size: contain;
+}
+
+/* 가운데 화살표 아이콘(업그레이드 가능 상태) */
+.houseUpgArrow {
+    opacity: 0.95;
+}
+
+/* 잠금 상태: 래퍼(기준 박스) */
+.houseUpgLockedWrap {
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+/* 잠금 아이콘(정중앙) */
+.houseUpgLock {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0.95;
+}
+
+/* 잠금 상태일 때 흐릿한 집 실루엣(아래쪽에 배치) */
+.houseUpgLockedHouseGhost {
+    position: absolute;
+    left: 50%;
+    bottom: calc(10 * var(--s));
+    transform: translateX(-50%);
+    width: calc(360 * var(--s));
+    height: calc(220 * var(--s));
+    object-fit: contain;
+    opacity: 0.18;
+    filter: blur(calc(0.6 * var(--s)));
+}
