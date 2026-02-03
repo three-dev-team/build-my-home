@@ -1,7 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { useGLTF, useAnimations, Environment } from '@react-three/drei';
-import confetti from 'canvas-confetti';
 
 const DiceModel = ({ value, onAnimationEnd }) => {
   const group = useRef();
@@ -49,39 +48,24 @@ const DiceModel = ({ value, onAnimationEnd }) => {
 const Dice3D = ({ value, onAnimationEnd }) => {
   const [showImage, setShowImage] = useState(false);
 
-  // 폭죽 효과
-  const fireConfetti = () => {
-    confetti({
-      particleCount: 100,
-      spread: 40,
-      origin: { y: 0.6 },
-      colors: ['#ff9500', '#ffcc00', '#ff6b6b', '#4ecdc4', '#a855f7'],
-      gravity: 1.5, // 빨리 떨어지게
-      decay: 0.95, // 빨리 사라지게
-      ticks: 100, // 짧게 유지 (기본 200)
-    });
-  };
-
   // 애니메이션 끝나면 1초 후 이미지 표시
   const handleAnimationEnd = () => {
     setTimeout(() => {
       setShowImage(true);
-      fireConfetti();
 
       // 이미지 보여주고 0.5초 후 최종 콜백
       setTimeout(() => {
-        confetti.reset();
         onAnimationEnd?.();
       }, 2000);
     }, 500);
   };
 
-  // 이미지 표시 상태
   if (showImage) {
     return (
       <img
         src={`/images/dice/dice-result-${value}.webp`}
         alt={`주사위 ${value}`}
+        className="dice-result-img bounce-in"
         style={{ width: '100%', height: '100%', objectFit: 'contain' }}
       />
     );

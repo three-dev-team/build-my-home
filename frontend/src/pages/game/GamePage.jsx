@@ -166,6 +166,7 @@ const GamePage = () => {
           const data = JSON.parse(message.body);
           console.log('>>> 🔔 메시지 수신:', data);
 
+          // TODO: 리팩토링 필요 추가 - Tiffany
           const t = data?.type;
 
           // 낚시/룸이벤트: gameState를 덮지 않고 분리 저장(UI 전용 처리)
