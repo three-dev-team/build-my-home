@@ -4,6 +4,7 @@ import InstructionText from '../../components/common/InstructionText.jsx';
 import './css/RollDicePage.css';
 import { CHARACTERS } from '../../constants/characters.js';
 import AspectLayout from '../../components/layout/AspectLayout';
+import Shadow from '../../components/common/Shadow.jsx'
 
 const RollDicePage = ({ currentPlayer, isMyTurn, diceValue, isRolling, onRollComplete, onAnimationEnd }) => {
   // 스페이스바 핸들러
@@ -39,8 +40,9 @@ const RollDicePage = ({ currentPlayer, isMyTurn, diceValue, isRolling, onRollCom
 
       {/* 사용자 캐릭터 + 안내 문구 */}
       <div className="character-area">
-        <img src={charImg} alt={currentPlayer?.nickname} className="current-character" />
-        <div className="character-shadow"></div>
+        <Shadow>
+          <img src={charImg} alt={currentPlayer?.nickname} className="current-character" />
+        </Shadow>
       </div>
 
       <InstructionText>
