@@ -1,14 +1,14 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Subtitle from '../../../components/common/Subtitle.jsx';
 import AutoMove from '../../../components/common/AutoMove.jsx';
 import { COLORS } from '../../../constants/colors.js';
-import {
-  getNextHouseLevelByLevel,
-  getHouseIconByLevel,
-  normalizeHouseLevelByAny,
-  roEuro,
-} from '../../../constants/houseLevel.js';
+import { getNextHouseLevelByLevel, getHouseIconByLevel, normalizeHouseLevelByAny, roEuro } from '../../../constants/houseLevel.js';
+import { useGameTimer } from '../../../hooks/useGameTimer.js';
 import './HouseStep4BuildFinish.css';
+
+const IMG = {
+  ui: '/images/board/ui-buildhouse.webp',
+};
 
 // 플레이어 표시 이름 정규화
 const getPlayerDisplayName = (player) => {
@@ -23,7 +23,7 @@ const getCurrentHouseLevel = (player) => {
   return normalizeHouseLevelByAny(v);
 };
 
-// 대사 길이에 따라 타이핑/노출 시간 추정
+// 대사 길이에 따라 "대략" 노출 시간(ms) 추정 (초 단위 훅에 맞게 나중에 ceil 처리)
 const estimateTypingMs = (text) => {
   const s = String(text ?? '');
   const len = s.replace(/\s+/g, '').length;
@@ -69,37 +69,36 @@ export default function HouseStep4BuildFinish({
     [houseName, myName, character?.color],
   );
 
-  // 대사 표시/숨김 + 자동 다음 단계 타이밍 제어
-  const [showSubtitle, setShowSubtitle] = useState(true);
-  const timersRef = useRef({ t1: null, t2: null });
+  // 단계: 1) 대사 노출 → 2) 숨김 → 3) 자동 이동
+  const [phase, setPhase] = useState('SHOW'); // SHOW | HIDE
 
   useEffect(() => {
-    setShowSubtitle(true);
+    // 텍스트가 바뀌면 항상 처음부터
+    setPhase('SHOW');
+  }, [contentText]);
 
-    if (timersRef.current.t1) window.clearTimeout(timersRef.current.t1);
-    if (timersRef.current.t2) window.clearTimeout(timersRef.current.t2);
-
+  // 1) SHOW 단계 시간(초)
+  const showMs = useMemo(() => {
     const typingMs = estimateTypingMs(contentText);
-    const hideDelay = typingMs + Math.max(0, Number(afterTypedMs) || 0);
+    return typingMs + Math.max(0, Number(afterTypedMs) || 0);
+  }, [contentText, afterTypedMs]);
 
-    timersRef.current.t1 = window.setTimeout(() => {
-      setShowSubtitle(false);
+  const showSeconds = useMemo(() => Math.max(1, Math.ceil(showMs / 1000)), [showMs]);
+  const hideSeconds = useMemo(() => Math.max(1, Math.ceil(Math.max(0, Number(afterHideMs) || 0) / 1000)), [afterHideMs]);
 
-      const moveDelay = Math.max(0, Number(afterHideMs) || 0);
-      timersRef.current.t2 = window.setTimeout(() => {
-        if (typeof onAutoNext === 'function') onAutoNext();
-      }, moveDelay);
-    }, hideDelay);
+  useGameTimer(phase === 'SHOW' ? showSeconds : 0, () => {
+    setPhase('HIDE');
+  });
 
-    return () => {
-      if (timersRef.current.t1) window.clearTimeout(timersRef.current.t1);
-      if (timersRef.current.t2) window.clearTimeout(timersRef.current.t2);
-    };
-  }, [contentText, afterTypedMs, afterHideMs, onAutoNext]);
+  useGameTimer(phase === 'HIDE' ? hideSeconds : 0, () => {
+    onAutoNext?.();
+  });
+
+  const showSubtitle = phase === 'SHOW';
 
   return (
     <div className="houseStep4Root">
-      <img src="/images/board/ui-buildhouse.webp" alt="" draggable={false} className="houseStep4Ui" />
+      <img src={IMG.ui} alt="" draggable={false} className="houseStep4Ui" />
 
       {/* 자동 이동 안내 */}
       <AutoMove />
