@@ -107,6 +107,11 @@ export const COLORS = {
       nameBox: '#E79F52',
       nameText: '#923421',
     },
+    // 몽셰르(스왑)
+    mongsher: {
+      nameBox: '#ba3aa7',
+      nameText: '#fdcbfd',
+    },
     // 기본값
     default: {
       nameBox: '#9B59B6',

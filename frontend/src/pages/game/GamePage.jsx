@@ -4,8 +4,6 @@ import { getBrokerURL } from '../../utils/ws.js';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import AspectLayout from '../../components/layout/AspectLayout.jsx';
 import Loading from '../../components/common/Loading.jsx';
-import MenuButton from '../../components/common/MenuButton.jsx';
-import ChatToggle from '../../components/common/ChatToggle.jsx';
 import RollForOrder from './RollForOrder.jsx';
 import { getMyIdFromToken } from '../../utils/auth.js';
 import MainBoardPage from './MainBoardPage.jsx';
@@ -26,7 +24,6 @@ import Start from './Start.jsx';
 import Result from './Result.jsx';
 import Mupani from './Mupani.jsx';
 import Machurilla from './Machurilla/Machurilla.jsx';
-import Swap from './Swap.jsx';
 import PlayerSkipped from './PlayerSkipped.jsx';
 import ItemTile from './ItemTile/ItemTile.jsx';
 import ItemInventory from './ItemInventory.jsx';
@@ -35,6 +32,7 @@ import Mirror from './itemEffect/Mirror.jsx';
 import RadishSell from './radish/RadishSell.jsx';
 import './css/GamePage.css';
 import TurnCharacterPanel from './TurnCharacterPanel.jsx';
+import Swap from './swap/Swap.jsx';
 
 import Subtitle from '../../components/common/Subtitle.jsx';
 import { COLORS } from '../../constants/colors.js';
@@ -106,8 +104,7 @@ const GamePage = () => {
   }, [atmUsingPlayer]);
 
   // 현재 턴 플레이어(현 상태의 currentPlayerId 기준)
-  const currentPlayer =
-    playersArr.find((p) => Number(p?.memberId) === Number(gameState?.currentPlayerId)) || null;
+  const currentPlayer = playersArr.find((p) => Number(p?.memberId) === Number(gameState?.currentPlayerId)) || null;
 
   // 내 턴 여부(현재 턴 플레이어가 나인지)
   const isParticipant = playersArr.some((p) => Number(p?.memberId) === Number(myId));
@@ -142,8 +139,7 @@ const GamePage = () => {
   const status = gameState?.status;
 
   // 오버레이(ATM/인벤) 열림 여부: 관전자 대기 상태도 HUD 숨기기 위해 포함
-  const isOverlayOpen =
-    inventoryOpen || atmOpen || !!inventoryUsingMemberId || !!atmUsingMemberId;
+  const isOverlayOpen = inventoryOpen || atmOpen || !!inventoryUsingMemberId || !!atmUsingMemberId;
 
   // 보드 장면(= HUD 노출이 필요한 구간)
   const isBoardScene = status === 'WAITING_PLAYER_ACTION' || status === 'MOVING';
@@ -168,9 +164,9 @@ const GamePage = () => {
   // 최종 배경 이미지
   const bgImage =
     // ATM은 "내가 열었거나" / "누군가 사용 중(관전자 대기)"이면 ATM 배경
-    (atmOpen || !!atmUsingMemberId)
+    atmOpen || !!atmUsingMemberId
       ? `url('${ATM_BG_URL}')`
-      : (shouldUseHouseBg || shouldUseHouseBgSpectator)
+      : shouldUseHouseBg || shouldUseHouseBgSpectator
         ? `url('${houseBgUrl}')`
         : `url('/images/bg-home.png')`;
 
@@ -208,8 +204,7 @@ const GamePage = () => {
 
           // 낚시/룸이벤트: gameState를 덮지 않고 분리 저장(UI 전용 처리)
           const isRoomEvent = typeof t === 'string' && t.startsWith('ROOM_EVENT_');
-          const isFishingError =
-            t === 'ERROR' && typeof data?.eventType === 'string' && data.eventType === 'FISHING';
+          const isFishingError = t === 'ERROR' && typeof data?.eventType === 'string' && data.eventType === 'FISHING';
 
           if (isRoomEvent || isFishingError) {
             setFishingEventMessage(data);
@@ -472,8 +467,7 @@ const GamePage = () => {
   }
 
   // 낚시 페이즈인지(상태 + 소켓 연결 확인)
-  const isFishingPhase =
-    ['WAITING_FISHING', 'FISHING_IN_PROGRESS'].includes(gameState.status) && stompClient;
+  const isFishingPhase = ['WAITING_FISHING', 'FISHING_IN_PROGRESS'].includes(gameState.status) && stompClient;
 
   return (
     <AspectLayout>
@@ -558,7 +552,7 @@ const GamePage = () => {
               nameText={inventoryUsingPlayer?.nickname}
               nameColor={COLORS.characters.default.nameBox}
               nameTextColor={COLORS.characters.default.nameText}
-              contentText={`${inventoryUsingPlayer?.nickname } 님이\n인벤토리를 확인 중입니다...`}
+              contentText={`${inventoryUsingPlayer?.nickname} 님이\n인벤토리를 확인 중입니다...`}
               highlights={[
                 {
                   text: inventoryUsingPlayer?.nickname || '',
@@ -575,10 +569,10 @@ const GamePage = () => {
           {/* 관전자 ATM 대기 화면 */}
           {!atmOpen && atmUsingMemberId && (
             <Subtitle
-              nameText={atmUsingPlayer?.nickname }
+              nameText={atmUsingPlayer?.nickname}
               nameColor={COLORS.characters.default.nameBox}
               nameTextColor={COLORS.characters.default.nameText}
-              contentText={`${atmUsingPlayer?.nickname } 님이\nATM을 이용 중입니다...`}
+              contentText={`${atmUsingPlayer?.nickname} 님이\nATM을 이용 중입니다...`}
               highlights={[
                 {
                   text: atmUsingPlayer?.nickname || '',
@@ -692,17 +686,28 @@ const GamePage = () => {
             )}
 
             {/* 스왑 */}
+            {/* 스왑 */}
             {gameState.status === 'WAITING_SWAP' && (
-              <div style={{ pointerEvents: isMyTurn ? 'auto' : 'none' }}>
-                <Swap
-                  isMyTurn={isMyTurn}
-                  player={currentPlayer}
-                  resultText={gameState?.actionDataStr}
-                  onConfirm={() => handleAction('SWAP_CONFIRM', {})}
-                  onExit={handleEventComplete}
-                />
-              </div>
+              <Swap
+                isMyTurn={isMyTurn}
+                player={currentPlayer}
+                players={gameState.players}
+                gameState={gameState}
+                onAction={handleAction}
+                onExit={handleEventComplete}
+              />
             )}
+            {/*{gameState.status === 'WAITING_SWAP' && (*/}
+            {/*  <div style={{ pointerEvents: isMyTurn ? 'auto' : 'none' }}>*/}
+            {/*    <Swap*/}
+            {/*      isMyTurn={isMyTurn}*/}
+            {/*      player={currentPlayer}*/}
+            {/*      resultText={gameState?.actionDataStr}*/}
+            {/*      onConfirm={() => handleAction('SWAP_CONFIRM', {})}*/}
+            {/*      onExit={handleEventComplete}*/}
+            {/*    />*/}
+            {/*  </div>*/}
+            {/*)}*/}
 
             {/* 스타트(이벤트) */}
             {gameState.status === 'WAITING_START' && (
