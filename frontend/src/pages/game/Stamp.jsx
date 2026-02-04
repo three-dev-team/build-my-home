@@ -94,7 +94,7 @@ const Stamp = ({ isMyTurn = false, player, currentPlayerName = '익명의 주민
 
   // 현재 플레이어의 캐릭터 정보 가져오기
   const character = CHARACTERS.find((c) => Number(c.id) === Number(player?.characterId));
-  const charImg = character?.backImage ?? null;
+  const charImg = character?.stampImage ?? null;
 
   return (
     <motion.div
