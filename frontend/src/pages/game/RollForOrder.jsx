@@ -4,6 +4,7 @@ import useDiceRoll from '../../hooks/useDiceRoll';
 import './css/RollForOrder.css';
 import { CHARACTERS } from '../../constants/characters.js';
 import InstructionText from '../../components/common/InstructionText.jsx';
+import Shadow from '../../components/common/Shadow.jsx';
 
 const RollForOrder = ({ players, myId, onRoll }) => {
   const myDiceValue = players.find((p) => p.memberId === myId)?.orderDiceValue;
@@ -49,9 +50,10 @@ const RollForOrder = ({ players, myId, onRoll }) => {
               </div>
 
               <div className="character-box">
-                <img src={charImg} alt={player.nickname} />
-                <div className="character-shadow"></div>
-                <div className={`nickname-tag ${isMe ? 'highlight' : ''}`}>{player.nickname}</div>
+                <Shadow>
+                  <img src={charImg} alt={player.nickname} />
+                  <div className={`nickname-tag ${isMe ? 'highlight' : ''}`}>{player.nickname}</div>
+                </Shadow>
               </div>
             </div>
           );
