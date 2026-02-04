@@ -81,3 +81,33 @@
 .animate-wiggle {
   animation: wiggle 0.5s ease-in-out infinite;
 }
+
+/* 타자기 효과 - 동물의 숲 스타일 */
+@keyframes typewriter {
+  0% {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-typewriter {
+  opacity: 0;
+  animation: typewriter 0.1s ease-out forwards;
+}
+
+/* 부드러운 바운스 - 채팅 말풍선용 */
+@keyframes gentle-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+.animate-gentle-bounce {
+  animation: gentle-bounce 1s ease-in-out infinite;
+}

@@ -7,6 +7,7 @@ import { leaveRoom } from '../../utils/roomUtils.js';
 import { getBrokerURL } from '../../utils/ws.js';
 import ExitButton from '../../components/common/ExitButton';
 import AspectLayout from '../../components/layout/AspectLayout';
+import { CheckCircleIcon } from '@heroicons/react/24/solid';
 
 const CharacterSelect = () => {
   const { roomId } = useParams();
@@ -100,7 +101,7 @@ const CharacterSelect = () => {
               <img
                 src={previewChar.houseImage}
                 alt={`${previewChar.name}'s House`}
-                className="w-[9.38cqw] h-auto object-contain hover:scale-105 transition-transform"
+                className="w-[9.38cqw] h-[9.38cqw] object-contain hover:scale-105 transition-transform"
               />
             </div>
           )}
@@ -122,7 +123,7 @@ const CharacterSelect = () => {
               {/* 2. 설명 텍스트 박스 (41.35cqw * 13.96cqw) */}
               <div
                 className="w-[41.35cqw] h-[13.96cqw] rounded-[1.88cqw] flex flex-col items-center justify-end pb-[2.08cqw] relative z-10"
-                style={{ backgroundColor: 'rgba(253, 251, 246, 0.9)' }} // #FDFBF6 90% 투명도 (사용자가 '흰색에 쌓임' 요청)
+                style={{ backgroundColor: 'rgba(254, 254, 254, 0.4)' }} // creamIvory 50% opacity
               >
                 {/* 이름 */}
                 <h2
@@ -161,10 +162,6 @@ const CharacterSelect = () => {
             {CHARACTERS.map((char) => {
               const isTaken = takenCharacters.includes(char.id);
               const isSelected = selectedCharacter === char.id;
-              // const isHovered = hoveredCharacterId === char.id; // Unused variable removed
-
-              // 선택되었을 때만 Active 이미지 사용 (호버 시에는 Idle 유지)
-              const displayIcon = isSelected ? char.iconActive : char.iconIdle;
 
               return (
                 <button
@@ -174,16 +171,29 @@ const CharacterSelect = () => {
                   onMouseLeave={() => setHoveredCharacterId(null)}
                   disabled={isTaken}
                   className={`
-                     relative w-[8.33cqw] h-[8.33cqw] flex items-center justify-center transition-all p-0
+                     relative w-[8.33cqw] h-[8.33cqw] flex items-center justify-center transition-all p-0 overflow-visible rounded-[24px]
+                     ${isSelected ? 'outline outline-[5px] outline-[#34C4D3]' : ''}
                      ${isTaken ? 'opacity-40 grayscale cursor-not-allowed' : 'cursor-pointer hover:scale-105'}
                    `}
-                  // 스타일(테두리, 그림자 등) 제거: 이미지만 표시
                   style={{}}
                 >
-                  {/* 캐릭터 아이콘 (선택 시 Active, 기본 Idle) */}
-                  <img src={displayIcon} alt={char.name} className="w-full h-full object-cover" />
+                  {/* 캐릭터 아이콘 - 항상 idle 이미지 사용 */}
+                  <img src={char.iconIdle} alt={char.name} className="w-full h-full object-cover rounded-[1.04cqw]" />
 
-                  {/* 선택됨 뱃지 제거됨 -> Active 이미지로 대체 */}
+                  {/* 선택 체크 아이콘 - 우상단 테두리 중간에 위치 */}
+                  {isSelected && (
+                    <div className="absolute -top-[1cqw] -right-[1cqw] w-[2.5cqw] h-[2.5cqw] bg-[#34C4D3] rounded-full flex items-center justify-center">
+                      <svg
+                        className="w-[1.8cqw] h-[1.8cqw] text-white"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={3}
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                  )}
                 </button>
               );
             })}

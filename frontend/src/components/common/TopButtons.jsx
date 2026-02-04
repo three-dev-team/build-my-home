@@ -26,9 +26,10 @@ const TopButtons = ({
   onBellClick,
   onConfigClick,
   colors = {
-    text: '#594E36',
-    badgeBg: '#FDFBF6',
-    badgeText: '#594E36',
+    text: '#7B6C53', // coffeeBrown
+    iconBg: '#FDFBF6', // creamWhite
+    badgeBg: '#7B6C53', // coffeeBrown (swap)
+    badgeText: '#FFFEE0', // creamIvory
     dropdownBorder: '#EAD7B8',
     dropdownHoverBg: '#FFF8EA',
     dropdownText: '#594E36',
@@ -40,17 +41,23 @@ const TopButtons = ({
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   // 기본값 설정 (colors prop에 일부만 들어올 경우 대비)
+  const iconBg = colors.iconBg || '#FDFBF6';
   const dropdownBorder = colors.dropdownBorder || '#EAD7B8';
   const dropdownHoverBg = colors.dropdownHoverBg || '#FFF8EA';
   const dropdownText = colors.dropdownText || '#594E36';
 
-  // 80px = 4.17cqw, 4px = 0.37cqh shadow, 3px = 0.16cqw border
-  const iconBoxStyle = `w-[4.17cqw] h-[4.17cqw] bg-white rounded-full flex items-center justify-center ${showShadow ? 'shadow-[0_0.37cqh_0.37cqh_rgba(0,0,0,0.1)]' : ''} hover:scale-105 transition-transform cursor-pointer border-[0.16cqw] border-white relative z-20`;
+  // 80px = 4.17cqw, 4px = 0.37cqh shadow
+  const iconBoxStyle = `w-[4.17cqw] h-[4.17cqw] rounded-full flex items-center justify-center ${showShadow ? 'shadow-[0_0.37cqh_0.37cqh_rgba(0,0,0,0.1)]' : ''} hover:scale-105 transition-transform cursor-pointer relative z-20`;
 
   const handleLogout = () => {
-    // 로그아웃 로직
+    // 로그아웃 로직 - 모든 세션 데이터 삭제
     sessionStorage.removeItem('token');
+    sessionStorage.removeItem('memberId');
+    sessionStorage.removeItem('role');
     sessionStorage.removeItem('nickname');
+    sessionStorage.removeItem('bell');
+    sessionStorage.removeItem('level');
+    sessionStorage.removeItem('profileImage');
     navigate('/');
   };
 
@@ -69,7 +76,7 @@ const TopButtons = ({
     <div className={`flex gap-[1.25cqw] items-start ${className}`}>
       {/* 프로필 (아이콘 + 닉네임) - gap-1 = 4px = 0.37cqh */}
       <button onClick={onProfileClick} className="flex flex-col items-center gap-[0.37cqh] group relative z-20">
-        <div className={`${iconBoxStyle} overflow-hidden p-0`}>
+        <div className={`${iconBoxStyle} overflow-hidden p-0`} style={{ backgroundColor: iconBg }}>
           {/* w-10 h-10 = 40px = 2.08cqw */}
           <UserIcon className="w-[2.08cqw] h-[2.08cqw]" style={{ color: colors.text }} />
         </div>
@@ -78,9 +85,9 @@ const TopButtons = ({
           className="flex items-center justify-center min-w-[4.17cqw] h-[3.7cqh] rounded-[1.04cqw] shadow-sm px-[0.63cqw] opacity-0 group-hover:opacity-100 transition-opacity duration-200"
           style={{ backgroundColor: colors.badgeBg }}
         >
-          {/* 24px = 1.25cqw text, pb-1 = 4px = 0.37cqh */}
+          {/* 24px = 1.25cqw text */}
           <span
-            className="text-[1.25cqw] font-black leading-none pb-[0.37cqh]"
+            className="text-[1.25cqw] font-black leading-none pt-[0.2cqh]"
             style={{ color: colors.badgeText || colors.text }}
           >
             {nickname}
@@ -89,7 +96,7 @@ const TopButtons = ({
       </button>
 
       {/* 알림 */}
-      <button onClick={onBellClick} className={`${iconBoxStyle} relative z-20`}>
+      <button onClick={onBellClick} className={`${iconBoxStyle} relative z-20`} style={{ backgroundColor: iconBg }}>
         <BellIcon className="w-[2.08cqw] h-[2.08cqw]" style={{ color: colors.text }} />
       </button>
 
@@ -97,7 +104,8 @@ const TopButtons = ({
       <div className="relative">
         <button
           onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-          className={`${iconBoxStyle} ${isDropdownOpen ? 'bg-gray-100' : ''}`}
+          className={`${iconBoxStyle}`}
+          style={{ backgroundColor: isDropdownOpen ? '#E5E5E5' : iconBg }}
         >
           <Cog6ToothIcon className="w-[2.08cqw] h-[2.08cqw]" style={{ color: colors.text }} />
         </button>
@@ -105,14 +113,14 @@ const TopButtons = ({
         {/* 드롭다운 메뉴 */}
         {isDropdownOpen && (
           <div
-            className="absolute top-[5.21cqw] right-0 w-[10.42cqw] bg-white rounded-[1.04cqw] shadow-lg border-[0.16cqw] overflow-hidden flex flex-col z-30 animate-fade-in-up"
-            style={{ borderColor: dropdownBorder }}
+            className="absolute top-[5.21cqw] right-0 w-[10.42cqw] rounded-[1.04cqw] shadow-lg border-[0.16cqw] overflow-hidden flex flex-col z-30 animate-fade-in-up"
+            style={{ backgroundColor: iconBg, borderColor: dropdownBorder }}
           >
             <button
               onClick={handleConfigSelect}
               className="w-full py-[0.83cqw] font-bold text-[1.04cqw] transition-colors border-b-[0.05cqw]"
               style={{
-                color: dropdownText,
+                color: '#7B6C53',
                 borderColor: dropdownBorder,
               }}
               onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = dropdownHoverBg)}
@@ -128,7 +136,7 @@ const TopButtons = ({
                 }}
                 className="w-full py-[0.83cqw] font-bold text-[1.04cqw] transition-colors border-b-[0.05cqw]"
                 style={{
-                  color: dropdownText,
+                  color: '#7B6C53',
                   borderColor: dropdownBorder,
                 }}
                 onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = dropdownHoverBg)}
@@ -141,7 +149,7 @@ const TopButtons = ({
                 onClick={handleInquiry}
                 className="w-full py-[0.83cqw] font-bold text-[1.04cqw] transition-colors border-b-[0.05cqw]"
                 style={{
-                  color: dropdownText,
+                  color: '#7B6C53',
                   borderColor: dropdownBorder,
                 }}
                 onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = dropdownHoverBg)}

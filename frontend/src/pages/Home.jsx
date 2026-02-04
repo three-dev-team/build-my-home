@@ -86,8 +86,8 @@ export default function Home() {
           onConfigClick={() => navigate('/config')}
           colors={{
             text: '#594E36',
-            badgeBg: '#FDFBF6',
-            badgeText: '#594E36',
+            badgeBg: '#7B6C53', // coffeeBrown
+            badgeText: '#FFFEE0', // creamIvory
           }}
           className={`absolute top-[3.7cqh] right-[2.08cqw] z-50 ${uiTransitionClass}`}
         />

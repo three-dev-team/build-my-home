@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { getMemberInfo, updateNickname, withdraw, unlinkSocialAccount } from '../api/memberApi';
 import ExitButton from '../components/common/ExitButton';
 import TopButtons from '../components/common/TopButtons';
+import HomeButton from '../components/common/HomeButton';
 import { CameraIcon } from '@heroicons/react/24/solid';
 import AspectLayout from '../components/layout/AspectLayout';
 import Cropper from 'react-easy-crop';
@@ -305,8 +306,8 @@ export default function MyPage() {
               showShadow={false}
               colors={{
                 text: '#594E36',
-                badgeBg: '#FDFBF6',
-                badgeText: '#594E36',
+                badgeBg: '#7B6C53', // coffeeBrown
+                badgeText: '#FFFEE0', // creamIvory
               }}
             />
           </div>
@@ -316,24 +317,7 @@ export default function MyPage() {
 
         {/* 홈 버튼 (좌측 상단) - Top 3.7cqh, Left 2.08cqw */}
         <div className="absolute top-[3.7cqh] left-[2.08cqw] z-50">
-          <button
-            onClick={() => navigate('/home')}
-            className="w-[4.17cqw] h-[4.17cqw] bg-white rounded-full flex items-center justify-center  hover:scale-105 transition-transform cursor-pointer border-[0.16cqw] border-white"
-          >
-            <div
-              className="w-[2.08cqw] h-[2.08cqw] bg-[#594E36]"
-              style={{
-                maskImage: 'url("/images/icon-home.svg")',
-                WebkitMaskImage: 'url("/images/icon-home.svg")',
-                maskSize: 'contain',
-                WebkitMaskSize: 'contain',
-                maskRepeat: 'no-repeat',
-                WebkitMaskRepeat: 'no-repeat',
-                maskPosition: 'center',
-                WebkitMaskPosition: 'center',
-              }}
-            />
-          </button>
+          <HomeButton />
         </div>
 
         {/* --- 주민증 카드 (메인 영역) --- */}
@@ -479,21 +463,18 @@ export default function MyPage() {
         </div>
 
         {/* --- 좌측 하단 탈퇴하기 버튼 --- 
-            - Bottom 3%, Left 1.67%
+            - Bottom 10px, Left 10px (나가기 버튼과 대칭)
+            - 나가기 버튼과 동일한 사이즈: w=204/1920=10.63cqw, h=62/1920=3.23cqw, r=32/1920=1.67cqw
         */}
         <button
           onClick={() => setIsWithdrawModalOpen(true)}
-          className="absolute bottom-[3%] left-[1.67%] bg-[#FFFBF0] w-[10.6cqw] h-[3.2cqw] rounded-[1.6cqw] flex items-center justify-center text-[1.6cqw] font-black text-[#6B5B45] hover:bg-[#F2E8D5] transition active:scale-95 pt-[0.2cqw]"
+          className="absolute bottom-[20px] left-[20px] bg-[#FFFEE0] w-[10.63cqw] h-[3.23cqw] rounded-[1.67cqw] flex items-center justify-center text-[1.67cqw] font-bold text-[#7B6C53] hover:bg-[#F2E8D5] transition active:scale-95"
         >
           탈퇴하기
         </button>
 
-        {/* --- 우측 하단 나가기 버튼 --- 
-            - Bottom 3%, Right 1.67%
-        */}
-        <div className="absolute bottom-[3%] right-[1.67%]">
-          <ExitButton onClick={() => navigate('/home')} showShadow={false} />
-        </div>
+        {/* --- 우측 하단 나가기 버튼 --- */}
+        <ExitButton onClick={() => navigate('/home')} showShadow={false} />
 
         {/* --- 모달들 --- */}
 

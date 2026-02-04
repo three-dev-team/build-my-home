@@ -170,6 +170,11 @@ public class GameWsController {
         Long roomId = message.getRoomId();
         RoomState room = roomStateService.getRoom(roomId);
 
+        // 모든 플레이어가 준비 완료 상태인지 확인 (카운트다운 중 준비 해제 시 게임 시작 방지)
+        if (!room.isAllReady()) {
+            return; // 준비 안 된 플레이어가 있으면 게임 시작 X
+        }
+
         // DB 상태를 PLAYING으로 변경 (중도 입장 방지)
         roomListService.startGame(roomId);
 
