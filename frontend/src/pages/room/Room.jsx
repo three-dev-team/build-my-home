@@ -727,7 +727,7 @@ function Room() {
                           />
                         </button>
                         {activeDropdown === 'rounds' && (
-                          <div className="absolute top-[4.69cqw] left-1/2 -translate-x-1/2 bg-white rounded-[1.04cqw] shadow-xl border-[0.21cqw] border-[#EAD7B8] px-[0.83cqw] py-[0.42cqw] flex items-center gap-[0.63cqw] z-50 min-w-[7.29cqw] justify-between">
+                          <div className="absolute top-[4.69cqw] left-1/2 -translate-x-1/2 bg-[#FDFBF6] rounded-[1.04cqw] shadow-xl border-[0.21cqw] border-[#EAD7B8] px-[0.83cqw] py-[0.42cqw] flex items-center gap-[0.63cqw] z-50 min-w-[7.29cqw] justify-between">
                             <button
                               onClick={() => {
                                 const next = Math.max(10, totalRounds - 10);

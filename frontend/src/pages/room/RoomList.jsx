@@ -692,193 +692,187 @@ function CreateIslandModal({ onClose, onCreate }) {
       >
         {/* 제목 - 56px = 2.92cqw */}
         <h2
-          className="text-[2.92cqw] font-black mb-[5.56cqh] leading-none text-center w-full"
+          className="text-[2.92cqw] font-black mb-[5.56cqh] mt-[3cqh] leading-none text-center w-full"
           style={{ color: COLORS.ac.darkPurple }}
         >
           섬 만들기
         </h2>
 
-        {/* 1. 섬 이름 - pl 124px(6.46cqw) */}
-        <div className="flex items-center pl-[6.46cqw]">
-          <LabelIcon iconSrc="/images/roomlist/icon-leaf.webp" />
-          <div className="w-[0.63cqw]" />
-          <LabelText text="섬 이름" />
-          {/* Gap 92px = 4.79cqw */}
-          <div className="w-[4.79cqw]" />
-          {/* Input W 600px = 31.25cqw, H 72px = 6.67cqh */}
-          <div className="relative w-[31.25cqw]">
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="방 제목"
-              className="w-full h-[6.67cqh] px-[1.25cqw] rounded-[1.04cqw] bg-white text-[1.46cqw] font-bold outline-none placeholder:text-gray-300 shadow-inner"
-              style={{ color: COLORS.ac.darkPurple }}
-              maxLength={18}
-            />
-            <span
-              className="absolute right-[0.83cqw] top-1/2 -translate-y-1/2 text-[0.94cqw] font-bold opacity-50"
-              style={{ color: COLORS.ac.darkPurple }}
-            >
-              {title.length}/18
-            </span>
+        {/* 폼 영역 - flex-1로 남은 공간 채우고 중앙 정렬 */}
+        <div className="flex-1 flex flex-col justify-center">
+          {/* 1. 섬 이름 - pl 124px(6.46cqw) */}
+          <div className="flex items-center pl-[6.46cqw]">
+            <LabelIcon iconSrc="/images/roomlist/icon-leaf.webp" />
+            <div className="w-[0.63cqw]" />
+            <LabelText text="섬 이름" />
+            {/* Gap 92px = 4.79cqw */}
+            <div className="w-[4.79cqw]" />
+            {/* Input W 600px = 31.25cqw, H 72px = 6.67cqh */}
+            <div className="relative w-[31.25cqw]">
+              <input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="방 제목"
+                className="w-full h-[6.67cqh] px-[1.25cqw] rounded-[1.04cqw] bg-white text-[1.46cqw] font-bold outline-none placeholder:text-gray-300 shadow-inner"
+                style={{ color: COLORS.ac.darkPurple }}
+                maxLength={18}
+              />
+              <span
+                className="absolute right-[0.83cqw] top-1/2 -translate-y-1/2 text-[0.94cqw] font-bold opacity-50"
+                style={{ color: COLORS.ac.darkPurple }}
+              >
+                {title.length}/18
+              </span>
+            </div>
           </div>
-        </div>
 
-        {/* 2. 인원 수 - mt 40px(3.7cqh) */}
-        <div className="flex items-center pl-[6.46cqw] mt-[3.7cqh]">
-          <LabelIcon iconSrc="/images/roomlist/icon-people.svg" />
-          <div className="w-[0.63cqw]" />
-          <LabelText text="인원수" />
-          {/* Gap 104px = 5.42cqw */}
-          <div className="w-[5.42cqw]" />
-          <div className="flex gap-[0.63cqw]">
-            {[2, 3, 4].map((num) => {
-              const isActive = maxPlayers === num;
-              return (
-                <button
-                  key={num}
-                  onClick={() => setMaxPlayers(num)}
-                  className="w-[6.25cqw] h-[6.11cqh] rounded-[1.67cqw] text-[1.67cqw] font-bold transition-all shadow-sm flex items-center justify-center leading-none pt-[0.09cqh]"
+          {/* 2. 인원 수 - mt 40px(3.7cqh) */}
+          <div className="flex items-center pl-[6.46cqw] mt-[3.7cqh]">
+            <LabelIcon iconSrc="/images/roomlist/icon-people.svg" />
+            <div className="w-[0.63cqw]" />
+            <LabelText text="인원수" />
+            {/* Gap 104px = 5.42cqw */}
+            <div className="w-[5.42cqw]" />
+            <div className="flex gap-[0.63cqw]">
+              {[2, 3, 4].map((num) => {
+                const isActive = maxPlayers === num;
+                return (
+                  <button
+                    key={num}
+                    onClick={() => setMaxPlayers(num)}
+                    className="w-[6.25cqw] h-[6.11cqh] rounded-[1.67cqw] text-[1.67cqw] font-bold transition-all shadow-sm flex items-center justify-center leading-none pt-[0.09cqh]"
+                    style={{
+                      backgroundColor: isActive ? COLORS.ac.purple : COLORS.ac.creamWhite,
+                      color: isActive ? COLORS.ac.creamWhite : COLORS.ac.darkPurple,
+                    }}
+                  >
+                    {num}명
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 3. 라운드 수 - mt 40px(3.7cqh) */}
+          <div className="flex items-center pl-[6.46cqw] mt-[3.7cqh]">
+            <LabelIcon iconSrc="/images/roomlist/icon-dice-10.webp" />
+            <div className="w-[0.63cqw]" />
+            <LabelText text="라운드 수" />
+            {/* Gap 60px = 3.13cqw */}
+            <div className="w-[3.13cqw]" />
+            <div className="flex gap-[0.63cqw]">
+              {[10, 20, 30, 40].map((num) => {
+                const isActive = totalRounds === num;
+                return (
+                  <button
+                    key={num}
+                    onClick={() => setTotalRounds(num)}
+                    className="w-[6.25cqw] h-[6.11cqh] rounded-[1.67cqw] text-[1.67cqw] font-bold transition-all shadow-sm flex items-center justify-center leading-none pt-[0.09cqh]"
+                    style={{
+                      backgroundColor: isActive ? COLORS.ac.purple : COLORS.ac.creamWhite,
+                      color: isActive ? COLORS.ac.creamWhite : COLORS.ac.darkPurple,
+                    }}
+                  >
+                    {num}판
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 4. 공개 설정 - mt 40px(3.7cqh) */}
+          <div className="flex items-center pl-[6.46cqw] mt-[3.7cqh] h-[6.67cqh]">
+            <LabelIcon iconSrc="/images/roomlist/icon-lock.svg" />
+            <div className="w-[0.63cqw]" />
+            <LabelText text="공개 설정" />
+            {/* Gap 68px = 3.54cqw */}
+            <div className="w-[3.54cqw]" />
+            <div className="flex items-center gap-[2.08cqw]">
+              {/* 공개 버튼 */}
+              <button onClick={() => setIsPrivate(false)} className="flex items-center gap-[0.63cqw] group">
+                <div className="w-[2.08cqw] h-[2.08cqw] rounded-full flex items-center justify-center transition-colors bg-[#FDFBF6]">
+                  {!isPrivate && (
+                    <div
+                      className="w-[1.25cqw] h-[1.25cqw] rounded-full"
+                      style={{ backgroundColor: COLORS.ac.purple }}
+                    />
+                  )}
+                </div>
+                <span
+                  className="text-[1.88cqw] font-bold pt-[0.09cqh]"
                   style={{
-                    backgroundColor: isActive ? COLORS.ac.darkPurple : 'white',
-                    color: isActive ? 'white' : COLORS.ac.darkPurple,
+                    color: COLORS.ac.darkPurple,
+                    opacity: !isPrivate ? 1 : 0.5,
                   }}
                 >
-                  {num}명
-                </button>
-              );
-            })}
-          </div>
-        </div>
+                  공개
+                </span>
+              </button>
 
-        {/* 3. 라운드 수 - mt 40px(3.7cqh) */}
-        <div className="flex items-center pl-[6.46cqw] mt-[3.7cqh]">
-          <LabelIcon iconSrc="/images/roomlist/icon-dice-10.webp" />
-          <div className="w-[0.63cqw]" />
-          <LabelText text="라운드 수" />
-          {/* Gap 60px = 3.13cqw */}
-          <div className="w-[3.13cqw]" />
-          <div className="flex gap-[0.63cqw]">
-            {[10, 20, 30, 40].map((num) => {
-              const isActive = totalRounds === num;
-              return (
-                <button
-                  key={num}
-                  onClick={() => setTotalRounds(num)}
-                  className="w-[6.25cqw] h-[6.11cqh] rounded-[1.67cqw] text-[1.67cqw] font-bold transition-all shadow-sm flex items-center justify-center leading-none pt-[0.09cqh]"
+              {/* 비공개 버튼 */}
+              <button onClick={() => setIsPrivate(true)} className="flex items-center gap-[0.63cqw] group">
+                <div className="w-[2.08cqw] h-[2.08cqw] rounded-full flex items-center justify-center transition-colors bg-[#FDFBF6]">
+                  {isPrivate && (
+                    <div
+                      className="w-[1.25cqw] h-[1.25cqw] rounded-full"
+                      style={{ backgroundColor: COLORS.ac.purple }}
+                    />
+                  )}
+                </div>
+                <span
+                  className="text-[1.88cqw] font-bold pt-[0.09cqh]"
                   style={{
-                    backgroundColor: isActive ? COLORS.ac.darkPurple : 'white',
-                    color: isActive ? 'white' : COLORS.ac.darkPurple,
+                    color: COLORS.ac.darkPurple,
+                    opacity: isPrivate ? 1 : 0.5,
                   }}
                 >
-                  {num}판
-                </button>
-              );
-            })}
+                  비공개
+                </span>
+              </button>
+            </div>
           </div>
-        </div>
 
-        {/* 4. 공개 설정 - mt 40px(3.7cqh) */}
-        <div className="flex items-center pl-[6.46cqw] mt-[3.7cqh] h-[6.67cqh]">
-          <LabelIcon iconSrc="/images/roomlist/icon-lock.svg" />
-          <div className="w-[0.63cqw]" />
-          <LabelText text="공개 설정" />
-          {/* Gap 68px = 3.54cqw */}
-          <div className="w-[3.54cqw]" />
-          <div className="flex items-center gap-[2.08cqw]">
-            {/* 공개 버튼 */}
-            <button onClick={() => setIsPrivate(false)} className="flex items-center gap-[0.63cqw] group">
-              <div
-                className={`w-[2.08cqw] h-[2.08cqw] rounded-full border-[0.16cqw] flex items-center justify-center transition-colors ${
-                  !isPrivate ? 'bg-[#744990] border-[#744990]' : 'bg-white border-[#744990]'
-                }`}
-                style={{
-                  backgroundColor: !isPrivate ? COLORS.ac.darkPurple : 'white',
-                  borderColor: COLORS.ac.darkPurple,
-                }}
-              >
-                {!isPrivate && <div className="w-[0.83cqw] h-[0.83cqw] bg-white rounded-full" />}
+          {/* 5. 비밀번호 (비공개일 때만 표시) */}
+          {/* Indent: 397px = 20.68cqw */}
+          {isPrivate && (
+            <div className="flex items-center mt-[1.85cqh]" style={{ paddingLeft: '20.68cqw' }}>
+              {/* Input W 600px = 31.25cqw, H 72px = 6.67cqh */}
+              <div className="relative w-[31.25cqw]">
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="비밀번호"
+                  className="w-full h-[6.67cqh] px-[1.25cqw] rounded-[1.04cqw] bg-white text-[1.67cqw] font-bold outline-none placeholder:text-gray-300 shadow-inner"
+                  style={{ color: COLORS.ac.darkPurple }}
+                />
+                {/* Lock Icon inside input on right */}
+                <div
+                  className="absolute right-[1.04cqw] top-1/2 -translate-y-1/2 w-[1.88cqw] h-[1.88cqw]"
+                  style={{
+                    backgroundColor: COLORS.ac.darkPurple,
+                    maskImage: `url("/images/roomlist/icon-lock.svg")`,
+                    WebkitMaskImage: `url("/images/roomlist/icon-lock.svg")`,
+                    maskSize: 'contain',
+                    WebkitMaskSize: 'contain',
+                    maskRepeat: 'no-repeat',
+                    WebkitMaskRepeat: 'no-repeat',
+                    maskPosition: 'center',
+                    WebkitMaskPosition: 'center',
+                    opacity: 0.5,
+                  }}
+                />
               </div>
-              <span
-                className={`text-[1.88cqw] font-bold pt-[0.09cqh] ${!isPrivate ? 'text-[#744990]' : 'text-[#744990]/50'}`}
-                style={{
-                  color: !isPrivate ? COLORS.ac.darkPurple : COLORS.ac.darkPurple,
-                  opacity: !isPrivate ? 1 : 0.5,
-                }}
-              >
-                공개
-              </span>
-            </button>
-
-            {/* 비공개 버튼 */}
-            <button onClick={() => setIsPrivate(true)} className="flex items-center gap-[0.63cqw] group">
-              <div
-                className={`w-[2.08cqw] h-[2.08cqw] rounded-full border-[0.16cqw] flex items-center justify-center transition-colors ${
-                  isPrivate ? 'bg-[#744990] border-[#744990]' : 'bg-white border-[#744990]'
-                }`}
-                style={{
-                  backgroundColor: isPrivate ? COLORS.ac.darkPurple : 'white',
-                  borderColor: COLORS.ac.darkPurple,
-                }}
-              >
-                {isPrivate && <div className="w-[0.83cqw] h-[0.83cqw] bg-white rounded-full" />}
-              </div>
-              <span
-                className={`text-[1.88cqw] font-bold pt-[0.09cqh] ${isPrivate ? 'text-[#744990]' : 'text-[#744990]/50'}`}
-                style={{
-                  color: isPrivate ? COLORS.ac.darkPurple : COLORS.ac.darkPurple,
-                  opacity: isPrivate ? 1 : 0.5,
-                }}
-              >
-                비공개
-              </span>
-            </button>
-          </div>
+            </div>
+          )}
         </div>
-
-        {/* 5. 비밀번호 (비공개일 때만, 인풋박스만 표시) */}
-        {/* Indent: 397px = 20.68cqw */}
-        <div
-          className={`flex items-center mt-[1.85cqh] transition-opacity ${
-            isPrivate ? 'opacity-100' : 'opacity-0 pointer-events-none'
-          }`}
-          style={{ paddingLeft: '20.68cqw' }}
-        >
-          {/* Input W 600px = 31.25cqw, H 72px = 6.67cqh */}
-          <div className="relative w-[31.25cqw]">
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              disabled={!isPrivate}
-              placeholder="비밀번호"
-              className="w-full h-[6.67cqh] px-[1.25cqw] rounded-[1.04cqw] bg-white text-[1.67cqw] font-bold outline-none placeholder:text-gray-300 shadow-inner"
-              style={{ color: COLORS.ac.darkPurple }}
-            />
-            {/* Lock Icon inside input on right */}
-            <div
-              className="absolute right-[1.04cqw] top-1/2 -translate-y-1/2 w-[1.88cqw] h-[1.88cqw]"
-              style={{
-                backgroundColor: COLORS.ac.darkPurple,
-                maskImage: `url("/images/roomlist/icon-lock.svg")`,
-                WebkitMaskImage: `url("/images/roomlist/icon-lock.svg")`,
-                maskSize: 'contain',
-                WebkitMaskSize: 'contain',
-                maskRepeat: 'no-repeat',
-                WebkitMaskRepeat: 'no-repeat',
-                maskPosition: 'center',
-                WebkitMaskPosition: 'center',
-                opacity: 0.5,
-              }}
-            />
-          </div>
-        </div>
+        {/* 폼 영역 래퍼 끝 */}
 
         {/* 하단 버튼 (뒤로가기 / 섬만들기) - 300x100px (15.63cqw x 9.26cqh), 40px gap (2.08cqw) */}
-        <div className="absolute bottom-[8.4cqh] left-0 w-full flex justify-center items-center gap-[2.08cqw]">
+        <div className="mt-[5cqh] pb-[6cqh] w-full flex justify-center items-center gap-[2.08cqw]">
           <button
             onClick={onClose}
-            className="w-[15.63cqw] h-[9.26cqh] rounded-[2.6cqw] bg-[#9984A0] text-white text-[2.08cqw] font-black hover:brightness-105 active:scale-95 transition-all leading-none pt-[0.09cqh] flex items-center justify-center gap-[0.42cqw]"
+            className="w-[15.63cqw] h-[9.26cqh] rounded-[2.6cqw] bg-[#9165AA] text-white text-[2.08cqw] font-black hover:brightness-105 active:scale-95 transition-all leading-none pt-[0.09cqh] flex items-center justify-center gap-[0.42cqw]"
           >
             <div
               className="w-[2.08cqw] h-[2.5cqh]"
@@ -1032,8 +1026,9 @@ function JoinIslandModal({ room, initialPlayers, onClose, onConfirm }) {
 
             <div style={{ width: '3.75cqw' }} />
 
-            <span className="text-[1.88cqw] font-bold" style={{ color: COLORS.ac.darkPurple }}>
-              {room.totalRounds} 라운드
+            <span className="text-[1.88cqw] font-bold">
+              <span style={{ color: COLORS.ac.purple }}>{room.totalRounds}</span>
+              <span style={{ color: COLORS.ac.darkPurple }}> 라운드</span>
             </span>
           </div>
 
@@ -1093,7 +1088,7 @@ function JoinIslandModal({ room, initialPlayers, onClose, onConfirm }) {
         <div className="absolute bottom-[8.4cqh] left-0 w-full flex justify-center items-center gap-[2.08cqw]">
           <button
             onClick={onClose}
-            className="w-[15.63cqw] h-[9.26cqh] rounded-[2.6cqw] bg-[#9984A0] text-white text-[2.08cqw] font-black hover:brightness-105 active:scale-95 transition-all leading-none pt-[0.09cqh] flex items-center justify-center gap-[0.42cqw]"
+            className="w-[15.63cqw] h-[9.26cqh] rounded-[2.6cqw] bg-[#9165AA] text-white text-[2.08cqw] font-black hover:brightness-105 active:scale-95 transition-all leading-none pt-[0.09cqh] flex items-center justify-center gap-[0.42cqw]"
           >
             <div
               className="w-[2.08cqw] h-[2.5cqh]"
