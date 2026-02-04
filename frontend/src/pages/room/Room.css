@@ -1,0 +1,15 @@
+/* Room.jsx 전용 스타일 */
+
+/* 부드러운 바운스 - 채팅 말풍선용 */
+@keyframes gentle-bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+.animate-gentle-bounce {
+  animation: gentle-bounce 1s ease-in-out infinite;
+}

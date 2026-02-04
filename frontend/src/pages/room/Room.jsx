@@ -6,6 +6,7 @@ import { getBrokerURL } from '../../utils/ws.js';
 import { getMyIdFromToken } from '../../utils/auth.js';
 import { CHARACTERS } from '../../constants/characters.js';
 import { COLORS } from '../../constants/colors.js';
+import './Room.css';
 import {
   UserIcon,
   BellIcon,
