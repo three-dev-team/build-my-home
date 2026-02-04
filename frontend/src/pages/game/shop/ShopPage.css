@@ -177,7 +177,7 @@
   border-radius: 2.08cqw; /* 40px */
 }
 
-.item-card:hover,
+.item-card:not(.readonly):hover,
 .item-card.selected {
   background-color: rgba(52, 196, 211); /* nook cyan 40% */
 }
