@@ -1,30 +1,20 @@
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import Subtitle from '../../../components/common/Subtitle.jsx';
+import AutoMove from '../../../components/common/AutoMove.jsx';
 import { COLORS } from '../../../constants/colors.js';
-import { ITEM_INFO_BY_KEY } from '../../../constants/items.js';
 import { CHARACTERS } from '../../../constants/characters.js';
+import { normalizeItemKey, resolveItemKey } from '../../../constants/items.js';
 
 const toBool = (v) => v === true || v === 'true';
 
-const fallbackItem = (key) => ({
-  key,
-  name: '아이템',
-  image: '/images/item/item-custom_dice.webp',
-});
-
-const getCharacterColor = (characterId) => {
+// characterId로 캐릭터 메타 조회
+const getCharacter = (characterId) => {
   const id = Number(characterId);
-  const c = CHARACTERS.find((x) => Number(x.id) === id);
-  return c?.color || COLORS.ac.darkBrown;
+  return CHARACTERS.find((x) => Number(x.id) === id) || null;
 };
 
-const getCharacterHabit = (characterId) => {
-  const id = Number(characterId);
-  const c = CHARACTERS.find((x) => Number(x.id) === id);
-  return String(c?.habit ?? '히히').trim() || '히히';
-};
-
+// ItemTile Complete 단계(획득 결과/대사)
 export default function CompleteScreen({
                                          playerName,
                                          newItemKey,
@@ -35,24 +25,49 @@ export default function CompleteScreen({
                                        }) {
   const myTurn = toBool(isMyTurn);
 
-  const hasItem = !!newItemKey;
+  // 캐릭터 메타(이름색/습관)
+  const character = useMemo(() => getCharacter(characterId), [characterId]);
 
+  const nameBoxColor = useMemo(() => character?.color, [character]);
+
+  const habit = useMemo(() => {
+    const h = character?.habit;
+    return typeof h === 'string' ? h.trim() : '';
+  }, [character]);
+
+  // 표시용 플레이어 이름 정리
+  const nameText = useMemo(() => (typeof playerName === 'string' ? playerName.trim() : ''), [playerName]);
+
+  // newItemKey -> 아이템 메타 정규화(resolveItemKey 기준)
   const item = useMemo(() => {
-    if (!hasItem) return null;
-    return ITEM_INFO_BY_KEY[newItemKey] || fallbackItem(newItemKey);
-  }, [hasItem, newItemKey]);
+    const key = normalizeItemKey(newItemKey);
+    if (!key) return null;
+    const info = resolveItemKey(key);
+    return info && typeof info === 'object' ? info : null;
+  }, [newItemKey]);
 
-  const itemName = String(item?.name ?? '아이템').trim();
+  const itemName = useMemo(() => {
+    const n = item?.name;
+    return typeof n === 'string' ? n.trim() : '';
+  }, [item]);
 
-  const habit = useMemo(() => getCharacterHabit(characterId), [characterId]);
+  const itemImage = useMemo(() => {
+    const img = item?.image;
+    return typeof img === 'string' ? img : '';
+  }, [item]);
 
-  const contentText = `히히 ${itemName} 아이템을 획득했어!\n어떻게 써볼까? ${habit}~`;
+  // 대사 텍스트(아이템명/습관 여부만 분기)
+  const contentText = useMemo(() => {
+    const line1 = itemName ? `히히 ${itemName} 아이템을 획득했어!` : '히히 아이템을 획득했어!';
+    const line2 = habit ? `어떻게 써볼까? ${habit}~` : '어떻게 써볼까?';
+    return `${line1}\n${line2}`;
+  }, [itemName, habit]);
 
-  // 하이라이트: 아이템 이름만 nookCyan
-  const highlights = useMemo(() => [{ text: itemName, color: COLORS.ac.nookCyan }], [itemName]);
-
-  // 이름 박스 배경색: 캐릭터 색 사용
-  const nameBoxColor = useMemo(() => getCharacterColor(characterId), [characterId]);
+  // 하이라이트(아이템명만)
+  const highlights = useMemo(() => {
+    if (!itemName) return [];
+    return [{ text: itemName, color: COLORS.ac.nookCyan }];
+  }, [itemName]);
 
   return (
     <motion.div
@@ -67,25 +82,26 @@ export default function CompleteScreen({
       }}
       style={{ cursor: myTurn ? 'pointer' : 'default' }}
     >
-      <div className="itemtile-top-pill">잠시후 자동으로 이동합니다...</div>
+      {/* 자동 이동 안내(내부 기본 문구 사용) */}
+      <AutoMove />
 
-      {/* 캐릭터 박스: 360x660 / 상단 정렬 */}
+      {/* 캐릭터 + 결과 아이템 */}
       <div className="itemtile-character-box itemtile-char-complete" aria-hidden>
         <div className="itemtile-character-inner">
           {characterImage ? <img src={characterImage} alt="" draggable={false} /> : null}
         </div>
 
-        {/* 결과 아이템: 160x160 / top=116 / right=-44 */}
-        {hasItem && item ? (
+        {itemImage ? (
           <div className="itemtile-complete-item" aria-hidden>
-            <img src={item.image} alt="" draggable={false} />
+            <img src={itemImage} alt="" draggable={false} />
           </div>
         ) : null}
       </div>
 
+      {/* 대사(Subtitle) */}
       <div className="itemtile-subtitle-scope">
         <Subtitle
-          nameText={playerName}
+          nameText={nameText}
           nameColor={nameBoxColor}
           nameTextColor={COLORS.ac.creamWhite}
           contentText={contentText}
@@ -94,7 +110,6 @@ export default function CompleteScreen({
           highlights={highlights}
           options={[]}
           showTriangle={false}
-          typingSpeed={30}
         />
       </div>
     </motion.div>

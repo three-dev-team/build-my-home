@@ -32,9 +32,13 @@ import ItemTile from './ItemTile/ItemTile.jsx';
 import ItemInventory from './ItemInventory.jsx';
 import Pipe from './itemEffect/Pipe.jsx';
 import Mirror from './itemEffect/Mirror.jsx';
-import RadishSell from './RadishSell.jsx';
+import RadishSell from './radish/RadishSell.jsx';
 import './css/GamePage.css';
 import TurnCharacterPanel from './TurnCharacterPanel.jsx';
+
+import Subtitle from '../../components/common/Subtitle.jsx';
+import { COLORS } from '../../constants/colors.js';
+import { CHARACTERS } from '../../constants/characters.js';
 
 const GamePage = () => {
   // 라우트 파라미터/네비게이션 핸들러
@@ -54,14 +58,20 @@ const GamePage = () => {
   // STOMP client 인스턴스 저장(연결 후 set)
   const [stompClient, setStompClient] = useState(null);
 
-  // 인벤토리 “어디서 열었는지” 기억해서(예: HOUSE) 배경을 고정하는 용도
-  const inventoryOriginRef = useRef(null); // 'HOUSE' | null
+  // 인벤토리,ATM 어디서 열었는지 기억(BOARD/HOUSE)
+  const inventoryOriginRef = useRef(null);
+  const atmOriginRef = useRef(null);
+
+  // ATM/인벤 오버레이 열림 상태(프론트 로컬)
+  const [atmOpen, setAtmOpen] = useState(false);
+  const [inventoryOpen, setInventoryOpen] = useState(false);
+
+  // 관전자용: 현재 누가 인벤/ATM 사용 중인지
+  const [inventoryUsingMemberId, setInventoryUsingMemberId] = useState(null);
+  const [atmUsingMemberId, setAtmUsingMemberId] = useState(null);
 
   // 낚시: ROOM_EVENT_* 메시지는 gameState와 분리해서 저장(상태 덮어쓰기 방지)
   const [fishingEventMessage, setFishingEventMessage] = useState(null);
-
-  // 보상(재화/과일) 획득 시 토스트 트리거 데이터
-  const [rewardToast, setRewardToast] = useState(null);
 
   // 상점: 선택 relay 메시지 저장(상점 세션 동기화 보조)
   const [shopRelay, setShopRelay] = useState(null);
@@ -74,12 +84,34 @@ const GamePage = () => {
     return [];
   }, [gameState?.players]);
 
+  // 관전자 대기용 플레이어/캐릭터
+  const inventoryUsingPlayer = useMemo(() => {
+    if (!inventoryUsingMemberId) return null;
+    return playersArr.find((p) => Number(p?.memberId) === Number(inventoryUsingMemberId)) || null;
+  }, [inventoryUsingMemberId, playersArr]);
+
+  const inventoryUsingCharacter = useMemo(() => {
+    const cid = Number(inventoryUsingPlayer?.characterId ?? 0);
+    return CHARACTERS.find((c) => Number(c.id) === cid) || null;
+  }, [inventoryUsingPlayer]);
+
+  const atmUsingPlayer = useMemo(() => {
+    if (!atmUsingMemberId) return null;
+    return playersArr.find((p) => Number(p?.memberId) === Number(atmUsingMemberId)) || null;
+  }, [atmUsingMemberId, playersArr]);
+
+  const atmUsingCharacter = useMemo(() => {
+    const cid = Number(atmUsingPlayer?.characterId ?? 0);
+    return CHARACTERS.find((c) => Number(c.id) === cid) || null;
+  }, [atmUsingPlayer]);
+
   // 현재 턴 플레이어(현 상태의 currentPlayerId 기준)
   const currentPlayer =
     playersArr.find((p) => Number(p?.memberId) === Number(gameState?.currentPlayerId)) || null;
 
   // 내 턴 여부(현재 턴 플레이어가 나인지)
-  const isMyTurn = gameState ? Number(myId) === Number(gameState.currentPlayerId) : false;
+  const isParticipant = playersArr.some((p) => Number(p?.memberId) === Number(myId));
+  const isMyTurn = gameState && isParticipant ? Number(myId) === Number(gameState.currentPlayerId) : false;
 
   // 내 상태(무 개수/썩는 턴 가이드 등)
   const myPlayerState = playersArr.find((p) => Number(p?.memberId) === Number(myId)) || null;
@@ -109,33 +141,38 @@ const GamePage = () => {
   // 현재 상태값 편의 변수
   const status = gameState?.status;
 
-  // 인벤토리 화면 여부
-  const isInventoryOpen = status === 'WAITING_INVENTORY';
+  // 오버레이(ATM/인벤) 열림 여부: 관전자 대기 상태도 HUD 숨기기 위해 포함
+  const isOverlayOpen =
+    inventoryOpen || atmOpen || !!inventoryUsingMemberId || !!atmUsingMemberId;
 
   // 보드 장면(= HUD 노출이 필요한 구간)
   const isBoardScene = status === 'WAITING_PLAYER_ACTION' || status === 'MOVING';
 
   // 보드 HUD(턴카운터/좌측 HUD 등) 노출 조건
-  const shouldShowHud = !!gameState && isBoardScene && !isInventoryOpen;
+  const shouldShowHud = !!gameState && isBoardScene && !isOverlayOpen;
 
-  // 인벤토리를 House에서 열었으면 인벤토리 화면에서도 House 배경 유지
-  const shouldUseHouseBg = isInventoryOpen && inventoryOriginRef.current === 'HOUSE';
+  // Inventory만 HOUSE 배경 유지 (내 화면)
+  const shouldUseHouseBg = inventoryOpen && inventoryOriginRef.current === 'HOUSE';
+
+  // 관전자: 하우스 상태에서 누군가 인벤 보고 있으면 하우스 배경 유지
+  const shouldUseHouseBgSpectator = !!inventoryUsingMemberId && status === 'WAITING_HOUSE';
 
   // House 배경은 step(너굴이면 naugul bg, 아니면 main bg)
   const houseStep = Number(currentPlayer?.uiStep ?? 0);
   const houseBgUrl =
     houseStep === 1 ? '/images/board/bg-buildhouse-naugul.webp' : '/images/board/bg-buildhouse-main.webp';
 
-  // 최종 배경 이미지(CSS 변수 --bg-image로 GamePage.css에서 사용)
-  const bgImage = shouldUseHouseBg ? `url('${houseBgUrl}')` : `url('/images/bg-home.png')`;
+  // ATM 배경(고정)
+  const ATM_BG_URL = '/images/board/bg-atm.webp';
 
-  // 인벤토리 상태에서 벗어나면 origin 초기화(다음 열기 때 잔상 방지)
-  useEffect(() => {
-    if (!gameState?.status) return;
-    if (gameState.status !== 'WAITING_INVENTORY') {
-      inventoryOriginRef.current = null;
-    }
-  }, [gameState?.status]);
+  // 최종 배경 이미지
+  const bgImage =
+    // ATM은 "내가 열었거나" / "누군가 사용 중(관전자 대기)"이면 ATM 배경
+    (atmOpen || !!atmUsingMemberId)
+      ? `url('${ATM_BG_URL}')`
+      : (shouldUseHouseBg || shouldUseHouseBgSpectator)
+        ? `url('${houseBgUrl}')`
+        : `url('/images/bg-home.png')`;
 
   // 토큰 없으면 로그인 페이지로 이동
   useEffect(() => {
@@ -193,22 +230,56 @@ const GamePage = () => {
             return;
           }
 
-          // MOVE_COMPLETE에서 보상(재화/과일) 토스트 트리거
-          if (t === 'MOVE_COMPLETE') {
-            const hasRes = data?.gainedResources && Object.keys(data.gainedResources).length > 0;
-            const hasHar = data?.gainedHarvests && Object.keys(data.gainedHarvests).length > 0;
-
-            if (hasRes || hasHar) {
-              setRewardToast({
-                gainedResources: hasRes ? data.gainedResources : null,
-                gainedHarvests: hasHar ? data.gainedHarvests : null,
-                key: Date.now(),
-              });
+          // ATM OPEN/CLOSE: 나/관전자 모두 처리
+          if (t === 'ATM_OPENED') {
+            const openedId = data?.memberId;
+            if (Number(openedId) === Number(myId)) {
+              setAtmOpen(true);
+              setAtmUsingMemberId(null); // 내가 열면 관전자 대기 해제
+            } else {
+              setAtmUsingMemberId(openedId ?? null);
             }
+            return;
+          }
+
+          if (t === 'ATM_CLOSED') {
+            const closedId = data?.memberId;
+            if (Number(closedId) === Number(myId)) {
+              setAtmOpen(false);
+              atmOriginRef.current = null;
+            }
+            // 관전자 대기 해제(해당 멤버가 닫았을 때)
+            setAtmUsingMemberId((prev) => (Number(prev) === Number(closedId) ? null : prev));
+            return;
+          }
+
+          // INVENTORY OPEN/CLOSE: 나/관전자 모두 처리
+          if (t === 'INVENTORY_OPENED') {
+            const openedId = data?.memberId;
+            if (Number(openedId) === Number(myId)) {
+              setInventoryOpen(true);
+              setInventoryUsingMemberId(null); // 내가 열면 관전자 대기 해제
+            } else {
+              setInventoryUsingMemberId(openedId ?? null);
+            }
+            return;
+          }
+
+          if (t === 'INVENTORY_CLOSED') {
+            const closedId = data?.memberId;
+            if (Number(closedId) === Number(myId)) {
+              setInventoryOpen(false);
+              inventoryOriginRef.current = null;
+            }
+            // 관전자 대기 해제(해당 멤버가 닫았을 때)
+            setInventoryUsingMemberId((prev) => (Number(prev) === Number(closedId) ? null : prev));
+            return;
           }
 
           // 기본: 서버에서 온 gameState로 동기화
-          setGameState(data);
+          if (data && typeof data === 'object' && 'status' in data) {
+            setGameState(data);
+          }
         });
 
         // 중복 로그인 감지(서버가 /user/queue/kick 보내면 강제 로그아웃)
@@ -245,7 +316,7 @@ const GamePage = () => {
         console.log('>>> ❌ WebSocket 연결 해제됨');
       }
     };
-  }, [roomId, token, navigate]);
+  }, [roomId, token, navigate, myId]);
 
   // 인트로 종료 신호(서버에 intro-complete publish)
   const handleIntroComplete = () => {
@@ -265,19 +336,52 @@ const GamePage = () => {
     });
   };
 
+  // 인벤/ATM 오버레이: 로컬 state로 열고 닫기 + 서버에 배너용 OPEN/CLOSE만 알림
+  const openInventory = (origin) => {
+    if (!stompClient) return;
+    if (!isMyTurn || gameState?.status === 'MOVING') return;
+    inventoryOriginRef.current = origin; // 'HOUSE' | 'BOARD'
+    setInventoryOpen(true);
+    stompClient.publish({
+      destination: '/app/games/action',
+      body: JSON.stringify({ roomId, type: 'OPEN_INVENTORY' }),
+    });
+  };
+
+  const closeInventory = () => {
+    if (!stompClient) return;
+    setInventoryOpen(false);
+    inventoryOriginRef.current = null;
+    stompClient.publish({
+      destination: '/app/games/action',
+      body: JSON.stringify({ roomId, type: 'CLOSE_INVENTORY' }),
+    });
+  };
+
+  const openAtm = (origin) => {
+    if (!stompClient) return;
+    if (!isMyTurn || gameState?.status === 'MOVING') return;
+    atmOriginRef.current = origin; // 'HOUSE' | 'BOARD'
+    setAtmOpen(true);
+    stompClient.publish({
+      destination: '/app/games/action',
+      body: JSON.stringify({ roomId, type: 'OPEN_ATM' }),
+    });
+  };
+
+  const closeAtm = () => {
+    if (!stompClient) return;
+    setAtmOpen(false);
+    atmOriginRef.current = null;
+    stompClient.publish({
+      destination: '/app/games/action',
+      body: JSON.stringify({ roomId, type: 'CLOSE_ATM' }),
+    });
+  };
+
   // 공통 액션 전송(턴 체크/예외 처리 포함)
   const handleAction = (actionType, payload) => {
     if (!stompClient) return;
-
-    // House에서 인벤 열면 origin=HOUSE 고정(인벤 화면에서도 House bg 유지용)
-    if (actionType === 'OPEN_INVENTORY' && gameState?.status === 'WAITING_HOUSE') {
-      inventoryOriginRef.current = 'HOUSE';
-    }
-
-    // CLOSE_INVENTORY를 직접 쏘는 경우 origin 초기화(안전장치)
-    if (actionType === 'CLOSE_INVENTORY') {
-      inventoryOriginRef.current = null;
-    }
 
     // 무파니는 전원 동시 결정이라 턴 무관 예외 허용
     const allowAnyPlayerAction =
@@ -422,12 +526,7 @@ const GamePage = () => {
                       body: JSON.stringify({ roomId, type: 'OPEN_ITEM_INVENTORY' }),
                     });
                   }}
-                  onATM={() => {
-                    stompClient.publish({
-                      destination: '/app/games/action',
-                      body: JSON.stringify({ roomId, type: 'OPEN_ATM' }),
-                    });
-                  }}
+                  onATM={() => openAtm('BOARD')}
                   onBuildHouse={() => {
                     stompClient.publish({
                       destination: '/app/games/action',
@@ -440,13 +539,7 @@ const GamePage = () => {
                       body: JSON.stringify({ roomId, type: 'OPEN_RADISH_SELL' }),
                     });
                   }}
-                  onInventory={() => {
-                    // 보드 인벤 열기(하우스 인벤 여부는 handleAction에서 판단)
-                    stompClient.publish({
-                      destination: '/app/games/action',
-                      body: JSON.stringify({ roomId, type: 'OPEN_INVENTORY' }),
-                    });
-                  }}
+                  onInventory={() => openInventory('BOARD')}
                   itemUsed={currentPlayer?.itemUsed}
                   radishQty={Number(myPlayerState?.radishQty ?? 0)}
                 />
@@ -457,6 +550,46 @@ const GamePage = () => {
               {/* 현재 턴 캐릭터(초상/아이콘) */}
               <TurnCharacterPanel players={playersArr} currentPlayerId={gameState.currentPlayerId} />
             </div>
+          )}
+
+          {/* 관전자 인벤토리 대기 화면 */}
+          {!inventoryOpen && inventoryUsingMemberId && (
+            <Subtitle
+              nameText={inventoryUsingPlayer?.nickname}
+              nameColor={COLORS.characters.default.nameBox}
+              nameTextColor={COLORS.characters.default.nameText}
+              contentText={`${inventoryUsingPlayer?.nickname } 님이\n인벤토리를 확인 중입니다...`}
+              highlights={[
+                {
+                  text: inventoryUsingPlayer?.nickname || '',
+                  color: inventoryUsingCharacter?.color || COLORS.ac.nookCyan,
+                },
+              ]}
+              options={[]}
+              optionDisabled
+              showTriangle={false}
+              typingSpeed={30}
+            />
+          )}
+
+          {/* 관전자 ATM 대기 화면 */}
+          {!atmOpen && atmUsingMemberId && (
+            <Subtitle
+              nameText={atmUsingPlayer?.nickname }
+              nameColor={COLORS.characters.default.nameBox}
+              nameTextColor={COLORS.characters.default.nameText}
+              contentText={`${atmUsingPlayer?.nickname } 님이\nATM을 이용 중입니다...`}
+              highlights={[
+                {
+                  text: atmUsingPlayer?.nickname || '',
+                  color: atmUsingCharacter?.color || COLORS.ac.nookCyan,
+                },
+              ]}
+              options={[]}
+              optionDisabled
+              showTriangle={false}
+              typingSpeed={30}
+            />
           )}
 
           {/* 무파니 UI(턴 무관 선택 구간 포함) */}
@@ -664,8 +797,8 @@ const GamePage = () => {
                 isMyTurn={isMyTurn}
                 onAction={handleAction}
                 onClose={handleCloseAction}
-                onInventory={() => handleAction('OPEN_INVENTORY', {})}
-                onATM={() => handleAction('OPEN_ATM', {})}
+                onInventory={() => openInventory('HOUSE')}
+                onATM={() => openAtm('HOUSE')}
               />
             )}
 
@@ -682,26 +815,24 @@ const GamePage = () => {
             )}
 
             {/* ATM(은행 타일이 아닌 ATM 상태) */}
-            {gameState.status === 'WAITING_ATM' && (
+            {atmOpen && (
               <Loan
                 isMyTurn={isMyTurn}
                 currentPlayerName={currentPlayer?.nickname}
                 userBell={currentPlayer?.bell || 0}
                 userLoan={currentPlayer?.loan || 0}
                 timeoutSeconds={gameState.timeoutSeconds || 0}
-                onClose={() => handleAction('CLOSE_ATM', {})}
+                onClose={closeAtm}
                 onAction={handleAction}
                 isBankTile={false}
               />
             )}
 
             {/* 인벤토리 */}
-            {gameState.status === 'WAITING_INVENTORY' && (
-              <Inventory player={currentPlayer} onClose={() => handleAction('CLOSE_INVENTORY', {})} />
-            )}
+            {inventoryOpen && <Inventory player={currentPlayer} onClose={closeInventory} />}
 
             {/* 보드(이동/액션 대기) */}
-            {['WAITING_PLAYER_ACTION', 'MOVING'].includes(gameState.status) && (
+            {!isOverlayOpen && ['WAITING_PLAYER_ACTION', 'MOVING'].includes(gameState.status) && (
               <MainBoardPage
                 players={playersArr}
                 movePath={currentPlayer?.movePath}

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import './css/PlayerActionPanel.css';
+import { COLORS, withAlpha } from '../../constants/colors.js';
 
 const BASE = { board: '/images/board' };
 
@@ -8,6 +9,7 @@ const IMG = {
   btn: (key) => `${BASE.board}/btn-remote-${key}.webp`,
 };
 
+// 현재 시간을 AM/PM 텍스트로 포맷
 const toAmPm = (d) => {
   const h = d.getHours();
   const m = String(d.getMinutes()).padStart(2, '0');
@@ -16,6 +18,7 @@ const toAmPm = (d) => {
   return `${isPm ? 'PM' : 'AM'} ${String(hh).padStart(2, '0')}:${m}`;
 };
 
+// 괄호 포함 문구를 2줄(괄호 앞/괄호 포함)로 분리
 const splitParenTwoLines = (s) => {
   if (!s) return ['', ''];
   const str = String(s).trim();
@@ -49,9 +52,11 @@ export default function PlayerActionPanel({
     return () => clearInterval(id);
   }, []);
 
+  // 보유 여부(아이템/무)
   const hasItem = useMemo(() => Array.isArray(items) && items.length > 0, [items]);
   const hasRadish = Number(radishQty ?? 0) > 0;
 
+  // 버튼 구성(타이틀/설명/핸들러/비활성 조건)
   const BTN = useMemo(
     () => ({
       dice: {
@@ -75,7 +80,7 @@ export default function PlayerActionPanel({
       inventory: {
         title: '인벤토리',
         desc: '소지품을 확인할 수 있어 (재화, 과일)',
-        onClick: onInventory, // ✅ 서버 OPEN_INVENTORY
+        onClick: onInventory,
         disabled: !!itemUsed || typeof onInventory !== 'function',
       },
       atm: {
@@ -88,7 +93,7 @@ export default function PlayerActionPanel({
         title: '무 판매',
         desc: '무를 판매할 수 있어 (무 보유시)',
         onClick: onMupaniPanel,
-        disabled: !!itemUsed || typeof onMupaniPanel !== 'function',
+        disabled:  !!itemUsed || typeof onMupaniPanel !== 'function', // !hasRadish ||
       },
     }),
     [
@@ -104,11 +109,14 @@ export default function PlayerActionPanel({
     ]
   );
 
+  // 버튼 표시 순서
   const order = ['dice', 'naugul', 'item', 'inventory', 'atm', 'mupani'];
-  const activeBtn = activeKey ? BTN[activeKey] : null;
 
+  // 활성 버튼(hover/focus) 기준으로 안내 문구 갱신
+  const activeBtn = activeKey ? BTN[activeKey] : null;
   const titleText = activeBtn?.title ?? '행동 선택';
 
+  // 설명 문구는 괄호 기준 2줄 분리(없으면 기본 문구)
   const descLines = useMemo(() => {
     const base = ['원하는 버튼을 눌러서', '진행해줘'];
     if (!activeBtn?.desc) return base;
@@ -116,14 +124,27 @@ export default function PlayerActionPanel({
     return [l1, l2 || ''];
   }, [activeBtn]);
 
+  // 버튼 클릭(비활성 상태면 무시)
   const handleClick = (key) => {
     const b = BTN[key];
     if (!b || b.disabled) return;
     b.onClick?.();
   };
 
+  const cssVars = useMemo(
+    () => ({
+      '--paa-bg': COLORS.ac.creamWhite,
+      '--paa-text': COLORS.ac.darkBrown,
+      '--paa-time-dim': withAlpha(COLORS.ac.darkBrown, 0.2),
+      '--paa-lte-dim': 0.2,
+      '--paa-disabled-opacity': 0.35,
+      '--paa-focus-outline': withAlpha(COLORS.ac.darkBrown, 0.25),
+    }),
+    []
+  );
+
   return (
-    <aside className="player-action-panel" aria-label="행동 선택">
+    <aside className="player-action-panel" aria-label="행동 선택" style={cssVars}>
       <div className="paa-time">
         <img className="paa-lte" src={IMG.lte} alt="lte" draggable={false} />
         <span className="paa-time-text">{timeText}</span>

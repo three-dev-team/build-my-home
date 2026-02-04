@@ -1,35 +1,42 @@
 import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { ITEM_INFO_BY_KEY } from '../../../constants/items.js';
-import { COLORS } from '../../../constants/colors.js';
+import { normalizeItemKey, resolveItemKey } from '../../../constants/items.js';
 import InstructionText from '../../../components/common/InstructionText.jsx';
 
-const fallbackItem = (key) => ({
-  key,
-  name: '알 수 없음',
-  desc: '',
-  image: '/images/item/item-custom_dice.webp',
-});
-
 const toBool = (v) => v === true || v === 'true';
+
+// 아이템 key -> 표시용 메타 정규화
+const normalizeItem = (key, isNew = false) => {
+  const k = normalizeItemKey(key) || '';
+  const info = k ? resolveItemKey(k) : null;
+
+  return {
+    key: k,
+    name: typeof info?.name === 'string' ? info.name : '',
+    desc: typeof info?.desc === 'string' ? info.desc : '',
+    image: typeof info?.image === 'string' ? info.image : '',
+    isNew,
+  };
+};
 
 export default function SelectScreen({ inventoryKeys, newItemKey, selectedIdx, onAction, isMyTurn }) {
   const myTurn = toBool(isMyTurn);
   const submittingRef = useRef(false);
 
-  // 인벤 3개 + 새 아이템 1개(총 4개)
+  // 인벤 3개 + 새 아이템 1개(총 4개) 구성
   const allItems = useMemo(() => {
-    const inv = (inventoryKeys || []).map((k) => ITEM_INFO_BY_KEY[k] || fallbackItem(k));
-    const newOne = { ...(ITEM_INFO_BY_KEY[newItemKey] || fallbackItem(newItemKey)), isNew: true };
+    const inv = (inventoryKeys || []).map((k) => normalizeItem(k, false));
+    const newOne = normalizeItem(newItemKey, true);
     return [...inv, newOne];
   }, [inventoryKeys, newItemKey]);
 
+  // 로컬 선택값(서버 selectedIdx 우선, 없으면 0)
   const [localSelected, setLocalSelected] = useState(() => {
     if (Number.isInteger(selectedIdx)) return selectedIdx;
     return allItems.length > 0 ? 0 : null;
   });
 
-  // ✅ 잠금 해제 타이밍 보강
+  // 서버 선택값/목록 변경 시 선택 동기화 + 잠금 해제
   useEffect(() => {
     submittingRef.current = false;
 
@@ -37,16 +44,17 @@ export default function SelectScreen({ inventoryKeys, newItemKey, selectedIdx, o
       setLocalSelected(selectedIdx);
       return;
     }
+
     if (!Number.isInteger(localSelected) && allItems.length > 0) setLocalSelected(0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedIdx, allItems.length]);
 
-  // ✅ 선택이 바뀌거나(다른 카드 클릭) 아이템 목록이 갱신되면 잠금 해제
+  // 선택/신규 아이템 변경 시 중복 제출 잠금 해제
   useEffect(() => {
     submittingRef.current = false;
   }, [localSelected, newItemKey]);
 
-  // 카드 선택
+  // 아이템 카드 선택(내 턴만)
   const handleSelect = useCallback(
     (idx) => {
       if (!myTurn) return;
@@ -55,16 +63,14 @@ export default function SelectScreen({ inventoryKeys, newItemKey, selectedIdx, o
       setLocalSelected(idx);
       onAction?.('SELECT_ITEM_TO_DROP', { actionData: idx, actionDataStr: String(idx) });
     },
-    [onAction, myTurn],
+    [onAction, myTurn]
   );
 
-  // 선택 확정(클릭으로만)
+  // 선택 확정(중복 클릭 방지 + 서버 액션 전송)
   const handleConfirmClick = useCallback(() => {
     if (!myTurn) return;
     if (submittingRef.current) return;
     if (!Number.isInteger(localSelected)) return;
-
-    // ✅ onAction이 없으면 잠그지 말기 (잠금만 걸리고 아무 일도 안 일어나는 케이스 방지)
     if (!onAction) return;
 
     submittingRef.current = true;
@@ -74,28 +80,30 @@ export default function SelectScreen({ inventoryKeys, newItemKey, selectedIdx, o
       actionDataStr: String(localSelected),
     });
 
-    // ✅ 안전장치: 서버 응답/화면전환이 안 오면 1.2초 뒤 잠금 해제
+    // 서버 전환 지연 대비 안전 잠금 해제
     window.setTimeout(() => {
       submittingRef.current = false;
     }, 1200);
   }, [localSelected, onAction, myTurn]);
 
+  // 확정 가능 여부(내 턴 + 선택됨 + 잠금 아님)
   const canConfirm = Number.isInteger(localSelected) && myTurn && !submittingRef.current;
 
   return (
     <motion.div
+      style={{
+        '--creamWhite': COLORS.ac.creamWhite,
+        '--nookCyan': COLORS.ac.nookCyan,
+        '--darkBrown': COLORS.ac.darkBrown,
+        '--red': COLORS.ac.red,
+        '--white': COLORS.ac.white,
+      }}
       className="itemtile-layer itemtile-select-layer"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       onPointerDown={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}
-      style={{
-        '--creamWhite': COLORS.ac.creamWhite,
-        '--nookCyan': COLORS.ac.nookCyan,
-        '--darkBrown': COLORS.ac.darkBrown,
-        '--red': COLORS.ac.red,
-      }}
     >
       <div className="itemtile-select-wrap" aria-label="아이템 선택">
         <div className="itemtile-select-cards">
@@ -104,7 +112,7 @@ export default function SelectScreen({ inventoryKeys, newItemKey, selectedIdx, o
 
             return (
               <button
-                key={`${it.key}-${idx}`}
+                key={`${it.key || 'x'}-${idx}`}
                 type="button"
                 className={`itemtile-card ${selected ? 'active' : ''}`}
                 onClick={() => handleSelect(idx)}
@@ -129,8 +137,9 @@ export default function SelectScreen({ inventoryKeys, newItemKey, selectedIdx, o
 
                   <div className="itemtile-card-body">
                     <div className="itemtile-card-img" aria-hidden>
-                      <img src={it.image} alt="" draggable={false} />
+                      {it.image ? <img src={it.image} alt="" draggable={false} /> : null}
                     </div>
+
                     <div className="itemtile-card-name">{it.name}</div>
                   </div>
                 </div>
@@ -140,6 +149,7 @@ export default function SelectScreen({ inventoryKeys, newItemKey, selectedIdx, o
         </div>
       </div>
 
+      {/* 인벤 가득 참 안내 */}
       <div className="itemtile-instruction-front" aria-hidden>
         <InstructionText>
           주머니가 가득해서 더이상 담을 수 없어{'\n'}

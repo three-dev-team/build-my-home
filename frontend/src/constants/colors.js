@@ -9,6 +9,7 @@ export const COLORS = {
   background: '#F0F2EB', // 연한 베이지
   text: '#594E36', // 다크 브라운
   border: '#C5D0C6', // 연한 테두리
+  inventory: '#EDDECA',
 
   // 동물의 숲 확장팩 (환경 및 UI)
   ac: {

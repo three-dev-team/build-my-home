@@ -1,12 +1,16 @@
 import React, { useMemo } from 'react';
+import { COLORS, withAlpha } from '../../constants/colors.js';
 
-const ICON_MUPANI = '/images/board/icon-mupani.webp';
+const BASE = { board: '/images/board' };
+
+const IMG = {
+  mupani: `${BASE.board}/icon-mupani.webp`,
+};
 
 export default function TurnCounter({
                                       currentRound,
                                       totalRounds,
                                       radishPrice,
-                                      radishQty,
                                       radishGuideText,
                                     }) {
   const roundText = String(currentRound ?? 1);
@@ -17,20 +21,27 @@ export default function TurnCounter({
     return '무: -';
   }, [radishPrice]);
 
-  // 1920 기준 4px stroke
+  // 공통 색상/스트로크 스타일
+  const white = COLORS.ac.white;
+  const strokeColor = withAlpha(COLORS.ac.black, 0.2);
+
+  // 1920 기준 4px 스트로크( cqw 변환 )
   const stroke20 = useMemo(
     () => ({
-      WebkitTextStroke: '0.2083cqw rgba(0,0,0,0.20)',
+      WebkitTextStroke: `0.2083cqw ${strokeColor}`,
       paintOrder: 'stroke fill',
     }),
-    []
+    [strokeColor]
   );
 
-  const white = '#FFFFFF';
+  // 무 시세 UI 색상
+  const iconBg = withAlpha(COLORS.ac.white, 0.3);
+  const priceBg = withAlpha(COLORS.ac.black, 0.3);
+  const guideColor = withAlpha(COLORS.ac.white, 0.88);
 
   return (
     <>
-      {/* 라운드 */}
+      {/* 라운드 UI */}
       <div
         aria-label="라운드 표시"
         style={{
@@ -105,7 +116,7 @@ export default function TurnCounter({
         </div>
       </div>
 
-      {/* 무 시세 */}
+      {/* 무 시세 UI */}
       <div
         aria-label="무 시세 표시"
         style={{
@@ -122,21 +133,21 @@ export default function TurnCounter({
           gap: '0.9259cqh',
         }}
       >
-        {/* 아이콘 */}
+        {/* 무파니 아이콘 */}
         <div
           aria-hidden="true"
           style={{
             width: '5.2083cqw',
             height: '9.2593cqh',
             borderRadius: '99cqw',
-            background: 'rgba(255,255,255,0.30)',
+            background: iconBg,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
           }}
         >
           <img
-            src={ICON_MUPANI}
+            src={IMG.mupani}
             alt=""
             draggable={false}
             style={{
@@ -147,13 +158,13 @@ export default function TurnCounter({
           />
         </div>
 
-        {/* 가격 */}
+        {/* 무 가격 텍스트 */}
         <div
           style={{
             width: '5.2083cqw',
             height: '2.5926cqh',
             borderRadius: '99cqw',
-            background: 'rgba(0,0,0,0.30)',
+            background: priceBg,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -166,14 +177,14 @@ export default function TurnCounter({
           {radishText}
         </div>
 
-        {/* 가이드 */}
+        {/* 무 시세 가이드 문구 */}
         {radishGuideText ? (
           <div
             style={{
               marginTop: '0.1852cqh',
               fontFamily: 'var(--font-gosanja)',
               fontSize: '0.625cqw',
-              color: 'rgba(255,255,255,0.88)',
+              color: guideColor,
               textAlign: 'center',
               whiteSpace: 'nowrap',
             }}

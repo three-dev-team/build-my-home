@@ -96,18 +96,6 @@ public class GameWsController {
                     response = defaultGameResponse("EVENT_TIMEOUT", gameState);
                 }
                 break;
-            case WAITING_ATM: {
-                //  턴 넘기지 말고 ATM만 닫고 원래 상태로 복귀
-                Long cpId = gameState.getCurrentPlayerId();
-                if (cpId != null) {
-                    GameStatus prev = gameState.popUiReturnStatus(cpId);
-                    gameState.setStatus(prev != null ? prev : GameStatus.WAITING_PLAYER_ACTION);
-                } else {
-                    gameState.setStatus(GameStatus.WAITING_PLAYER_ACTION);
-                }
-                response = defaultGameResponse("ATM_TIMEOUT_CLOSED", gameState);
-                break;
-            }
             // 기본은 다음 턴으로 넘어감
             default:
                 gameStateService.turnToNextPlayer(roomId);
@@ -551,33 +539,13 @@ public class GameWsController {
                         break;
                     }
                     case "OPEN_ATM":
-                        gameState.clearCurrentTimeout();
-                        gameState.saveUiReturnStatus(memberId, gameState.getStatus());
-                        gameState.setStatus(GameStatus.WAITING_ATM);
                         response.setType("ATM_OPENED");
-                        // 어디서 열든 타임아웃 자동 닫기 보장
-                        if (GameStatus.WAITING_ATM.isAutoProceed()) {
-                            ScheduledFuture<?> future = scheduler.schedule(
-                                    () -> {
-                                        synchronized (gameState) {
-                                            if (gameState.getStatus() == GameStatus.WAITING_ATM) {
-                                                handleEventTimeout(gameState, GameStatus.WAITING_ATM, roomId);
-                                            }
-                                        }
-                                    },
-                                    GameStatus.WAITING_ATM.getTimeoutSeconds(),
-                                    TimeUnit.SECONDS
-                            );
-                            gameState.setCurrentTimeout(future);
-                        }
+                        response.setMemberId(memberId);
                         break;
-                    case "CLOSE_ATM": {
-                        gameState.clearCurrentTimeout();
-                        GameStatus prev = gameState.popUiReturnStatus(memberId);
-                        gameState.setStatus(prev != null ? prev : GameStatus.WAITING_PLAYER_ACTION);
+                    case "CLOSE_ATM":
                         response.setType("ATM_CLOSED");
+                        response.setMemberId(memberId);
                         break;
-                    }
                     case "CLOSE_ACTION":
                         gameState.clearCurrentTimeout();
                         player.setUiStep(0); // UI 스텝 초기화
@@ -605,18 +573,13 @@ public class GameWsController {
                         response.setType("MACHURILLA_SELECTED");
                         break;
                     case "OPEN_INVENTORY":
-                        gameState.clearCurrentTimeout();
-                        gameState.saveUiReturnStatus(memberId, gameState.getStatus());
-                        gameState.setStatus(GameStatus.WAITING_INVENTORY);
                         response.setType("INVENTORY_OPENED");
+                        response.setMemberId(memberId);
                         break;
-                    case "CLOSE_INVENTORY": {
-                        gameState.clearCurrentTimeout();
-                        GameStatus prev = gameState.popUiReturnStatus(memberId);
-                        gameState.setStatus(prev != null ? prev : GameStatus.WAITING_PLAYER_ACTION);
+                    case "CLOSE_INVENTORY":
                         response.setType("INVENTORY_CLOSED");
+                        response.setMemberId(memberId);
                         break;
-                    }
                     case "GET_RANDOM_ITEM": {
                         ItemType item = itemService.getRandomItem(player);
                         player.setActionDataStr(item.name());

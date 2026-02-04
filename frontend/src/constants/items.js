@@ -2,6 +2,21 @@ const BASE = {
   item: '/images/item',
 };
 
+// 문자열 키 정규화(따옴표 감싸진 경우 제거 + trim)
+export function normalizeItemKey(raw) {
+  if (raw === null || raw === undefined) return null;
+
+  // 숫자는 string으로만(매핑은 resolveItemKey에서 처리)
+  if (typeof raw === 'number') return String(raw);
+
+  const s = String(raw).trim();
+  if (!s) return null;
+
+  // "CUSTOM_DICE" 같은 형태 방어
+  const unquoted = s.replace(/^"+|"+$/g, '').trim();
+  return unquoted || null;
+}
+
 // 아이템 메타를 한 곳에서 생성(서버 키/파일 키/이미지 경로까지 통일)
 function makeItem({ id, serverKey, assetKey, name, desc = '' }) {
   return {
@@ -76,18 +91,18 @@ export function resolveItemKey(raw) {
   // 숫자면 id로
   if (typeof raw === 'number') return ITEM_INFO_BY_KEY[raw] || null;
 
-  const s = String(raw).trim();
-  if (!s) return null;
+  const s0 = normalizeItemKey(raw);
+  if (!s0) return null;
 
   // 1) 그대로
-  if (ITEM_INFO_BY_KEY[s]) return ITEM_INFO_BY_KEY[s];
+  if (ITEM_INFO_BY_KEY[s0]) return ITEM_INFO_BY_KEY[s0];
 
   // 2) 대문자(ENUM) 시도
-  const upper = s.toUpperCase();
+  const upper = s0.toUpperCase();
   if (ITEM_INFO_BY_KEY[upper]) return ITEM_INFO_BY_KEY[upper];
 
   // 3) 경로/확장자 제거해서 assetKey 뽑기
-  const file = s.split('/').pop() || s;
+  const file = s0.split('/').pop() || s0;
   const noExt = file.replace(/\.(webp|png|jpg|jpeg)$/i, '');
   const noPrefix = noExt.replace(/^item[-_]/i, '');
   if (ITEM_INFO_BY_KEY[noPrefix]) return ITEM_INFO_BY_KEY[noPrefix];
