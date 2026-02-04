@@ -3,14 +3,12 @@
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
-
     width: calc(1794 * var(--s));
     height: calc(800 * var(--s));
     border-radius: calc(80 * var(--s));
     background: var(--house-panel-bg);
-
     overflow: hidden;
-    pointer-events: none; /* 패널은 클릭 차단(버튼은 별도 영역에서 처리) */
+    pointer-events: none;
 }
 
 /* 상단 타이틀 */
@@ -18,14 +16,11 @@
     position: absolute;
     left: calc(96 * var(--s));
     top: calc(44 * var(--s));
-
     width: calc(1604 * var(--s));
     height: calc(46 * var(--s));
-
     display: flex;
     align-items: center;
     justify-content: center;
-
     color: var(--house-white);
     font-family: var(--font-gosanja);
     font-size: calc(44 * var(--s));
@@ -38,14 +33,12 @@
     position: absolute;
     left: calc(96 * var(--s));
     top: calc(128 * var(--s));
-
     width: calc(1604 * var(--s));
     height: calc(600 * var(--s));
-
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: calc(32 * var(--s)); /* 카드/화살표 간격 */
+    gap: calc(32 * var(--s));
 }
 
 /* 카드 공통 */
@@ -54,12 +47,10 @@
     height: calc(600 * var(--s));
     border-radius: calc(60 * var(--s));
     background: var(--house-card-bg);
-
     overflow: hidden;
     display: flex;
     flex-direction: column;
     align-items: center;
-
     padding-top: calc(52 * var(--s));
     color: var(--house-white);
     font-family: var(--font-gosanja);
@@ -71,12 +62,10 @@
     width: calc(520 * var(--s));
     height: calc(48 * var(--s));
     border-radius: calc(24 * var(--s));
-    background: transparent; /* 레벨 박스 배경 제거 */
-
+    background: transparent;
     display: flex;
     align-items: center;
     justify-content: center;
-
     font-size: calc(40 * var(--s));
     white-space: nowrap;
 }
@@ -87,14 +76,11 @@
     height: calc(352 * var(--s));
     border-radius: calc(60 * var(--s));
     overflow: hidden;
-
     margin-top: calc(52 * var(--s));
-
     display: flex;
     align-items: center;
     justify-content: center;
-
-    background: transparent; /* 이미지 영역 틴트 제거 */
+    background: transparent;
 }
 
 /* 집 이미지(비율 유지) */
@@ -123,11 +109,9 @@
     display: block;
     user-select: none;
     -webkit-user-drag: none;
-
     -webkit-mask-repeat: no-repeat;
     -webkit-mask-position: center;
     -webkit-mask-size: contain;
-
     mask-repeat: no-repeat;
     mask-position: center;
     mask-size: contain;

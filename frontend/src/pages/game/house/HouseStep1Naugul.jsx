@@ -2,10 +2,6 @@ import React, { useMemo } from 'react';
 import Subtitle from '../../../components/common/Subtitle.jsx';
 import { COLORS } from '../../../constants/colors.js';
 
-// player 객체에서 표시 이름을 최대한 안전하게 뽑기(없으면 기본값)
-const getPlayerDisplayName = (player) =>
-  player?.nickname || player?.playerName || player?.memberName || player?.name || '플레이어';
-
 export default function HouseStep1Naugul({
                                            player,
                                            isMyTurn,
@@ -14,8 +10,11 @@ export default function HouseStep1Naugul({
                                            onSelectUpgrade,
                                            onSelectMaterials,
                                          }) {
-  // 말풍선에 넣을 내 이름(플레이어 표시명)
-  const myName = useMemo(() => getPlayerDisplayName(player), [player]);
+  const myName = useMemo(() => {
+    const v = player?.nickname || player?.playerName || player?.memberName || player?.name || '플레이어';
+    const s = String(v ?? '').trim();
+    return s || '플레이어';
+  }, [player]);
 
   return (
     <>
@@ -53,16 +52,16 @@ export default function HouseStep1Naugul({
 
       {/* 너굴 말풍선(옵션 2개) */}
       <Subtitle
-        nameText="너굴" // 이름 박스 텍스트
-        nameColor={COLORS.characters.naugul.nameBox} // 이름 박스 배경색
-        nameTextColor={COLORS.characters.naugul.nameText} // 이름 글자색
-        contentText={`${myName}...\n무슨 업무를 보러왔나구리?`} // 본문(줄바꿈 포함)
-        highlights={[{ text: myName, color: character?.color || COLORS.ac.darkBrown }]} // 내 이름만 강조
+        nameText="너굴"
+        nameColor={COLORS.characters.naugul.nameBox}
+        nameTextColor={COLORS.characters.naugul.nameText}
+        contentText={`${myName}...\n무슨 업무를 보러왔나구리?`}
+        highlights={[{ text: myName, color: character?.color || COLORS.ac.darkBrown }]}
         options={[
-          { text: '업그레이드 할래', onClick: () => isMyTurn && onSelectUpgrade?.() }, // 업그레이드 페이지로
-          { text: '집 재료 알려줘', onClick: () => isMyTurn && onSelectMaterials?.() }, // 재료 안내 페이지로
+          { text: '업그레이드 할래', onClick: () => isMyTurn && onSelectUpgrade?.() },
+          { text: '집 재료 알려줘', onClick: () => isMyTurn && onSelectMaterials?.() },
         ]}
-        optionDisabled={!isMyTurn} // 내 턴 아니면 옵션 비활성
+        optionDisabled={!isMyTurn}
       />
     </>
   );

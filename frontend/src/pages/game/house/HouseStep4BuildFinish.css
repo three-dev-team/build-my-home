@@ -26,12 +26,10 @@
     justify-content: flex-start;
 }
 
-/* 타이틀 텍스트 스타일 */
 .houseStep4Title {
     font-family: var(--font-gosanja);
     font-size: calc(36 * var(--s));
     line-height: 1.35;
-    color: #6b8f3a;
 }
 
 /* 집 이미지 박스(가로 중앙, 세로 바닥 정렬) */

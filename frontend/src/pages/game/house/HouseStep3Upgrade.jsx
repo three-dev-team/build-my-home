@@ -16,7 +16,7 @@ const getPlayerDisplayName = (player) => {
   return String(v ?? '').trim() || '플레이어';
 };
 
-// houseLevel 입력 형태(숫자/문자열/enum)를 레벨 숫자로 정규화
+// 플레이어 현재 집 레벨 정규화
 const getCurrentHouseLevel = (player) => {
   const cand = [player?.houseLevel, player?.house?.level, player?.house?.currentLevel, player?.homeLevel];
   const v = cand.find((x) => x !== undefined && x !== null);
@@ -24,7 +24,7 @@ const getCurrentHouseLevel = (player) => {
 };
 
 // 레벨 숫자로 HOUSE_LEVEL_MAP 메타 찾기
-const pickLevelObj = (level) => (HOUSE_LEVEL_MAP || []).find((x) => Number(x.level) === Number(level)) || null;
+const pickLevelObj = (level) => (HOUSE_LEVEL_MAP || []).find((x) => Number(x?.level) === Number(level)) || null;
 
 // characterId로 캐릭터 컬러 조회
 const getCharacterColorById = (characterId) => {
@@ -94,10 +94,6 @@ export default function HouseStep3Upgrade({
                                             hasAllMaterials,
                                             lackMessage,
                                           }) {
-  // Step2와 동일 톤의 패널/카드 배경
-  const PANEL_BG = withAlpha(COLORS.house.panelBrown, 0.9);
-  const CARD_BG = withAlpha(COLORS.house.cardBrown, 0.6);
-
   const myName = useMemo(() => getPlayerDisplayName(player), [player]);
   const characterId = player?.characterId;
 
@@ -174,13 +170,12 @@ export default function HouseStep3Upgrade({
 
   return (
     <>
-      {/* 업그레이드 안내 패널 */}
-      <div className="houseUpgPanel" style={{ background: PANEL_BG }}>
+      <div className="houseUpgPanel">
         <div className="houseUpgTitle">업그레이드 안내서</div>
 
         <div className="houseUpgRow">
           {/* 현재 집 */}
-          <div className="houseUpgCard" style={{ background: CARD_BG }}>
+          <div className="houseUpgCard">
             <div className="houseUpgLevelBox">{curName}</div>
 
             <div className="houseUpgImgBox">
@@ -192,17 +187,10 @@ export default function HouseStep3Upgrade({
           <img className="houseUpgArrowImg" src={ICON.arrow} alt="arrow" draggable={false} />
 
           {/* 다음 집 */}
-          <div
-            className="houseUpgCard houseUpgCardNext"
-            style={{
-              background: CARD_BG,
-              ...(nextCardStyle || {}),
-            }}
-          >
+          <div className="houseUpgCard" style={nextCardStyle || undefined}>
             <div className="houseUpgLevelBox">{nextName}</div>
 
             <div className="houseUpgImgBox">
-              {/* 잠금 상태(고스트 + 락) */}
               {!canUpgrade ? (
                 <div className="houseUpgLockedWrap">
                   {nextIcon ? (
