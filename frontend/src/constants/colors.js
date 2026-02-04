@@ -30,7 +30,7 @@ export const COLORS = {
     darkPurple: '#744990',
     purple: '#9165AA',
     white: '#FFFFFF',
-    black:'#000000',
+    black: '#000000',
 
     // [기존 및 레거시 별칭]
     mint: '#78D7B2', // nookMint의 별칭
@@ -89,6 +89,11 @@ export const COLORS = {
     mori: {
       nameBox: '#F2C94C',
       nameText: '#2D9CDB',
+    },
+    // 무파니
+    mupani: {
+      nameBox: '#E79F52',
+      nameText: '#923421',
     },
     // 기본값
     default: {

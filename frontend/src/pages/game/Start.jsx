@@ -94,7 +94,7 @@ const Start = ({ isMyTurn = false, player, currentPlayerName = '익명의 주민
   };
 
   const nameHighlights = () => {
-      return [{ text: currentPlayerName, color: '#4AC1E0' }];
+    return [{ text: currentPlayerName, color: COLORS.ac.ocean }];
   };
 
   return (
