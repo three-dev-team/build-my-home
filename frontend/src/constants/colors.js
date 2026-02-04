@@ -57,6 +57,14 @@ export const COLORS = {
     optionText: '#5b4d33',
   },
 
+  dialogbox: {
+    contentBox: '#183653',
+    contentText: '#5b4d33',
+    arrow: '#ffb700',
+    optionBox: '#fcec9e',
+    optionText: '#5b4d33',
+  },
+
   // 캐릭터별 자막 색상
   characters: {
     // 여울 (시청 사무소)

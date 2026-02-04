@@ -22,7 +22,7 @@ function makeCharacter({ id, name, quote, habit, key, color }) {
     seatImage: `${BASE.character}/char-${key}-seat.webp`,
     seatbackImage: `${BASE.character}/char-${key}-seat-backward.webp`,
     sleepImage: `${BASE.character}/char-${key}-sleep.webp`,
-    atmImage: `${BASE.character}/char-${key}-atm.webp`,
+    rightImage: `${BASE.character}/char-${key}-right.webp`,
     stampImage: `${BASE.character}/char-${key}-stamp.webp`,
   };
 }

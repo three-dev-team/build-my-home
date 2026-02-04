@@ -83,7 +83,7 @@
 }
 
 .houseMatImg {
-    width: calc(296 * var(--s));
+    width: calc(196 * var(--s));
     height: calc(152 * var(--s));
     object-fit: contain;
     display: block;
