@@ -21,13 +21,16 @@ export const COLORS = {
     yellow: '#F2C94C',
     lightGreen: '#B4E4B5',
     lilac: '#D9C5F8',
-    purpleGray: '#F9F3F9', // 이름 변경 (이미지: 퍼플 그레이)
-    lightPurple: '#F9F3F9', // 이미지 스펙 반영 (기존 #F0E0F8에서 변경)
+    purpleGray: '#F9F3F9', // 이미지: 퍼플 그레이
+    lightPurple: '#F0E0F8', // 이미지 스펙 원본값
+    lightBrown: '#fde9be', // 라이트 브라운
+    brown: '#d5b78d', // 브라운
     darkBrown: '#594E36',
     coffeeBrown: '#7B6C53',
     nookCyan: '#34C4D3',
     nookMint: '#78D7B2',
     green: '#57B47C',
+    readyGreen: '#57B47C', // 준비완료 버튼 - green과 동일
     darkPurple: '#744990',
     purple: '#9165AA',
     white: '#FFFFFF',
@@ -177,7 +180,11 @@ export const hexToRgba = (hex, alpha = 1, fallback = `rgba(0,0,0,${alpha})`) => 
   }
 
   if (h.startsWith('#')) h = h.slice(1);
-  if (h.length === 3) h = h.split('').map((c) => c + c).join('');
+  if (h.length === 3)
+    h = h
+      .split('')
+      .map((c) => c + c)
+      .join('');
   if (h.length !== 6) return fallback;
 
   const r = parseInt(h.slice(0, 2), 16);

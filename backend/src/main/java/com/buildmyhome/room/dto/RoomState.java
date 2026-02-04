@@ -59,4 +59,12 @@ public class RoomState {
       .stream()
       .anyMatch((player) -> characterId.equals(player.getCharacterId()));
   }
+
+  /**
+   * 모든 플레이어가 준비 완료 상태인지 확인
+   */
+  public boolean isAllReady() {
+    if (players.isEmpty()) return false;
+    return players.values().stream().allMatch(RoomPlayerState::isReady);
+  }
 }

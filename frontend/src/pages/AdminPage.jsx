@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { Cog6ToothIcon } from '@heroicons/react/24/solid';
 import AspectLayout from '../components/layout/AspectLayout';
+import HomeButton from '../components/common/HomeButton';
 
 import { COLORS } from '../constants/colors';
 
@@ -434,25 +434,8 @@ export default function AdminPage() {
             </div>
           </div>
           <div className="flex flex-col items-end">
-            {/* 상단 우측 홈/설정 버튼은 global layout이나 별도 컴포넌트로 처리될 수 있으나 
-                 시안에 있으므로 여기서는 TopButtons 컴포넌트나 직접 구현. 
-                 일단 시안상 우측 상단에 홈 아이콘 등이 보임.
-                 여기서는 기존 레이아웃 유지하며 공간 확보.
-             */}
-            <div className="flex gap-[0.52cqw]">
-              <button
-                onClick={() => navigate('/home')}
-                className="w-[3.13cqw] h-[3.13cqw] bg-white rounded-full flex items-center justify-center shadow-md hover:scale-105 transition"
-              >
-                <img src="/images/icon-home.svg" alt="home" className="w-[60%] opacity-70" />
-              </button>
-              <button
-                onClick={() => navigate('/config')}
-                className="w-[3.13cqw] h-[3.13cqw] bg-white rounded-full flex items-center justify-center shadow-md hover:scale-105 transition"
-              >
-                <Cog6ToothIcon className="w-[1.88cqw] h-[1.88cqw] text-[#594E36]" style={{ opacity: 0.7 }} />
-              </button>
-            </div>
+            {/* 상단 우측 홈 버튼 */}
+            <HomeButton className="w-[3.13cqw] h-[3.13cqw]" iconColor="#594E36" bgColor="white" />
           </div>
         </div>
 

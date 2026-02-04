@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import ExitButton from '../components/common/ExitButton';
 import TopButtons from '../components/common/TopButtons';
+import HomeButton from '../components/common/HomeButton';
 import AspectLayout from '../components/layout/AspectLayout';
 
 export default function Config() {
@@ -43,32 +44,15 @@ export default function Config() {
             showShadow={false}
             colors={{
               text: '#594E36',
-              badgeBg: '#FDFBF6',
-              badgeText: '#594E36',
+              badgeBg: '#7B6C53', // coffeeBrown
+              badgeText: '#FFFEE0', // creamIvory
             }}
           />
         </div>
 
         {/* 홈 버튼 (좌측 상단) - Top/Left 2.08cqw */}
         <div className="absolute top-[2.08cqw] left-[2.08cqw] z-50">
-          <button
-            onClick={() => navigate('/home')}
-            className="w-[4.17cqw] h-[4.17cqw] bg-white rounded-full flex items-center justify-center hover:scale-105 transition-transform cursor-pointer border-[0.16cqw] border-white"
-          >
-            <div
-              className="w-[2.08cqw] h-[2.08cqw] bg-[#594E36]"
-              style={{
-                maskImage: 'url("/images/icon-home.svg")',
-                WebkitMaskImage: 'url("/images/icon-home.svg")',
-                maskSize: 'contain',
-                WebkitMaskSize: 'contain',
-                maskRepeat: 'no-repeat',
-                WebkitMaskRepeat: 'no-repeat',
-                maskPosition: 'center',
-                WebkitMaskPosition: 'center',
-              }}
-            />
-          </button>
+          <HomeButton />
         </div>
 
         {/* Main Content Group */}

@@ -3,6 +3,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Client } from '@stomp/stompjs';
 import TopButtons from '../../components/common/TopButtons';
+import HomeButton from '../../components/common/HomeButton';
 import AspectLayout from '../../components/layout/AspectLayout';
 
 import { CHARACTERS } from '../../constants/characters.js';
@@ -300,22 +301,7 @@ export default function RoomList() {
       <div className="relative w-full h-full overflow-hidden bg-[url('/images/bg-roomlist.jpg')] bg-cover bg-center font-gosanja flex items-center justify-center">
         {/* 1. 상단 아이콘 및 프로필 영역 - 40px = 2.08cqw, 3.7cqh */}
         <div className="absolute top-[3.7cqh] left-[2.08cqw] z-50">
-          <button onClick={() => navigate('/home')} className={iconBtnStyle}>
-            <div
-              className="w-[2.08cqw] h-[2.08cqw]"
-              style={{
-                backgroundColor: COLORS.roomList.textMain,
-                maskImage: 'url("/images/icon-home.svg")',
-                WebkitMaskImage: 'url("/images/icon-home.svg")',
-                maskSize: 'contain',
-                WebkitMaskSize: 'contain',
-                maskRepeat: 'no-repeat',
-                WebkitMaskRepeat: 'no-repeat',
-                maskPosition: 'center',
-                WebkitMaskPosition: 'center',
-              }}
-            />
-          </button>
+          <HomeButton iconColor={COLORS.roomList.textMain} bgColor="white" />
         </div>
 
         <div className="absolute top-[3.7cqh] right-[2.08cqw] z-50">
@@ -326,6 +312,7 @@ export default function RoomList() {
             onConfigClick={() => navigate('/config')}
             colors={{
               text: COLORS.roomList.textMain,
+              iconBg: 'white',
               badgeBg: COLORS.roomList.btnMain,
               badgeText: 'white',
               dropdownBorder: COLORS.roomList.border, // #B39DDB
@@ -1015,10 +1002,12 @@ function JoinIslandModal({ room, initialPlayers, onClose, onConfirm }) {
             {/* Value: Avatar + Nickname */}
             <div className="flex items-center gap-[0.83cqw]">
               {/* Avatar 80px = 4.17cqw */}
-              <div className="w-[4.17cqw] h-[4.17cqw] rounded-full overflow-hidden bg-[#EAD8F9] border-[0.1cqw] border-[#8b5a2b] flex items-center justify-center">
+              <div className="w-[4.17cqw] h-[4.17cqw] rounded-full overflow-hidden bg-[#EAD8F9] flex items-center justify-center">
                 {hostImgSrc && <img src={hostImgSrc} alt="host" className="w-[80%] h-[80%] object-contain" />}
               </div>
-              <span className="text-[1.88cqw] font-bold text-[#594E36]">{room.hostNickname}</span>
+              <span className="text-[1.88cqw] font-bold" style={{ color: COLORS.ac.darkPurple }}>
+                {room.hostNickname}
+              </span>
             </div>
           </div>
 
@@ -1043,7 +1032,9 @@ function JoinIslandModal({ room, initialPlayers, onClose, onConfirm }) {
 
             <div style={{ width: '3.75cqw' }} />
 
-            <span className="text-[1.88cqw] font-bold text-[#594E36]">{room.totalRounds} 라운드</span>
+            <span className="text-[1.88cqw] font-bold" style={{ color: COLORS.ac.darkPurple }}>
+              {room.totalRounds} 라운드
+            </span>
           </div>
 
           {/* Row 3: Participants -- Gap 72px(3.75cqw) */}
@@ -1073,8 +1064,8 @@ function JoinIslandModal({ room, initialPlayers, onClose, onConfirm }) {
                 return (
                   <div
                     key={i}
-                    className={`w-[4.17cqw] h-[4.17cqw] rounded-full overflow-hidden flex items-center justify-center border-[0.1cqw] ${
-                      imgSrc ? 'bg-[#EAD8F9] border-[#8b5a2b]' : 'bg-[#D9D9D9] border-transparent'
+                    className={`w-[4.17cqw] h-[4.17cqw] rounded-full overflow-hidden flex items-center justify-center ${
+                      imgSrc ? 'bg-[#EAD8F9]' : 'bg-[#D9D9D9]'
                     }`}
                   >
                     {imgSrc && <img src={imgSrc} alt="p" className="w-[80%] h-[80%] object-contain" />}

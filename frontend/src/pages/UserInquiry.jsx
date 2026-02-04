@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import TopButtons from '../components/common/TopButtons';
 import ExitButton from '../components/common/ExitButton';
+import HomeButton from '../components/common/HomeButton';
 import AspectLayout from '../components/layout/AspectLayout';
 import { COLORS } from '../constants/colors';
 
@@ -211,33 +212,15 @@ export default function UserInquiryPage() {
             showShadow={false}
             colors={{
               text: COLORS.userInquiry.darkBrown,
-              badgeBg: COLORS.userInquiry.creamWhite,
-              badgeText: COLORS.userInquiry.darkBrown,
+              badgeBg: '#7B6C53', // coffeeBrown
+              badgeText: '#FFFEE0', // creamIvory
             }}
           />
         </div>
 
         {/* 홈 버튼 (좌측 상단) */}
         <div className="absolute top-[2.08cqw] left-[2.08cqw] z-50">
-          <button
-            onClick={() => navigate('/home')}
-            className="w-[4.17cqw] h-[4.17cqw] bg-white rounded-full flex items-center justify-center hover:scale-105 transition-transform cursor-pointer border-[0.16cqw] border-white"
-          >
-            <div
-              className="w-[2.08cqw] h-[2.08cqw]"
-              style={{
-                backgroundColor: COLORS.userInquiry.darkBrown,
-                maskImage: 'url("/images/icon-home.svg")',
-                WebkitMaskImage: 'url("/images/icon-home.svg")',
-                maskSize: 'contain',
-                WebkitMaskSize: 'contain',
-                maskRepeat: 'no-repeat',
-                WebkitMaskRepeat: 'no-repeat',
-                maskPosition: 'center',
-                WebkitMaskPosition: 'center',
-              }}
-            />
-          </button>
+          <HomeButton />
         </div>
 
         {/* 헤더 타이틀 - 80px = 4.17cqw font size, top margin adjustment */}

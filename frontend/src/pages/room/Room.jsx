@@ -6,6 +6,7 @@ import { getBrokerURL } from '../../utils/ws.js';
 import { getMyIdFromToken } from '../../utils/auth.js';
 import { CHARACTERS } from '../../constants/characters.js';
 import { COLORS } from '../../constants/colors.js';
+import './Room.css';
 import {
   UserIcon,
   BellIcon,
@@ -305,7 +306,7 @@ function Room() {
 
         {/* --- 글로벌 게임 시작 카운트다운 오버레이 --- */}
         {countDown !== null && (
-          <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center animate-fade-in">
+          <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center animate-fade-in pointer-events-none">
             <div className="flex flex-col items-center justify-center">
               {countDown > 0 ? (
                 <div className="text-white text-[7.81cqw] font-black drop-shadow-[0_0.52cqw_0.52cqw_rgba(0,0,0,0.5)] animate-bounce">
@@ -316,6 +317,19 @@ function Room() {
                   GO!
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* --- 방장 시작 안내 오버레이 (자동 시작 타이머 활성화 시) --- */}
+        {hostCountDown !== null && isHost && (
+          <div className="absolute inset-0 z-40 flex items-center justify-center pointer-events-none">
+            <div className="bg-[#594E36]/90 px-[6cqw] py-[5cqw] rounded-[2.5cqw] shadow-2xl text-center">
+              <p className="text-[#FFFEE0] text-[2.5cqw] font-black leading-relaxed">
+                모든 플레이어가 기다리고 있어요
+                <br />
+                시작하기 버튼을 눌러주세요!
+              </p>
             </div>
           </div>
         )}
@@ -362,31 +376,23 @@ function Room() {
         )}
 
         {/* --- 상단 헤더 (제목 + 라운드) --- */}
-        <div className="w-full h-[6.25cqw] flex justify-center items-center relative z-10 pt-[2.5cqw] gap-[0.94cqw]">
+        <div className="w-full h-[6.25cqw] flex justify-center items-center relative z-10 pt-[5cqw] gap-[0.94cqw]">
           {/* 방 제목 보드 */}
           <div className="flex flex-col items-center">
             <div
-              className="w-[36.04cqw] h-[5.21cqw] flex items-center justify-center gap-[1.88cqw] bg-center bg-no-repeat"
+              className="w-[36.04cqw] h-[5.21cqw] flex items-center px-[3cqw] gap-[1cqw] bg-center bg-no-repeat"
               style={{
                 backgroundImage: "url('/images/room-waiting/ui-room-titlebox.webp')",
                 backgroundSize: '100% 100%',
               }}
             >
-              <span className="text-[2.08cqw] font-black text-[#594E36] drop-shadow-sm pt-[0.2cqw]">
+              <span className="mb-[0.4cqw] text-[2.08cqw] font-black text-[#7B6C53] drop-shadow-sm pt-[0.2cqw] shrink-0">
                 목적지 &gt;&gt;
               </span>
-              <span className="text-[2.08cqw] font-black text-[#594E36] drop-shadow-sm pt-[0.2cqw] overflow-hidden text-ellipsis whitespace-nowrap max-w-[19.79cqw]">
+              <span className="mb-[0.4cqw] text-[2.08cqw] font-black text-[#594E36] drop-shadow-sm pt-[0.2cqw] overflow-hidden text-ellipsis whitespace-nowrap flex-1 text-center">
                 {roomTitle}
               </span>
             </div>
-
-            {/* Host Auto-Start Countdown */}
-            {hostCountDown !== null && isHost && (
-              <div className="absolute top-full mt-[0.42cqw] bg-black/70 px-[1.25cqw] py-[0.42cqw] rounded-[0.63cqw] backdrop-blur-sm border-[0.1cqw] border-[#ff6b6b] flex items-center gap-[0.63cqw] animate-bounce z-50">
-                <span className="text-white font-bold text-[0.94cqw] whitespace-nowrap">자동 시작까지</span>
-                <span className="text-[#ff6b6b] text-[1.56cqw] font-black">{hostCountDown}</span>
-              </div>
-            )}
           </div>
 
           {/* 라운드 배지 */}
@@ -399,7 +405,7 @@ function Room() {
               }}
             >
               <div
-                className="w-[3.33cqw] h-[3.33cqw] bg-[#594E36]"
+                className="mb-[0.4cqw] w-[6cqw] h-[6cqw] bg-[#7B6C53]"
                 style={{
                   maskImage: `url(/images/room-waiting/icon-dice-${totalRounds}.png)`,
                   maskSize: 'contain',
@@ -416,7 +422,7 @@ function Room() {
         </div>
 
         {/* --- 메인 콘텐츠 (플레이어 카드) --- */}
-        <div className="flex-1 w-full max-w-[78.13cqw] flex items-center justify-center px-[0.83cqw] gap-[1.04cqw]">
+        <div className="flex-1 w-full max-w-[78.13cqw] flex items-start justify-center px-[0.83cqw] gap-[1.04cqw] pt-[6cqw]">
           {players.map((player) => {
             const isEmpty = !player.nickname;
             const islocked = player.index - 1 >= maxPlayers;
@@ -447,23 +453,18 @@ function Room() {
                 {/* 카드 Area */}
                 <div
                   onClick={() => {
-                    if (isMySlot) {
-                      if (player.isReady) {
-                        setReadyWarningMessage('준비 완료 상태에서는\n캐릭터를 변경할 수 없습니다.');
-                        setShowReadyWarning(true);
-                      } else {
-                        navigate(`/rooms/${roomId}/select`);
-                      }
-                    } else {
+                    if (!isMySlot) {
                       handleSlotClick(player.index - 1, isEmpty);
                     }
                   }}
                   className={`
-                     relative w-[17.5cqw] h-[23.96cqw] rounded-[1.88cqw] transition-all duration-300 overflow-hidden
+                     relative w-[17.5cqw] h-[23.96cqw] rounded-[1.88cqw] transition-all duration-300 overflow-visible
                      ${
                        isEmpty
                          ? islocked
-                           ? 'cursor-pointer hover:opacity-90'
+                           ? isHost
+                             ? 'cursor-pointer hover:opacity-90'
+                             : 'cursor-default'
                            : 'cursor-pointer hover:scale-105'
                          : 'cursor-pointer'
                      }
@@ -484,14 +485,14 @@ function Room() {
 
                       <div className="absolute inset-0 z-10 flex flex-col items-center p-[0.83cqw]">
                         {/* 인덱스 */}
-                        <div className="absolute top-[1.2cqw] left-[1.1cqw] min-w-[1.67cqw] h-[1.67cqw] flex items-center justify-center text-white font-black text-[0.94cqw] z-20">
+                        <div className="absolute top-[1.2cqw] left-[1.1cqw] min-w-[2cqw] h-[2cqw] flex items-center justify-center text-white font-black text-[1.25cqw] z-20">
                           {player.index}
                         </div>
 
                         {/* 이름 */}
-                        <div className="relative flex justify-center items-center mb-[0.42cqw] mt-[0.83cqw] w-full z-50">
+                        <div className="relative flex justify-center items-center mb-[0.42cqw] mt-[0.3cqw] w-full z-50">
                           <div
-                            className={`text-[1.56cqw] font-black text-[#594E36] relative ${!isMySlot ? 'cursor-pointer' : ''}`}
+                            className={`text-[1.8cqw] font-black text-[#594E36] relative ${!isMySlot ? 'cursor-pointer' : ''}`}
                             onClick={(e) => {
                               if (!isMySlot) {
                                 e.stopPropagation();
@@ -503,7 +504,7 @@ function Room() {
                           >
                             {player.nickname}
                             {player.isHost && (
-                              <div className="absolute left-full top-1/2 -translate-y-1/2 ml-[0.42cqw] bg-[#896339] text-white text-[0.63cqw] font-bold px-[0.42cqw] py-[0.21cqw] rounded-full shadow-sm whitespace-nowrap">
+                              <div className="absolute left-full top-1/2 -translate-y-1/2 ml-[0.42cqw] bg-[#896339] text-white text-[0.83cqw] font-bold px-[0.63cqw] py-[0.31cqw] rounded-full shadow-sm whitespace-nowrap">
                                 방장
                               </div>
                             )}
@@ -517,36 +518,28 @@ function Room() {
                           ) : (
                             <div className="text-[2.08cqw] opacity-20">?</div>
                           )}
-                          {/* 타이머 */}
-                          {player.isHost && showHostTimer && (
-                            <img
-                              src="/images/room-waiting/icon-timer.png"
-                              alt="timer"
-                              className="absolute bottom-[1.04cqw] right-[2.08cqw] w-[2.92cqw] h-[2.92cqw] object-contain animate-wiggle z-50 drop-shadow-lg"
-                            />
-                          )}
                         </div>
 
                         {/* 준비 상태 */}
                         <div className="w-full flex justify-center mb-[0.9cqw] z-20 translate-y-[0.63cqw]">
                           {isReady ? (
-                            <div className="w-[80%] py-[0.63cqw] rounded-full bg-[#78D7B2] text-white font-black text-[1.04cqw] text-center shadow-md">
+                            <div className="w-[60%] py-[0.42cqw] rounded-[0.83cqw] bg-[#57B47C] text-white font-black text-[1.25cqw] text-center shadow-md">
                               ✔ 준비완료
                             </div>
                           ) : (
-                            <div className="w-[80%] py-[0.63cqw] rounded-full bg-[#EB5757] text-white font-black text-[1.04cqw] text-center shadow-md">
+                            <div className="w-[60%] py-[0.42cqw] rounded-[0.83cqw] bg-[#EB5757] text-white font-black text-[1.25cqw] text-center shadow-md">
                               준비중
                             </div>
                           )}
                         </div>
 
-                        {/* 말풍선 */}
+                        {/* 말풍선 - 플레이어 카드 우측 상단 */}
                         {chatMessages[player.memberId] && (
-                          <div className="absolute top-[4.17cqw] z-40 bg-white px-[0.83cqw] py-[0.42cqw] rounded-[0.63cqw] shadow-lg border-[0.1cqw] border-[#EAD7B8] animate-bounce whitespace-nowrap">
-                            <span className="font-bold text-[#594E36] text-[0.83cqw]">
+                          <div className="absolute top-[0.5cqw] right-[-3cqw] z-40 bg-[#FFFEE0] px-[1cqw] py-[0.5cqw] rounded-[0.83cqw] shadow-lg border-[0.1cqw] border-[#EAD7B8] whitespace-nowrap animate-gentle-bounce">
+                            <span className="font-bold text-[#7B6C53] text-[1.2cqw]">
                               {chatMessages[player.memberId].text}
                             </span>
-                            <div className="absolute -bottom-[0.42cqw] left-1/2 -translate-x-1/2 w-[0.83cqw] h-[0.83cqw] bg-white border-b-[0.1cqw] border-r-[0.1cqw] border-[#EAD7B8] transform rotate-45"></div>
+                            <div className="absolute -bottom-[0.42cqw] left-[1.5cqw] w-[0.83cqw] h-[0.83cqw] bg-[#FFFEE0] border-b-[0.1cqw] border-r-[0.1cqw] border-[#EAD7B8] transform rotate-45"></div>
                           </div>
                         )}
                       </div>
@@ -590,6 +583,15 @@ function Room() {
                   )}
                 </div>
 
+                {/* 방장 시계 아이콘 (모든 플레이어에게 표시) */}
+                {player.isHost && showHostTimer && (
+                  <img
+                    src="/images/room-waiting/icon-timer.png"
+                    alt="timer"
+                    className="absolute top-[13.2cqw] right-[-1.2cqw] w-[8cqw] h-[8cqw] object-contain animate-wiggle z-30 drop-shadow-lg"
+                  />
+                )}
+
                 {/* 방장 컨트롤 */}
                 {!isMySlot && isHost && player.nickname && countDown === null && (
                   <div className="absolute top-full mt-[0.83cqw] h-[4.17cqw] flex gap-[0.63cqw] animate-slide-in-up z-50">
@@ -598,13 +600,21 @@ function Room() {
                         e.stopPropagation();
                         handleKick(player.memberId);
                       }}
-                      className="w-[4.17cqw] h-[4.17cqw] bg-white rounded-[1.25cqw] shadow-lg flex items-center justify-center hover:scale-105 transition hover:bg-[#FFF0F0]"
+                      className="w-[4.17cqw] h-[4.17cqw] bg-[#FFFEE0] rounded-[1.25cqw] shadow-lg flex items-center justify-center hover:scale-105 transition hover:bg-[#FFF0F0]"
                       title="강퇴하기"
                     >
-                      <img
-                        src="/images/room-waiting/icon-x.svg"
-                        alt="kick"
-                        className="w-[2.08cqw] h-[2.08cqw] object-contain"
+                      <div
+                        className="w-[2.5cqw] h-[2.5cqw] bg-[#7B6C53]"
+                        style={{
+                          maskImage: "url('/images/room-waiting/icon-x.svg')",
+                          maskSize: 'contain',
+                          maskRepeat: 'no-repeat',
+                          maskPosition: 'center',
+                          WebkitMaskImage: "url('/images/room-waiting/icon-x.svg')",
+                          WebkitMaskSize: 'contain',
+                          WebkitMaskRepeat: 'no-repeat',
+                          WebkitMaskPosition: 'center',
+                        }}
                       />
                     </button>
                     <button
@@ -612,7 +622,7 @@ function Room() {
                         e.stopPropagation();
                         handleDelegate(player.memberId);
                       }}
-                      className="w-[4.17cqw] h-[4.17cqw] bg-white rounded-[1.25cqw] shadow-lg flex items-center justify-center hover:scale-105 transition text-[#594E36]"
+                      className="w-[4.17cqw] h-[4.17cqw] bg-[#FFFEE0] rounded-[1.25cqw] shadow-lg flex items-center justify-center hover:scale-105 transition text-[#7B6C53]"
                       title="방장 위임"
                     >
                       <StarIcon className="w-[2.08cqw] h-[2.08cqw]" />
@@ -627,17 +637,17 @@ function Room() {
                     <div className="relative">
                       <button
                         onClick={() => setActiveDropdown(activeDropdown === 'chat' ? null : 'chat')}
-                        className="w-[4.17cqw] h-[4.17cqw] bg-white rounded-[1.25cqw] shadow-lg flex items-center justify-center hover:scale-105 transition"
+                        className="w-[4.17cqw] h-[4.17cqw] bg-[#FFFEE0] rounded-[1.25cqw] shadow-lg flex items-center justify-center hover:scale-105 transition"
                       >
-                        <ChatBubbleLeftEllipsisIcon className="w-[1.67cqw] h-[1.67cqw] text-[#594E36]" />
+                        <ChatBubbleLeftEllipsisIcon className="w-[3cqw] h-[3cqw] text-[#7B6C53]" />
                       </button>
                       {activeDropdown === 'chat' && (
-                        <div className="absolute bottom-[4.69cqw] left-1/2 -translate-x-1/2 bg-white rounded-[0.83cqw] shadow-xl p-[0.63cqw] flex flex-col gap-[0.42cqw] min-w-[7.81cqw] border-[0.1cqw] border-[#EAD7B8] animate-fade-in-up z-50">
-                          {['레디레디', '시작해~!', '화이팅'].map((msg) => (
+                        <div className="absolute right-[3.13cqw] bottom-0 bg-[#FFFEE0] rounded-[0.83cqw] shadow-xl p-[0.63cqw] flex flex-col gap-[0.42cqw] min-w-[7.81cqw] border-[0.1cqw] border-[#EAD7B8] animate-fade-in-up z-50">
+                          {['레디레디', '시작해~!', '화이팅', '잠시만요', '빨리빨리', '안녕하세요'].map((msg) => (
                             <button
                               key={msg}
                               onClick={() => sendChat(msg)}
-                              className="text-left px-[0.63cqw] py-[0.42cqw] hover:bg-[#FFF8EA] rounded-[0.42cqw] font-bold text-[#594E36] whitespace-nowrap text-[0.83cqw]"
+                              className="text-left px-[0.63cqw] py-[0.42cqw] hover:bg-[#F5EED0] rounded-[0.42cqw] font-bold text-[#7B6C53] whitespace-nowrap text-[0.83cqw]"
                             >
                               {msg}
                             </button>
@@ -656,12 +666,20 @@ function Room() {
                           navigate(`/rooms/${roomId}/select`);
                         }
                       }}
-                      className="w-[4.17cqw] h-[4.17cqw] bg-white rounded-[1.25cqw] shadow-lg flex items-center justify-center hover:scale-105 transition"
+                      className="w-[4.17cqw] h-[4.17cqw] bg-[#FFFEE0] rounded-[1.25cqw] shadow-lg flex items-center justify-center hover:scale-105 transition"
                     >
-                      <img
-                        src="/images/room-waiting/icon-choose.svg"
-                        alt="re-select"
-                        className="w-[4.17cqw] h-[4.17cqw] object-contain p-[0.83cqw]"
+                      <div
+                        className="w-[3cqw] h-[3cqw] bg-[#7B6C53]"
+                        style={{
+                          maskImage: "url('/images/room-waiting/icon-choose.svg')",
+                          maskSize: 'contain',
+                          maskRepeat: 'no-repeat',
+                          maskPosition: 'center',
+                          WebkitMaskImage: "url('/images/room-waiting/icon-choose.svg')",
+                          WebkitMaskSize: 'contain',
+                          WebkitMaskRepeat: 'no-repeat',
+                          WebkitMaskPosition: 'center',
+                        }}
                       />
                     </button>
 
@@ -692,17 +710,17 @@ function Room() {
                               setActiveDropdown(activeDropdown === 'rounds' ? null : 'rounds');
                             }
                           }}
-                          className="w-[4.17cqw] h-[4.17cqw] bg-white rounded-[1.25cqw] shadow-lg flex items-center justify-center hover:scale-105 transition relative"
+                          className="w-[4.17cqw] h-[4.17cqw] bg-[#FFFEE0] rounded-[1.25cqw] shadow-lg flex items-center justify-center hover:scale-105 transition relative"
                         >
                           <div
-                            className="w-[3.33cqw] h-[3.33cqw] bg-[#594E36]"
+                            className="w-[6cqw] h-[6cqw] bg-[#7B6C53]"
                             style={{
                               maskImage: `url(/images/room-waiting/icon-dice-${totalRounds}.png)`,
-                              maskSize: 'contain',
+                              maskSize: '100%',
                               maskRepeat: 'no-repeat',
                               maskPosition: 'center',
                               WebkitMaskImage: `url(/images/room-waiting/icon-dice-${totalRounds}.png)`,
-                              WebkitMaskSize: 'contain',
+                              WebkitMaskSize: '100%',
                               WebkitMaskRepeat: 'no-repeat',
                               WebkitMaskPosition: 'center',
                             }}
@@ -755,24 +773,24 @@ function Room() {
         </div>
 
         {/* --- 하단 컨트롤 --- */}
-        <div className="w-full h-[7.29cqw] px-[2.08cqw] pb-[1.67cqw] flex items-end justify-center relative z-10">
-          <div className="flex gap-[0.83cqw] items-end mb-[0.42cqw]">
-            <button className="bg-[#78D7B2] w-[13.54cqw] h-[4.17cqw] rounded-[2.08cqw] shadow-lg hover:scale-105 transition flex items-center justify-center gap-[0.63cqw]">
+        <div className="absolute bottom-[6cqw] left-1/2 -translate-x-1/2 z-10">
+          <div className="flex gap-[2cqw] items-center">
+            <button className="bg-[#78D7B2] w-[15cqw] py-[1cqw] rounded-[1.2cqw] shadow-lg hover:scale-105 transition flex items-center justify-center gap-[0.8cqw]">
               <img
                 src="/images/room-waiting/icon-mail.svg"
                 alt="invite"
-                className="w-[2.08cqw] h-[2.08cqw] object-contain brightness-0 invert"
+                className="w-[2.8cqw] h-[2.8cqw] object-contain brightness-0 invert"
               />
-              <span className="text-white text-[1.56cqw] font-black">초대하기</span>
+              <span className="text-white text-[2cqw] font-black">초대하기</span>
             </button>
 
             <button
               onClick={handleReady}
-              className={`w-[13.54cqw] h-[4.17cqw] rounded-[2.08cqw] shadow-lg hover:scale-105 transition flex items-center justify-center
-                    ${currentPlayer?.isReady ? 'bg-[#78D7B2]' : 'bg-[#EB5757]'}
+              className={`w-[15cqw] py-[1cqw] rounded-[1.2cqw] shadow-lg hover:scale-105 transition flex items-center justify-center
+                    ${currentPlayer?.isReady ? 'bg-[#57B47C]' : 'bg-[#EB5757]'}
                   `}
             >
-              <span className="text-white text-[1.56cqw] font-black">
+              <span className="text-white text-[2cqw] font-black">
                 {currentPlayer?.isReady ? '준비 완료' : '준비하기'}
               </span>
             </button>
@@ -780,16 +798,17 @@ function Room() {
             {isHost && allReady && (
               <button
                 onClick={handleStartGame}
-                className="bg-[#4A90E2] w-[13.54cqw] h-[4.17cqw] rounded-[2.08cqw] shadow-lg hover:scale-105 transition flex items-center justify-center animate-pulse"
+                className="bg-[#4A90E2] w-[15cqw] py-[1cqw] rounded-[1.2cqw] shadow-lg hover:scale-105 transition flex items-center justify-center animate-pulse"
               >
-                <span className="text-white text-[1.56cqw] font-black">게임 시작</span>
+                <span className="text-white text-[2cqw] font-black">게임 시작</span>
               </button>
             )}
           </div>
+        </div>
 
-          <div className="absolute right-[2.08cqw] bottom-[1.67cqw]">
-            <ExitButton onClick={handleLeave} />
-          </div>
+        {/* --- 나가기 버튼 (우측 하단 고정) --- */}
+        <div className="absolute right-[2.08cqw] bottom-[2cqw] z-10">
+          <ExitButton onClick={handleLeave} />
         </div>
 
         {isHost && (
