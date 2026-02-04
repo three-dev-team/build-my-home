@@ -1,8 +1,7 @@
 // SelectCategory.jsx
 import { useMemo } from 'react';
-import AspectLayout from '../../../components/layout/AspectLayout.jsx';
 import InstructionText from '../../../components/common/InstructionText.jsx';
-import { CHARACTERS } from '../../../constants/characters.js';
+import SwapBoxes from './SwapBoxes.jsx';
 import './Swap.css';
 
 const IMG = {
@@ -10,18 +9,16 @@ const IMG = {
   clickWebp: '/images/board/icon-click.webp',
 };
 
-const CATEGORIES = ['HOUSE', 'BELL', 'RESOURCE', 'LOAN'];
-const DIRECTIONS = ['TO_RIGHT', 'TO_LEFT', 'EXCHANGE'];
-
-// 카테고리+방향 조합으로 이미지 경로 반환
-const getCenterIcon = (category, direction) => {
-  const cat = category.toLowerCase();
-  const dir = direction === 'EXCHANGE' ? 'exchange' : direction === 'TO_RIGHT' ? 'to-right' : 'to-left';
-  return `/images/swap/ui-swap-${cat}-${dir}.webp`;
-};
-
 export default function SelectCategory({ isMyTurn, player, players, onAction }) {
-  // swapData에서 선택된 값 확인
+  // swapData 파싱
+  //{
+  //   "player1Id": 123,
+  //   "player2Id": 456,
+  //   "category": "BELL",
+  //   "direction": "TO_RIGHT",
+  //   "player1StartAt": 1700000000000,
+  //   "player1CycleMs": 150
+  // }
   const swapData = useMemo(() => {
     try {
       return JSON.parse(player?.actionDataStr || '{}');
@@ -30,85 +27,28 @@ export default function SelectCategory({ isMyTurn, player, players, onAction }) 
     }
   }, [player?.actionDataStr]);
 
-  // 선택된 플레이어 찾기
-  const selectedPlayer1 = swapData.player1Id ? players.find((p) => p.memberId === swapData.player1Id) : null;
-  const selectedPlayer2 = swapData.player2Id ? players.find((p) => p.memberId === swapData.player2Id) : null;
-
-  const selectedChar1 = selectedPlayer1 ? CHARACTERS.find((c) => c.id === selectedPlayer1.characterId) : null;
-  const selectedChar2 = selectedPlayer2 ? CHARACTERS.find((c) => c.id === selectedPlayer2.characterId) : null;
-
-  // 선택된 카테고리/방향
-  const selectedCategory = swapData.category || null;
-  const selectedDirection = swapData.direction || null;
-
-  // 랜덤 초기값 (시각적 표시용, 미선택 시)
-  const randomPlayer1 = players[Math.floor(Math.random() * players.length)];
-  const randomPlayer2 = players[Math.floor(Math.random() * players.length)];
-  const randomCategory = CATEGORIES[Math.floor(Math.random() * CATEGORIES.length)];
-  const randomDirection = DIRECTIONS[Math.floor(Math.random() * DIRECTIONS.length)];
-
-  // 캐릭터 정보 가져오기
-  const getCharacter = (p) => {
-    return CHARACTERS.find((c) => c.id === p?.characterId) || CHARACTERS[0];
-  };
-
-  const char1 = getCharacter(randomPlayer1);
-  const char2 = getCharacter(randomPlayer2);
-
-  const handleSelect = (nextStep) => {
+  // 박스 클릭 → 해당 stage로 이동
+  const handleBoxClick = (boxType) => {
     if (!isMyTurn) return;
-    onAction('SET_STEP', { uiStep: nextStep });
+    if (boxType === 'player1') {
+      onAction('SWAP_START_PLAYER1_ROULETTE', {});
+    } else if (boxType === 'player2') {
+      onAction('SWAP_START_PLAYER2_ROULETTE', {});
+    } else if (boxType === 'arrow') {
+      onAction('SWAP_START_ARROW_ROULETTE', {});
+    }
   };
 
   return (
     <div className="swap-container swap-main">
-      {/* 왼쪽 - 플레이어1 */}
-      {selectedChar1 ? (
-        <div className="swap-selected swap-selected-left">
-          <img src={selectedChar1.rightImage} alt={selectedChar1.name} className="swap-selected-img" />
-        </div>
-      ) : (
-        <div className={`swap-box swap-box-left ${isMyTurn ? 'clickable' : ''}`} onClick={() => handleSelect(2)}>
-          <div className="swap-box-white-area">
-            <div className="swap-box-icon-area">
-              <img src={char1.roomListImage} alt={char1.name} className="swap-box-icon" />
-            </div>
-          </div>
-          <img src="/images/swap/ui-swap-left.webp" alt="" className="swap-box-frame" />
-        </div>
-      )}
-
-      {/* 가운데 - 재화/방향 */}
-      {selectedCategory && selectedDirection ? (
-        <div className="swap-selected swap-selected-center">
-          <img src={getCenterIcon(selectedCategory, selectedDirection)} alt="" className="swap-selected-img" />
-        </div>
-      ) : (
-        <div className={`swap-box swap-box-center ${isMyTurn ? 'clickable' : ''}`} onClick={() => handleSelect(4)}>
-          <div className="swap-box-white-area">
-            <div className="swap-box-icon-area">
-              <img src={getCenterIcon(randomCategory, randomDirection)} alt="" className="swap-box-icon" />
-            </div>
-          </div>
-          <img src="/images/swap/ui-swap-center.webp" alt="" className="swap-box-frame" />
-        </div>
-      )}
-
-      {/* 오른쪽 - 플레이어2 */}
-      {selectedChar2 ? (
-        <div className="swap-selected swap-selected-right">
-          <img src={selectedChar2.leftImage} alt={selectedChar2.name} className="swap-selected-img" />
-        </div>
-      ) : (
-        <div className={`swap-box swap-box-right ${isMyTurn ? 'clickable' : ''}`} onClick={() => handleSelect(3)}>
-          <div className="swap-box-white-area">
-            <div className="swap-box-icon-area">
-              <img src={char2.roomListImage} alt={char2.name} className="swap-box-icon" />
-            </div>
-          </div>
-          <img src="/images/swap/ui-swap-right.webp" alt="" className="swap-box-frame" />
-        </div>
-      )}
+      <SwapBoxes
+        activeBox={null}
+        isMyTurn={isMyTurn}
+        player={player}
+        players={players}
+        swapData={swapData}
+        onBoxClick={handleBoxClick}
+      />
 
       <InstructionText>
         {isMyTurn ? (
@@ -126,7 +66,7 @@ export default function SelectCategory({ isMyTurn, player, players, onAction }) 
             />
           </span>
         ) : (
-          `${player?.nickname || '플레이어'}가 선택 중입니다`
+          `${player?.nickname || '플레이어'}의 차례입니다`
         )}
       </InstructionText>
     </div>
