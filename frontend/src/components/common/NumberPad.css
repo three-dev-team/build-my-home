@@ -1,0 +1,72 @@
+.numpad-wrapper {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* 실제 판 */
+.numpad-grid {
+    max-width: 86cqw;
+    width: 86cqw;
+    margin: 0 auto;
+    background-color: #a6916b;
+    padding: 2.2cqw;
+    border-radius: 2.7cqw;
+    display: grid;
+    grid-template-columns: repeat(3, 12.0cqw) 10.9cqw;
+    grid-template-rows: repeat(5, 6.0cqh);
+    gap: 1.1cqw;
+    align-items: stretch;
+    justify-content: center;
+}
+
+.numpad-btn {
+    border: none;
+    border-radius: 1.3cqw;
+    font-size: 2.6cqw;
+    color: #7a6244;
+    background-color: #dcc697;
+    cursor: pointer;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.numpad-btn.clear {
+    background-color: #e6ba4e;
+    grid-column: 1;
+    grid-row: 1;
+}
+
+.numpad-btn.max {
+    grid-column: 2 / 4;
+    grid-row: 1;
+    background-color: #b3944d;
+    font-size: 2.0cqw;
+    color: #fdfbf6;
+}
+
+/* JSX 순서가 2행에 있어도, CSS로 1행 4열 고정 */
+.numpad-btn.delete {
+    background-color: #5f5f59;
+    color: #fbfbf4;
+    grid-column: 4;
+    grid-row: 1;
+    font-size: 2.8cqw;
+}
+
+/* 결정: 오른쪽 큰 버튼(2~5행, 4열) */
+.numpad-btn.confirm {
+    grid-column: 4;
+    grid-row: 2 / 6;
+    background-color: #66b6a8;
+    color: #fbfbf4;
+    font-size: 2.8cqw;
+}
+
+/* 0: 아래 3칸 */
+.numpad-btn.zero {
+    grid-column: 1 / 4;
+}

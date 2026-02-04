@@ -17,6 +17,7 @@ const Start = ({ isMyTurn = false, player, currentPlayerName = '익명의 주민
 
   // 내부 대화 단계 관리 (0: 스탬프 개수 안내, 1: 정산 여부 질문)
   const [dialogStep, setDialogStep] = useState(0);
+  const [isTypingComplete, setIsTypingComplete] = useState(false);
 
   // uiStep 0: 프론트에서 미리보기 계산
   // uiStep 1: 서버에서 받은 실제 값
@@ -44,6 +45,7 @@ const Start = ({ isMyTurn = false, player, currentPlayerName = '익명의 주민
     if (!isMyTurn) return;
     if (dialogStep === 0) {
       setDialogStep(1); // 다음 대화로 진행
+      setIsTypingComplete(false); // 다음 대화로 넘어갈 때 타이핑 상태 리셋
     }
   };
 
@@ -94,7 +96,7 @@ const Start = ({ isMyTurn = false, player, currentPlayerName = '익명의 주민
   };
 
   const nameHighlights = () => {
-      return [{ text: currentPlayerName, color: '#4AC1E0' }];
+      return [{ text: currentPlayerName, color: COLORS.ac.mint }];
   };
 
   return (
@@ -119,6 +121,7 @@ const Start = ({ isMyTurn = false, player, currentPlayerName = '익명의 주민
               highlights={nameHighlights()}
               showTriangle
               clickTriangle={handleTriangleClick} // 삼각형 클릭 핸들러
+              onTypingComplete={() => setIsTypingComplete(true)}
             />
           )}
 
@@ -131,7 +134,8 @@ const Start = ({ isMyTurn = false, player, currentPlayerName = '익명의 주민
               contentText={getSecondDialogText()}
               highlights={nameHighlights()}
               options={getOptions()}
-              optionDisabled={!isMyTurn}
+              optionDisabled={!isMyTurn || !isTypingComplete} // 타이핑 완료 후에만 활성화
+              onTypingComplete={() => setIsTypingComplete(true)}
             />
           )}
         </>

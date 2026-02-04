@@ -2,13 +2,15 @@ import React, { useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useGameTimer } from '../../hooks/useGameTimer.js';
 import { boardTiles } from '../../constants/boardData.js';
+import './css/Stamp.css';
+import { useExitHandler } from '../../hooks/useExitHandler.js';
 import Subtitle from '../../components/common/Subtitle.jsx';
 import InstructionText from '../../components/common/InstructionText.jsx';
 import useSpaceKey from '../../hooks/useSpaceKey.js';
-import { useExitHandler } from '../../hooks/useExitHandler.js';
 import { COLORS } from '../../constants/colors.js';
 import { CHARACTERS } from '../../constants/characters.js';
-import './css/Stamp.css';
+
+const DUPLICATE_REWARD = 20;
 
 const STAMP_CONFIG = {
   GAPDOL: {
@@ -48,8 +50,6 @@ const STAMP_CONFIG = {
       `스탬프 각인 완료, 오버!\n현재 방문카드 확인 절차가 정상적으로 처리되었다.\n남은 여행도 안전하게 수행하길 바란다. 이상!`,
   },
 };
-
-const DUPLICATE_REWARD = 20;
 
 const Stamp = ({ isMyTurn = false, player, currentPlayerName = '익명의 주민', onAction, onExit }) => {
   // position으로 stampType 계산
