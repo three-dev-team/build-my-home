@@ -41,8 +41,8 @@
     height: 10.7407cqh; /* 116px */
     padding: 0.3704cqh 1.0417cqw; /* 4px 20px */
     border-radius: 1.5625cqw; /* 30px */
-    border: 0.1563cqw solid rgba(0, 0, 0, 0.3); /* 3px */
-    background: rgba(255, 255, 255, 0.3);
+    border: 0.1563cqw solid var(--ps-box-border); /* (기존 rgba(0,0,0,0.3)) */
+    background: var(--ps-box-bg); /* (기존 rgba(255,255,255,0.3)) */
     box-sizing: border-box;
     display: flex;
     align-items: center;
@@ -71,7 +71,7 @@
     width: 0.4167cqw; /* 8px */
     height: 0.7407cqh; /* 8px */
     border-radius: 99cqw;
-    background: rgba(0, 0, 0, 0.3);
+    background: var(--ps-dot-30);
     display: inline-block;
 }
 
@@ -90,8 +90,8 @@
     justify-content: flex-start;
     font-size: 1.6667cqw; /* 32px */
     line-height: 1;
-    color: rgba(255, 255, 255, 0.95);
-    -webkit-text-stroke: 0.3125cqw rgba(0, 0, 0, 0.3); /* 6px */
+    color: var(--ps-text-white-95);
+    -webkit-text-stroke: 0.3125cqw var(--ps-stroke-30); /* 6px */
     paint-order: stroke fill;
 }
 
@@ -112,7 +112,7 @@
 }
 
 .ps-char-ph {
-    background: rgba(0, 0, 0, 0.08);
+    background: var(--ps-ph-bg);
     border-radius: 0.625cqw; /* 12px */
 }
 
@@ -142,9 +142,9 @@
     font-size: 1.25cqw; /* 24px */
     line-height: 1;
     text-align: left;
-    color: rgba(255, 255, 255, 0.95);
+    color: var(--ps-text-white-95);
     letter-spacing: 0.0781cqw; /* 1.5px */
-    -webkit-text-stroke: 0.3125cqw rgba(0, 0, 0, 0.3); /* 6px */
+    -webkit-text-stroke: 0.3125cqw var(--ps-stroke-30); /* 6px */
     paint-order: stroke fill;
     white-space: nowrap;
 }
@@ -177,7 +177,7 @@
     width: 0.4167cqw; /* 8px */
     height: 0.7407cqh; /* 8px */
     border-radius: 99cqw;
-    background: rgba(0, 0, 0, 0.3);
+    background: var(--ps-dot-30);
     display: inline-block;
 }
 
@@ -186,12 +186,12 @@
     width: 10.4167cqw; /* 200px */
     height: 2.5926cqh; /* 28px */
     border-radius: 99cqw;
-    background: rgba(0, 0, 0, 0.3);
+    background: var(--ps-nickname-bg);
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 0.8333cqw; /* 16px */
-    color: rgba(255, 255, 255, 0.92);
+    color: var(--ps-text-white-92);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

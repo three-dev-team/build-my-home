@@ -1,4 +1,3 @@
-/* seatback 캐릭터 위치(대략 PSD 느낌) */
 .house-naugul-seatback {
     position: absolute;
     left: 50%;
@@ -22,7 +21,6 @@
     display: block;
 }
 
-/* Subtitle 전체를 PSD 비율로 “조금 작게” */
 .house-naugul-subtitle {
     position: absolute;
     left: 0;
@@ -34,16 +32,11 @@
     justify-content: center;
     pointer-events: auto;
 
-    /* ✅ 기본 Subtitle가 너무 커서 스케일 다운 */
     transform: scale(0.82);
     transform-origin: center bottom;
 }
 
-/* =========================
-   Subtitle 내부 글씨 크기 조정
-   (Subtitle.css를 그대로 쓰되, 여기서만 살짝 덮어쓰기)
-   ========================= */
-
+/* Subtitle 내부 글자 크기만 이 스코프에서 조정 */
 .house-naugul-subtitle .content-text {
     font-size: calc(36 * var(--s)) !important;
     line-height: 1.15 !important;
@@ -53,10 +46,8 @@
     font-size: calc(30 * var(--s)) !important;
 }
 
-/* 옵션 박스(노란 말풍선) 크기/위치 보정 */
+/* 옵션 말풍선(노란 박스) 위치/크기 보정 */
 .house-naugul-subtitle .option-box {
-    /* Subtitle 구조 상 option-box는 content-box 아래에 붙는데,
-       PSD처럼 오른쪽 위에 작은 말풍선 느낌으로 보이게 조정 */
     position: absolute !important;
     right: calc(-380 * var(--s)) !important;
     top: calc(-160 * var(--s)) !important;

@@ -1,0 +1,151 @@
+/* src/pages/game/radish/RadishSellInput.css */
+
+.radishSellInput-root {
+    position: absolute;
+    inset: 0;
+    pointer-events: none; /* 전체는 클릭막고, 입력 버튼만 pointer-events 켬 */
+}
+
+/* 메인 UI 이미지 */
+.radishSellInput-ui {
+    position: absolute;
+
+    /* ✅ 전체 중앙 배치(스샷 구조 동일) */
+    left: 50%;
+    transform: translateX(-50%);
+    top: calc(40 * var(--s));
+
+    /* UI 이미지 원본 비율 유지 */
+    width: calc(1720 * var(--s));
+    height: auto;
+
+    user-select: none;
+    pointer-events: none;
+}
+
+/* 타이틀 (핑크: w1046 h68 f52 / 왼쪽정렬) */
+.radishSellInput-title {
+    position: absolute;
+    left: calc(392 * var(--s));
+    top: calc(120 * var(--s));
+
+    width: calc(1046 * var(--s));
+    height: calc(68 * var(--s));
+
+    display: flex;
+    align-items: center;
+
+    font-family: var(--font-gosanja);
+    font-weight: 900;
+    font-size: calc(52 * var(--s));
+    letter-spacing: -0.02em;
+
+    color: var(--rs-title, #594e36);
+    pointer-events: none;
+}
+
+.radishSellInput-titleAccent {
+    color: var(--rs-accent, #00b9b0); /* COLORS.ac.nookCyan 느낌 */
+}
+
+/* 오른쪽 상단 보유 무 배지 (핑크: w200 h68 f52 / right92 / rotate2deg) */
+.radishSellInput-badge {
+    position: absolute;
+    top: calc(40 * var(--s));
+    right: calc(92 * var(--s));
+
+    width: calc(200 * var(--s));
+    height: calc(68 * var(--s));
+
+    transform: rotate(2deg);
+    pointer-events: none;
+}
+
+.radishSellInput-badgeImg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    user-select: none;
+    pointer-events: none;
+}
+
+.radishSellInput-badgeText {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-family: var(--font-gosanja);
+    font-weight: 900;
+    font-size: calc(52 * var(--s));
+    letter-spacing: -0.02em;
+
+    color: var(--rs-badge-text, #ffffff);
+    text-shadow: 0 calc(2 * var(--s)) calc(6 * var(--s)) rgba(0, 0, 0, 0.22);
+}
+
+/* 가운데 입력 숫자(클릭 가능 영역만 pointer-events 켬)
+   핑크: w180 h72 f72 / 중앙정렬 */
+.radishSellInput-qtyHit {
+    position: absolute;
+    left: 50%;
+    top: calc(238 * var(--s));
+    transform: translateX(-50%);
+
+    width: calc(180 * var(--s));
+    height: calc(72 * var(--s));
+
+    border: 0;
+    background: transparent;
+    padding: 0;
+    margin: 0;
+
+    pointer-events: auto; /* ✅ 이 버튼만 클릭 가능 */
+    cursor: text;
+}
+
+.radishSellInput-qtyText {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    font-family: var(--font-gosanja);
+    font-weight: 900;
+    font-size: calc(72 * var(--s));
+    letter-spacing: -0.02em;
+
+    color: var(--rs-qty-text, #ffffff);
+    text-shadow: 0 calc(2 * var(--s)) calc(6 * var(--s)) rgba(0, 0, 0, 0.22);
+}
+
+/* 합계 금액(핑크: f48 / 라인 위) */
+.radishSellInput-total {
+    position: absolute;
+    left: 50%;
+    top: calc(392 * var(--s));
+    transform: translateX(calc(-50% + (180 * var(--s))));
+
+    /* 오른쪽 정렬 느낌(스샷처럼 합계 뒤쪽에 붙게) */
+    font-family: var(--font-gosanja);
+    font-weight: 900;
+    font-size: calc(48 * var(--s));
+    letter-spacing: -0.02em;
+
+    color: var(--rs-accent, #00b9b0);
+    pointer-events: none;
+}
+
+/* 실제 입력은 숨김 */
+.radishSellInput-hiddenInput {
+    position: absolute;
+    left: -99999px;
+    top: -99999px;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+}

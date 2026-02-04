@@ -8,9 +8,15 @@ import {
   getCount,
   rewardIconSrc,
 } from '../../constants/reward.js';
-import { COLORS } from '../../constants/colors.js';
+import { COLORS, withAlpha } from '../../constants/colors.js';
+
+const BASE = {
+  inventory: '/images/inventory',
+};
 
 export default function Inventory({ player, onClose }) {
+  if (!player) return null;
+
   const overlayRef = useRef(null);
 
   useEffect(() => {
@@ -23,8 +29,6 @@ export default function Inventory({ player, onClose }) {
     if (e.target === overlayRef.current) onClose?.();
   };
 
-  if (!player) return null;
-
   const MODAL_W = 1296;
   const MODAL_H = 555;
 
@@ -35,7 +39,7 @@ export default function Inventory({ player, onClose }) {
   const ICON_H = 80;
 
   const CIRCLE = 40;
-  const CIRCLE_COLOR = '#EDDECA';
+  const CIRCLE_COLOR = COLORS.inventory;
 
   const COL_BOTTOM = [48, 68, 88, 104, 112, 112, 104, 88, 68, 48];
   const COLS = 10;
@@ -85,10 +89,12 @@ export default function Inventory({ player, onClose }) {
 
   const slotItems = entries.slice(0, 40);
 
-  const BG_SRC = '/images/inventory/ui-inventory.svg';
+  const BG_SRC = `${BASE.inventory}/ui-inventory.svg`;
 
   const numFill = COLORS.ac.darkBrown;
   const numStroke = COLORS.ac.creamIvory;
+
+  const overlayBg = withAlpha(COLORS.ac.black, 0.22);
 
   return (
     <div
@@ -96,7 +102,7 @@ export default function Inventory({ player, onClose }) {
       onMouseDown={handleOverlayMouseDown}
       className="absolute inset-0 z-[24000]"
       style={{
-        background: 'rgba(0,0,0,0.22)',
+        background: overlayBg,
         position: 'absolute',
         containerType: 'size',
       }}

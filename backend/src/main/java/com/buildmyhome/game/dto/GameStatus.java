@@ -17,12 +17,10 @@ public enum GameStatus {
     PLAYER_SKIPPED(0), // 플레이어 스킵 턴 상태(프론트에서 타임아웃 처리)
     MOVING(0), // 캐릭터 이동 중 (애니메이션 연출 시간 확보용)
     WAITING_HOUSE(0), // 집짓기
-    WAITING_ATM(60), // ATM
     WAITING_USING_ITEM(30), // 아이템 사용 대기 중
     WAITING_PIPE(0),
     WAITING_MIRROR(0),
     WAITING_DOUBLE_DICE(0),
-    WAITING_INVENTORY(0), // 인벤토리(재화/과일) 화면
     WAITING_RADISH_SELL(0), // 무 판매 화면
 
     // --- 칸 이벤트별 유저 입력을 기다리는 상태 ---

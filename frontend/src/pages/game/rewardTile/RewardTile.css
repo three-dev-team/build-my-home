@@ -47,27 +47,6 @@
     z-index: 1;
 }
 
-/* 상단 안내 pill */
-.reward-top-pill {
-    position: absolute;
-    left: 50%;
-    top: calc(72 * var(--v));
-    transform: translateX(-50%);
-    width: calc(400 * var(--u));
-    height: calc(80 * var(--v));
-    border-radius: 999px;
-    background: rgba(12, 32, 48, 0.55);
-    color: #fff;
-    font-family: var(--font-gosanja, "Gosanja", system-ui, sans-serif);
-    font-size: calc(24 * var(--u));
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-shadow: 1px 1px 6px rgba(0, 0, 0, 0.25);
-    z-index: 135;
-    pointer-events: none;
-}
-
 /* 상단 보상 슬롯 2개 */
 .reward-top-items {
     position: absolute;
@@ -88,6 +67,7 @@
     z-index: 110;
 }
 
+/* 슬롯 박스(좌/우 끝) */
 .reward-item-box {
     position: relative;
     width: var(--slot);
@@ -95,14 +75,17 @@
     overflow: visible;
 }
 
+/* 좌측 슬롯 위치 */
 .reward-top-items .reward-item-box:first-child {
     grid-column: 1;
 }
 
+/* 우측 슬롯 위치 */
 .reward-top-items .reward-item-box:last-child {
     grid-column: 5;
 }
 
+/* 슬롯 내부 패딩 영역 */
 .reward-item-inner,
 .slot-drop-wrap {
     position: absolute;
@@ -113,6 +96,7 @@
     overflow: visible;
 }
 
+/* 슬롯 이미지(컨테인) */
 .reward-item-img {
     width: 100%;
     height: 100%;
@@ -122,7 +106,7 @@
     pointer-events: none;
 }
 
-/* step2(Complete) 캐릭터 위치 */
+/* Complete(step1) 캐릭터: 화면 중앙 기준 오프셋 */
 .reward-character-wrap {
     position: absolute;
     left: 50%;
@@ -134,7 +118,7 @@
     z-index: 60;
 }
 
-/* step0(Discover) 캐릭터 위치(발끝 기준 bottom) */
+/* Discover(step0) 캐릭터: 발끝 기준 bottom 정렬 */
 .reward-character-wrap-bottom {
     position: absolute;
     left: 50%;
@@ -146,6 +130,7 @@
     z-index: 60;
 }
 
+/* 캐릭터 박스: 하단(발) 기준 정렬 */
 .reward-character-box {
     width: 100%;
     height: 100%;
@@ -155,6 +140,7 @@
     pointer-events: none;
 }
 
+/* 캐릭터 이미지: 바닥 기준 스케일 */
 .reward-character-img {
     height: 100%;
     width: auto;
@@ -164,17 +150,5 @@
     transform-origin: 50% 100%;
     transform: scale(var(--char-scale));
     user-select: none;
-    pointer-events: none;
-}
-
-/* InstructionText 위치 */
-.rewardtile-screen .instruction-wrapper {
-    top: auto !important;
-    bottom: calc(var(--inst-bottom-px) * var(--v)) !important;
-    left: 50% !important;
-    right: auto !important;
-    transform: translateX(-50%) !important;
-    width: 100% !important;
-    z-index: 140 !important;
     pointer-events: none;
 }
