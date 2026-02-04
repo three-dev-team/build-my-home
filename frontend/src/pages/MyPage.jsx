@@ -468,7 +468,7 @@ export default function MyPage() {
         */}
         <button
           onClick={() => setIsWithdrawModalOpen(true)}
-          className="absolute bottom-[20px] left-[20px] bg-[#FFFEE0] w-[10.63cqw] h-[3.23cqw] rounded-[1.67cqw] flex items-center justify-center text-[1.67cqw] font-bold text-[#7B6C53] hover:bg-[#F2E8D5] transition active:scale-95"
+          className="absolute bottom-[20px] left-[20px] bg-[#FDFBF6] w-[10.63cqw] h-[3.23cqw] rounded-[1.67cqw] flex items-center justify-center text-[1.67cqw] font-bold text-[#7B6C53] hover:bg-[#F2E8D5] transition active:scale-95"
         >
           탈퇴하기
         </button>

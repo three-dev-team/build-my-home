@@ -7,7 +7,6 @@ import { leaveRoom } from '../../utils/roomUtils.js';
 import { getBrokerURL } from '../../utils/ws.js';
 import ExitButton from '../../components/common/ExitButton';
 import AspectLayout from '../../components/layout/AspectLayout';
-import { CheckCircleIcon } from '@heroicons/react/24/solid';
 
 const CharacterSelect = () => {
   const { roomId } = useParams();
