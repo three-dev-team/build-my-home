@@ -47,4 +47,10 @@ public class GameMessage {
     private Map<HarvestType, Integer> gainedHarvests; // 과일칸 보상
     private Integer actionData; // player state의 actionData 처럼 사용됨(휘발성 데이터 필드)
     private String actionDataStr; // 문자열용 휘발성 데이터
+
+    // 스왑용 필드 추가
+    private Long player1Id;
+    private Long player2Id;
+    private String category;
+    private String direction;
 }
