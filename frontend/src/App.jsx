@@ -267,7 +267,7 @@ function App() {
 
       {/* 브라우저 배율 경고 모달 */}
       {/* 필요하면 이 부분 주석 */}
-      {/* {showZoomWarning && <ZoomWarningModal onDismiss={() => setShowZoomWarning(false)} />} */}
+      {/*{showZoomWarning && <ZoomWarningModal onDismiss={() => setShowZoomWarning(false)} />}*/}
     </>
   );
 }

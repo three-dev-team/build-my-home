@@ -256,10 +256,27 @@ public class GameWsController {
 
                 gameState.setTurnOrder(sortedTurnOrder);
                 gameState.setCurrentPlayerId(sortedTurnOrder.get(0));
-                gameState.setStatus(GameStatus.WAITING_PLAYER_ACTION); // 서버 상태 변경
+//                gameState.setStatus(GameStatus.WAITING_PLAYER_ACTION); // 서버 상태 변경
             }
 
             GameMessage response = defaultGameResponse(allDone ? "ALL_DICE_ROLLED" : "DICE_ROLLED", gameState);
+            simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
+        }
+    }
+
+    @MessageMapping("/games/order-complete")
+    public void orderComplete(GameMessage message) {
+        Long roomId = message.getRoomId();
+        GameState gameState = gameStateService.getGame(roomId);
+        if (gameState == null) return;
+
+        synchronized (gameState) {
+            if (gameState.getStatus() != GameStatus.DETERMINING_ORDER) return;
+            if (gameState.getTurnOrder() == null || gameState.getTurnOrder().isEmpty()) return;
+
+            gameState.setStatus(GameStatus.WAITING_PLAYER_ACTION);
+
+            GameMessage response = defaultGameResponse("ORDER_COMPLETE", gameState);
             simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
         }
     }

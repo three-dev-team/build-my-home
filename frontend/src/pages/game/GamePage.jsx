@@ -636,7 +636,17 @@ const GamePage = () => {
 
             {/* 순서 정하기 */}
             {gameState.status === 'DETERMINING_ORDER' && stompClient && (
-              <RollForOrder players={playersArr} myId={myId} onRoll={handleRollDiceForOrder} />
+              <RollForOrder
+                players={playersArr}
+                myId={myId}
+                onRoll={handleRollDiceForOrder}
+                onOrderComplete={() => {
+                  stompClient.publish({
+                    destination: '/app/games/order-complete',
+                    body: JSON.stringify({ roomId }),
+                  });
+                }}
+              />
             )}
 
             {/* 스킵 알림 */}
