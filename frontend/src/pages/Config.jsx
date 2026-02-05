@@ -55,21 +55,25 @@ export default function Config() {
           <HomeButton />
         </div>
 
-        {/* Main Content Group */}
-        <div className="flex flex-col items-center gap-[1.67cqw] relative z-10 w-full mb-[2cqw]">
-          {/* 타이틀 영역 (카드 밖으로 이동) */}
-          <div className="flex flex-col items-center gap-[0.88cqw] w-[40cqw]">
-            <h1 className="text-[4.17cqw] font-black text-[#594E36] whitespace-nowrap">환경설정</h1>
+        {/* 타이틀 영역 - 상단 고정 (홈버튼과 TopButtons 사이) */}
+        <div className="absolute top-[7cqh] left-1/2 -translate-x-1/2 flex flex-col items-center gap-[0.88cqw] w-[40cqw] z-20">
+          <h1 className="text-[3.125cqw] font-black text-[#594E36] whitespace-nowrap">환경설정</h1>
 
-            {/* Divider */}
-            <div className="flex items-center w-full gap-[0.52cqw]">
-              <div className="w-[0.63cqw] h-[0.63cqw] rounded-full bg-[#594E36]" />
-              <div className="h-[0.09cqw] flex-1 border-b-[0.3cqw] border-[#594E36] border-dashed opacity-80" />
-              <div className="w-[0.63cqw] h-[0.63cqw] rounded-full bg-[#594E36]" />
+          {/* Divider - 직접 점선 구현 */}
+          <div className="flex items-center w-full">
+            <div className="w-[1.04cqw] h-[1.04cqw] rounded-full bg-[#594E36]" />
+            <div className="flex-1 flex items-center justify-between mx-[0.42cqw]">
+              {Array.from({ length: 14 }).map((_, i) => (
+                <div key={i} className="h-[0.31cqw] rounded-full bg-[#594E36]" style={{ width: '2.08cqw' }} />
+              ))}
             </div>
+            <div className="w-[1.04cqw] h-[1.04cqw] rounded-full bg-[#594E36]" />
           </div>
+        </div>
 
-          {/* 2. 중앙 컨텐츠 카드 */}
+        {/* Main Content Group - 중앙 정렬 */}
+        <div className="flex flex-col items-center justify-center relative z-10 w-full h-full pt-[10cqh]">
+          {/* 중앙 컨텐츠 카드 */}
           <div className="relative w-[70.1cqw] h-[34.58cqw] bg-[#E8F5E9] rounded-[6.25cqw] flex flex-col items-center justify-center pt-[1.04cqw]">
             {/* 슬라이더 영역 */}
             <div className="flex flex-col gap-[3.13cqw] w-full items-center">

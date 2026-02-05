@@ -223,31 +223,27 @@ export default function UserInquiryPage() {
           <HomeButton />
         </div>
 
-        {/* 헤더 타이틀 - 80px = 4.17cqw font size, top margin adjustment */}
-        <div className="flex flex-col items-center gap-[1.56cqh] mb-[1.85cqh] mt-[4.63cqh]">
-          <h1 className="text-[4.17cqw] font-black" style={{ color: COLORS.userInquiry.darkBrown }}>
+        {/* 타이틀 영역 - 상단 고정 (Config.jsx와 동일한 레이아웃) */}
+        <div className="absolute top-[7cqh] left-1/2 -translate-x-1/2 flex flex-col items-center gap-[0.88cqw] w-[40cqw] z-20">
+          <h1 className="text-[3.125cqw] font-black text-[#594E36] whitespace-nowrap">
             {activeTab === 'write' ? '문의하기' : '내 문의내역'}
           </h1>
-          {/* 구분선 (점선) */}
-          <div className="flex items-center w-[40cqw] gap-[0.52cqw]">
-            <div
-              className="w-[0.63cqw] h-[0.63cqw] rounded-full"
-              style={{ backgroundColor: COLORS.userInquiry.darkBrown }}
-            />
-            <div
-              className="flex-1 h-[0.16cqh] border-b-[0.5cqh] border-dashed opacity-80"
-              style={{ borderColor: COLORS.userInquiry.darkBrown }}
-            />
-            <div
-              className="w-[0.63cqw] h-[0.63cqw] rounded-full"
-              style={{ backgroundColor: COLORS.userInquiry.darkBrown }}
-            />
+
+          {/* Divider - 직접 점선 구현 (Config.jsx와 동일) */}
+          <div className="flex items-center w-full">
+            <div className="w-[1.04cqw] h-[1.04cqw] rounded-full bg-[#594E36]" />
+            <div className="flex-1 flex items-center justify-between mx-[0.42cqw]">
+              {Array.from({ length: 14 }).map((_, i) => (
+                <div key={i} className="h-[0.31cqw] rounded-full bg-[#594E36]" style={{ width: '2.08cqw' }} />
+              ))}
+            </div>
+            <div className="w-[1.04cqw] h-[1.04cqw] rounded-full bg-[#594E36]" />
           </div>
         </div>
 
-        {/* 메인 컨텐트 카드 - 1280px = 66.67cqw width, 680px = 62.96cqh height */}
+        {/* 메인 컨텐트 카드 - Config.jsx와 동일한 크기 */}
         <div
-          className="w-[66.67cqw] h-[62.96cqh] rounded-[2.08cqw] flex flex-col items-center py-[3.7cqh] px-[4.17cqw] relative"
+          className="w-[70.1cqw] h-[34.58cqw] rounded-[2.08cqw] flex flex-col items-center py-[3.7cqh] px-[4.17cqw] relative mt-[22cqh]"
           style={{ backgroundColor: COLORS.userInquiry.creamPink }}
         >
           {/* 1. 문의 작성 탭 컨텐츠 */}
