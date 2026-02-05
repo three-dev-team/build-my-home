@@ -132,17 +132,9 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
       throw new RuntimeException("유저를 찾을 수 없습니다. (Login Failed)");
     }
 
-    // ========== 정지된 계정 체크 ==========
+    // ========== 정지 자동 해제 ==========
     if (Boolean.TRUE.equals(member.getIsSuspended())) {
-      if (member.getSuspendedUntil() != null && member.getSuspendedUntil().isAfter(java.time.LocalDateTime.now())) {
-        // 정지 중인 경우 - 로그인 페이지로 직접 리다이렉트
-        String suspendedUrl = UriComponentsBuilder.fromUriString(frontBaseUrl + "/")
-          .queryParam("error", "suspended")
-          .build()
-          .toUriString();
-        getRedirectStrategy().sendRedirect(request, response, suspendedUrl);
-        return;
-      } else {
+      if (member.getSuspendedUntil() != null && member.getSuspendedUntil().isBefore(java.time.LocalDateTime.now())) {
         // 정지 기간이 지난 경우 자동 해제
         member.setIsSuspended(false);
         member.setSuspendedUntil(null);
@@ -167,13 +159,21 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
       nickname = "Unknown";
     }
 
-    String targetUrl = UriComponentsBuilder.fromUriString(frontBaseUrl + "/oauth2/redirect")
+    UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(frontBaseUrl + "/oauth2/redirect")
       .queryParam("token", token)
       .queryParam("nickname", nickname)
       .queryParam("bell", member.getBell())
-      .queryParam("level", member.getLevel())
-      .build()
-      .toUriString();
+      .queryParam("level", member.getLevel());
+    
+    // 정지 정보 전달
+    if (Boolean.TRUE.equals(member.getIsSuspended())) {
+      builder.queryParam("isSuspended", "true");
+      if (member.getSuspendedUntil() != null) {
+        builder.queryParam("suspendedUntil", member.getSuspendedUntil().toString());
+      }
+    }
+    
+    String targetUrl = builder.build().toUriString();
 
     // 5. 리다이렉트 실행
     getRedirectStrategy().sendRedirect(request, response, targetUrl);

@@ -173,6 +173,14 @@ const GamePage = () => {
         ? `url('${houseBgUrl}')`
         : `url('/images/bg-home.png')`;
 
+  // URL 직접 접속 차단 - 정상 경로(RoomList)에서만 입장 가능
+  useEffect(() => {
+    const joinedRoom = sessionStorage.getItem('joinedRoom');
+    if (joinedRoom !== roomId) {
+      navigate('/room-list', { replace: true });
+    }
+  }, [roomId, navigate]);
+
   // 토큰 없으면 로그인 페이지로 이동
   useEffect(() => {
     if (!token) {

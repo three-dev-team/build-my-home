@@ -182,6 +182,7 @@ export default function RoomList() {
               pendingCreateIdRef.current = null;
               endTransition();
               setCreateOpen(false);
+              sessionStorage.setItem('joinedRoom', String(payload.roomId));
               navigate(`/rooms/${payload.roomId}/select`);
             }
             return;
@@ -270,6 +271,7 @@ export default function RoomList() {
         return;
       }
       setInviteCodeOpen(false);
+      sessionStorage.setItem('joinedRoom', String(room.id));
       navigate(`/rooms/${room.id}/select`);
     } catch (err) {
       console.error('초대코드 처리 에러:', err);
@@ -277,9 +279,24 @@ export default function RoomList() {
     }
   };
 
-  const openJoinModal = (room) => {
+  const openJoinModal = async (room) => {
     const isFull = room.currentPlayers >= room.maxPlayers;
     if (isFull || !room.joinable) return;
+
+    // 모달 열기 전 최신 플레이어 목록 재조회
+    try {
+      const res = await fetch(`${API_BASE}/api/rooms/${room.id}/players`, {
+        method: 'GET',
+        headers: authHeaders(),
+      });
+      if (res.ok) {
+        const players = await res.json();
+        setRoomPlayersMap((prev) => ({ ...prev, [room.id]: Array.isArray(players) ? players : [] }));
+      }
+    } catch (e) {
+      // 조회 실패해도 기존 캐시로 모달 열기
+    }
+
     setSelectedRoom(room);
     setJoinOpen(true);
   };
@@ -322,6 +339,7 @@ export default function RoomList() {
     }
 
     setJoinOpen(false);
+    sessionStorage.setItem('joinedRoom', String(selectedRoom.id));
     navigate(`/rooms/${selectedRoom.id}/select`);
   };
 
@@ -527,8 +545,8 @@ export default function RoomList() {
 
             {/* [하단 섹션] 액션 바 (Footer) - 148px = 13.7cqh, 80px = 4.17cqw padding, 10px = 0.93cqh pb */}
             <div className="w-full h-[13.7cqh] px-[4.17cqw] flex justify-between items-center shrink-0 pb-[0.93cqh]">
-              {/* 검색 버튼 + 초대코드 버튼 */}
-              <div className="flex gap-[1.25cqw]">
+              {/* 좌측: 검색 버튼 + 초대코드 버튼 */}
+              <div className="flex gap-[1.25cqw] flex-1">
                 <button
                   onClick={() => setSearchOpen(true)}
                   className="flex flex-col items-center hover:scale-110 transition-transform p-[0.21cqw]"
@@ -560,7 +578,7 @@ export default function RoomList() {
                 </button>
               </div>
 
-              {/* 섬 만들기 (중앙 버튼) - 300px = 15.63cqw, 80px = 7.41cqh, 40px = 2.08cqw radius, 32px = 1.67cqw text */}
+              {/* 중앙: 섬 만들기 버튼 */}
               <button
                 onClick={() => setCreateOpen(true)}
                 className="w-[15.63cqw] h-[7.41cqh] rounded-[2.08cqw] text-[1.67cqw] font-black text-white shadow-xl hover:brightness-105 active:scale-95 transition-all"
@@ -569,21 +587,23 @@ export default function RoomList() {
                 섬 만들기
               </button>
 
-              {/* 새로고침 버튼 - 56px = 2.92cqw */}
-              <button
-                onClick={() => refreshRooms('')}
-                className="flex flex-col items-center hover:rotate-180 transition-transform duration-500 p-[0.21cqw]"
-              >
-                <div
-                  className="w-[2.92cqw] h-[2.92cqw] bg-[#8B5E83]"
-                  style={{
-                    maskImage: `url("/images/roomlist/icon-refresh.svg")`,
-                    WebkitMaskImage: `url("/images/roomlist/icon-refresh.svg")`,
-                    maskSize: 'contain',
-                    WebkitMaskSize: 'contain',
-                  }}
-                />
-              </button>
+              {/* 우측: 새로고침 버튼 */}
+              <div className="flex gap-[1.25cqw] flex-1 justify-end">
+                <button
+                  onClick={() => refreshRooms('')}
+                  className="flex flex-col items-center hover:rotate-180 transition-transform duration-500 p-[0.21cqw]"
+                >
+                  <div
+                    className="w-[2.92cqw] h-[2.92cqw] bg-[#8B5E83]"
+                    style={{
+                      maskImage: `url("/images/roomlist/icon-refresh.svg")`,
+                      WebkitMaskImage: `url("/images/roomlist/icon-refresh.svg")`,
+                      maskSize: 'contain',
+                      WebkitMaskSize: 'contain',
+                    }}
+                  />
+                </button>
+              </div>
             </div>
           </div>
         </div>
