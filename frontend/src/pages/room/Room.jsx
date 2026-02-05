@@ -131,15 +131,27 @@ function Room() {
   // 방 정보
   useEffect(() => {
     const fetchRoom = async () => {
-      const response = await fetch(`/api/rooms/${roomId}`);
-      const roomResponse = await response.json();
-      setRoomTitle(roomResponse.title);
-      setMaxPlayers(roomResponse.maxPlayers);
-      setTotalRounds(roomResponse.totalRounds);
-      setLoading(false);
+      try {
+        const response = await fetch(`/api/rooms/${roomId}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        if (!response.ok) {
+          console.error('방 정보 조회 실패:', response.status);
+          navigate('/roomlist');
+          return;
+        }
+        const roomResponse = await response.json();
+        setRoomTitle(roomResponse.title);
+        setMaxPlayers(roomResponse.maxPlayers);
+        setTotalRounds(roomResponse.totalRounds);
+        setLoading(false);
+      } catch (error) {
+        console.error('방 정보 조회 에러:', error);
+        navigate('/roomlist');
+      }
     };
     fetchRoom();
-  }, [roomId]);
+  }, [roomId, token, navigate]);
 
   // 웹소켓 (WebSocket)
   useEffect(() => {
