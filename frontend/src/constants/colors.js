@@ -79,8 +79,12 @@ export const COLORS = {
     },
     // 마추릴라
     machurilla: {
-      nameBox: '#9B59B6', // 보라
-      nameText: '#FFFFFF',
+      nameBox: '#2f467e',
+      nameText: '#f5f5ee',
+      contentBox: '#471c52',
+      contentText: '#f4eafe',
+      boomBox: '#70160c',
+      boomText: '#eabd40',
     },
     // KK
     kk: {

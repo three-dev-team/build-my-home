@@ -88,7 +88,10 @@ export default function Subtitle({
   nameTextColor = COLORS.characters.default.nameText,
 
   contentText = '',
+  contentFontSize = null,
   contentTextColor = COLORS.subtitle.contentText,
+  contentBoxColor = null,
+  contentMaskImage = null,
   highlights = [],
 
   options = [],
@@ -173,11 +176,21 @@ export default function Subtitle({
         <div
           className="content-box"
           style={{
-            backgroundColor: COLORS.subtitle.contentBox,
+            backgroundColor: contentBoxColor || COLORS.subtitle.contentBox,
+            ...(contentMaskImage && {
+              WebkitMaskImage: `url('${contentMaskImage}')`,
+              maskImage: `url('${contentMaskImage}')`,
+            }),
           }}
           onClick={handleSkipTyping}
         >
-          <div className="content-text" style={{ color: contentTextColor }}>
+          <div
+            className="content-text"
+            style={{
+              color: contentTextColor,
+              ...(contentFontSize && { fontSize: contentFontSize }),
+            }}
+          >
             {/* 라인 단위 렌더링 + 하이라이트 적용 */}
             {lines.map((ln, i) => (
               <div key={i} style={{ display: 'block' }}>

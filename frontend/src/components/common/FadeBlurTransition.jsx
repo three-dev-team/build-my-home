@@ -3,9 +3,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 /**
  * @param {ReactNode} children - 전환될 화면 컨텐츠
  * @param {any} stageKey - 스테이지 번호나 이름 (값이 바뀔 때마다 애니메이션 트리거)
+ * @param {string} bgColor - 배경 색상 (기본값: 'white')
  */
 
-export default function FadeBlurTransition({ children, stageKey }) {
+export default function FadeBlurTransition({ children, stageKey, bgColor = 'white' }) {
   return (
     <div
       style={{
@@ -13,7 +14,7 @@ export default function FadeBlurTransition({ children, stageKey }) {
         inset: 0,
         width: '100%',
         height: '100%',
-        background: 'white',
+        background: bgColor,
         overflow: 'hidden',
       }}
     >

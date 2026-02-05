@@ -126,20 +126,6 @@
   height: calc(150 * var(--s));
 }
 
-/* InstructionText 내부 스타일 */
-.swap-instruction-inline {
-  display: inline-flex;
-  align-items: center;
-  gap: calc(8 * var(--s));
-}
-
-.swap-click-icon {
-  width: calc(36 * var(--s));
-  height: calc(36 * var(--s));
-  object-fit: contain;
-  filter: brightness(0) invert(1);
-}
-
 /* ============ 선택 완료된 캐릭터/아이콘 ============ */
 
 .swap-selected-player1 {

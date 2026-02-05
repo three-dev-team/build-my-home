@@ -33,3 +33,16 @@
     transform: translateY(calc(-5 * var(--u)));
   }
 }
+
+.instruction-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(8 * var(--u));
+}
+
+.instruction-click-icon {
+  width: calc(36 * var(--u));
+  height: calc(36 * var(--u));
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+}
