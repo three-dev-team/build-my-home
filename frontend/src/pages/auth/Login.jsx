@@ -137,6 +137,17 @@ export default function Login() {
     }
   }, []);
 
+  // --- URL 파라미터로 전달된 에러 처리 (OAuth2 정지 등) ---
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const error = params.get('error');
+    if (error === 'suspended') {
+      openAlert('🚫 정지된 계정입니다.\n\n운영 정책 위반으로 로그인이\n제한되었습니다.');
+      // URL에서 에러 파라미터 제거
+      window.history.replaceState({}, '', '/');
+    }
+  }, []);
+
   // --- 타이머 핸들러 ---
   useEffect(() => {
     if (timeLeft <= 0) return;
@@ -189,7 +200,13 @@ export default function Login() {
         setTimeout(() => navigate('/home'), 1500);
       }
     } catch (error) {
-      openAlert('로그인 정보를 확인해주세요.');
+      const errorMsg = error.response?.data?.message || error.response?.data || '';
+      // 정지된 계정 에러 메시지 감지
+      if (typeof errorMsg === 'string' && errorMsg.includes('정지된 계정')) {
+        openAlert('🚫 정지된 계정입니다.\n\n운영 정책 위반으로 로그인이\n제한되었습니다.');
+      } else {
+        openAlert('로그인 정보를 확인해주세요.');
+      }
     }
   };
 

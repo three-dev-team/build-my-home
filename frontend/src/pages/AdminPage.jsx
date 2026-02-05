@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import AspectLayout from '../components/layout/AspectLayout';
 import HomeButton from '../components/common/HomeButton';
+import ConfirmModal from '../components/common/ConfirmModal';
 
 import { COLORS } from '../constants/colors';
 
@@ -39,8 +40,12 @@ export default function AdminPage() {
   // 회원 필터/정렬 상태
   const [isMemberFilterOpen, setIsMemberFilterOpen] = useState(false);
   const [selectedRoles, setSelectedRoles] = useState([]); // ['USER', 'ADMIN']
+  const [selectedSuspendStatus, setSelectedSuspendStatus] = useState(null); // null: 전체, true: 정지, false: 정상
   const [isMemberSortOpen, setIsMemberSortOpen] = useState(false);
   const [selectedMemberSort, setSelectedMemberSort] = useState('latest'); // 'latest', 'oldest', 'level', 'bell'
+
+  // 정지 확인 모달 상태
+  const [suspendModal, setSuspendModal] = useState({ isOpen: false, memberId: null, isSuspended: false });
 
   const [loading, setLoading] = useState(false);
 
@@ -123,9 +128,10 @@ export default function AdminPage() {
       // 회원 목록 10개씩 페이지네이션
       const keywordParam = keyword ? `&keyword=${encodeURIComponent(keyword)}` : '';
       const roleParam = roles.length > 0 ? `&roles=${roles.join(',')}` : '';
+      const suspendParam = selectedSuspendStatus !== null ? `&suspended=${selectedSuspendStatus}` : '';
       const sortParam = `&sort=${sort}`;
       const response = await axios.get(
-        `/api/admin/members?page=${page}&size=10${keywordParam}${roleParam}${sortParam}`,
+        `/api/admin/members?page=${page}&size=8${keywordParam}${roleParam}${suspendParam}${sortParam}`,
         {
           headers: { Authorization: `Bearer ${token}` },
         },
@@ -293,6 +299,14 @@ export default function AdminPage() {
     fetchMembers(0, memberSearchKeyword, newRoles, selectedMemberSort);
   };
 
+  // 정지 상태 필터 변경
+  const handleSuspendFilter = (status) => {
+    const newStatus = selectedSuspendStatus === status ? null : status;
+    setSelectedSuspendStatus(newStatus);
+    setMemberCurrentPage(0);
+    fetchMembers(0, memberSearchKeyword, selectedRoles, selectedMemberSort);
+  };
+
   // 회원 정렬 토글
   const toggleMemberSort = () => {
     setIsMemberSortOpen(!isMemberSortOpen);
@@ -307,6 +321,33 @@ export default function AdminPage() {
     setIsMemberSortOpen(false);
     setMemberCurrentPage(0);
     fetchMembers(0, memberSearchKeyword, selectedRoles, sort);
+  };
+
+  // 회원 정지/해제 확인 모달 열기
+  const handleToggleSuspend = (memberId, isSuspended) => {
+    setSuspendModal({ isOpen: true, memberId, isSuspended });
+  };
+
+  // 정지/해제 실행
+  const executeSuspendToggle = async () => {
+    const { memberId, isSuspended } = suspendModal;
+    const token = sessionStorage.getItem('token');
+    const action = isSuspended ? 'unsuspend' : 'suspend';
+
+    try {
+      await axios.post(
+        `/api/admin/members/${memberId}/${action}`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      // 목록 새로고침
+      fetchMembers(memberCurrentPage, memberSearchKeyword, selectedRoles, selectedMemberSort);
+    } catch (error) {
+      console.error('정지 처리 실패:', error);
+    }
+    setSuspendModal({ isOpen: false, memberId: null, isSuspended: false });
   };
 
   // CSV 다운로드
@@ -894,6 +935,32 @@ export default function AdminPage() {
                               </label>
                             ))}
                           </div>
+
+                          {/* 정지 상태 필터 */}
+                          <h4 className="text-[0.83cqw] font-bold text-[#594E36] mt-[0.8cqh] mb-[0.5cqh]">상태</h4>
+                          <div className="flex flex-col gap-[0.3cqh]">
+                            {[
+                              { value: false, label: '정상' },
+                              { value: true, label: '정지' },
+                            ].map((status) => (
+                              <label
+                                key={String(status.value)}
+                                className="flex items-center gap-[0.42cqw] cursor-pointer hover:bg-[#F9F3F9] p-[0.31cqw] rounded-[0.52cqw]"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={selectedSuspendStatus === status.value}
+                                  onChange={() => handleSuspendFilter(status.value)}
+                                  className="w-[0.83cqw] h-[0.83cqw] cursor-pointer"
+                                />
+                                <span
+                                  className={`text-[0.73cqw] font-medium ${status.value ? 'text-[#EB5757]' : 'text-[#78D7B2]'}`}
+                                >
+                                  {status.label}
+                                </span>
+                              </label>
+                            ))}
+                          </div>
                         </div>
                       )}
                     </div>
@@ -924,6 +991,12 @@ export default function AdminPage() {
                         <th className="p-[1.04cqw] text-[0.83cqw] font-black text-[#594E36]">이메일</th>
                         <th className="p-[1.04cqw] text-[0.83cqw] font-black text-[#594E36] text-center">레벨</th>
                         <th className="p-[1.04cqw] text-[0.83cqw] font-black text-[#594E36] text-center">보유 벨</th>
+                        <th className="p-[1.04cqw] text-[0.83cqw] font-black text-[#594E36] text-center">접속</th>
+                        <th className="p-[1.04cqw] text-[0.83cqw] font-black text-[#594E36] text-center">
+                          마지막 로그인
+                        </th>
+                        <th className="p-[1.04cqw] text-[0.83cqw] font-black text-[#594E36] text-center">신고</th>
+                        <th className="p-[1.04cqw] text-[0.83cqw] font-black text-[#594E36] text-center">상태</th>
                         <th className="p-[1.04cqw] text-[0.83cqw] font-black text-[#594E36] text-center">역할</th>
                         <th className="p-[1.04cqw] text-[0.83cqw] font-black text-[#594E36] text-center">가입일</th>
                       </tr>
@@ -942,7 +1015,43 @@ export default function AdminPage() {
                             Lv.{member.level}
                           </td>
                           <td className="p-[1.04cqw] text-[0.83cqw] font-bold text-[#594E36] text-center">
-                            {member.bell.toLocaleString()}
+                            {member.bell?.toLocaleString() || 0}
+                          </td>
+                          {/* 접속 상태 */}
+                          <td className="p-[1.04cqw] text-center">
+                            <span
+                              className={`inline-block w-[0.8cqw] h-[0.8cqw] rounded-full ${member.isOnline ? 'bg-[#78D7B2]' : 'bg-[#D9D9D9]'}`}
+                            />
+                          </td>
+                          {/* 마지막 로그인 */}
+                          <td className="p-[1.04cqw] text-[0.73cqw] font-medium text-[#594E36] text-center opacity-60">
+                            {member.lastLoginAt
+                              ? new Date(member.lastLoginAt).toLocaleString('ko-KR', {
+                                  month: '2-digit',
+                                  day: '2-digit',
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })
+                              : '-'}
+                          </td>
+                          {/* 신고 횟수 */}
+                          <td className="p-[1.04cqw] text-[0.83cqw] font-bold text-center">
+                            <span
+                              className={`${member.reportedCount > 0 ? 'text-[#EB5757]' : 'text-[#594E36] opacity-50'}`}
+                            >
+                              {member.reportedCount || 0}
+                            </span>
+                          </td>
+                          {/* 정지 상태 - 클릭 가능 */}
+                          <td className="p-[1.04cqw] text-center">
+                            <button
+                              onClick={() => handleToggleSuspend(member.id, member.isSuspended)}
+                              className={`px-[0.5cqw] py-[0.1cqw] rounded-full text-[0.63cqw] font-bold cursor-pointer hover:opacity-80 transition-opacity ${
+                                member.isSuspended ? 'bg-[#EB5757] text-white' : 'bg-[#78D7B2] text-white'
+                              }`}
+                            >
+                              {member.isSuspended ? '정지' : '정상'}
+                            </button>
                           </td>
                           <td className="p-[1.04cqw] text-center">
                             <span
@@ -995,6 +1104,15 @@ export default function AdminPage() {
           )}
         </div>
       </div>
+
+      {/* 정지 확인 모달 */}
+      <ConfirmModal
+        isOpen={suspendModal.isOpen}
+        title={suspendModal.isSuspended ? '정지 해제' : '회원 정지'}
+        message={suspendModal.isSuspended ? '정지를 해제하시겠습니까?' : '해당 회원을 48시간 정지하시겠습니까?'}
+        onConfirm={executeSuspendToggle}
+        onCancel={() => setSuspendModal({ isOpen: false, memberId: null, isSuspended: false })}
+      />
     </AspectLayout>
   );
 }

@@ -15,7 +15,9 @@ import UserInquiry from './pages/UserInquiry.jsx';
 import GamePage from './pages/game/GamePage.jsx';
 import NotFound from './pages/NotFound.jsx';
 import Loading from './components/common/Loading.jsx';
-import LogoutModal from './components/common/LogoutModal.jsx';
+import AlertModal from './components/common/AlertModal.jsx';
+import ZoomWarningModal from './components/common/ZoomWarningModal.jsx';
+import usePlayTimeWarning from './hooks/usePlayTimeWarning.js';
 
 function App() {
   const audioRef = useRef(null);
@@ -24,9 +26,44 @@ function App() {
   const [isInitialized, setIsInitialized] = useState(false);
   const [logoutModalOpen, setLogoutModalOpen] = useState(false); // 모달 상태 추가
 
+  // 2시간 플레이 경고
+  const { showWarning, playMinutes, dismissWarning } = usePlayTimeWarning(120);
+
+  // 브라우저 배율 경고 (실시간 감지)
+  const [showZoomWarning, setShowZoomWarning] = useState(window.devicePixelRatio !== 1);
+
+  useEffect(() => {
+    const checkZoom = () => {
+      if (window.devicePixelRatio !== 1) {
+        setShowZoomWarning(true);
+      }
+    };
+
+    window.addEventListener('resize', checkZoom);
+    window.addEventListener('focus', checkZoom);
+
+    return () => {
+      window.removeEventListener('resize', checkZoom);
+      window.removeEventListener('focus', checkZoom);
+    };
+  }, []);
+
+  // 로그인 필수 - 토큰 없으면 로그인 페이지로 이동
+  const ProtectedRoute = ({ children }) => {
+    const token = sessionStorage.getItem('token');
+    if (!token) {
+      return <Navigate to="/" replace />;
+    }
+    return children;
+  };
+
   // 권한 확인 - 경로로 admin 페이지로 들어오려고 하면 차단
   const ProtectedAdminRoute = ({ children }) => {
     const userRole = sessionStorage.getItem('role');
+    const token = sessionStorage.getItem('token');
+    if (!token) {
+      return <Navigate to="/" replace />;
+    }
     if (userRole !== 'ADMIN') {
       alert('관리자만 접근 가능한 페이지입니다! ⛔');
       return <Navigate to="/home" replace />;
@@ -76,40 +113,136 @@ function App() {
     <>
       <Router>
         <Routes>
-          <Route path="/home" element={<Home />} />
+          {/* 공개 페이지 (로그인 불필요) */}
           <Route path="/" element={<Login />} />
-          <Route path="/config" element={<Config />} />
-          <Route path="/store" element={<Store />} />
-          <Route path="/rooms/:roomId" element={<Room />} />
-          <Route path="/rooms/:roomId/select" element={<CharacterSelect />} />
-          <Route path="/room-list" element={<RoomList />} />
           <Route path="/join" element={<Join />} />
-          <Route path="/mypage" element={<MyPage />} />
           <Route path="/oauth2/redirect" element={<OAuth2RedirectHandler />} />
+
+          {/* 로그인 필수 페이지 */}
+          <Route
+            path="/home"
+            element={
+              <ProtectedRoute>
+                <Home />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/config"
+            element={
+              <ProtectedRoute>
+                <Config />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/store"
+            element={
+              <ProtectedRoute>
+                <Store />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/rooms/:roomId"
+            element={
+              <ProtectedRoute>
+                <Room />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/rooms/:roomId/select"
+            element={
+              <ProtectedRoute>
+                <CharacterSelect />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/room-list"
+            element={
+              <ProtectedRoute>
+                <RoomList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/mypage"
+            element={
+              <ProtectedRoute>
+                <MyPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/games/:roomId"
+            element={
+              <ProtectedRoute>
+                <GamePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/user-inquiry"
+            element={
+              <ProtectedRoute>
+                <UserInquiry />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* 관리자 전용 */}
           <Route
             path="/admin"
             element={
               <ProtectedAdminRoute>
-                {' '}
-                <AdminPage />{' '}
+                <AdminPage />
               </ProtectedAdminRoute>
             }
           />
-          <Route path="/games/:roomId" element={<GamePage />} />
-          <Route path="/user-inquiry" element={<UserInquiry />} />
+
           <Route path="*" element={<NotFound />} />
         </Routes>
       </Router>
 
       {/* ✅ 중복 로그인 알림 모달 */}
-      {logoutModalOpen && (
-        <LogoutModal
-          onConfirm={() => {
-            setLogoutModalOpen(false);
-            window.location.href = '/';
-          }}
-        />
-      )}
+      <AlertModal
+        isOpen={logoutModalOpen}
+        icon="⚠️"
+        title="연결이 끊어졌어요!"
+        message={
+          <>
+            다른 기기에서 접속하여 로그아웃 되었습니다.
+            <br />
+            다시 로그인해 주세요.
+          </>
+        }
+        onConfirm={() => {
+          setLogoutModalOpen(false);
+          window.location.href = '/';
+        }}
+      />
+
+      {/* ✅ 2시간 플레이 경고 모달 */}
+      <AlertModal
+        isOpen={showWarning}
+        icon="⏰"
+        title="휴식이 필요해요!"
+        message={
+          <>
+            {Math.floor(playMinutes / 60) > 0 ? `${Math.floor(playMinutes / 60)}시간 ` : ''}
+            {playMinutes % 60}분째 플레이 중이에요.
+            <br />
+            잠시 쉬어가는 건 어떨까요? 🌿
+          </>
+        }
+        confirmText="알겠어요"
+        onConfirm={dismissWarning}
+      />
+
+      {/* ✅ 브라우저 배율 경고 모달 */}
+      {showZoomWarning && <ZoomWarningModal onDismiss={() => setShowZoomWarning(false)} />}
     </>
   );
 }

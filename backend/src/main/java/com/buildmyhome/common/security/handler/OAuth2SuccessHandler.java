@@ -74,8 +74,14 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         // 쿠키 삭제
         deleteCookie(response, "LINK_MEMBER_ID");
 
+        // 마지막 로그인 시간 갱신
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        member.setLastLoginAt(now);
+        member.setIsOnline(true);
+        memberRepository.save(member);
+
         // 기존 토큰 재발급 (연동 후 유지)
-        String token = tokenProvider.createToken(member.getEmail(), member.getRole().name(), member.getId());
+        String token = tokenProvider.createToken(member.getEmail(), member.getRole().name(), member.getId(), now);
         userSessionStore.registerToken(member.getId(), token);
 
         // 마이페이지로 이동
@@ -126,8 +132,31 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
       throw new RuntimeException("유저를 찾을 수 없습니다. (Login Failed)");
     }
 
+    // ========== 정지된 계정 체크 ==========
+    if (Boolean.TRUE.equals(member.getIsSuspended())) {
+      if (member.getSuspendedUntil() != null && member.getSuspendedUntil().isAfter(java.time.LocalDateTime.now())) {
+        // 정지 중인 경우 - 로그인 페이지로 직접 리다이렉트
+        String suspendedUrl = UriComponentsBuilder.fromUriString(frontBaseUrl + "/")
+          .queryParam("error", "suspended")
+          .build()
+          .toUriString();
+        getRedirectStrategy().sendRedirect(request, response, suspendedUrl);
+        return;
+      } else {
+        // 정지 기간이 지난 경우 자동 해제
+        member.setIsSuspended(false);
+        member.setSuspendedUntil(null);
+      }
+    }
+
+    // 마지막 로그인 시간 갱신
+    java.time.LocalDateTime now = java.time.LocalDateTime.now();
+    member.setLastLoginAt(now);
+    member.setIsOnline(true);
+    memberRepository.save(member);
+
     // 3. JWT 토큰 생성
-    String token = tokenProvider.createToken(member.getEmail(), member.getRole().name(), member.getId());
+    String token = tokenProvider.createToken(member.getEmail(), member.getRole().name(), member.getId(), now);
     userSessionStore.registerToken(member.getId(), token);
 
     // 4. 프론트엔드로 리다이렉트할 URL 생성

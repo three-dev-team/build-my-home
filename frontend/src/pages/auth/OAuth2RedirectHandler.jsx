@@ -13,10 +13,17 @@ export default function OAuth2RedirectHandler() {
 
     // 2. URL 파라미터에서 데이터 추출
     const params = new URLSearchParams(location.search);
+    const error = params.get('error');
     const token = params.get('token');
     const nickname = params.get('nickname');
     const bell = params.get('bell');
     const level = params.get('level');
+
+    // 정지된 계정 에러 처리
+    if (error === 'suspended') {
+      window.location.href = '/?error=suspended';
+      return;
+    }
 
     if (token) {
       try {

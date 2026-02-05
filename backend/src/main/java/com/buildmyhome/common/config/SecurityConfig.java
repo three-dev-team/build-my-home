@@ -98,9 +98,9 @@ public class SecurityConfig {
           // 내 정보 조회는 인증 필수
           .requestMatchers("/api/member/me")
           .authenticated()
-          // 그 외는 일단 허용 (필요 시 점진적으로 잠그기)
+          // 그 외 모든 요청은 인증 필수
           .anyRequest()
-          .permitAll()
+          .authenticated()
       )
       // OAuth2 로그인 설정
       .oauth2Login((oauth2) ->

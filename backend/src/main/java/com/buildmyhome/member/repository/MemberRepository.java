@@ -28,14 +28,19 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
 
   // ========== 관리자용 필터/검색 쿼리 ==========
   
-  // 키워드 + 역할 필터 검색
+  // 키워드 + 역할 + 정지 상태 필터 검색
   @Query("SELECT m FROM Member m WHERE " +
          "(:keyword IS NULL OR LOWER(m.nickname) LIKE LOWER(CONCAT('%', :keyword, '%'))) AND " +
-         "(:roles IS NULL OR m.role IN :roles)")
+         "(:roles IS NULL OR m.role IN :roles) AND " +
+         "(:suspended IS NULL OR m.isSuspended = :suspended)")
   Page<Member> searchMembers(
     @Param("keyword") String keyword,
     @Param("roles") List<Member.Role> roles,
+    @Param("suspended") Boolean suspended,
     Pageable pageable
   );
+
+  // 정지 해제 대상 회원 조회 (스케줄러용)
+  List<Member> findByIsSuspendedTrueAndSuspendedUntilBefore(java.time.LocalDateTime dateTime);
 }
 
