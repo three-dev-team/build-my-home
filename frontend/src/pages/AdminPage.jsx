@@ -47,6 +47,9 @@ export default function AdminPage() {
   // 정지 확인 모달 상태
   const [suspendModal, setSuspendModal] = useState({ isOpen: false, memberId: null, isSuspended: false });
 
+  // 경고 확인 모달 상태
+  const [warnModal, setWarnModal] = useState({ isOpen: false, memberId: null, nickname: '' });
+
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
@@ -348,6 +351,39 @@ export default function AdminPage() {
       console.error('정지 처리 실패:', error);
     }
     setSuspendModal({ isOpen: false, memberId: null, isSuspended: false });
+  };
+
+  // 경고 확인 모달 열기
+  const handleWarnMember = (memberId, nickname) => {
+    setWarnModal({ isOpen: true, memberId, nickname });
+  };
+
+  // 경고 부여 실행
+  const executeWarnMember = async () => {
+    const { memberId } = warnModal;
+    const token = sessionStorage.getItem('token');
+
+    try {
+      const response = await axios.post(
+        `/api/admin/members/${memberId}/warn`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        },
+      );
+      // 자동 정지 여부에 따른 메시지
+      if (response.data.isSuspended) {
+        alert(`경고 ${response.data.warningCount}회 누적! 계정이 자동 정지되었습니다.`);
+      } else {
+        alert(`경고가 부여되었습니다. (현재 ${response.data.warningCount}회)`);
+      }
+      // 목록 새로고침
+      fetchMembers(memberCurrentPage, memberSearchKeyword, selectedRoles, selectedMemberSort);
+    } catch (error) {
+      console.error('경고 부여 실패:', error);
+      alert('경고 부여에 실패했습니다.');
+    }
+    setWarnModal({ isOpen: false, memberId: null, nickname: '' });
   };
 
   // CSV 다운로드
@@ -856,6 +892,7 @@ export default function AdminPage() {
                           { value: 'oldest', label: '오래된 가입순' },
                           { value: 'level', label: '레벨 높은순' },
                           { value: 'bell', label: '벨 많은순' },
+                          { value: 'warning', label: '경고 많은순' },
                         ].map((option) => (
                           <div
                             key={option.value}
@@ -996,6 +1033,7 @@ export default function AdminPage() {
                           마지막 로그인
                         </th>
                         <th className="p-[1.04cqw] text-[0.83cqw] font-black text-[#594E36] text-center">신고</th>
+                        <th className="p-[1.04cqw] text-[0.83cqw] font-black text-[#594E36] text-center">경고</th>
                         <th className="p-[1.04cqw] text-[0.83cqw] font-black text-[#594E36] text-center">상태</th>
                         <th className="p-[1.04cqw] text-[0.83cqw] font-black text-[#594E36] text-center">역할</th>
                         <th className="p-[1.04cqw] text-[0.83cqw] font-black text-[#594E36] text-center">가입일</th>
@@ -1041,6 +1079,23 @@ export default function AdminPage() {
                             >
                               {member.reportedCount || 0}
                             </span>
+                          </td>
+                          {/* 경고 횟수 + 경고 버튼 */}
+                          <td className="p-[1.04cqw] text-[0.83cqw] font-bold text-center">
+                            <div className="flex items-center justify-center gap-[0.4cqw]">
+                              <span
+                                className={`${(member.warningCount || 0) >= 5 ? 'text-[#EB5757]' : (member.warningCount || 0) > 0 ? 'text-[#F9A825]' : 'text-[#594E36] opacity-50'}`}
+                              >
+                                {member.warningCount || 0}
+                              </span>
+                              <button
+                                onClick={() => handleWarnMember(member.id, member.nickname)}
+                                disabled={member.isSuspended}
+                                className="px-[0.4cqw] py-[0.1cqw] rounded-[0.3cqw] text-[0.6cqw] font-bold bg-[#F9A825] text-white hover:bg-[#F57F17] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                              >
+                                경고
+                              </button>
+                            </div>
                           </td>
                           {/* 정지 상태 - 클릭 가능 */}
                           <td className="p-[1.04cqw] text-center">
@@ -1112,6 +1167,15 @@ export default function AdminPage() {
         message={suspendModal.isSuspended ? '정지를 해제하시겠습니까?' : '해당 회원을 48시간 정지하시겠습니까?'}
         onConfirm={executeSuspendToggle}
         onCancel={() => setSuspendModal({ isOpen: false, memberId: null, isSuspended: false })}
+      />
+
+      {/* 경고 확인 모달 */}
+      <ConfirmModal
+        isOpen={warnModal.isOpen}
+        title="경고 부여"
+        message={`${warnModal.nickname}님에게 경고를 부여하시겠습니까?\n(5회 누적 시 자동 정지)`}
+        onConfirm={executeWarnMember}
+        onCancel={() => setWarnModal({ isOpen: false, memberId: null, nickname: '' })}
       />
     </AspectLayout>
   );

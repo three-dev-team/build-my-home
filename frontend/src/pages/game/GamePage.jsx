@@ -83,8 +83,7 @@ const GamePage = () => {
     return [];
   }, [gameState?.players]);
 
-  const findPlayerByMemberId = (arr, memberId) =>
-    arr.find((p) => Number(p?.memberId) === Number(memberId)) || null;
+  const findPlayerByMemberId = (arr, memberId) => arr.find((p) => Number(p?.memberId) === Number(memberId)) || null;
 
   const findCharacterByPlayer = (player) => {
     const cid = Number(player?.characterId ?? 0);
@@ -196,7 +195,7 @@ const GamePage = () => {
   useEffect(() => {
     if (!token) {
       alert('로그인이 필요합니다.');
-      navigate('/login');
+      navigate('/');
     }
   }, [token, navigate]);
 
@@ -316,7 +315,7 @@ const GamePage = () => {
         console.error('STOMP 에러:', errorMsg);
 
         alert('게임 연결에 문제가 발생했습니다: ' + errorMsg);
-        navigate(`/rooms/${roomId}`);
+        navigateRef.current(`/rooms/${roomId}`);
       },
     });
 
