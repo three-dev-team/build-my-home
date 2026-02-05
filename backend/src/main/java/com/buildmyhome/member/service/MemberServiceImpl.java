@@ -54,7 +54,7 @@ public class MemberServiceImpl implements MemberService {
   }
 
   @Override
-  @Transactional(readOnly = true)
+  @Transactional
   public MemberResponse login(LoginRequest loginRequest) {
     Member member = memberRepository
       .findByEmail(loginRequest.getEmail())
@@ -64,7 +64,23 @@ public class MemberServiceImpl implements MemberService {
       throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
     }
 
-    String token = jwtTokenProvider.createToken(member.getEmail(), member.getRole().name(), member.getId());
+    // 정지 회원 체크
+    if (Boolean.TRUE.equals(member.getIsSuspended())) {
+      if (member.getSuspendedUntil() != null && member.getSuspendedUntil().isAfter(java.time.LocalDateTime.now())) {
+        throw new IllegalArgumentException("정지된 계정입니다. 해제 시간: " + member.getSuspendedUntil());
+      } else {
+        // 정지 시간이 지났으면 자동 해제
+        member.setIsSuspended(false);
+        member.setSuspendedUntil(null);
+      }
+    }
+
+    // 마지막 로그인 시간 갱신
+    java.time.LocalDateTime now = java.time.LocalDateTime.now();
+    member.setLastLoginAt(now);
+    member.setIsOnline(true);
+
+    String token = jwtTokenProvider.createToken(member.getEmail(), member.getRole().name(), member.getId(), now);
     userSessionStore.registerToken(member.getId(), token);
 
     return MemberResponse.builder()

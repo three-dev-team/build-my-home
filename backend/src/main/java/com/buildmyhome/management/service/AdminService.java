@@ -30,7 +30,7 @@ public class AdminService {
   }
 
   // 필터/정렬 검색 (관리자용) - 추가
-  public Page<MemberListResponse> searchMembers(String keyword, List<String> roleStrings, Pageable pageable) {
+  public Page<MemberListResponse> searchMembers(String keyword, List<String> roleStrings, Boolean suspended, Pageable pageable) {
     // 역할 문자열을 Enum으로 변환
     List<Member.Role> roles = null;
     if (roleStrings != null && !roleStrings.isEmpty()) {
@@ -41,7 +41,7 @@ public class AdminService {
     
     String keywordFilter = (keyword == null || keyword.trim().isEmpty()) ? null : keyword.trim();
     
-    return memberRepository.searchMembers(keywordFilter, roles, pageable)
+    return memberRepository.searchMembers(keywordFilter, roles, suspended, pageable)
         .map(this::toListResponse);
   }
 
@@ -55,6 +55,10 @@ public class AdminService {
       .level(member.getLevel())
       .bell(member.getBell())
       .playCount(member.getPlayCount())
+      .isOnline(member.getIsOnline())
+      .lastLoginAt(member.getLastLoginAt())
+      .reportedCount(member.getReportedCount())
+      .isSuspended(member.getIsSuspended())
       .createdAt(member.getCreatedAt())
       .build();
   }

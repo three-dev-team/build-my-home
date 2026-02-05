@@ -94,6 +94,7 @@ public class AdminController {
   public ResponseEntity<Page<MemberListResponse>> getAllMembers(
     @RequestParam(required = false) String keyword,
     @RequestParam(required = false) List<String> roles,
+    @RequestParam(required = false) Boolean suspended,
     @RequestParam(required = false, defaultValue = "latest") String sort,
     @RequestParam(defaultValue = "0") int page,
     @RequestParam(defaultValue = "10") int size
@@ -115,8 +116,34 @@ public class AdminController {
     }
     Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size, sortOrder);
 
-    Page<MemberListResponse> members = adminService.searchMembers(keyword, roles, pageable);
+    Page<MemberListResponse> members = adminService.searchMembers(keyword, roles, suspended, pageable);
     return ResponseEntity.ok(members);
+  }
+
+  // 회원 정지 설정
+  @PostMapping("/members/{id}/suspend")
+  public ResponseEntity<?> suspendMember(@PathVariable Long id) {
+    Member member = memberRepository.findById(id)
+        .orElseThrow(() -> new RuntimeException("회원을 찾을 수 없습니다."));
+    
+    member.setIsSuspended(true);
+    member.setSuspendedUntil(java.time.LocalDateTime.now().plusHours(48)); // 48시간 정지
+    memberRepository.save(member);
+    
+    return ResponseEntity.ok().body(java.util.Map.of("message", "회원이 정지되었습니다.", "suspendedUntil", member.getSuspendedUntil()));
+  }
+
+  // 회원 정지 해제
+  @PostMapping("/members/{id}/unsuspend")
+  public ResponseEntity<?> unsuspendMember(@PathVariable Long id) {
+    Member member = memberRepository.findById(id)
+        .orElseThrow(() -> new RuntimeException("회원을 찾을 수 없습니다."));
+    
+    member.setIsSuspended(false);
+    member.setSuspendedUntil(null);
+    memberRepository.save(member);
+    
+    return ResponseEntity.ok().body(java.util.Map.of("message", "정지가 해제되었습니다."));
   }
 
   // ========== 헬퍼 메서드 ==========

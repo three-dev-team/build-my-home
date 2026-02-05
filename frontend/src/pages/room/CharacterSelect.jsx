@@ -31,6 +31,12 @@ const CharacterSelect = () => {
           }
         });
 
+        // [Added] 먼저 방에 입장 시도 - 대기방에 빈 카드로 표시됨
+        client.publish({
+          destination: '/app/rooms/enter',
+          body: JSON.stringify({ roomId: roomId }),
+        });
+
         client.publish({
           destination: '/app/rooms/get-players',
           body: JSON.stringify({ roomId: roomId }),
@@ -105,12 +111,10 @@ const CharacterSelect = () => {
             </div>
           )}
 
-          {/* 캐릭터 미리보기 이미지 */}
           {/* 캐릭터 미리보기 이미지 & 설명 (상하 배치) */}
           {previewChar && (
             <div className="flex flex-col items-center mt-[8.08cqw] relative z-10 w-full">
               {/* 1. 캐릭터 이미지 (박스 위로 겹쳐보이게) */}
-              {/* mb-[-3.13cqw]로 텍스트 박스와 겹침 효과 */}
               <div className="relative z-20 mb-[-2.08cqw] animate-fade-in-up">
                 <img
                   src={getPreviewImage(previewChar)}
@@ -145,8 +149,6 @@ const CharacterSelect = () => {
               </div>
             </div>
           )}
-
-          {/* 배경 장식 (나뭇잎 패턴 등은 bg 이미지에 포함됨) */}
         </div>
 
         {/* --- RIGHT SECTION (Grid & Actions) (50%) --- */}
@@ -170,13 +172,13 @@ const CharacterSelect = () => {
                   onMouseLeave={() => setHoveredCharacterId(null)}
                   disabled={isTaken}
                   className={`
-                     relative w-[8.33cqw] h-[8.33cqw] flex items-center justify-center transition-all p-0 overflow-visible rounded-[24px]
+                     relative w-[8.33cqw] h-[8.33cqw] flex items-center justify-center transition-all p-0 overflow-visible rounded-[30px]
                      ${isSelected ? 'outline outline-[5px] outline-[#34C4D3]' : ''}
                      ${isTaken ? 'opacity-40 grayscale cursor-not-allowed' : 'cursor-pointer hover:scale-105'}
                    `}
                   style={{}}
                 >
-                  {/* 캐릭터 아이콘 - 항상 idle 이미지 사용 */}
+                  {/* 캐릭터 아이콘 */}
                   <img src={char.iconIdle} alt={char.name} className="w-full h-full object-cover rounded-[1.04cqw]" />
 
                   {/* 선택 체크 아이콘 - 우상단 테두리 중간에 위치 */}

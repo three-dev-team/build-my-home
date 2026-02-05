@@ -50,4 +50,10 @@ public class RoomController {
 
     return ResponseEntity.ok(snapshot);
   }
+
+  // 초대 코드로 방 정보 조회
+  @GetMapping("/invite/{inviteCode}")
+  public ResponseEntity<RoomResponse> getRoomByInviteCode(@PathVariable String inviteCode) {
+    return ResponseEntity.ok(roomService.getRoomByInviteCode(inviteCode));
+  }
 }

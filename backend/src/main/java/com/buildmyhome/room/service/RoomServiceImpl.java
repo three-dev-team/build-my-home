@@ -17,4 +17,11 @@ public class RoomServiceImpl implements RoomService {
     Room room = roomRepository.findById(roomId).orElseThrow(() -> new RuntimeException("Room not found"));
     return RoomResponse.fromEntity(room);
   }
+
+  @Override
+  public RoomResponse getRoomByInviteCode(String inviteCode) {
+    Room room = roomRepository.findByInviteCode(inviteCode)
+        .orElseThrow(() -> new RuntimeException("초대 코드가 유효하지 않습니다."));
+    return RoomResponse.fromEntity(room);
+  }
 }
