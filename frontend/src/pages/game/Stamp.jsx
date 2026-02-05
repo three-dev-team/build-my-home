@@ -68,7 +68,7 @@ const Stamp = ({ isMyTurn = false, player, currentPlayerName = '익명의 주민
   // exit 핸들러 생성, isMyTurn일 때만 onExit(event-complete) 호출
   const handleExit = useExitHandler(isMyTurn, onExit);
   // step 2에서 3초 후 자동 나가기
-  useGameTimer(isMyTurn && step === 2 ? 3 : null, handleExit); // 타이머도 내 턴만
+  useGameTimer(isMyTurn && step === 2 ? 5 : null, handleExit); // 타이머도 내 턴만
 
   const setStep = (newStep) => {
     if (!isMyTurn) return;
@@ -151,21 +151,27 @@ const Stamp = ({ isMyTurn = false, player, currentPlayerName = '익명의 주민
               {/* 비행장 스탬프 */}
               <div className="stamp-position stamp-position-airport">
                 {collectedStamps.includes('AIRPORT') && (
-                  <img src="/images/stamp/stamp-airport.webp" alt="비행장 스탬프" className="stamp-image" />
+                  <div className="stamp-image-wrap">
+                    <img src="/images/stamp/stamp-airport.webp" alt="비행장 스탬프" className="stamp-image" />
+                  </div>
                 )}
               </div>
 
               {/* 갑돌섬 스탬프 */}
               <div className="stamp-position stamp-position-gapdol">
                 {collectedStamps.includes('GAPDOL') && (
-                  <img src="/images/stamp/stamp-gapdol.webp" alt="갑돌섬 스탬프" className="stamp-image" />
+                  <div className="stamp-image-wrap">
+                    <img src="/images/stamp/stamp-gapdol.webp" alt="갑돌섬 스탬프" className="stamp-image" />
+                  </div>
                 )}
               </div>
 
               {/* 박물관 스탬프 */}
               <div className="stamp-position stamp-position-museum">
                 {collectedStamps.includes('MUSEUM') && (
-                  <img src="/images/stamp/stamp-museum.webp" alt="박물관 스탬프" className="stamp-image" />
+                  <div className="stamp-image-wrap">
+                    <img src="/images/stamp/stamp-museum.webp" alt="박물관 스탬프" className="stamp-image" />
+                  </div>
                 )}
               </div>
             </div>
@@ -201,8 +207,12 @@ const Stamp = ({ isMyTurn = false, player, currentPlayerName = '익명의 주민
               {/* 비행장 */}
               <div className="stamp-position stamp-position-airport">
                 {collectedStamps.includes('AIRPORT') && (
-                  <div className={stampType === 'AIRPORT' && !isDuplicate ? 'animate-stamp-slam' : ''}>
-                    <img src="/images/stamp/stamp-airport.webp" alt="비행장" className="stamp-image" />
+                  <div className="stamp-image-wrap">
+                    <img
+                      src="/images/stamp/stamp-airport.webp"
+                      alt="비행장"
+                      className={`stamp-image ${stampType === 'AIRPORT' && !isDuplicate ? 'animate-stamp-slam' : ''}`}
+                    />
                   </div>
                 )}
               </div>
@@ -210,8 +220,12 @@ const Stamp = ({ isMyTurn = false, player, currentPlayerName = '익명의 주민
               {/* 갑돌섬 */}
               <div className="stamp-position stamp-position-gapdol">
                 {collectedStamps.includes('GAPDOL') && (
-                  <div className={stampType === 'GAPDOL' && !isDuplicate ? 'animate-stamp-slam' : ''}>
-                    <img src="/images/stamp/stamp-gapdol.webp" alt="갑돌섬" className="stamp-image" />
+                  <div className="stamp-image-wrap">
+                    <img
+                      src="/images/stamp/stamp-gapdol.webp"
+                      alt="갑돌섬"
+                      className={`stamp-image ${stampType === 'GAPDOL' && !isDuplicate ? 'animate-stamp-slam' : ''}`}
+                    />
                   </div>
                 )}
               </div>
@@ -219,8 +233,12 @@ const Stamp = ({ isMyTurn = false, player, currentPlayerName = '익명의 주민
               {/* 박물관 */}
               <div className="stamp-position stamp-position-museum">
                 {collectedStamps.includes('MUSEUM') && (
-                  <div className={stampType === 'MUSEUM' && !isDuplicate ? 'animate-stamp-slam' : ''}>
-                    <img src="/images/stamp/stamp-museum.webp" alt="박물관" className="stamp-image" />
+                  <div className="stamp-image-wrap">
+                    <img
+                      src="/images/stamp/stamp-museum.webp"
+                      alt="박물관"
+                      className={`stamp-image ${stampType === 'MUSEUM' && !isDuplicate ? 'animate-stamp-slam' : ''}`}
+                    />
                   </div>
                 )}
               </div>

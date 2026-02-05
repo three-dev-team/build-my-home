@@ -35,7 +35,7 @@ public enum GameStatus {
     WAITING_MUPANI(20), // 무파니 진행 중
     WAITING_START(60), // 시작칸 진행 중 (스탬프 정산)
     WAITING_ITEMS(30),  // 아이템칸 진행 중
-    WAITING_MACHURILLA(60), // 마추릴라 진행 중
+    WAITING_MACHURILLA(100), // 마추릴라 진행 중
 //    WAITING_SWAP(30), // 몽셰르(스왑 이벤트) 진행 중
     WAITING_SWAP(0), // 몽셰르(스왑 이벤트) 진행 중
 
