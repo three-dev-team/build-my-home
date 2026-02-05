@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import Subtitle from '../../../components/common/Subtitle.jsx';
 import AutoMove from '../../../components/common/AutoMove.jsx';
 import { COLORS } from '../../../constants/colors.js';
-import { getNextHouseLevelByLevel, getHouseIconByLevel, normalizeHouseLevelByAny, roEuro } from '../../../constants/houseLevel.js';
+import { HOUSE_LEVEL_MAP, getHouseIconByLevel, normalizeHouseLevelByAny, roEuro } from '../../../constants/houseLevel.js';
 import { useGameTimer } from '../../../hooks/useGameTimer.js';
 import './HouseStep4BuildFinish.css';
 
@@ -44,18 +44,16 @@ export default function HouseStep4BuildFinish({
                                               }) {
   const myName = useMemo(() => getPlayerDisplayName(player), [player]);
   const characterId = player?.characterId;
-
-  // 현재 집 레벨 -> 다음 집 정보 계산
   const curLevel = useMemo(() => getCurrentHouseLevel(player), [player]);
-  const nextLevelObj = useMemo(() => getNextHouseLevelByLevel(curLevel), [curLevel]);
 
-  const houseName = nextLevelObj?.name || '집';
+  const curLevelObj = useMemo(() => {
+    return (HOUSE_LEVEL_MAP || []).find((x) => Number(x?.level) === Number(curLevel)) || null;
+  }, [curLevel]);
 
-  // 다음 집 아이콘(캐릭터별 아이콘 우선)
+  const houseName = curLevelObj?.name || '집';
   const houseSrc = useMemo(() => {
-    if (!nextLevelObj) return '';
-    return getHouseIconByLevel(nextLevelObj.level, characterId) || '';
-  }, [nextLevelObj, characterId]);
+    return getHouseIconByLevel(curLevel, characterId) || '';
+  }, [curLevel, characterId]);
 
   // 너굴 대사(집 이름 조사 반영)
   const contentText = `${houseName}${roEuro(houseName)} 공사를 진행하겠다구리!\n돌아가면 멋진 집이 완성되어있을거라구리`;

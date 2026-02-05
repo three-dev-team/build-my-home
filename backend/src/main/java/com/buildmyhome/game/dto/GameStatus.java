@@ -32,7 +32,7 @@ public enum GameStatus {
     WAITING_FISHING(10), // 시작하기 버튼/연출 단계
     FISHING_IN_PROGRESS(0), // 실제 미니게임 진행(낚시 내부 타이머로 종료)
     WAITING_KK(20), // KK칸 진행 중 (KK 노래 여러개)
-    WAITING_MUPANI(20), // 무파니 진행 중
+    WAITING_MUPANI(100), // 무파니 진행 중
     WAITING_START(60), // 시작칸 진행 중 (스탬프 정산)
     WAITING_ITEMS(30),  // 아이템칸 진행 중
     WAITING_MACHURILLA(100), // 마추릴라 진행 중

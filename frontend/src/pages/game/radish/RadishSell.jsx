@@ -1,3 +1,4 @@
+// RadishSell.jsx
 import React, { useMemo, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
@@ -37,18 +38,29 @@ export default function RadishSell({
 
   const [sellQty, setSellQty] = useState(1);
 
+  // ✅ "결정" 누른 순간의 확정값(서버 값 오기 전까지 완료 화면에서 사용)
+  const [confirmed, setConfirmed] = useState(null); // { qty, amount }
+
+  const priceNum = useMemo(() => Number(radishPrice || 0), [radishPrice]);
+  const priceText = useMemo(() => priceNum.toLocaleString(), [priceNum]);
+
+  // ✅ 입력(step=1)에서만 owned qty 기준으로 입력값 clamp
   useEffect(() => {
+    if (step !== 1) return;
     const max = Math.max(1, radishQty || 1);
     setSellQty((q) => clamp(Number(q) || 1, 1, max));
-  }, [radishQty]);
+  }, [radishQty, step]);
+
+  // ✅ step이 0으로 돌아오면 confirmed 초기화
+  useEffect(() => {
+    if (step === 0) setConfirmed(null);
+  }, [step]);
 
   const safeQty = useMemo(() => {
     const max = Math.max(1, radishQty || 1);
     return clamp(Number(sellQty) || 1, 1, max);
   }, [sellQty, radishQty]);
 
-  const priceNum = useMemo(() => Number(radishPrice || 0), [radishPrice]);
-  const priceText = useMemo(() => priceNum.toLocaleString(), [priceNum]);
   const expectedAmount = useMemo(() => safeQty * priceNum, [safeQty, priceNum]);
 
   const setStep = (next) => {
@@ -58,11 +70,14 @@ export default function RadishSell({
 
   const handleSell = () => {
     if (!canSell) return;
-    onAction?.('RADISH_SELL', { quantity: safeQty });
-  };
 
-  const soldQty = Number(player?.quantity ?? player?.lastTradeQty ?? safeQty);
-  const soldAmount = Number(player?.amount ?? player?.lastTradeAmount ?? expectedAmount);
+    // ✅ 결정 순간 qty/amount를 확정값으로 저장
+    const qty = safeQty;
+    const amount = qty * priceNum;
+    setConfirmed({ qty, amount });
+
+    onAction?.('RADISH_SELL', { quantity: qty });
+  };
 
   const pName = useMemo(() => getPlayerName(player), [player]);
   const pChar = useMemo(() => getPlayerCharacter(player), [player]);
@@ -90,6 +105,21 @@ export default function RadishSell({
   }, [pName, playerColor, priceText]);
 
   const overlayDim = useMemo(() => withAlpha(COLORS.ac.black, 0.06), []);
+
+  // ✅ 서버 값이 있으면 서버 값 우선, 없으면 confirmed(결정값) 사용
+  const soldQty = useMemo(() => {
+    const serverQty = Number(player?.quantity ?? player?.lastTradeQty);
+    if (Number.isFinite(serverQty) && serverQty > 0) return serverQty;
+    if (confirmed?.qty != null) return Number(confirmed.qty) || 0;
+    return 0;
+  }, [player, confirmed]);
+
+  const soldAmount = useMemo(() => {
+    const serverAmt = Number(player?.amount ?? player?.lastTradeAmount);
+    if (Number.isFinite(serverAmt) && serverAmt >= 0) return serverAmt;
+    if (confirmed?.amount != null) return Number(confirmed.amount) || 0;
+    return 0;
+  }, [player, confirmed]);
 
   const renderContent = () => {
     if (step === 0) {

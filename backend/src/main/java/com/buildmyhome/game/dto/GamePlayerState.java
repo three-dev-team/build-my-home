@@ -4,7 +4,7 @@ import com.buildmyhome.house.constants.HouseLevel;
 
 import java.util.*;
 
-import lombok.*;
+        import lombok.*;
 
 @Getter
 @Setter
@@ -21,7 +21,7 @@ public class GamePlayerState {
     private List<Integer> movePath; // 이동 경로 (칸 인덱스 리스트) -> 프론트 이동 애니메이션용
     private int remainingMoves = 0; // 남은 이동 칸 수 (지나가기 로직 시 사용)
     private int position = 0; // 현재 칸 위치
-    private int bell = 10; // 시작 벨 10
+    private int bell = 100000; // 시작 벨 10
     private int loan = 0; // 대출금
     private int uiStep = 0; // 행동 단계 (특정 상태에서 페이지 이동 로직 시 사용)
     private int rank = 0; // 게임 결과 순위 (1 ~ 4)
