@@ -10,8 +10,8 @@
     inset: 0;
     background:
             var(--bg-image, url('/images/bg-home.png')) center / cover no-repeat,
-            radial-gradient(62.5cqw 55.56cqh at 50% 30%, rgba(255, 255, 255, 0.1), transparent 60%),
-            linear-gradient(180deg, rgba(6, 18, 28, 0.55), rgba(6, 18, 28, 0.78));
+            radial-gradient(62.5cqw 55.56cqh at 50% 30%, var(--bg-radial, rgba(255, 255, 255, 0.1)), transparent 60%),
+            linear-gradient(180deg, var(--bg-linear-top, rgba(6, 18, 28, 0.55)), var(--bg-linear-bottom, rgba(6, 18, 28, 0.78)));
 }
 
 .game-stage {
@@ -280,13 +280,11 @@
     transform: none !important;
     filter: none !important;
 }
-/* 관전자 대기 레이어: Loan.jsx와 동일한 스케일 컨텍스트 제공 */
 .spectator-wait {
     position: absolute;
     inset: 0;
     z-index: 25000;
     pointer-events: none;
-
     container-type: size;
     --sx: calc(100cqw / 1920);
     --sy: calc(100cqh / 1080);

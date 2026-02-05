@@ -1,161 +1,166 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import './css/Mupani.css';
 import Subtitle from '../../components/common/Subtitle.jsx';
 import AspectLayout from '../../components/layout/AspectLayout';
 import NumberPad from '../../components/common/NumberPad.jsx';
-import ExitButton from '../../components/common/ExitButton.jsx'
-import BellPanel from '../../components/common/BellPanel.jsx'
+import ExitButton from '../../components/common/ExitButton.jsx';
+import BellPanel from '../../components/common/BellPanel.jsx';
 import { COLORS } from '../../constants/colors.js';
 
-const INTRO_BG = '/images/mupani/bg-mupanitile.jpg';
+// 무파니 칸 당사자(현재 턴 플레이어) 보너스 수량
+const MUPANI_BONUS = 2;
 
 export default function Mupani({ gameState, myId, onBuy, onSkip }) {
   const status = gameState?.status;
 
-  // step 0: 인트로 | 1: 구매 화면 (숫자 패드) | 2: 첫 번째 확인 ("이렇게 사실래?")
-  // 3: 최종 완료 ("무야 무야 비~싸져라~") | 4: 스킵 화면 ("다음에 보자구~") | 5: 무 보유 중 메시지
+  // step 0: 인트로 | 1: 구매 화면 | 2: 첫 확인 | 3: 구매 완료 | 4: 스킵 | 5: 무 보유 중
   const [step, setStep] = useState(0);
 
-  // 구매 수량 상태
   const [qty, setQty] = useState(1);
-
-  // 서버 확정 기준 결정 완료 상태
   const [hasDecided, setHasDecided] = useState(false);
 
-  // 현재 무 가격 숫자 변환
-  const radishPrice = Number(gameState?.radishPrice ?? 0);
+  // ✅ status가 바뀌어도 결과 화면 잠깐 유지하기 위한 래치
+  const [open, setOpen] = useState(false);
 
+  // ✅ 결과 대사 타이핑 완료 후 “잠시 후 이동합니다” 띄우기
+  const [showMovingNotice, setShowMovingNotice] = useState(false);
+
+  const radishPrice = Number(gameState?.radishPrice ?? 0);
   const selfId = useMemo(() => Number(myId), [myId]);
 
-  // players는 리스트 형태라서 내 플레이어 엔트리 검색 처리
+  const isMupaniOwner = useMemo(() => {
+    const cur = gameState?.currentPlayerId;
+    if (cur == null) return false;
+    return Number(cur) === selfId;
+  }, [gameState?.currentPlayerId, selfId]);
+
   const myPlayer = useMemo(() => {
     const list = gameState?.players;
     if (!Array.isArray(list)) return null;
     return list.find((p) => Number(p?.memberId) === selfId) ?? null;
   }, [gameState?.players, selfId]);
 
-  // 내 보유 벨 숫자 변환
   const myBell = Number(myPlayer?.bell ?? 0);
-
-  // 내 보유 무 수량 숫자 변환
   const myRadishQty = Number(myPlayer?.radishQty ?? 0);
-
-  // 무 보유 여부 확인
   const hasRadish = myRadishQty > 0;
 
-  // 무파니 색상
   const mupani = COLORS.characters.mupani;
 
-  // 현재 벨과 가격 기준 구매 가능한 최대 수량 계산
+  const isWaiting = status === 'WAITING_MUPANI';
+
   const maxAffordableQty = useMemo(() => {
-    if (status !== 'WAITING_MUPANI') return 1;
+    if (!isWaiting) return 1;
     if (radishPrice <= 0) return 1;
     return Math.max(1, Math.floor(myBell / radishPrice));
-  }, [status, myBell, radishPrice]);
+  }, [isWaiting, myBell, radishPrice]);
 
-  // 최대 구매 가능 수량이 바뀌면 현재 qty 범위 보정 처리
   useEffect(() => {
-    if (status !== 'WAITING_MUPANI') return;
+    if (!isWaiting) return;
     setQty((q) => Math.min(Math.max(1, q), maxAffordableQty));
-  }, [status, maxAffordableQty]);
+  }, [isWaiting, maxAffordableQty]);
 
-  // 현재 선택 수량 기준 총 가격 계산
   const totalCost = useMemo(() => {
     if (radishPrice <= 0) return 0;
     return radishPrice * qty;
   }, [radishPrice, qty]);
 
-  // WAITING_MUPANI 진입 시 화면 초기화 처리
+  const closeNow = () => {
+    setOpen(false);
+  };
+
+  // ✅ WAITING_MUPANI 진입하면 열고 초기화
   useEffect(() => {
-    if (status !== 'WAITING_MUPANI') return;
+    if (!isWaiting) return;
+
+    setOpen(true);
     setStep(0);
     setQty(1);
     setHasDecided(false);
-  }, [status]);
+    setShowMovingNotice(false);
+  }, [isWaiting]);
 
-  // 서버 응답 타입과 memberId 기준 내 결정 확정 처리
-  // RADISH_BOUGHT면 step 3으로
-  // RADISH_SKIPPED면 step 4로
+  // ✅ 서버 응답으로 내 결정 확정되면 step 3/4로 전환
   useEffect(() => {
-    if (status !== 'WAITING_MUPANI') return;
+    if (!open) return;
 
     const t = gameState?.type;
     const mid = Number(gameState?.memberId);
+    if (mid !== selfId) return;
 
-    if (mid === selfId) {
-      if (t === 'RADISH_BOUGHT') {
-        setHasDecided(true);
-        setStep(3);
-        return;
-      }
-      if (t === 'RADISH_SKIPPED') {
-        setHasDecided(true);
-        setStep(4);
-        return;
-      }
-    }
-  }, [status, gameState?.type, gameState?.memberId, selfId]);
-
-  // 무파니 상태가 아니면 렌더 생략 처리
-  if (status !== 'WAITING_MUPANI') return null;
-
-  // 인트로 화면 핸들러
-  const handleBuy = () => {
-    // 무 보유 여부 체크
-    if (hasRadish) {
-      setStep(5); // 무 보유 중 메시지로
-    } else {
-      setStep(1); // 구매 화면으로
-    }
-  };
-
-  const handleSkip = () => {
-    onSkip(); // 스킵 화면으로
-  };
-
-  // 구매 화면에서 결정 버튼
-  const handleConfirmBuy = () => {
-    if (totalCost > myBell) {
+    if (t === 'RADISH_BOUGHT') {
+      setHasDecided(true);
+      setStep(3);
+      setShowMovingNotice(false); // 타이핑 완료 전에는 숨김
       return;
     }
-    setStep(2); // 첫 번째 확인 화면으로
+
+    if (t === 'RADISH_SKIPPED') {
+      setHasDecided(true);
+      setStep(4);
+      setShowMovingNotice(false); // 타이핑 완료 전에는 숨김
+      return;
+    }
+  }, [open, gameState?.type, gameState?.memberId, selfId]);
+
+  // ✅ WAITING이 끝나면(= 서버가 턴 넘김) 그 순간 닫기
+  useEffect(() => {
+    if (!open) return;
+    if (isWaiting) return;
+
+    // 서버가 TURN_COMPLETED로 넘어간 순간 닫기
+    closeNow();
+  }, [open, isWaiting]);
+
+  // ✅ 결과 대사 타이핑 완료 시: “잠시 후 이동합니다” 표기
+  const handleResultTypingDone = () => {
+    setShowMovingNotice(true);
   };
 
-  // 첫 번째 확인 화면에서 "사실게" 버튼
+  if (!open) return null;
+
+  const handleBuy = () => {
+    if (hasRadish) setStep(5);
+    else setStep(1);
+  };
+
+  // “안살래”를 누르면 step4 대사 보여주고 서버 스킵 호출
+  const handleSkip = () => {
+    setHasDecided(true);
+    setStep(4);
+    setShowMovingNotice(false);
+    onSkip?.();
+  };
+
+  const handleConfirmBuy = () => {
+    if (totalCost > myBell) return;
+    setStep(2);
+  };
+
   const handleFinalConfirm = () => {
-    onBuy(qty); // 서버에 구매 요청
+    onBuy?.(qty);
   };
 
-  // 뒤로 가기 (구매 화면 → 인트로)
-  const handleBack = () => {
-    setStep(0);
-  };
-
-  // 다시 정하기 (첫 번째 확인 화면 → 구매 화면)
   const handleReselect = () => {
     setStep(1);
   };
 
-  // 스킵 확정 핸들러
-  const handleConfirmSkip = () => {
-    onSkip();
-  };
-
-  // 무 보유 중 메시지에서 나가기
   const handleAlreadyHasRadish = () => {
-    onSkip(); // 또는 setStep(0)으로 인트로로 돌아가기
+    setHasDecided(true);
+    setStep(4);
+    setShowMovingNotice(false);
+    onSkip?.();
   };
 
-  // ExitButton 핸들러 - step 4로 가고 자동 종료
+  // ExitButton: 그냥 스킵 호출(지연 호출/중복 호출 방지)
   const handleExit = () => {
+    if (hasDecided) return;
+    setHasDecided(true);
     setStep(4);
-    // 짧은 딜레이 후 onSkip 호출하여 서버에 알림
-    setTimeout(() => {
-      if (!hasDecided) {
-        onSkip();
-      }
-    }, 5000);
+    setShowMovingNotice(false);
+    onSkip?.();
   };
+
+  const showNotice = (step === 3 || step === 4) && showMovingNotice;
 
   return (
     <div
@@ -170,7 +175,10 @@ export default function Mupani({ gameState, myId, onBuy, onSkip }) {
     >
       <AspectLayout>
         <div className="mupani-container">
-          {/* Step 0: 인트로 화면 */}
+          {/* 결과 화면 상단 “잠시 후 이동합니다” */}
+          {showNotice && <div className="mupani-moving-notice">잠시 후 이동합니다…</div>}
+
+          {/* Step 0 */}
           {step === 0 && (
             <Subtitle
               nameText="무파니"
@@ -184,47 +192,52 @@ export default function Mupani({ gameState, myId, onBuy, onSkip }) {
               ]}
             />
           )}
-          {/* Step 1: 구매 화면 (숫자 패드) */}
+
+          {/* Step 1 */}
           {step === 1 && (
             <div className="mupani-purchase-screen">
-              {/* UI 배경 이미지 */}
               <div className="mupani-ui-background">
                 <img src="/images/mupani/ui-mupani.webp" alt="무파니 UI" className="mupani-ui-image" />
 
-                {/* 상단 정보 영역 */}
                 <div className="mupani-header-question">
                   1무에 <span className="highlight-price"> {radishPrice}벨</span>인데 얼마나 사실래?
                 </div>
 
-                {/* 무 입력 표시 */}
                 <div className="mupani-radish-display"> {qty}</div>
 
-                {/* 총 가격 표시 */}
-                <div className="mupani-total"> {totalCost.toLocaleString()}벨 </div>
+                <div className="mupani-total">{totalCost.toLocaleString()}벨</div>
               </div>
 
-              {/* 숫자 패드 */}
               <NumberPad
                 value={qty}
                 onChange={setQty}
                 max={maxAffordableQty}
                 onConfirm={handleConfirmBuy}
-                onBack={handleBack}
                 maxButtonText="살 수 있는 만큼"
+                confirmText="결정"
               />
+
               <BellPanel amount={myBell ?? 0} />
-              <ExitButton onClick={handleExit} />
+
+              <div className="mupani-exit-wrap">
+                <ExitButton onClick={handleExit} />
+              </div>
             </div>
           )}
 
-          {/* Step 2: 첫 번째 확인 화면 (이렇게 사실래?) */}
+          {/* Step 2 */}
           {step === 2 && (
             <Subtitle
               nameText="무파니"
               nameColor={mupani.nameBox}
               nameTextColor={mupani.nameText}
-              contentText={`${qty}무라면...\n다 해서 ${totalCost.toLocaleString()}벨인데 이렇게 사실래?`}
-              highlights={[{ text: `${totalCost.toLocaleString()}`, color: COLORS.ac.ocean }]}
+              contentText={`${qty}무라면...\n다 해서 ${totalCost.toLocaleString()}벨인데 이렇게 사실래?${
+                isMupaniOwner ? `\n할머니가 덤으로 ${MUPANI_BONUS}무를 더 챙겨주래` : ''
+              }`}
+              highlights={[
+                { text: `${totalCost.toLocaleString()}`, color: COLORS.ac.ocean },
+                ...(isMupaniOwner ? [{ text: `${MUPANI_BONUS}`, color: COLORS.ac.ocean }] : []),
+              ]}
               options={[
                 { text: '사실게', onClick: handleFinalConfirm },
                 { text: '다시정하실게', onClick: handleReselect },
@@ -232,7 +245,7 @@ export default function Mupani({ gameState, myId, onBuy, onSkip }) {
             />
           )}
 
-          {/* Step 3: 최종 구매 완료 화면 */}
+          {/* Step 3 */}
           {step === 3 && (
             <Subtitle
               nameText="무파니"
@@ -240,20 +253,22 @@ export default function Mupani({ gameState, myId, onBuy, onSkip }) {
               nameTextColor={mupani.nameText}
               contentText={`무야 무야 비~싸져라~\n비싸지면 좋겠구만~\n무는 3턴이 지나면 썩으니 기억하라구...`}
               highlights={[{ text: '3턴', color: COLORS.ac.red }]}
+              onTypingComplete={handleResultTypingDone}
             />
           )}
 
-          {/* Step 4: 스킵 화면 (안살래 선택 시) */}
+          {/* Step 4 */}
           {step === 4 && (
             <Subtitle
               nameText="무파니"
               nameColor={mupani.nameBox}
               nameTextColor={mupani.nameText}
               contentText={`무 장사 외길 인생을 걸은 지\n얼마 안 됐지만 아무튼...\n다음에 기회가 있으면 또 보자구~`}
+              onTypingComplete={handleResultTypingDone}
             />
           )}
 
-          {/* Step 5: 무 보유 중 메시지 (이미 무가 있을 때) */}
+          {/* Step 5 */}
           {step === 5 && (
             <Subtitle
               nameText="무파니"

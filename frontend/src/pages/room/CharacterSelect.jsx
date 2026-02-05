@@ -55,7 +55,7 @@ const CharacterSelect = () => {
   const handleSelect = (characterId) => {
     if (takenCharacters.includes(characterId)) return;
     if (selectedCharacter === characterId) {
-      setSelectedCharacter(null); // 다시 클릭 시 해제? 아니면 유지. 보통은 유지.
+      setSelectedCharacter(null);
     } else {
       setSelectedCharacter(characterId);
     }
@@ -75,8 +75,7 @@ const CharacterSelect = () => {
   };
 
   const handleLeave = () => {
-    leaveRoom(stompClient, roomId);
-    navigate('/room-list');
+    navigate(`/rooms/${roomId}`);
   };
 
   // 미리보기 로직: 호버 중이면 호버, 아니면 선택된 캐릭터, 그것도 아니면 기본값(애플)

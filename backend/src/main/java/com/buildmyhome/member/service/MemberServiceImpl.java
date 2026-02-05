@@ -64,12 +64,9 @@ public class MemberServiceImpl implements MemberService {
       throw new IllegalArgumentException("비밀번호가 일치하지 않습니다.");
     }
 
-    // 정지 회원 체크
+    // 정지 시간이 지났으면 자동 해제
     if (Boolean.TRUE.equals(member.getIsSuspended())) {
-      if (member.getSuspendedUntil() != null && member.getSuspendedUntil().isAfter(java.time.LocalDateTime.now())) {
-        throw new IllegalArgumentException("정지된 계정입니다. 해제 시간: " + member.getSuspendedUntil());
-      } else {
-        // 정지 시간이 지났으면 자동 해제
+      if (member.getSuspendedUntil() != null && member.getSuspendedUntil().isBefore(java.time.LocalDateTime.now())) {
         member.setIsSuspended(false);
         member.setSuspendedUntil(null);
       }
@@ -96,6 +93,8 @@ public class MemberServiceImpl implements MemberService {
       .naverId(member.getNaverId())
       .googleId(member.getGoogleId())
       .profileImage(member.getProfileImage())
+      .isSuspended(member.getIsSuspended())
+      .suspendedUntil(member.getSuspendedUntil())
       .build();
   }
 

@@ -9,10 +9,11 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.buildmyhome.game.service.GameStateService;
+import jakarta.annotation.PreDestroy;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
@@ -25,8 +26,22 @@ public class MupaniServiceImpl implements MupaniService {
     // 구매 라운드 + 4 라운드 시작 시점에 무 자동 소멸
     private static final int RADISH_DECAY_OFFSET_ROUND = 4;
 
+    // 전원 결정 완료 후 턴 종료 지연(초)
+    private static final int ALL_DECIDED_END_DELAY_SECONDS = 10;
+
     // roomId -> 무파니 구간 임시 세션(결정 상태/대상 스냅샷) 저장소
     private final ConcurrentHashMap<Long, Session> sessions = new ConcurrentHashMap<>();
+
+    // roomId -> 예약된 종료 작업(중복 예약/취소용)
+    private final ConcurrentHashMap<Long, ScheduledFuture<?>> endTurnFutures = new ConcurrentHashMap<>();
+
+    // 종료 예약 스케줄러(서비스 내부)
+    private final ScheduledExecutorService scheduler =
+            Executors.newScheduledThreadPool(1, r -> {
+                Thread t = new Thread(r, "mupani-end-scheduler");
+                t.setDaemon(true);
+                return t;
+            });
 
     // 게임 토픽 브로드캐스트(STOMP) 송신자
     private final SimpMessagingTemplate template;
@@ -37,6 +52,13 @@ public class MupaniServiceImpl implements MupaniService {
     public MupaniServiceImpl(SimpMessagingTemplate template, GameStateService gameStateService) {
         this.template = template;
         this.gameStateService = gameStateService;
+    }
+
+    @PreDestroy
+    public void shutdownScheduler() {
+        try {
+            scheduler.shutdownNow();
+        } catch (Exception ignored) {}
     }
 
     // 무파니 구간 내 "누가 결정을 해야 하는지/했는지"만 추적하는 세션
@@ -63,10 +85,43 @@ public class MupaniServiceImpl implements MupaniService {
         return sessions.computeIfAbsent(roomId, (k) -> new Session());
     }
 
+    // 예약 종료 등록(이미 예약돼 있으면 중복 예약 안 함)
+    private void scheduleEndTurn(Long roomId, GameState gameState, int delaySeconds) {
+        if (roomId == null || gameState == null) return;
+
+        ScheduledFuture<?> existing = endTurnFutures.get(roomId);
+        if (existing != null && !existing.isDone() && !existing.isCancelled()) {
+            return; // 이미 예약됨
+        }
+
+        ScheduledFuture<?> future = scheduler.schedule(() -> {
+            try {
+                // 10초 뒤에도 아직 무파니 상태면 종료
+                if (gameState.getStatus() == GameStatus.WAITING_MUPANI) {
+                    endTurnNow(roomId, gameState);
+                }
+            } finally {
+                endTurnFutures.remove(roomId);
+            }
+        }, delaySeconds, TimeUnit.SECONDS);
+
+        endTurnFutures.put(roomId, future);
+    }
+
+    // 예약 종료 취소
+    private void cancelScheduledEndTurn(Long roomId) {
+        if (roomId == null) return;
+        ScheduledFuture<?> f = endTurnFutures.remove(roomId);
+        if (f != null) {
+            f.cancel(false);
+        }
+    }
+
     // 무파니 상태 진입 시: 기존 세션 제거 후 현재 gameState로 스냅샷 재구성
     @Override
     public void startSession(Long roomId, GameState gameState) {
         if (roomId == null || gameState == null) return;
+        cancelScheduledEndTurn(roomId);
 
         sessions.remove(roomId);
         Session s = getOrCreate(roomId);
@@ -77,6 +132,8 @@ public class MupaniServiceImpl implements MupaniService {
     @Override
     public void clearSession(Long roomId) {
         if (roomId == null) return;
+        cancelScheduledEndTurn(roomId);
+
         sessions.remove(roomId);
     }
 
@@ -152,6 +209,11 @@ public class MupaniServiceImpl implements MupaniService {
         // 전원 결정 완료가 "처음으로" 달성됐는지 계산
         boolean becameAllDecided = markAllDecidedIfFirst(s);
 
+        // 전원 결정 완료면 10초 뒤 턴 종료 예약
+        if (becameAllDecided) {
+            scheduleEndTurn(roomId, gameState, ALL_DECIDED_END_DELAY_SECONDS);
+        }
+
         // 벨 변화량은 음수로 기록
         TradeResult tr = new TradeResult("RADISH_BOUGHT", finalQty, -cost, price);
         return new MupaniActionResult(tr, becameAllDecided);
@@ -186,6 +248,11 @@ public class MupaniServiceImpl implements MupaniService {
 
         // 전원 결정 완료가 "처음으로" 달성됐는지 계산
         boolean becameAllDecided = markAllDecidedIfFirst(s);
+
+        // 전원 결정 완료면 10초 뒤 턴 종료 예약
+        if (becameAllDecided) {
+            scheduleEndTurn(roomId, gameState, ALL_DECIDED_END_DELAY_SECONDS);
+        }
 
         TradeResult tr = new TradeResult("RADISH_SKIPPED", 0, 0, gameState.getRadishPrice());
         return new MupaniActionResult(tr, becameAllDecided);
@@ -242,7 +309,7 @@ public class MupaniServiceImpl implements MupaniService {
     public void onTimeout(Long roomId, GameState gameState) {
         if (roomId == null || gameState == null) return;
         if (gameState.getStatus() != GameStatus.WAITING_MUPANI) return;
-
+        cancelScheduledEndTurn(roomId);
         endTurnNow(roomId, gameState);
     }
 
@@ -255,13 +322,13 @@ public class MupaniServiceImpl implements MupaniService {
         synchronized (gameState) {
             // 이미 상태가 바뀌었으면 중복 종료 방지
             if (gameState.getStatus() != GameStatus.WAITING_MUPANI) return;
+            cancelScheduledEndTurn(roomId);
 
             // 무파니 세션 정리
             clearSession(roomId);
 
             // 다음 플레이어로 턴 전환(내부에서 status/updatedAt 등 처리 가정)
             gameStateService.turnToNextPlayer(roomId);
-            //      gameState.nextTurn();
 
             // TURN_COMPLETED 메시지 구성 후 토픽 전송
             GameMessage endMsg = buildTurnCompletedMessage(gameState);

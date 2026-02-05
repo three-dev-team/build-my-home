@@ -64,6 +64,23 @@ function App() {
     return children;
   };
 
+  // 정지 유저 접근 차단 - /home, /config, /user-inquiry 제외 모든 페이지 접근 불가
+  const SuspendedBlockRoute = ({ children }) => {
+    const token = sessionStorage.getItem('token');
+    const isSuspended = sessionStorage.getItem('isSuspended');
+
+    if (!token) {
+      return <Navigate to="/" replace />;
+    }
+
+    // 정지된 유저는 /home으로 리다이렉트 (정지 모달 표시용)
+    if (isSuspended === 'true') {
+      return <Navigate to="/home" replace />;
+    }
+
+    return children;
+  };
+
   // 권한 확인 - 경로로 admin 페이지로 들어오려고 하면 차단
   const ProtectedAdminRoute = ({ children }) => {
     const userRole = sessionStorage.getItem('role');
@@ -145,33 +162,33 @@ function App() {
           <Route
             path="/store"
             element={
-              <ProtectedRoute>
+              <SuspendedBlockRoute>
                 <Store />
-              </ProtectedRoute>
+              </SuspendedBlockRoute>
             }
           />
           <Route
             path="/rooms/:roomId"
             element={
-              <ProtectedRoute>
+              <SuspendedBlockRoute>
                 <Room />
-              </ProtectedRoute>
+              </SuspendedBlockRoute>
             }
           />
           <Route
             path="/rooms/:roomId/select"
             element={
-              <ProtectedRoute>
+              <SuspendedBlockRoute>
                 <CharacterSelect />
-              </ProtectedRoute>
+              </SuspendedBlockRoute>
             }
           />
           <Route
             path="/room-list"
             element={
-              <ProtectedRoute>
+              <SuspendedBlockRoute>
                 <RoomList />
-              </ProtectedRoute>
+              </SuspendedBlockRoute>
             }
           />
           <Route
@@ -185,9 +202,9 @@ function App() {
           <Route
             path="/games/:roomId"
             element={
-              <ProtectedRoute>
+              <SuspendedBlockRoute>
                 <GamePage />
-              </ProtectedRoute>
+              </SuspendedBlockRoute>
             }
           />
           <Route
