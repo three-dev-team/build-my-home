@@ -124,7 +124,13 @@ export default function Login() {
   useEffect(() => {
     const token = sessionStorage.getItem('token');
     if (token) {
-      navigate('/home');
+      const returnUrl = sessionStorage.getItem('returnUrl');
+      if (returnUrl) {
+        sessionStorage.removeItem('returnUrl');
+        navigate(returnUrl);
+      } else {
+        navigate('/home');
+      }
     }
   }, [navigate]);
 
@@ -197,7 +203,15 @@ export default function Login() {
         }
 
         openAlert(`${nickname}님 환영합니다!`);
-        setTimeout(() => navigate('/home'), 1500);
+        setTimeout(() => {
+          const returnUrl = sessionStorage.getItem('returnUrl');
+          if (returnUrl) {
+            sessionStorage.removeItem('returnUrl');
+            navigate(returnUrl);
+          } else {
+            navigate('/home');
+          }
+        }, 1500);
       }
     } catch (error) {
       const errorMsg = error.response?.data?.message || error.response?.data || '';

@@ -21,6 +21,22 @@ public class RoomStateServiceImpl implements RoomStateService {
     }
     synchronized (room) {
       player.setEnteredAt(java.time.LocalDateTime.now()); // 입장 시간 기록
+      
+      // 사용 중인 슬롯과 잠긴 슬롯을 제외한 빈 자리 찾기 (1-based)
+      java.util.Set<Integer> usedIndices = room.getPlayers().values().stream()
+          .filter(p -> p.getIndex() != null)
+          .map(RoomPlayerState::getIndex)
+          .collect(java.util.stream.Collectors.toSet());
+      
+      java.util.Set<Integer> lockedSlots = room.getLockedSlots();
+      
+      for (int i = 1; i <= 4; i++) {
+        if (!usedIndices.contains(i) && !lockedSlots.contains(i)) {
+          player.setIndex(i);
+          break;
+        }
+      }
+      
       room.addPlayer(player);
     }
   }

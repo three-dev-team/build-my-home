@@ -31,6 +31,12 @@ const CharacterSelect = () => {
           }
         });
 
+        // [Added] 먼저 방에 입장 시도 - 대기방에 빈 카드로 표시됨
+        client.publish({
+          destination: '/app/rooms/enter',
+          body: JSON.stringify({ roomId: roomId }),
+        });
+
         client.publish({
           destination: '/app/rooms/get-players',
           body: JSON.stringify({ roomId: roomId }),

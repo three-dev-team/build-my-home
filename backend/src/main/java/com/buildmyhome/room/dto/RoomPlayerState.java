@@ -14,4 +14,5 @@ public class RoomPlayerState {
   private boolean isReady;
   private boolean isHost;
   private LocalDateTime enteredAt;
+  private Integer index; // [NEW] 플레이어 자리 인덱스 (1-based)
 }

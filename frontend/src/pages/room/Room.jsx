@@ -39,6 +39,7 @@ function Room() {
   const [maxPlayers, setMaxPlayers] = useState(4);
   const [totalRounds, setTotalRounds] = useState(null);
   const [stompClient, setStompClient] = useState(null);
+  const [lockedSlots, setLockedSlots] = useState(new Set()); // 잠긴 슬롯 목록 (1-based)
 
   // 상태 (States)
   const [targetStartTime, setTargetStartTime] = useState(null);
@@ -47,6 +48,11 @@ function Room() {
   const [showHostTimer, setShowHostTimer] = useState(false); // [New] 방장 타이머 표시 여부 (전원)
   const [chatMessages, setChatMessages] = useState({});
   const [activeDropdown, setActiveDropdown] = useState(null); // 'chat' or 'rounds' or null
+
+  // 초대 관련 상태
+  const [inviteCode, setInviteCode] = useState('');
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [copySuccess, setCopySuccess] = useState(false);
 
   // 강퇴 상태 (Kick States)
   const [kickTargetId, setKickTargetId] = useState(null);
@@ -144,6 +150,7 @@ function Room() {
         setRoomTitle(roomResponse.title);
         setMaxPlayers(roomResponse.maxPlayers);
         setTotalRounds(roomResponse.totalRounds);
+        setInviteCode(roomResponse.inviteCode || '');
         setLoading(false);
       } catch (error) {
         console.error('방 정보 조회 에러:', error);
@@ -175,9 +182,11 @@ function Room() {
               isHost: false,
             }));
             data.players.forEach((p, idx) => {
-              if (idx < 4) {
-                updated[idx] = {
-                  index: idx + 1,
+              // 백엔드에서 받은 index가 있으면 사용, 없으면 배열 순서 사용
+              const slotIndex = (p.index ? p.index : idx + 1) - 1;
+              if (slotIndex >= 0 && slotIndex < 4) {
+                updated[slotIndex] = {
+                  index: slotIndex + 1,
                   memberId: p.memberId,
                   nickname: p.nickname,
                   characterId: p.characterId,
@@ -188,6 +197,10 @@ function Room() {
             });
             setPlayers(updated);
             setTargetStartTime(data.autoStartTime || null);
+          }
+          // 잠긴 슬롯 업데이트
+          if (data.lockedSlots) {
+            setLockedSlots(new Set(data.lockedSlots));
           }
           if (data.type === 'CHAT') {
             setChatMessages((prev) => ({
@@ -218,27 +231,20 @@ function Room() {
     leaveRoom(stompClient, roomId);
     navigate('/room-list');
   };
-  const handleSlotClick = (index, isEmpty) => {
+  // 빈 슬롯 좌클릭 시 잠금 토글 (방장만)
+  const handleSlotClick = (slotIndex) => {
     if (!isHost) return;
-    const currentCount = players.filter((p) => p.nickname).length;
-    let newMax = maxPlayers;
-    if (index >= maxPlayers) newMax = index + 1;
-    else if (isEmpty) {
-      if (currentCount > index) {
-        if (index < 2) return;
-        newMax = index;
-      } // 잠금 (기존 인원 강퇴 방지?)
-      else {
-        if (index < 2) return;
-        newMax = index;
-      }
-    } else return;
+    // 1-based index로 변환
+    const slot = slotIndex + 1;
 
-    if (newMax !== maxPlayers)
-      stompClient?.publish({
-        destination: '/app/rooms/update-settings',
-        body: JSON.stringify({ roomId: Number(roomId), maxPlayers: newMax }),
-      });
+    // 해당 슬롯에 플레이어가 있으면 잠금 불가
+    const hasPlayer = players.find((p) => p.index === slot && p.nickname);
+    if (hasPlayer) return;
+
+    stompClient?.publish({
+      destination: '/app/rooms/toggle-lock',
+      body: JSON.stringify({ roomId: Number(roomId), slotIndex: slot }),
+    });
   };
   // 라운드 변경 (10 -> 15 -> 20 -> 10)
   const handleRoundChange = () => {
@@ -249,6 +255,19 @@ function Room() {
       body: JSON.stringify({ roomId: Number(roomId), totalRounds: nextRounds }),
     });
     setTotalRounds(nextRounds); // 낙관적 UI 업데이트 (Optimistic UI update)
+  };
+
+  // 빈 자리 우클릭 시 자리 이동
+  const handleMoveSeat = (targetIndex, isEmpty, islocked) => {
+    // 빈 자리가 아니거나 잠긴 자리면 무시
+    if (!isEmpty || islocked) return;
+    // 준비 상태면 이동 불가
+    if (currentPlayer?.isReady) return;
+
+    stompClient?.publish({
+      destination: '/app/rooms/move-seat',
+      body: JSON.stringify({ roomId: Number(roomId), targetIndex }),
+    });
   };
 
   const handleKick = (tid) => {
@@ -433,7 +452,7 @@ function Room() {
         <div className="flex-1 w-full max-w-[78.13cqw] flex items-start justify-center px-[0.83cqw] gap-[1.04cqw] pt-[6cqw]">
           {players.map((player) => {
             const isEmpty = !player.nickname;
-            const islocked = player.index - 1 >= maxPlayers;
+            const islocked = lockedSlots.has(player.index); // 개별 슬롯 잠금 확인
             const isReady = player.isReady;
             const isMySlot = player.memberId === myId;
             const charImg = player.characterId ? CHARACTER_IMG_MAP[player.characterId] : null;
@@ -461,8 +480,14 @@ function Room() {
                 {/* 카드 Area */}
                 <div
                   onClick={() => {
-                    if (!isMySlot) {
-                      handleSlotClick(player.index - 1, isEmpty);
+                    if (!isMySlot && isEmpty) {
+                      handleSlotClick(player.index - 1);
+                    }
+                  }}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    if (!isMySlot && isEmpty) {
+                      handleMoveSeat(player.index - 1, isEmpty, islocked);
                     }
                   }}
                   className={`
@@ -783,7 +808,10 @@ function Room() {
         {/* --- 하단 컨트롤 --- */}
         <div className="absolute bottom-[6cqw] left-1/2 -translate-x-1/2 z-10">
           <div className="flex gap-[2cqw] items-center">
-            <button className="bg-[#78D7B2] w-[15cqw] py-[1cqw] rounded-[1.2cqw] shadow-lg hover:scale-105 transition flex items-center justify-center gap-[0.8cqw]">
+            <button
+              onClick={() => setShowInviteModal(true)}
+              className="bg-[#78D7B2] w-[15cqw] py-[1cqw] rounded-[1.2cqw] shadow-lg hover:scale-105 transition flex items-center justify-center gap-[0.8cqw]"
+            >
               <img
                 src="/images/room-waiting/icon-mail.svg"
                 alt="invite"
@@ -840,6 +868,47 @@ function Room() {
                 className="bg-[#594E36] text-white px-[2.08cqw] py-[0.63cqw] rounded-[0.63cqw] font-bold text-[1.04cqw] hover:bg-[#453C2A] hover:scale-105 transition shadow-md"
               >
                 확인
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* 초대 모달 */}
+        {showInviteModal && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 animate-fade-in">
+            <div className="bg-white rounded-[1.04cqw] p-[2.08cqw] shadow-xl flex flex-col items-center gap-[1.67cqw] min-w-[25cqw] animate-scale-up">
+              <div className="text-[#594E36] font-bold text-[1.46cqw]">🎮 친구 초대하기</div>
+
+              {/* 초대 코드 */}
+              <div className="w-full flex flex-col gap-[0.42cqw]">
+                <span className="text-[#7C7158] text-[0.94cqw]">초대 코드</span>
+                <div className="flex items-center gap-[0.63cqw]">
+                  <div className="flex-1 bg-[#F5F1E8] rounded-[0.63cqw] px-[1.04cqw] py-[0.63cqw] font-mono font-bold text-[1.25cqw] text-[#594E36] text-center tracking-widest">
+                    {inviteCode}
+                  </div>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(inviteCode);
+                      setCopySuccess(true);
+                      setTimeout(() => setCopySuccess(false), 2000);
+                    }}
+                    className="bg-[#594E36] text-white px-[1.04cqw] py-[0.63cqw] rounded-[0.63cqw] font-bold text-[0.94cqw] hover:bg-[#453C2A] transition"
+                  >
+                    복사
+                  </button>
+                </div>
+              </div>
+
+              {/* 복사 완료 메시지 */}
+              {copySuccess && (
+                <span className="text-[#78D7B2] font-bold text-[0.94cqw] animate-fade-in">✓ 복사 완료!</span>
+              )}
+
+              <button
+                onClick={() => setShowInviteModal(false)}
+                className="bg-[#E0DED9] text-[#594E36] px-[2.5cqw] py-[0.63cqw] rounded-[0.63cqw] font-bold text-[1.04cqw] hover:bg-[#D0CEC9] transition"
+              >
+                닫기
               </button>
             </div>
           </div>

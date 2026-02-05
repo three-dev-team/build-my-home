@@ -48,6 +48,13 @@ function App() {
     };
   }, []);
 
+  // 마우스 우클릭 방지
+  useEffect(() => {
+    const handleContextMenu = (e) => e.preventDefault();
+    document.addEventListener('contextmenu', handleContextMenu);
+    return () => document.removeEventListener('contextmenu', handleContextMenu);
+  }, []);
+
   // 로그인 필수 - 토큰 없으면 로그인 페이지로 이동
   const ProtectedRoute = ({ children }) => {
     const token = sessionStorage.getItem('token');

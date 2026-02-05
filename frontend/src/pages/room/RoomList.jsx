@@ -28,6 +28,7 @@ export default function RoomList() {
   const [keyword, setKeyword] = useState(''); // 검색어 상태
 
   const [searchOpen, setSearchOpen] = useState(false);
+  const [inviteCodeOpen, setInviteCodeOpen] = useState(false); // 초대코드 입력 모달
   const [transitioning, setTransitioning] = useState(false);
 
   const [toast, setToast] = useState(null);
@@ -243,6 +244,38 @@ export default function RoomList() {
       return bt - at;
     });
   }, [rooms]);
+
+  // 초대코드로 방 입장 처리
+  const handleInviteCode = async (code) => {
+    const token = sessionStorage.getItem('token');
+    if (!token) {
+      showToast('로그인이 필요해.');
+      return;
+    }
+    try {
+      const res = await fetch(`${API_BASE}/api/rooms/invite/${code}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        if (res.status === 404) {
+          showToast('유효하지 않은 초대코드야.');
+        } else {
+          showToast('방 정보를 불러올 수 없어.');
+        }
+        return;
+      }
+      const room = await res.json();
+      if (room.status !== 'WAITING') {
+        showToast('이미 게임이 시작된 섬이야.');
+        return;
+      }
+      setInviteCodeOpen(false);
+      navigate(`/rooms/${room.id}/select`);
+    } catch (err) {
+      console.error('초대코드 처리 에러:', err);
+      showToast('초대코드 처리 중 오류가 발생했어.');
+    }
+  };
 
   const openJoinModal = (room) => {
     const isFull = room.currentPlayers >= room.maxPlayers;
@@ -494,21 +527,38 @@ export default function RoomList() {
 
             {/* [하단 섹션] 액션 바 (Footer) - 148px = 13.7cqh, 80px = 4.17cqw padding, 10px = 0.93cqh pb */}
             <div className="w-full h-[13.7cqh] px-[4.17cqw] flex justify-between items-center shrink-0 pb-[0.93cqh]">
-              {/* 검색 버튼 - 56px = 2.92cqw, padding 4 = 0.21cqw */}
-              <button
-                onClick={() => setSearchOpen(true)}
-                className="flex flex-col items-center hover:scale-110 transition-transform p-[0.21cqw]"
-              >
-                <div
-                  className="w-[2.92cqw] h-[2.92cqw] bg-[#8B5E83]"
-                  style={{
-                    maskImage: `url("/images/roomlist/icon-search.svg")`,
-                    WebkitMaskImage: `url("/images/roomlist/icon-search.svg")`,
-                    maskSize: 'contain',
-                    WebkitMaskSize: 'contain',
-                  }}
-                />
-              </button>
+              {/* 검색 버튼 + 초대코드 버튼 */}
+              <div className="flex gap-[1.25cqw]">
+                <button
+                  onClick={() => setSearchOpen(true)}
+                  className="flex flex-col items-center hover:scale-110 transition-transform p-[0.21cqw]"
+                >
+                  <div
+                    className="w-[2.92cqw] h-[2.92cqw] bg-[#8B5E83]"
+                    style={{
+                      maskImage: `url("/images/roomlist/icon-search.svg")`,
+                      WebkitMaskImage: `url("/images/roomlist/icon-search.svg")`,
+                      maskSize: 'contain',
+                      WebkitMaskSize: 'contain',
+                    }}
+                  />
+                </button>
+                <button
+                  onClick={() => setInviteCodeOpen(true)}
+                  className="flex flex-col items-center hover:scale-110 transition-transform p-[0.21cqw]"
+                  title="초대코드 입력"
+                >
+                  <div
+                    className="w-[2.92cqw] h-[2.92cqw] bg-[#8B5E83]"
+                    style={{
+                      maskImage: `url("/images/roomlist/icon-mail.svg")`,
+                      WebkitMaskImage: `url("/images/roomlist/icon-mail.svg")`,
+                      maskSize: 'contain',
+                      WebkitMaskSize: 'contain',
+                    }}
+                  />
+                </button>
+              </div>
 
               {/* 섬 만들기 (중앙 버튼) - 300px = 15.63cqw, 80px = 7.41cqh, 40px = 2.08cqw radius, 32px = 1.67cqw text */}
               <button
@@ -597,6 +647,8 @@ export default function RoomList() {
             }}
           />
         )}
+
+        {inviteCodeOpen && <InviteCodeModal onClose={() => setInviteCodeOpen(false)} onSubmit={handleInviteCode} />}
       </div>
     </AspectLayout>
   );
@@ -1157,6 +1209,62 @@ function SearchModal({ initialKeyword, onClose, onSearch }) {
             style={{ backgroundColor: COLORS.roomList.btnMain }}
           >
             검색
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --------------------------------------------------------------------------------------
+// [MODAL 4: Invite Code]
+// --------------------------------------------------------------------------------------
+function InviteCodeModal({ onClose, onSubmit }) {
+  const [code, setCode] = useState('');
+
+  const handleSubmit = () => {
+    if (code.trim().length === 0) return;
+    onSubmit(code.trim().toUpperCase());
+  };
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/60 z-[200] flex items-center justify-center p-[0.83cqw] backdrop-blur-md"
+      onMouseDown={onClose}
+    >
+      <div
+        className="w-[31.25cqw] bg-white rounded-[2.08cqw] p-[2.08cqw] shadow-2xl"
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        <h2 className="text-[2.08cqw] font-black text-center mb-[2.78cqh]" style={{ color: COLORS.roomList.textMain }}>
+          초대코드 입력
+        </h2>
+
+        <input
+          value={code}
+          onChange={(e) => setCode(e.target.value.toUpperCase())}
+          placeholder="6자리 코드 입력"
+          maxLength={6}
+          className="w-full h-[6.48cqh] px-[1.25cqw] rounded-[1.04cqw] bg-[#F5F0EB] text-[1.67cqw] font-bold text-center tracking-[0.42cqw] outline-none placeholder:text-gray-300"
+          style={{ color: COLORS.roomList.textMain }}
+          onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+          autoFocus
+        />
+
+        <div className="flex gap-[0.83cqw] mt-[2.78cqh]">
+          <button
+            onClick={onClose}
+            className="flex-1 h-[6.48cqh] rounded-[1.25cqw] bg-gray-300 text-white text-[1.46cqw] font-bold hover:brightness-105"
+          >
+            취소
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={code.trim().length === 0}
+            className="flex-1 h-[6.48cqh] rounded-[1.25cqw] text-white text-[1.46cqw] font-bold hover:brightness-105 disabled:opacity-50"
+            style={{ backgroundColor: COLORS.roomList.btnMain }}
+          >
+            입장
           </button>
         </div>
       </div>

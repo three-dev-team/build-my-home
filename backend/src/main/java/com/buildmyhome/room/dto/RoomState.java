@@ -1,6 +1,7 @@
 package com.buildmyhome.room.dto;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.Getter;
 import lombok.Setter;
@@ -20,6 +21,9 @@ public class RoomState {
   @Setter
   private Long autoStartTime; // 자동 시작 예정 시간 (Server Timestamp)
 
+  // 잠긴 슬롯 목록 (1-based index)
+  private final Set<Integer> lockedSlots = ConcurrentHashMap.newKeySet();
+
   // 접속할 때 쿠키로 로컬로 다운을 받을 수 있으면 좋을 듯
   // Key: memberId Value: RoomPlayerState
   private final Map<Long, RoomPlayerState> players = new ConcurrentHashMap<>();
@@ -28,6 +32,22 @@ public class RoomState {
     this.roomId = roomId;
     this.totalRounds = totalRounds;
     this.maxPlayers = maxPlayers;
+  }
+
+  // 슬롯 잠금 토글
+  public boolean toggleLock(int slotIndex) {
+    if (lockedSlots.contains(slotIndex)) {
+      lockedSlots.remove(slotIndex);
+      return false; // 잠금 해제됨
+    } else {
+      lockedSlots.add(slotIndex);
+      return true; // 잠금됨
+    }
+  }
+
+  // 슬롯이 잠겨있는지 확인
+  public boolean isSlotLocked(int slotIndex) {
+    return lockedSlots.contains(slotIndex);
   }
 
   // totalRounds setter 추가 (판수 변경 기능)
