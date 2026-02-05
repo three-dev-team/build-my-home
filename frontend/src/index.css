@@ -83,12 +83,20 @@
 }
 
 /* 커서 설정 */
-html, body {
-    cursor: url("/images/icon-cursor.png") 0 0, auto;
+html,
+body {
+  /* 전체 영역 기본 커서 */
+  cursor:
+    url('/images/icon-cursor.svg') 6 6,
+    /* 6 6은 클릭되는 좌표(Hotspot) */ auto;
 }
+
 button:hover,
 a:hover,
 .clickable:hover {
-    cursor: url("/images/icon-cursor-pointer.png") 0 0, pointer;
+  /* 포인터 상태 (지금 보내준 흰색/검정 포인터) */
+  /* 10 0 좌표는 손가락 끝이 정확히 버튼을 누르게 만듭니다 */
+  cursor:
+    url('/images/icon-cursor-pointer.svg') 10 0,
+    pointer;
 }
-
