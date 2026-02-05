@@ -1,10 +1,10 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
+import Loading from '../../components/common/Loading';
 
 export default function OAuth2RedirectHandler() {
   const location = useLocation();
   const ranRef = useRef(false); // React StrictMode로 인한 중복 실행 방지
-  const [fadeOut, setFadeOut] = useState(false);
 
   useEffect(() => {
     // 1. 중복 실행 방지 로직
@@ -42,11 +42,10 @@ export default function OAuth2RedirectHandler() {
         sessionStorage.setItem('bell', bell || '0');
         sessionStorage.setItem('level', level || '1');
 
-        // 5. 메인 화면으로 이동 (페이드아웃 후)
-        setFadeOut(true);
+        // 5. 메인 화면으로 이동
         setTimeout(() => {
           window.location.href = '/home';
-        }, 1000); // 페이드아웃 애니메이션 시간만큼만 대기
+        }, 1000);
       } catch (error) {
         console.error('인증 처리 중 오류 발생:', error);
         window.location.href = '/'; // 오류 발생 시 로그인 페이지로 복귀
@@ -57,18 +56,5 @@ export default function OAuth2RedirectHandler() {
     }
   }, [location]);
 
-  return (
-    <div
-      className={`w-full h-screen flex items-center justify-center bg-black bg-cover bg-center bg-no-repeat transition-opacity duration-1000 ${
-        fadeOut ? 'opacity-0' : 'opacity-100'
-      }`}
-      style={{ backgroundImage: 'url(/images/bg-loading-1.jpg)' }}
-    >
-      <div className="flex flex-col items-center gap-4">
-        {/* 애니메이션 효과로 처리 중임을 알림 */}
-        <div className="text-3xl animate-bounce">🍃</div>
-        <div className="text-2xl font-black text-[#8b5a2b]">주민 등록증을 확인 중입니다...</div>
-      </div>
-    </div>
-  );
+  return <Loading message="주민 등록증을 확인 중입니다..." backgroundImage="/images/bg-loading-1.jpg" />;
 }

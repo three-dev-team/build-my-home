@@ -306,17 +306,13 @@ function Room() {
 
         {/* --- 글로벌 게임 시작 카운트다운 오버레이 --- */}
         {countDown !== null && (
-          <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center animate-fade-in pointer-events-none">
-            <div className="flex flex-col items-center justify-center">
-              {countDown > 0 ? (
-                <div className="text-white text-[7.81cqw] font-black drop-shadow-[0_0.52cqw_0.52cqw_rgba(0,0,0,0.5)] animate-bounce">
-                  {countDown}
-                </div>
-              ) : (
-                <div className="text-white text-[5.21cqw] font-black drop-shadow-[0_0.52cqw_0.52cqw_rgba(0,0,0,0.5)] animate-ping">
-                  GO!
-                </div>
-              )}
+          <div className="absolute inset-0 z-40 flex items-center justify-center pointer-events-none">
+            <div className="bg-[#594E36]/90 px-[6cqw] py-[5cqw] rounded-[2.5cqw] shadow-2xl text-center">
+              <p className="text-[#FFFEE0] text-[2.5cqw] font-black leading-relaxed">
+                잠시후 자동으로
+                <br />
+                게임이 시작됩니다...
+              </p>
             </div>
           </div>
         )}
@@ -533,13 +529,13 @@ function Room() {
                           )}
                         </div>
 
-                        {/* 말풍선 - 플레이어 카드 우측 상단 */}
+                        {/* 말풍선 - 캐릭터 머리 위 */}
                         {chatMessages[player.memberId] && (
-                          <div className="absolute top-[0.5cqw] right-[-3cqw] z-40 bg-[#FFFEE0] px-[1cqw] py-[0.5cqw] rounded-[0.83cqw] shadow-lg border-[0.1cqw] border-[#EAD7B8] whitespace-nowrap animate-gentle-bounce">
+                          <div className="absolute top-[2cqw] left-1/2 -translate-x-1/2 z-[60] bg-[#FFFEE0] px-[1cqw] py-[0.5cqw] rounded-[0.83cqw] shadow-lg border-[0.1cqw] border-[#EAD7B8] whitespace-nowrap animate-gentle-bounce">
                             <span className="font-bold text-[#7B6C53] text-[1.2cqw]">
                               {chatMessages[player.memberId].text}
                             </span>
-                            <div className="absolute -bottom-[0.42cqw] left-[1.5cqw] w-[0.83cqw] h-[0.83cqw] bg-[#FFFEE0] border-b-[0.1cqw] border-r-[0.1cqw] border-[#EAD7B8] transform rotate-45"></div>
+                            <div className="absolute -bottom-[0.42cqw] left-1/2 -translate-x-1/2 w-[0.83cqw] h-[0.83cqw] bg-[#FFFEE0] border-b-[0.1cqw] border-r-[0.1cqw] border-[#EAD7B8] transform rotate-45"></div>
                           </div>
                         )}
                       </div>

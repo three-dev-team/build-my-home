@@ -3,9 +3,9 @@ import React from 'react';
 export default function LogoutModal({ onConfirm }) {
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center px-6 z-[9999]">
-      <div className="w-full max-w-[22cqw] rounded-[1.5cqw] p-[2cqw] bg-[#FFFCEF] border-[0.21cqw] border-[#8b5a2b] shadow-2xl flex flex-col items-center text-center">
+      <div className="w-full max-w-[22cqw] rounded-[1.5cqw] p-[2cqw] bg-[#FFFCEF] shadow-2xl flex flex-col items-center text-center">
         {/* Warning Icon */}
-        <div className="w-[4.17cqw] h-[4.17cqw] rounded-full bg-[#FFF9E6] border-[0.21cqw] border-[#8b5a2b] flex items-center justify-center text-[2.5cqw] mb-[1.5cqh] shadow-sm">
+        <div className="w-[5.5cqw] h-[5.5cqw] rounded-full bg-[#FFF9E6] flex items-center justify-center text-[3.5cqw] mb-[1.5cqh]">
           ⚠️
         </div>
 
