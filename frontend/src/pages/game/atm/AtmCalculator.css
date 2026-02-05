@@ -1,0 +1,126 @@
+/* =========================
+   ATM Calculator (1920x1080 기준)
+   ========================= */
+
+/* 1920x1080 기준 스케일 */
+.atmCalc-root {
+    position: absolute;
+    inset: 0;
+    z-index: 30;
+    overflow: hidden;
+    container-type: size;
+
+    --sx: calc(100cqw / 1920);
+    --sy: calc(100cqh / 1080);
+    --s: min(var(--sx), var(--sy));
+
+    font-family: var(--font-gosanja);
+}
+
+/* 제목: 상단 중앙 / 위에서 60px */
+.atmCalc-title {
+    position: absolute;
+    left: 50%;
+    top: calc(60 * var(--s));
+    transform: translateX(-50%);
+    font-size: calc(44 * var(--s));
+    color: #43991a;
+    text-align: center;
+}
+
+/* 상단 잔액 박스 */
+.atmCalc-balanceBox {
+    position: absolute;
+    left: 50%;
+    top: calc(228 * var(--s));
+    transform: translateX(-50%);
+
+    width: calc(1200 * var(--s));
+    height: calc(240 * var(--s));
+    border-radius: calc(120 * var(--s));
+    background: rgba(255, 255, 255, 0.75);
+
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: calc(44 * var(--s)) calc(140 * var(--s));
+    gap: calc(28 * var(--s));
+}
+
+.atmCalc-balanceRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.atmCalc-balanceLabel {
+    font-size: calc(40 * var(--s));
+    color: #179162;
+}
+
+.atmCalc-balanceValue {
+    font-size: calc(40 * var(--s));
+    color: #60b635;
+    font-weight: 700;
+}
+
+/* 입력창: top 468 */
+.atmCalc-inputWrap {
+    position: absolute;
+    left: 50%;
+    top: calc(468 * var(--s));
+    transform: translateX(-50%);
+    width: calc(560 * var(--s));
+    height: calc(120 * var(--s));
+}
+
+.atmCalc-inputBox {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: calc(388 * var(--s));
+    height: calc(74 * var(--s));
+    border-radius: calc(28 * var(--s));
+    border: calc(6 * var(--s)) solid #60b635;
+    background: rgba(255, 255, 255, 0.65);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.atmCalc-inputText {
+    font-size: calc(44 * var(--s));
+    color: #43991a;
+    font-weight: 700;
+}
+
+.atmCalc-unitPill {
+    position: absolute;
+    left: calc(404 * var(--s));
+    top: calc(34 * var(--s));
+    transform: translateY(-50%);
+
+    width: calc(52 * var(--s));
+    height: calc(52 * var(--s));
+    border-radius: calc(999 * var(--s));
+    background: #60b635;
+    color: #fff;
+    font-size: calc(28 * var(--s));
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 입력 우측 보조 문구 */
+.atmCalc-helper {
+    position: absolute;
+    left: calc(468 * var(--s));
+    top: calc(44 * var(--s));
+    transform: translateY(-50%);
+    font-size: calc(18 * var(--s));
+    color: #60b635;
+    white-space: nowrap;
+}
+

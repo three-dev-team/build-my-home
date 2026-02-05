@@ -280,3 +280,15 @@
     transform: none !important;
     filter: none !important;
 }
+/* 관전자 대기 레이어: Loan.jsx와 동일한 스케일 컨텍스트 제공 */
+.spectator-wait {
+    position: absolute;
+    inset: 0;
+    z-index: 25000;
+    pointer-events: none;
+
+    container-type: size;
+    --sx: calc(100cqw / 1920);
+    --sy: calc(100cqh / 1080);
+    --s: min(var(--sx), var(--sy));
+}

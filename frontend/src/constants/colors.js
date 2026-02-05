@@ -65,6 +65,18 @@ export const COLORS = {
     optionText: '#5b4d33',
   },
 
+  // 계산기
+  numberPad: {
+    panel: '#a6916b',
+    key: '#e5c691',
+    keyText: '#846240',
+    clear: '#eebb4e',
+    max: '#b9944c',
+    backspace: '#60605a',
+    confirm: '#00b6a9',
+    creamWhite: '#FDFBF6',
+  },
+
   // 캐릭터별 자막 색상
   characters: {
     // 여울 (시청 사무소)
