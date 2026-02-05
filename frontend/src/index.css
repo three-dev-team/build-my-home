@@ -81,3 +81,14 @@
 .animate-wiggle {
   animation: wiggle 0.5s ease-in-out infinite;
 }
+
+/* 커서 설정 */
+html, body {
+    cursor: url("/images/icon-cursor.png") 0 0, auto;
+}
+button:hover,
+a:hover,
+.clickable:hover {
+    cursor: url("/images/icon-cursor-pointer.png") 0 0, pointer;
+}
+
