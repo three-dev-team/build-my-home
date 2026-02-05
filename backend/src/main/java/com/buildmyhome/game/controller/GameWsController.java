@@ -109,9 +109,18 @@ public class GameWsController {
 
         simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
     }
+    private void refreshHouseInfos(GameState gameState) {
+        if (gameState == null || gameState.getPlayers() == null) return;
+
+        for (GamePlayerState p : gameState.getPlayers().values()) {
+            if (p == null) continue;
+            houseService.updateHouseInfo(p); // canUpgradeHouse/nextHouseLevel/requiredResources 최신화
+        }
+    }
 
     // 서버메모리 -> 프론트로 전달하는 공통 응답 DTO 생성하는 메서드
     private GameMessage defaultGameResponse(String type, GameState gameState) {
+        refreshHouseInfos(gameState);
         GameMessage response = new GameMessage();
         response.setType(type);
         response.setCurrentPlayerId(gameState.getCurrentPlayerId());
@@ -177,7 +186,23 @@ public class GameWsController {
         gameState.setTotalRounds(room.getTotalRounds());
 
         for (RoomPlayerState player : room.getPlayers().values()) {
-            gameState.addPlayer(new GamePlayerState(player.getMemberId(), player.getNickname(), player.getCharacterId()));
+        // Todo: 테스트용입니다!!! 지울 것!!!!
+            GamePlayerState gps = new GamePlayerState(
+                    player.getMemberId(),
+                    player.getNickname(),
+                    player.getCharacterId()
+            );
+            // 모든 자원 10개씩
+            for (ResourceType t : ResourceType.values()) {
+                gps.getResources().put(t, 10);
+            }
+
+            // 모든 수확물 1개씩
+            for (HarvestType h : HarvestType.values()) {
+                gps.getHarvests().put(h, 10);
+            }
+
+            gameState.addPlayer(gps);
         }
         gameStateService.saveGame(roomId, gameState);
 
@@ -547,18 +572,12 @@ public class GameWsController {
                         int qty = Math.max(1, message.getQuantity());
                         MupaniService.MupaniActionResult ar = mupaniService.buy(roomId, gameState, memberId, qty);
                         applyTradeResult(response, memberId, ar.trade());
-                        if (ar.becameAllDecided()) {
-                            endMupaniAfterSend = true;
-                        }
                         response.setPlayers(new ArrayList<>(gameState.getPlayers().values()));
                         break;
                     }
                     case "RADISH_SKIP": {
                         MupaniService.MupaniActionResult ar = mupaniService.skip(roomId, gameState, memberId);
                         applyTradeResult(response, memberId, ar.trade());
-                        if (ar.becameAllDecided()) {
-                            endMupaniAfterSend = true;
-                        }
                         response.setPlayers(new ArrayList<>(gameState.getPlayers().values()));
                         break;
                     }
@@ -682,11 +701,6 @@ public class GameWsController {
                 response.setStatus(gameState.getStatus().name());
                 response.setPlayers(new ArrayList<>(gameState.getPlayers().values()));
                 simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
-                // 무파니 전원 결정 완료면 응답 전송 후 즉시 턴 종료(TURN_COMPLETED 브로드캐스트)
-                if (endMupaniAfterSend) {
-                    mupaniService.endTurnNow(roomId, gameState);
-                    return;
-                }
             } catch (Exception e) {
                 // 에러 발생 시 에러 메시지 전송
                 GameMessage errorResponse = defaultGameResponse("ACTION_ERROR", gameState);

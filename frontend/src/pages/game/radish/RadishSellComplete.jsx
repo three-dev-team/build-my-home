@@ -1,3 +1,4 @@
+// RadishSellComplete.jsx
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import AutoMove from '../../../components/common/AutoMove.jsx';
@@ -24,6 +25,7 @@ export default function RadishSellComplete({
 
   const qtyText = useMemo(() => fmt(soldQty), [soldQty]);
   const amtText = useMemo(() => fmt(soldAmount), [soldAmount]);
+
   const [typedDone, setTypedDone] = useState(false);
   const exitTimerRef = useRef(null);
 

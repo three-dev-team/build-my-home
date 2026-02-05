@@ -1,8 +1,12 @@
-/* 무파니 컨테이너 */
 .mupani-container {
     position: relative;
-    width: 100cqw;
-    height: 100cqh;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    container-type: size;
+    --sx: calc(100cqw / 1920);
+    --sy: calc(100cqh / 1080);
+    --s: min(var(--sx), var(--sy));
     background-image: url('/images/mupani/bg-mupanitile.jpg');
     background-size: cover;
     background-position: center;
@@ -16,7 +20,6 @@
     inset: 0;
     display: flex;
     flex-direction: column;
-    background: rgba(255, 248, 230, 0.3); /* cream ivory 30% */
 }
 
 /* UI 배경 영역 */
@@ -43,9 +46,9 @@
 .mupani-header-question {
     position: absolute;
     z-index: 3;
-    width: 54.38cqw; /* 1046px */
-    height: 6.29cqh; /* 68px */
-    font-size: 2.7cqw; /* 52px */
+    width: 54.38cqw;
+    height: 6.29cqh;
+    font-size: 2.7cqw;
     color: #5C4A3A;
     text-align: center;
     display: flex;
@@ -63,14 +66,14 @@
 .mupani-radish-display {
     position: absolute;
     z-index: 3;
-    width: 9.375cqw; /* 180px */
-    height: 6.67cqh; /* 72px */
+    width: 9.375cqw;
+    height: 6.67cqh;
     display: flex;
     align-items: center;
     justify-content: right;
-    font-size: 3.75cqw; /* 72px */
-    top: 23.51cqh;  /* 254px */
-    right: 42.5cqw; /* 816px */
+    font-size: 3.75cqw;
+    top: 23.51cqh;
+    right: 42.5cqw;
     color: white;
 }
 
@@ -78,14 +81,16 @@
 .mupani-total {
     position: absolute;
     z-index: 3;
-    width: 7.91cqw; /* 152px */
-    height: 5.92cqh; /* 64px */
-    font-size: 2.08cqw; /* 40px */
-    color: #4AC1E0;
-    text-align: center;
+    width: calc(152 * var(--s));
+    height: calc(64 * var(--s));
+    font-size: calc(48 * var(--s));
+    line-height: calc(64 * var(--s));
+    white-space: nowrap;
+    text-align: right;
     display: flex;
     align-items: center;
-    justify-content: center;
-    top: 36.29cqh;
-    right: 40.83cqw;  /* 784px */
+    justify-content: flex-end;
+    color: #4AC1E0;
+    right: calc(784 * var(--s));
+    top: calc(392 * var(--s));
 }
