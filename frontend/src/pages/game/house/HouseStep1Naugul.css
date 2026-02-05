@@ -7,7 +7,6 @@
     bottom: calc(60 * var(--s));
     pointer-events: none;
     z-index: 2;
-
     display: flex;
     align-items: flex-end;
     justify-content: center;
@@ -27,11 +26,9 @@
     right: 0;
     bottom: calc(58 * var(--s));
     z-index: 5;
-
     display: flex;
     justify-content: center;
     pointer-events: auto;
-
     transform: scale(0.82);
     transform-origin: center bottom;
 }

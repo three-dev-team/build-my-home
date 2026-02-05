@@ -57,6 +57,14 @@ export const COLORS = {
     optionText: '#5b4d33',
   },
 
+  dialogbox: {
+    contentBox: '#183653',
+    contentText: '#5b4d33',
+    arrow: '#ffb700',
+    optionBox: '#fcec9e',
+    optionText: '#5b4d33',
+  },
+
   // 캐릭터별 자막 색상
   characters: {
     // 여울 (시청 사무소)
@@ -98,6 +106,11 @@ export const COLORS = {
     mupani: {
       nameBox: '#E79F52',
       nameText: '#923421',
+    },
+    // 몽셰르(스왑)
+    mongsher: {
+      nameBox: '#ba3aa7',
+      nameText: '#fdcbfd',
     },
     // 기본값
     default: {

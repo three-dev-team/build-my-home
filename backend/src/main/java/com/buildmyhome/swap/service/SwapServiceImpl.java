@@ -1,666 +1,415 @@
 package com.buildmyhome.swap.service;
 
-import com.buildmyhome.game.dto.GameMessage;
-import com.buildmyhome.game.dto.GamePlayerState;
-import com.buildmyhome.game.dto.GameState;
-import com.buildmyhome.game.dto.GameStatus;
-import com.buildmyhome.game.dto.HarvestType;
-import com.buildmyhome.game.dto.ResourceType;
+import com.buildmyhome.game.dto.*;
 import com.buildmyhome.game.service.GameStateService;
-import com.buildmyhome.house.constants.HouseLevel;
+import com.buildmyhome.swap.dto.SwapData;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
-import java.time.Duration;
-import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
 @RequiredArgsConstructor
 public class SwapServiceImpl implements SwapService {
 
-    private final SimpMessagingTemplate simpMessagingTemplate;
     private final GameStateService gameStateService;
+    private final ObjectMapper objectMapper;
 
-    // 방별 스왑 세션 저장소
-    private final ConcurrentHashMap<Long, SwapSession> sessions = new ConcurrentHashMap<>();
+    // 룰렛 속도 상수
+    private static final long PLAYER_CYCLE_MS = 150L;
+    private static final long ARROW_CYCLE_MS = 120L;
 
-    // 룰렛 회전 속도 기준값
-    private static final long CENTER_CYCLE_MS = 120L;
-    private static final long TARGET_CYCLE_MS = 110L;
-
-    // 스왑 이벤트 시작 처리
-    @Override
-    public void start(Long roomId) {
-        if (roomId == null) return;
-
-        GameState gameState = gameStateService.getGame(roomId);
-        if (gameState == null) return;
-
-        synchronized (gameState) {
-            if (gameState.getStatus() != GameStatus.WAITING_SWAP) return;
-
-            // 이미 세션이 살아있으면 중복 시작 방지
-            SwapSession existing = sessions.get(roomId);
-            if (existing != null && !existing.resolved.get()) return;
-
-            Long giverId = gameState.getCurrentPlayerId();
-            GamePlayerState giver = gameState.getPlayers().get(giverId);
-            if (giver == null) return;
-
-            // 대상 후보 목록 구성
-            List<Candidate> candidates = buildCandidates(gameState, giverId);
-
-            // 대상이 없으면 자동 스킵 처리
-            if (candidates.isEmpty()) {
-                giver.setUiStep(2);
-
-                GameMessage res = toGameMessage("SWAP_RESULT", gameState);
-                res.setActionDataStr("{\"phase\":\"RESOLVED\",\"resultSummary\":\"몽셰르: 대상이 없어 자동 스킵\"}");
-
-                broadcast(roomId, res);
-                clear(roomId);
-                return;
-            }
-
-            // 가운데 옵션 구성 가중치 방식
-            List<CenterOption> centerOptions = buildCenterOptionsWeighted();
-
-            SwapSession session = new SwapSession(
-                    giverId,
-                    giver.getCharacterId(),
-                    candidates,
-                    centerOptions
-            );
-            sessions.put(roomId, session);
-
-            // UI 단계 초기화
-            giver.setUiStep(0);
-
-            // 시작 브로드캐스트
-            broadcast(roomId, buildStageMessage(roomId, gameState, session, Phase.INTRO, null));
+    // JSON 파싱
+    private SwapData parseSwapData(String json) {
+        if (json == null || json.isBlank()) return new SwapData();
+        try {
+            return objectMapper.readValue(json, SwapData.class);
+        } catch (Exception e) {
+            return new SwapData();
         }
     }
 
-    // 확정 입력 처리
+    // JSON 변환
+    private String toJson(SwapData data) {
+        try {
+            return objectMapper.writeValueAsString(data);
+        } catch (Exception e) {
+            return "{}";
+        }
+    }
+
     @Override
-    public void confirm(Long roomId, Long actorId) {
-        if (roomId == null || actorId == null) return;
+    public void confirmPlayer1(Long roomId, Long memberId, Long player1Id) {
+        if (roomId == null || memberId == null || player1Id == null) return;
 
         GameState gameState = gameStateService.getGame(roomId);
         if (gameState == null) return;
 
-        SwapSession session = sessions.get(roomId);
-        if (session == null || session.resolved.get()) return;
-
         synchronized (gameState) {
             if (gameState.getStatus() != GameStatus.WAITING_SWAP) return;
-
             // 현재 턴 플레이어만 허용
-            if (!Objects.equals(actorId, gameState.getCurrentPlayerId())) return;
-            if (!Objects.equals(actorId, session.giverId)) return;
+            if (!Objects.equals(memberId, gameState.getCurrentPlayerId())) return;
 
-            GamePlayerState giver = gameState.getPlayers().get(session.giverId);
-            if (giver == null) {
-                clear(roomId);
+            GamePlayerState player = gameState.getPlayers().get(memberId);
+            if (player == null) return;
+
+            // 기존 swapData 읽기
+            SwapData swapData = parseSwapData(player.getActionDataStr());
+
+            // player2와 같은 사람 선택 방지
+            if (player1Id.equals(swapData.getPlayer2Id())) {
                 return;
             }
 
-            int curStage = safeInt(giver.getUiStep());
-            long now = System.currentTimeMillis();
+            // player1Id 저장 + 룰렛 시작 시간 초기화
+            swapData.setPlayer1Id(player1Id);
+            swapData.setPlayer1StartAt(null); // 선택 완료되면 시작 시간 필요 없음
 
-            // intro에서 가운데 룰렛 시작
-            if (curStage == 0) {
-                giver.setUiStep(1);
-                session.centerStartAtEpochMs = now;
+            // 저장
+            player.setActionDataStr(toJson(swapData));
 
-                broadcast(roomId, buildStageMessage(roomId, gameState, session, Phase.SPIN_CENTER, null));
-                return;
-            }
+            // uiStep을 1로 변경 (SelectCategory로 돌아감)
+            player.setUiStep(1);
 
-            // 가운데 룰렛 고정 후 대상 룰렛 시작
-            if (curStage == 1) {
-                giver.setUiStep(2);
-
-                int centerIdx = computeIndex(
-                        session.centerStartAtEpochMs,
-                        now,
-                        CENTER_CYCLE_MS,
-                        session.centerOptions.size()
-                );
-                session.lockedCenterIndex = centerIdx;
-
-                session.targetStartAtEpochMs = now;
-
-                broadcast(roomId, buildStageMessage(roomId, gameState, session, Phase.SPIN_TARGET, null));
-                return;
-            }
-
-            // 대상 고정 후 결과 적용
-            if (curStage >= 2) {
-                if (session.resolved.get()) return;
-
-                int targetIdx = computeIndex(
-                        session.targetStartAtEpochMs,
-                        now,
-                        TARGET_CYCLE_MS,
-                        session.candidates.size()
-                );
-                session.lockedTargetIndex = targetIdx;
-
-                Candidate target = session.candidates.get(targetIdx);
-                GamePlayerState receiver = gameState.getPlayers().get(target.memberId);
-
-                if (receiver == null) {
-                    applyAndBroadcastResultLocked(roomId, gameState, session, "몽셰르: 대상이 사라져 자동 스킵");
-                    return;
-                }
-
-                String summary = applyResult(gameState, session, giver, receiver);
-                applyAndBroadcastResultLocked(roomId, gameState, session, summary);
+            // 3개 다 선택됐으면 결과 적용
+            if (swapData.isAllSelected()) {
+                applyResult(gameState, player, swapData);
             }
         }
     }
 
-    // 타임아웃 종료 처리
     @Override
-    public void onTimeout(Long roomId) {
-        if (roomId == null) return;
+    public void confirmPlayer2(Long roomId, Long memberId, Long player2Id) {
+        if (roomId == null || memberId == null || player2Id == null) return;
 
         GameState gameState = gameStateService.getGame(roomId);
         if (gameState == null) return;
 
-        SwapSession session = sessions.get(roomId);
-        if (session == null || session.resolved.get()) return;
+        synchronized (gameState) {
+            if (gameState.getStatus() != GameStatus.WAITING_SWAP) return;
+            if (!Objects.equals(memberId, gameState.getCurrentPlayerId())) return;
+
+            GamePlayerState player = gameState.getPlayers().get(memberId);
+            if (player == null) return;
+
+            SwapData swapData = parseSwapData(player.getActionDataStr());
+
+            // player1과 같은 사람 선택 방지
+            if (player2Id.equals(swapData.getPlayer1Id())) {
+                return;
+            }
+
+            swapData.setPlayer2Id(player2Id);
+            swapData.setPlayer2StartAt(null);
+
+            player.setActionDataStr(toJson(swapData));
+            player.setUiStep(1);
+
+            if (swapData.isAllSelected()) {
+                applyResult(gameState, player, swapData);
+            }
+        }
+    }
+
+    @Override
+    public void confirmArrow(Long roomId, Long memberId, String category, String direction) {
+        if (roomId == null || memberId == null || category == null || direction == null) return;
+
+        GameState gameState = gameStateService.getGame(roomId);
+        if (gameState == null) return;
 
         synchronized (gameState) {
-            if (gameState.getStatus() != GameStatus.WAITING_SWAP) {
-                clear(roomId);
-                return;
+            if (gameState.getStatus() != GameStatus.WAITING_SWAP) return;
+            if (!Objects.equals(memberId, gameState.getCurrentPlayerId())) return;
+
+            GamePlayerState player = gameState.getPlayers().get(memberId);
+            if (player == null) return;
+
+            SwapData swapData = parseSwapData(player.getActionDataStr());
+
+            swapData.setCategory(category);
+            swapData.setDirection(direction);
+            swapData.setArrowStartAt(null);
+
+            player.setActionDataStr(toJson(swapData));
+            player.setUiStep(1);
+
+            if (swapData.isAllSelected()) {
+                applyResult(gameState, player, swapData);
             }
-
-            GamePlayerState giver = gameState.getPlayers().get(session.giverId);
-            if (giver == null) {
-                clear(roomId);
-                return;
-            }
-
-            long now = System.currentTimeMillis();
-
-            // 현재 화면 기준으로 강제 고정 처리
-            if (session.centerStartAtEpochMs == null) {
-                session.centerStartAtEpochMs = now - ThreadLocalRandom.current().nextLong(0, 3000);
-            }
-            if (session.lockedCenterIndex == null) {
-                session.lockedCenterIndex = computeIndex(
-                        session.centerStartAtEpochMs,
-                        now,
-                        CENTER_CYCLE_MS,
-                        session.centerOptions.size()
-                );
-            }
-
-            if (session.targetStartAtEpochMs == null) {
-                session.targetStartAtEpochMs = now - ThreadLocalRandom.current().nextLong(0, 3000);
-            }
-            if (session.lockedTargetIndex == null) {
-                session.lockedTargetIndex = computeIndex(
-                        session.targetStartAtEpochMs,
-                        now,
-                        TARGET_CYCLE_MS,
-                        session.candidates.size()
-                );
-            }
-
-            giver.setUiStep(2);
-
-            Candidate target = session.candidates.get(session.lockedTargetIndex);
-            GamePlayerState receiver = gameState.getPlayers().get(target.memberId);
-
-            if (receiver == null) {
-                applyAndBroadcastResultLocked(roomId, gameState, session, "몽셰르: 대상이 사라져 자동 스킵");
-                return;
-            }
-
-            String summary = applyResult(gameState, session, giver, receiver);
-            applyAndBroadcastResultLocked(roomId, gameState, session, summary);
         }
     }
 
-    // 재접속 동기화용 payload 제공
     @Override
-    public Optional<String> getPayload(Long roomId) {
-        if (roomId == null) return Optional.empty();
+    public void startPlayer1Roulette(Long roomId, Long memberId) {
+        if (roomId == null || memberId == null) return;
 
-        SwapSession s = sessions.get(roomId);
-        if (s == null) return Optional.empty();
+        GameState gameState = gameStateService.getGame(roomId);
+        if (gameState == null) return;
 
-        return Optional.of(buildPayloadJson(s, "INTRO", null));
+        synchronized (gameState) {
+            if (gameState.getStatus() != GameStatus.WAITING_SWAP) return;
+            if (!Objects.equals(memberId, gameState.getCurrentPlayerId())) return;
+
+            GamePlayerState player = gameState.getPlayers().get(memberId);
+            if (player == null) return;
+
+            SwapData swapData = parseSwapData(player.getActionDataStr());
+            swapData.setPlayer1CycleMs(PLAYER_CYCLE_MS);
+            swapData.setPlayer1StartAt(System.currentTimeMillis());
+
+            player.setActionDataStr(toJson(swapData));
+            player.setUiStep(2);  // SelectFirstPlayer
+        }
     }
 
-    // 세션 제거
     @Override
-    public void clear(Long roomId) {
-        if (roomId == null) return;
-        sessions.remove(roomId);
+    public void startPlayer2Roulette(Long roomId, Long memberId) {
+        if (roomId == null || memberId == null) return;
+
+        GameState gameState = gameStateService.getGame(roomId);
+        if (gameState == null) return;
+
+        synchronized (gameState) {
+            if (gameState.getStatus() != GameStatus.WAITING_SWAP) return;
+            if (!Objects.equals(memberId, gameState.getCurrentPlayerId())) return;
+
+            GamePlayerState player = gameState.getPlayers().get(memberId);
+            if (player == null) return;
+
+            SwapData swapData = parseSwapData(player.getActionDataStr());
+            swapData.setPlayer2CycleMs(PLAYER_CYCLE_MS);
+            swapData.setPlayer2StartAt(System.currentTimeMillis());
+
+            player.setActionDataStr(toJson(swapData));
+            player.setUiStep(3);  // SelectSecondPlayer
+        }
     }
 
-    // 결과 브로드캐스트 및 세션 정리
-    private void applyAndBroadcastResultLocked(Long roomId, GameState gameState, SwapSession session, String summary) {
-        if (session.resolved.getAndSet(true)) return;
+    @Override
+    public void startArrowRoulette(Long roomId, Long memberId) {
+        if (roomId == null || memberId == null) return;
 
-        GameMessage res = toGameMessage("SWAP_RESULT", gameState);
-        res.setActionDataStr(buildPayloadJson(session, "RESOLVED", summary));
+        GameState gameState = gameStateService.getGame(roomId);
+        if (gameState == null) return;
 
-        broadcast(roomId, res);
-        clear(roomId);
+        synchronized (gameState) {
+            if (gameState.getStatus() != GameStatus.WAITING_SWAP) return;
+            if (!Objects.equals(memberId, gameState.getCurrentPlayerId())) return;
+
+            GamePlayerState player = gameState.getPlayers().get(memberId);
+            if (player == null) return;
+
+            SwapData swapData = parseSwapData(player.getActionDataStr());
+            swapData.setArrowCycleMs(ARROW_CYCLE_MS);
+            swapData.setArrowStartAt(System.currentTimeMillis());
+
+            player.setActionDataStr(toJson(swapData));
+            player.setUiStep(4);  // SelectArrow
+        }
     }
 
-    // 결과 적용 로직
-    private String applyResult(GameState gameState,
-                               SwapSession session,
-                               GamePlayerState giver,
-                               GamePlayerState receiver) {
+    private void applyResult(GameState gameState, GamePlayerState currentPlayer, SwapData swapData) {
+        GamePlayerState player1 = gameState.getPlayers().get(swapData.getPlayer1Id());
+        GamePlayerState player2 = gameState.getPlayers().get(swapData.getPlayer2Id());
 
-        int centerIdx = session.lockedCenterIndex == null ? 0 : session.lockedCenterIndex;
-        CenterOption opt = session.centerOptions.get(Math.max(0, Math.min(centerIdx, session.centerOptions.size() - 1)));
-
-        String giverName = safeName(giver.getNickname(), giver.getMemberId());
-        String recvName = safeName(receiver.getNickname(), receiver.getMemberId());
-
-        // 집은 서로 교환 처리
-        if (opt.category == CenterCategory.HOUSE) {
-            HouseLevel a = giver.getHouseLevel();
-            HouseLevel b = receiver.getHouseLevel();
-
-            giver.setHouseLevel(b);
-            receiver.setHouseLevel(a);
-
-            return "집 스왑: " + giverName + " ↔ " + recvName + "  (" + a.name() + " ↔ " + b.name() + ")";
+        if (player1 == null || player2 == null) {
+            currentPlayer.setActionDataStr(toJson(swapData));
+            currentPlayer.setUiStep(5);
+            return;
         }
 
-        // 방향에 따라 송신자와 수신자 결정
-        boolean toOther = opt.direction == SwapDirection.TO_OTHER;
-        GamePlayerState sender = toOther ? giver : receiver;
-        GamePlayerState dest = toOther ? receiver : giver;
+        String category = swapData.getCategory();
+        String direction = swapData.getDirection();
 
-        String senderName = safeName(sender.getNickname(), sender.getMemberId());
-        String destName = safeName(dest.getNickname(), dest.getMemberId());
+        switch (category) {
+            case "HOUSE":
+                swapHouse(player1, player2, swapData);
+                break;
+            case "BELL":
+                swapBell(player1, player2, direction, swapData);
+                break;
+            case "RESOURCE":
+                swapResource(player1, player2, direction, swapData);
+                break;
+            case "LOAN":
+                swapLoan(player1, player2, direction, swapData);
+                break;
+        }
 
-        // 벨 이동 처리
-        if (opt.category == CenterCategory.BELL) {
-            int amount = randomStep(50, 200, 10);
+        currentPlayer.setActionDataStr(toJson(swapData));
+        currentPlayer.setUiStep(5); // 결과 페이지로 이동
+    }
 
-            int senderBell = sender.getBell();
-            int senderLoan = sender.getLoan();
+    // 벨, 대출 100~500 사이 랜덤 (10 단위)
+    private int randomAmount() {
+        return ThreadLocalRandom.current().nextInt(10, 51) * 10;  // 100~500
+    }
 
-            int need = Math.max(0, amount - senderBell);
-            if (need > 0) {
-                senderLoan += need;
-                senderBell = 0;
-            } else {
-                senderBell -= amount;
+    // 집 교환
+    private void swapHouse(GamePlayerState p1, GamePlayerState p2, SwapData swapData) {
+        var temp = p1.getHouseLevel();
+        p1.setHouseLevel(p2.getHouseLevel());
+        p2.setHouseLevel(temp);
+    }
+
+    // 벨 스왑
+    private void swapBell(GamePlayerState p1, GamePlayerState p2, String direction, SwapData swapData) {
+        switch (direction) {
+            case "TO_RIGHT": {
+                int amount = randomAmount();
+                int actual = Math.min(amount, p1.getBell());
+                p1.setBell(p1.getBell() - actual);
+                p2.setBell(p2.getBell() + actual);
+                swapData.setResultAmount(actual);
+                break;
+            }
+            case "TO_LEFT": {
+                int amount = randomAmount();
+                int actual = Math.min(amount, p2.getBell());
+                p2.setBell(p2.getBell() - actual);
+                p1.setBell(p1.getBell() + actual);
+                swapData.setResultAmount(actual);
+                break;
+            }
+            case "EXCHANGE": {
+                int temp = p1.getBell();
+                p1.setBell(p2.getBell());
+                p2.setBell(temp);
+                break;
+            }
+        }
+    }
+
+    // 재화 스왑
+    private void swapResource(GamePlayerState p1, GamePlayerState p2, String direction, SwapData swapData) {
+        switch (direction) {
+            case "TO_RIGHT": {
+                int moved = transferRandomResources(p1, p2);
+                swapData.setResultCount(moved);
+                break;
+            }
+            case "TO_LEFT": {
+                int moved = transferRandomResources(p2, p1);
+                swapData.setResultCount(moved);
+                break;
+            }
+            case "EXCHANGE": {
+                // 1. P1의 데이터를 백업 (타입 명시)
+                var tempRes = copyMap(p1.getResources(), ResourceType.class);
+                var tempHar = copyMap(p1.getHarvests(), HarvestType.class);
+
+                // 2. P1에 P2 데이터 주입
+                p1.setResources(copyMap(p2.getResources(), ResourceType.class));
+                p1.setHarvests(copyMap(p2.getHarvests(), HarvestType.class));
+
+                // 3. P2에 백업해둔 P1 데이터 주입
+                p2.setResources(tempRes);
+                p2.setHarvests(tempHar);
+                break;
+            }
+        }
+    }
+
+    // 대출 스왑
+    private void swapLoan(GamePlayerState p1, GamePlayerState p2, String direction, SwapData swapData) {
+        switch (direction) {
+            case "TO_RIGHT": {
+                int amount = randomAmount();
+                int actual = Math.min(amount, p1.getLoan());
+                p1.setLoan(p1.getLoan() - actual);
+                p2.setLoan(p2.getLoan() + actual);
+                swapData.setResultAmount(actual);
+                break;
+            }
+            case "TO_LEFT": {
+                int amount = randomAmount();
+                int actual = Math.min(amount, p2.getLoan());
+                p2.setLoan(p2.getLoan() - actual);
+                p1.setLoan(p1.getLoan() + actual);
+                swapData.setResultAmount(actual);
+                break;
+            }
+            case "EXCHANGE": {
+                int temp = p1.getLoan();
+                p1.setLoan(p2.getLoan());
+                p2.setLoan(temp);
+                break;
+            }
+        }
+    }
+
+    // 랜덤 1~5개 재화 이동 (from → to)
+    private int transferRandomResources(GamePlayerState from, GamePlayerState to) {
+        int want = ThreadLocalRandom.current().nextInt(1, 6);  // 1~5
+        int moved = 0;
+
+        // Resource 이동
+        if (from.getResources() != null && !from.getResources().isEmpty()) {
+            if (to.getResources() == null) {
+                to.setResources(new EnumMap<>(ResourceType.class));
             }
 
-            sender.setBell(senderBell);
-            sender.setLoan(senderLoan);
-            dest.setBell(dest.getBell() + amount);
-
-            return "현금 이동(부족분 자동 대출): " + senderName + " → " + destName + "  " + amount + "벨";
-        }
-
-        // 대출금 이동 처리
-        if (opt.category == CenterCategory.LOAN) {
-            int amount = randomStep(100, 500, 10);
-
-            int senderLoan = Math.max(0, sender.getLoan());
-
-            if (senderLoan > 0) {
-                int moved = Math.min(amount, senderLoan);
-
-                sender.setLoan(senderLoan - moved);
-                dest.setLoan(Math.max(0, dest.getLoan()) + moved);
-
-                return "대출금 떠넘기기: " + senderName + " → " + destName + "  " + moved;
+            List<ResourceType> available = new ArrayList<>();
+            for (var entry : from.getResources().entrySet()) {
+                if (entry.getValue() > 0) {
+                    available.add(entry.getKey());
+                }
             }
 
-            // sender.loan이 0이면 대상에게 채무 부과 + 전원 벨 분배
-            dest.setLoan(Math.max(0, dest.getLoan()) + amount);
-            distributeBellEqually(gameState, amount);
+            Collections.shuffle(available);
 
-            return "채무 부과(계약서): " + destName + " 대출금 +" + amount + " / 전원에게 " + amount + "벨 공평 분배";
+            for (ResourceType type : available) {
+                if (moved >= want) break;
+
+                int have = from.getResources().get(type);
+                int take = Math.min(want - moved, have);
+
+                from.getResources().put(type, have - take);
+                to.getResources().merge(type, take, Integer::sum);
+                moved += take;
+            }
         }
 
-        // 재화 이동 처리
-        int want = ThreadLocalRandom.current().nextInt(1, 4);
-        InventoryPick pick = pickAnyTransferable(sender);
+        // Harvest 이동 (Resource로 부족하면)
+        if (moved < want && from.getHarvests() != null && !from.getHarvests().isEmpty()) {
+            if (to.getHarvests() == null) {
+                to.setHarvests(new EnumMap<>(HarvestType.class));
+            }
 
-        if (pick == null) {
-            return "재화 이동: " + senderName + " → " + destName + "  (보낼 재화가 없어 아무 일도 일어나지 않음)";
+            List<HarvestType> available = new ArrayList<>();
+            for (var entry : from.getHarvests().entrySet()) {
+                if (entry.getValue() > 0) {
+                    available.add(entry.getKey());
+                }
+            }
+
+            Collections.shuffle(available);
+
+            for (HarvestType type : available) {
+                if (moved >= want) break;
+
+                int have = from.getHarvests().get(type);
+                int take = Math.min(want - moved, have);
+
+                from.getHarvests().put(type, have - take);
+                to.getHarvests().merge(type, take, Integer::sum);
+                moved += take;
+            }
         }
 
-        int moved = Math.min(want, pick.have);
-        if (moved <= 0) {
-            return "재화 이동: " + senderName + " → " + destName + "  (보낼 재화가 없어 아무 일도 일어나지 않음)";
+        return moved;
+    }
+
+    // Map 복사 (null-safe)
+    @SuppressWarnings("unchecked")
+    // Enum 타입을 인자로 받아 null이어도 빈 맵을 생성하도록 수정
+    private <K extends Enum<K>, V> EnumMap<K, V> copyMap(Map<K, V> original, Class<K> keyType) {
+        if (original == null || original.isEmpty()) {
+            return new EnumMap<>(keyType);
         }
-
-        if (pick.kind == InventoryKind.RESOURCE) {
-            Map<ResourceType, Integer> sMap = safeResourceMap(sender);
-            Map<ResourceType, Integer> dMap = safeResourceMap(dest);
-
-            int have = sMap.getOrDefault(pick.resourceType, 0);
-            sMap.put(pick.resourceType, Math.max(0, have - moved));
-            dMap.put(pick.resourceType, dMap.getOrDefault(pick.resourceType, 0) + moved);
-
-            return "재화 이동: " + senderName + " → " + destName + "  " + pick.resourceType.name() + " x" + moved;
-        } else {
-            Map<HarvestType, Integer> sMap = safeHarvestMap(sender);
-            Map<HarvestType, Integer> dMap = safeHarvestMap(dest);
-
-            int have = sMap.getOrDefault(pick.harvestType, 0);
-            sMap.put(pick.harvestType, Math.max(0, have - moved));
-            dMap.put(pick.harvestType, dMap.getOrDefault(pick.harvestType, 0) + moved);
-
-            return "재화 이동: " + senderName + " → " + destName + "  " + pick.harvestType.name() + " x" + moved;
-        }
-    }
-
-    // 가운데 옵션 가중치 구성
-    private List<CenterOption> buildCenterOptionsWeighted() {
-        List<CenterOption> list = new ArrayList<>(20);
-
-        // HOUSE 1칸
-        list.add(new CenterOption(CenterCategory.HOUSE, SwapDirection.SWAP));
-
-        // BELL 9칸
-        for (int i = 0; i < 5; i++) list.add(new CenterOption(CenterCategory.BELL, SwapDirection.TO_OTHER));
-        for (int i = 0; i < 4; i++) list.add(new CenterOption(CenterCategory.BELL, SwapDirection.TO_ME));
-
-        // RESOURCE 8칸
-        for (int i = 0; i < 4; i++) list.add(new CenterOption(CenterCategory.RESOURCE, SwapDirection.TO_OTHER));
-        for (int i = 0; i < 4; i++) list.add(new CenterOption(CenterCategory.RESOURCE, SwapDirection.TO_ME));
-
-        // LOAN 2칸
-        list.add(new CenterOption(CenterCategory.LOAN, SwapDirection.TO_OTHER));
-        list.add(new CenterOption(CenterCategory.LOAN, SwapDirection.TO_ME));
-
-        return list;
-    }
-
-    private enum InventoryKind { RESOURCE, HARVEST }
-
-    private static class InventoryPick {
-        final InventoryKind kind;
-        final ResourceType resourceType;
-        final HarvestType harvestType;
-        final int have;
-
-        private InventoryPick(ResourceType t, int have) {
-            this.kind = InventoryKind.RESOURCE;
-            this.resourceType = t;
-            this.harvestType = null;
-            this.have = have;
-        }
-
-        private InventoryPick(HarvestType t, int have) {
-            this.kind = InventoryKind.HARVEST;
-            this.resourceType = null;
-            this.harvestType = t;
-            this.have = have;
-        }
-    }
-
-    // sender가 가진 ResourceType 또는 HarvestType 중 하나를 선택
-    private InventoryPick pickAnyTransferable(GamePlayerState sender) {
-        if (sender == null) return null;
-
-        List<InventoryPick> pool = new ArrayList<>();
-
-        Map<ResourceType, Integer> rMap = safeResourceMap(sender);
-        for (ResourceType t : ResourceType.values()) {
-            int v = rMap.getOrDefault(t, 0);
-            if (v > 0) pool.add(new InventoryPick(t, v));
-        }
-
-        Map<HarvestType, Integer> hMap = safeHarvestMap(sender);
-        for (HarvestType t : HarvestType.values()) {
-            int v = hMap.getOrDefault(t, 0);
-            if (v > 0) pool.add(new InventoryPick(t, v));
-        }
-
-        if (pool.isEmpty()) return null;
-        return pool.get(ThreadLocalRandom.current().nextInt(pool.size()));
-    }
-
-    // ResourceType 맵을 null 안전하게 보장
-    private Map<ResourceType, Integer> safeResourceMap(GamePlayerState p) {
-        if (p.getResources() == null) {
-            p.setResources(new EnumMap<>(ResourceType.class));
-        }
-        return p.getResources();
-    }
-
-    // HarvestType 맵을 null 안전하게 보장
-    // 프로젝트에서 필드명이 harvests가 아니면 여기만 맞춰서 수정
-    private Map<HarvestType, Integer> safeHarvestMap(GamePlayerState p) {
-        if (p.getHarvests() == null) {
-            p.setHarvests(new EnumMap<>(HarvestType.class));
-        }
-        return p.getHarvests();
-    }
-
-    // 전원에게 벨을 공평하게 분배
-    private void distributeBellEqually(GameState gameState, int amount) {
-        if (gameState == null || gameState.getPlayers() == null || gameState.getPlayers().isEmpty()) return;
-
-        List<Long> ids = new ArrayList<>(gameState.getPlayers().keySet());
-        ids.sort(Comparator.naturalOrder());
-
-        int n = ids.size();
-        int base = amount / n;
-        int rem = amount % n;
-
-        for (int i = 0; i < ids.size(); i++) {
-            GamePlayerState p = gameState.getPlayers().get(ids.get(i));
-            if (p == null) continue;
-
-            int add = base + (i < rem ? 1 : 0);
-            p.setBell(p.getBell() + add);
-        }
-    }
-
-    // step 단위 랜덤 값 생성
-    private int randomStep(int min, int max, int step) {
-        int count = ((max - min) / step) + 1;
-        int k = ThreadLocalRandom.current().nextInt(count);
-        return min + (k * step);
-    }
-
-    // 대상 후보 목록 구성
-    private List<Candidate> buildCandidates(GameState gameState, Long giverId) {
-        List<Candidate> list = new ArrayList<>();
-
-        for (GamePlayerState p : gameState.getPlayers().values()) {
-            if (p == null) continue;
-            if (Objects.equals(p.getMemberId(), giverId)) continue;
-            list.add(new Candidate(p.getMemberId(), p.getCharacterId()));
-        }
-
-        list.sort(Comparator.comparingLong(c -> c.memberId));
-        return list;
-    }
-
-    // 단계 메시지 구성
-    private GameMessage buildStageMessage(Long roomId, GameState gameState, SwapSession session, Phase phase, String resultSummary) {
-        GameMessage msg = toGameMessage("SWAP_STAGE", gameState);
-        msg.setRoomId(roomId);
-        msg.setActionDataStr(buildPayloadJson(session, phase.name(), resultSummary));
-        return msg;
-    }
-
-    // payload JSON 문자열 생성
-    private String buildPayloadJson(SwapSession s, String phase, String resultSummary) {
-        StringBuilder sb = new StringBuilder();
-        sb.append("{");
-
-        sb.append("\"phase\":\"").append(phase).append("\",");
-
-        sb.append("\"actorId\":").append(s.giverId).append(",");
-        sb.append("\"actorCharacterId\":").append(s.giverCharacterId == null ? 0 : s.giverCharacterId).append(",");
-
-        sb.append("\"centerStartAt\":").append(s.centerStartAtEpochMs == null ? 0 : s.centerStartAtEpochMs).append(",");
-        sb.append("\"centerCycleMs\":").append(CENTER_CYCLE_MS).append(",");
-        sb.append("\"centerOptions\":[");
-        for (int i = 0; i < s.centerOptions.size(); i++) {
-            CenterOption o = s.centerOptions.get(i);
-            if (i > 0) sb.append(",");
-            sb.append("{")
-                    .append("\"category\":\"").append(o.category.name()).append("\",")
-                    .append("\"direction\":\"").append(o.direction.name()).append("\"")
-                    .append("}");
-        }
-        sb.append("],");
-        sb.append("\"lockedCenterIndex\":").append(s.lockedCenterIndex == null ? -1 : s.lockedCenterIndex).append(",");
-
-        sb.append("\"targetStartAt\":").append(s.targetStartAtEpochMs == null ? 0 : s.targetStartAtEpochMs).append(",");
-        sb.append("\"targetCycleMs\":").append(TARGET_CYCLE_MS).append(",");
-        sb.append("\"targetCandidates\":[");
-        for (int i = 0; i < s.candidates.size(); i++) {
-            Candidate c = s.candidates.get(i);
-            if (i > 0) sb.append(",");
-            sb.append("{")
-                    .append("\"memberId\":").append(c.memberId).append(",")
-                    .append("\"characterId\":").append(c.characterId == null ? 0 : c.characterId)
-                    .append("}");
-        }
-        sb.append("],");
-        sb.append("\"lockedTargetIndex\":").append(s.lockedTargetIndex == null ? -1 : s.lockedTargetIndex);
-
-        if (resultSummary != null) {
-            sb.append(",\"resultSummary\":\"").append(escapeJson(resultSummary)).append("\"");
-        }
-
-        sb.append("}");
-        return sb.toString();
-    }
-
-    // JSON 문자열 이스케이프 처리
-    private String escapeJson(String s) {
-        if (s == null) return "";
-        return s.replace("\\", "\\\\").replace("\"", "\\\"");
-    }
-
-    // 룰렛 인덱스 계산
-    private int computeIndex(Long startAt, long now, long cycleMs, int len) {
-        if (startAt == null || startAt <= 0 || cycleMs <= 0 || len <= 0) return 0;
-        long elapsed = Math.max(0, now - startAt);
-        return (int) ((elapsed / cycleMs) % len);
-    }
-
-    // 토픽 브로드캐스트 처리
-    private void broadcast(Long roomId, GameMessage msg) {
-        simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, msg);
-    }
-
-    // GameMessage 공통 세팅
-    private GameMessage toGameMessage(String type, GameState gameState) {
-        GameMessage response = new GameMessage();
-        response.setType(type);
-        response.setCurrentPlayerId(gameState.getCurrentPlayerId());
-        response.setStatus(gameState.getStatus().name());
-        response.setPlayers(new ArrayList<>(gameState.getPlayers().values()));
-        response.setTurnOrder(gameState.getTurnOrder());
-        response.setCurrentRound(gameState.getCurrentRound());
-        response.setTotalRounds(gameState.getTotalRounds());
-        response.setRadishPrice(gameState.getRadishPrice());
-
-        int definitionTimeout = gameState.getStatus().getTimeoutSeconds();
-        if (definitionTimeout > 0 && gameState.getStatusUpdatedAt() != null) {
-            long elapsed = Duration.between(gameState.getStatusUpdatedAt(), LocalDateTime.now()).toSeconds();
-            int remain = Math.max(0, definitionTimeout - (int) elapsed);
-            response.setTimeoutSeconds(remain);
-        } else {
-            response.setTimeoutSeconds(definitionTimeout);
-        }
-
-        return response;
-    }
-
-    // null 안전 정수 처리
-    private int safeInt(Integer v) {
-        return v == null ? 0 : v;
-    }
-
-    // 닉네임이 없을 때 표시 이름 처리
-    private String safeName(String nickname, Long memberId) {
-        if (nickname != null && !nickname.isBlank()) return nickname;
-        return "Player#" + (memberId == null ? "?" : memberId);
-    }
-
-    private enum Phase {
-        INTRO,
-        SPIN_CENTER,
-        SPIN_TARGET,
-        RESOLVED
-    }
-
-    private enum CenterCategory {
-        HOUSE,
-        BELL,
-        RESOURCE,
-        LOAN
-    }
-
-    private enum SwapDirection {
-        TO_OTHER,
-        TO_ME,
-        SWAP
-    }
-
-    private static class CenterOption {
-        final CenterCategory category;
-        final SwapDirection direction;
-
-        private CenterOption(CenterCategory category, SwapDirection direction) {
-            this.category = category;
-            this.direction = direction;
-        }
-    }
-
-    private static class Candidate {
-        final Long memberId;
-        final Long characterId;
-
-        private Candidate(Long memberId, Long characterId) {
-            this.memberId = memberId;
-            this.characterId = characterId;
-        }
-    }
-
-    private static class SwapSession {
-        final Long giverId;
-        final Long giverCharacterId;
-
-        final List<Candidate> candidates;
-        final List<CenterOption> centerOptions;
-
-        volatile Long centerStartAtEpochMs;
-        volatile Integer lockedCenterIndex;
-
-        volatile Long targetStartAtEpochMs;
-        volatile Integer lockedTargetIndex;
-
-        final AtomicBoolean resolved = new AtomicBoolean(false);
-
-        private SwapSession(Long giverId, Long giverCharacterId, List<Candidate> candidates, List<CenterOption> centerOptions) {
-            this.giverId = giverId;
-            this.giverCharacterId = giverCharacterId;
-            this.candidates = candidates;
-            this.centerOptions = centerOptions;
-        }
+        return new EnumMap<>(original);
     }
 }

@@ -24,7 +24,7 @@ public enum GameStatus {
     WAITING_RADISH_SELL(0), // 무 판매 화면
 
     // --- 칸 이벤트별 유저 입력을 기다리는 상태 ---
-    WAITING_STAMP(15), // 스탬프칸 이용 중
+    WAITING_STAMP(30), // 스탬프칸 이용 중
     WAITING_RESOURCES(30), // 재화칸 이용 중
     WAITING_HARVEST(30), // 수확물칸 이용 중
     WAITING_SHOP(0), // 아이템 상점 이용 중
@@ -36,7 +36,8 @@ public enum GameStatus {
     WAITING_START(60), // 시작칸 진행 중 (스탬프 정산)
     WAITING_ITEMS(30),  // 아이템칸 진행 중
     WAITING_MACHURILLA(60), // 마추릴라 진행 중
-    WAITING_SWAP(30), // 몽셰르(스왑 이벤트) 진행 중
+//    WAITING_SWAP(30), // 몽셰르(스왑 이벤트) 진행 중
+    WAITING_SWAP(0), // 몽셰르(스왑 이벤트) 진행 중
 
     // --- 다음 턴으로 넘어가기 전 ---
     TURN_END_PENDING(0), // 턴 종료 전 확인 단계(공통)

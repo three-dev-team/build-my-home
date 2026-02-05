@@ -80,9 +80,6 @@ public class GameWsController {
             case WAITING_MUPANI:
                 mupaniService.onTimeout(roomId, gameState);
                 return;
-            case WAITING_SWAP:
-                swapService.onTimeout(roomId);
-                return;
             case WAITING_START:
                 if (player.getRemainingMoves() > 0) {
                     int remaining = player.getRemainingMoves();
@@ -357,11 +354,6 @@ public class GameWsController {
                 mupaniService.startSession(roomId, gameState);
             }
 
-            // SWAP(몽셰르) 세션 시작(2단계 룰렛/5초 자동확정은 서비스에서 처리)
-            if (nextStatus == GameStatus.WAITING_SWAP) {
-                swapService.start(roomId);
-            }
-
             rewardService.prepareReward(nextStatus, player);
 
             if (nextStatus == GameStatus.WAITING_SHOP) {
@@ -473,9 +465,30 @@ public class GameWsController {
                         player.setUiStep(2);
                         response.setType("KK_FEE_PAID");
                         break;
-                    case "SWAP_CONFIRM":
-                        swapService.confirm(roomId, memberId);
-                        return;
+                    case "SWAP_START_PLAYER1_ROULETTE":
+                        swapService.startPlayer1Roulette(roomId, memberId);
+                        response.setType("SWAP_PLAYER1_ROULETTE_STARTED");
+                        break;
+                    case "SWAP_START_PLAYER2_ROULETTE":
+                        swapService.startPlayer2Roulette(roomId, memberId);
+                        response.setType("SWAP_PLAYER2_ROULETTE_STARTED");
+                        break;
+                    case "SWAP_START_ARROW_ROULETTE":
+                        swapService.startArrowRoulette(roomId, memberId);
+                        response.setType("SWAP_ARROW_ROULETTE_STARTED");
+                        break;
+                    case "SWAP_PLAYER1_CONFIRM":
+                        swapService.confirmPlayer1(roomId, memberId, message.getPlayer1Id());
+                        response.setType("SWAP_PLAYER1_CONFIRMED");
+                        break;
+                    case "SWAP_PLAYER2_CONFIRM":
+                        swapService.confirmPlayer2(roomId, memberId, message.getPlayer2Id());
+                        response.setType("SWAP_PLAYER2_CONFIRMED");
+                        break;
+                    case "SWAP_ARROW_CONFIRM":
+                        swapService.confirmArrow(roomId, memberId, message.getCategory(), message.getDirection());
+                        response.setType("SWAP_ARROW_CONFIRMED");
+                        break;
                     case "REWARD_CONFIRM": {
                         if (gameState.getStatus() == GameStatus.WAITING_RESOURCES
                                 || gameState.getStatus() == GameStatus.WAITING_HARVEST) {

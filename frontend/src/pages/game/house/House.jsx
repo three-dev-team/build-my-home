@@ -18,9 +18,17 @@ import HouseStep4BuildFinish from './HouseStep4BuildFinish.jsx';
 
 const px = (n) => `calc(${n} * var(--s))`;
 
+const BG_BY_STEP = {
+  0: '/images/board/bg-buildhouse-main.webp',
+  1: '/images/board/bg-buildhouse-naugul.webp',
+  2: '/images/board/bg-buildhouse-naugul.webp',
+  3: '/images/board/bg-buildhouse-naugul.webp',
+  4: '/images/board/bg-buildhouse-naugul.webp',
+};
+
 const pickCharacter = (characterId) => {
   const id = Number(characterId);
-  return CHARACTERS.find((c) => Number(c.id) === id) || null;
+  return (Array.isArray(CHARACTERS) ? CHARACTERS : []).find((c) => Number(c?.id) === id) || null;
 };
 
 const getCurrentHouseLevel = (player) => {
@@ -29,7 +37,7 @@ const getCurrentHouseLevel = (player) => {
   return normalizeHouseLevelByAny(v);
 };
 
-const pickLevelObj = (level) => (HOUSE_LEVEL_MAP || []).find((x) => Number(x.level) === Number(level)) || null;
+const pickLevelObj = (level) => (HOUSE_LEVEL_MAP || []).find((x) => Number(x?.level) === Number(level)) || null;
 
 const getOwnedBell = (player) => {
   const cand = [
@@ -63,7 +71,7 @@ const calcUpgradeRequirement = (player) => {
   const needBell = Number(nextObj?.bell || 0);
   const ownedBell = getOwnedBell(player);
   const lackBell = Math.max(0, needBell - ownedBell);
-  if (lackBell > 0) lacks.push(`${lackBell}벨이`);
+  if (lackBell > 0) lacks.push(`${lackBell}벨`);
 
   (RESOURCE_ORDER || []).forEach((K) => {
     const lower = String(K).toLowerCase();
@@ -111,19 +119,8 @@ export default function House({ player, isMyTurn, onClose, onAction, onInventory
   const character = useMemo(() => pickCharacter(player?.characterId), [player?.characterId]);
   const { hasAllMaterials, lackMessage } = useMemo(() => calcUpgradeRequirement(player), [player]);
 
-  const BG_BY_STEP = useMemo(
-    () => ({
-      0: '/images/board/bg-buildhouse-main.webp',
-      1: '/images/board/bg-buildhouse-naugul.webp',
-      2: '/images/board/bg-buildhouse-naugul.webp',
-      3: '/images/board/bg-buildhouse-naugul.webp',
-      4: '/images/board/bg-buildhouse-naugul.webp',
-    }),
-    [],
-  );
-
-  const PANEL_BG = useMemo(() => withAlpha(COLORS.ac.black, 0.55), []);
-  const CARD_BG = useMemo(() => withAlpha(COLORS.ac.black, 0.35), []);
+  const PANEL_BG = withAlpha(COLORS.ac.black, 0.55);
+  const CARD_BG = withAlpha(COLORS.ac.black, 0.35);
 
   const handleBack = () => {
     if (!isMyTurn) return;
@@ -154,7 +151,6 @@ export default function House({ player, isMyTurn, onClose, onAction, onInventory
 
           {step === 0 && (
             <HouseStep0
-              player={player}
               isMyTurn={isMyTurn}
               character={character}
               px={px}
