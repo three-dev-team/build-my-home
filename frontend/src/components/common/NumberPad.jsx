@@ -1,120 +1,126 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import './NumberPad.css';
+import { COLORS } from '../../constants/colors.js';
 
-/**
- * NumberPad 컴포넌트
- * @param {number} value - 현재 입력된 값
- * @param {function} onChange - 값 변경 핸들러
- * @param {number} max - 최대값
- * @param {function} onConfirm - 결정 버튼 핸들러
- * @param {string} confirmText - 결정 버튼 텍스트 (기본: "결정")
- * @param {string} maxButtonText - 최대값 버튼 텍스트 (기본: "살 수 있는 만큼")
- */
 export default function NumberPad({
-  value = 1,
-  onChange,
-  max = 999999,
-  onConfirm,
-  confirmText = '결정',
-  maxButtonText = '살 수 있는 만큼',
-}) {
-  // 첫 입력 여부 추적
+                                    value = 1,
+                                    onChange,
+                                    max = 999999,
+                                    onConfirm,
+                                    confirmText = '결정',
+                                    maxButtonText = '전액',
+                                  }) {
   const [isFirstInput, setIsFirstInput] = useState(true);
 
-  // value가 외부에서 변경되면 첫 입력 상태 리셋
   useEffect(() => {
     setIsFirstInput(true);
-  }, [max]); // max가 변경되면 리셋 (새로운 상품 선택 등)
+  }, [max]);
 
-  // 숫자 추가
+  const clamp = (n) => Math.min(max, Math.max(1, n));
+
   const handleAddDigit = (digit) => {
-    let newValue;
-
+    let next;
     if (isFirstInput) {
-      newValue = digit;
+      next = digit;
       setIsFirstInput(false);
     } else {
-      newValue = value * 10 + digit;
+      next = value * 10 + digit;
     }
-
-    onChange(Math.min(max, Math.max(1, newValue)));
+    onChange?.(clamp(next));
   };
 
-  // 숫자 삭제 (백스페이스)
   const handleDelete = () => {
-    setIsFirstInput(false); // 삭제하면 첫 입력 아님
-    const newValue = Math.floor(value / 10);
-    onChange(Math.max(1, newValue));
+    setIsFirstInput(false);
+    const next = Math.floor(value / 10);
+    onChange?.(Math.max(1, next));
   };
 
-  // 초기화
   const handleClear = () => {
-    setIsFirstInput(true); // 초기화하면 다시 첫 입력 상태
-    onChange(1);
+    setIsFirstInput(true);
+    onChange?.(1);
   };
 
-  // 최대값으로 설정
   const handleSetMax = () => {
-    setIsFirstInput(false); // 최대값 설정하면 첫 입력 아님
-    onChange(max);
+    setIsFirstInput(false);
+    onChange?.(max);
   };
+
+  const theme = useMemo(() => COLORS?.numberPad || {}, []);
 
   return (
-    <div className="numpad-wrapper">
-      <div className="numpad-grid">
-        {/* 1행: C, 살 수 있는 만큼, 공백 */}
-        <button className="numpad-btn clear" onClick={handleClear}>
-          C
-        </button>
-        <button className="numpad-btn max" onClick={handleSetMax}>
-          {maxButtonText}
-        </button>
+    <div
+      className="atmNumpadRoot"
+      style={{
+        '--np-panel': theme.panel,
+        '--np-key': theme.key,
+        '--np-keyText': theme.keyText,
+        '--np-clear': theme.clear,
+        '--np-max': theme.max,
+        '--np-backspace': theme.backspace,
+        '--np-confirm': theme.confirm,
+        '--np-creamWhite': theme.creamWhite,
+      }}
+    >
+      <div className="atmNumpadPanel">
+        <div className="atmNumpadGrid">
+          {/* 1행 */}
+          <button type="button" className="atmNumpadBtn btnClear" onClick={handleClear}>
+            C
+          </button>
 
-        {/* 2행: 7, 8, 9, ⌫ */}
-        <button className="numpad-btn" onClick={() => handleAddDigit(7)}>
-          7
-        </button>
-        <button className="numpad-btn" onClick={() => handleAddDigit(8)}>
-          8
-        </button>
-        <button className="numpad-btn" onClick={() => handleAddDigit(9)}>
-          9
-        </button>
-        <button className="numpad-btn delete" onClick={handleDelete}>
-          ⌫
-        </button>
+          <button type="button" className="atmNumpadBtn btnMax" onClick={handleSetMax}>
+            {maxButtonText}
+          </button>
 
+          {/* 1행 4열은 PSD상 빈칸이라 “스페이서”로 자리 고정 */}
+          <div className="atmNumpadSpacer" aria-hidden="true" />
 
-        {/* 3행: 4, 5, 6, 결정 */}
-        <button className="numpad-btn" onClick={() => handleAddDigit(4)}>
-          4
-        </button>
-        <button className="numpad-btn" onClick={() => handleAddDigit(5)}>
-          5
-        </button>
-        <button className="numpad-btn" onClick={() => handleAddDigit(6)}>
-          6
-        </button>
-        <button className="numpad-btn confirm confirm-start" onClick={onConfirm}>
-          {confirmText}
-        </button>
+          {/* 2행 */}
+          <button type="button" className="atmNumpadBtn btnNum key7" onClick={() => handleAddDigit(7)}>
+            7
+          </button>
+          <button type="button" className="atmNumpadBtn btnNum key8" onClick={() => handleAddDigit(8)}>
+            8
+          </button>
+          <button type="button" className="atmNumpadBtn btnNum key9" onClick={() => handleAddDigit(9)}>
+            9
+          </button>
 
+          <button type="button" className="atmNumpadBtn btnDelete" onClick={handleDelete} aria-label="삭제">
+            <span className="btnDeleteIcon" aria-hidden="true" />
+          </button>
 
-        {/* 4행: 1, 2, 3, (결정 계속) */}
-        <button className="numpad-btn" onClick={() => handleAddDigit(1)}>
-          1
-        </button>
-        <button className="numpad-btn" onClick={() => handleAddDigit(2)}>
-          2
-        </button>
-        <button className="numpad-btn" onClick={() => handleAddDigit(3)}>
-          3
-        </button>
+          {/* 3행 */}
+          <button type="button" className="atmNumpadBtn btnNum key4" onClick={() => handleAddDigit(4)}>
+            4
+          </button>
+          <button type="button" className="atmNumpadBtn btnNum key5" onClick={() => handleAddDigit(5)}>
+            5
+          </button>
+          <button type="button" className="atmNumpadBtn btnNum key6" onClick={() => handleAddDigit(6)}>
+            6
+          </button>
 
-        {/* 5행: 0 (3칸), (결정) */}
-        <button className="numpad-btn zero" onClick={() => handleAddDigit(0)}>
-          0
-        </button>
+          <button type="button" className="atmNumpadBtn btnConfirm" onClick={onConfirm}>
+            {confirmText}
+          </button>
+
+          {/* 4행 */}
+          <button type="button" className="atmNumpadBtn btnNum key1" onClick={() => handleAddDigit(1)}>
+            1
+          </button>
+          <button type="button" className="atmNumpadBtn btnNum key2" onClick={() => handleAddDigit(2)}>
+            2
+          </button>
+          <button type="button" className="atmNumpadBtn btnNum key3" onClick={() => handleAddDigit(3)}>
+            3
+          </button>
+
+          {/* 5행 */}
+          <button type="button" className="atmNumpadBtn btnZero key0" onClick={() => handleAddDigit(0)}>
+            0
+          </button>
+        </div>
       </div>
     </div>
   );

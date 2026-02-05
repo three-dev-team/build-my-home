@@ -13,6 +13,7 @@ import { COLORS, withAlpha } from '../../constants/colors.js';
 const BASE = {
   inventory: '/images/inventory',
 };
+const RADISH_ICON_SRC = '/images/mupani/radish.webp';
 
 export default function Inventory({ player, onClose }) {
   if (!player) return null;
@@ -83,9 +84,10 @@ export default function Inventory({ player, onClose }) {
     }
     for (const k of FRUIT_ORDER || []) pushIfOwned('HAR', k, getCount(player.harvests, k));
     for (const k of FISH_ORDER || []) pushIfOwned('FISH', k, getCount(player.harvests, k));
-
+    const radishQty = Number(player?.radishQty ?? 0);
+    if (radishQty > 0) { list.push({ id: 'RADISH_RADISH', key: 'RADISH', label: '무', count: radishQty, src: RADISH_ICON_SRC,});}
     return list;
-  }, [player.resources, player.harvests]);
+  }, [player.resources, player.harvests, player?.radishQty]);
 
   const slotItems = entries.slice(0, 40);
 

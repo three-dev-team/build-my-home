@@ -1,8 +1,7 @@
 import React from 'react';
 import { COLORS, withAlpha } from '../../constants/colors.js';
 
-// import AutoMove from '../../components/common/AutoMove.jsx';
-// <AutoMove open /> => 사용방법
+// <AutoMove /> 그냥 붙여도 16:9 캔버스(AspectLayout) 안에서 1920*1080 기준 px로 스케일
 export default function AutoMove({
                                    open = true,
                                    text = '잠시후 자동으로 이동합니다...',
@@ -18,8 +17,7 @@ export default function AutoMove({
                                    style,
                                  }) {
   if (!open) return null;
-
-  const s = 'var(--s, 1px)';
+  const u = '(1cqh / 10.8)';
 
   return (
     <div
@@ -30,10 +28,10 @@ export default function AutoMove({
         position: 'absolute',
         left: '50%',
         transform: 'translateX(-50%)',
-        top: `calc(${topPx} * ${s})`,
-        width: `calc(${widthPx} * ${s})`,
-        height: `calc(${heightPx} * ${s})`,
-        borderRadius: `calc(${radiusPx} * ${s})`,
+        top: `calc(${topPx} * ${u})`,
+        width: `calc(${widthPx} * ${u})`,
+        height: `calc(${heightPx} * ${u})`,
+        borderRadius: `calc(${radiusPx} * ${u})`,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -42,7 +40,7 @@ export default function AutoMove({
         fontFamily: 'var(--font-gosanja)',
         fontWeight: 600,
         letterSpacing: '-0.02em',
-        fontSize: `calc(${fontPx} * ${s})`,
+        fontSize: `calc(${fontPx} * ${u})`,
         lineHeight: 1,
         userSelect: 'none',
         pointerEvents: 'none',
@@ -50,13 +48,7 @@ export default function AutoMove({
         ...style,
       }}
     >
-      <span
-        style={{
-          whiteSpace: 'nowrap',
-        }}
-      >
-        {text}
-      </span>
+      <span style={{ whiteSpace: 'nowrap' }}>{text}</span>
     </div>
   );
 }

@@ -9,7 +9,7 @@ import { getMyIdFromToken } from '../../utils/auth.js';
 import MainBoardPage from './MainBoardPage.jsx';
 import GameIntro from './GameIntro.jsx';
 import PlayerStatusPanel from './PlayerStatusPanel.jsx';
-import Loan from './Loan.jsx';
+import Loan from './atm/Loan.jsx';
 import Stamp from './Stamp.jsx';
 import PlayerActionPanel from './PlayerActionPanel.jsx';
 import RollDicePage from './RollDicePage.jsx';
@@ -35,6 +35,7 @@ import TurnCharacterPanel from './TurnCharacterPanel.jsx';
 import Swap from './swap/Swap.jsx';
 
 import Subtitle from '../../components/common/Subtitle.jsx';
+import DialogBox from '../../components/common/DialogBox.jsx';
 import { COLORS } from '../../constants/colors.js';
 import { CHARACTERS } from '../../constants/characters.js';
 
@@ -138,8 +139,11 @@ const GamePage = () => {
   // 현재 상태값 편의 변수
   const status = gameState?.status;
 
+  // 내 화면에서 직접 여는 오버레이만 따로 분리
+  const isLocalOverlayOpen = inventoryOpen || atmOpen;
+
   // 오버레이(ATM/인벤) 열림 여부: 관전자 대기 상태도 HUD 숨기기 위해 포함
-  const isOverlayOpen = inventoryOpen || atmOpen || !!inventoryUsingMemberId || !!atmUsingMemberId;
+  const isOverlayOpen = isLocalOverlayOpen || !!inventoryUsingMemberId || !!atmUsingMemberId;
 
   // 보드 장면(= HUD 노출이 필요한 구간)
   const isBoardScene = status === 'WAITING_PLAYER_ACTION' || status === 'MOVING';
@@ -160,13 +164,12 @@ const GamePage = () => {
 
   // ATM 배경(고정)
   const ATM_BG_URL = '/images/board/bg-atm.webp';
+  const shouldUseHouseBgBase = status === 'WAITING_HOUSE';
 
-  // 최종 배경 이미지
   const bgImage =
-    // ATM은 "내가 열었거나" / "누군가 사용 중(관전자 대기)"이면 ATM 배경
-    atmOpen || !!atmUsingMemberId
+    (atmOpen || !!atmUsingMemberId)
       ? `url('${ATM_BG_URL}')`
-      : shouldUseHouseBg || shouldUseHouseBgSpectator
+      : (shouldUseHouseBgBase || shouldUseHouseBg || shouldUseHouseBgSpectator)
         ? `url('${houseBgUrl}')`
         : `url('/images/bg-home.png')`;
 
@@ -482,7 +485,7 @@ const GamePage = () => {
         />
 
         <div className="game-stage">
-          {/* 공통 UI(메뉴/채팅) - 필요하면 showCommonUI 조건으로 사용 */}
+          {/* 공통 UI(채팅/메뉴) - 필요하면 showCommonUI 조건으로 사용 */}
           {/* {showCommonUI && (
             <div className="game-overlay">
               <MenuButton />
@@ -549,10 +552,14 @@ const GamePage = () => {
           {/* 관전자 인벤토리 대기 화면 */}
           {!inventoryOpen && inventoryUsingMemberId && (
             <Subtitle
-              nameText={inventoryUsingPlayer?.nickname}
-              nameColor={COLORS.characters.default.nameBox}
-              nameTextColor={COLORS.characters.default.nameText}
-              contentText={`${inventoryUsingPlayer?.nickname} 님이\n인벤토리를 확인 중입니다...`}
+              nameText={inventoryUsingPlayer?.nickname || '플레이어'}
+              nameColor={inventoryUsingCharacter?.color || COLORS.ac.nookCyan}
+              contentText={
+                `하아~ 집을 언제쯤 지을 수 있으려나...\n` +
+                `재료가 얼마나 모였는지 인벤토리 좀 보고 올게~\n` +
+                `잠깐만 기다려 줘!` +
+                (inventoryUsingCharacter?.habit ? ` ${inventoryUsingCharacter.habit}~!` : '')
+              }
               highlights={[
                 {
                   text: inventoryUsingPlayer?.nickname || '',
@@ -568,22 +575,51 @@ const GamePage = () => {
 
           {/* 관전자 ATM 대기 화면 */}
           {!atmOpen && atmUsingMemberId && (
-            <Subtitle
-              nameText={atmUsingPlayer?.nickname}
-              nameColor={COLORS.characters.default.nameBox}
-              nameTextColor={COLORS.characters.default.nameText}
-              contentText={`${atmUsingPlayer?.nickname} 님이\nATM을 이용 중입니다...`}
-              highlights={[
-                {
-                  text: atmUsingPlayer?.nickname || '',
-                  color: atmUsingCharacter?.color || COLORS.ac.nookCyan,
-                },
-              ]}
-              options={[]}
-              optionDisabled
-              showTriangle={false}
-              typingSpeed={30}
-            />
+            <div className="spectator-wait">
+              {atmUsingCharacter?.rightImage && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    right: 'calc(884 * var(--s))',
+                    bottom: 'calc(416 * var(--s))',
+                    width: 'calc(200 * var(--s))',
+                    height: 'calc(460 * var(--s))',
+                    zIndex: 25010,
+                    pointerEvents: 'none',
+                  }}
+                >
+                  <img
+                    src={atmUsingCharacter.rightImage}
+                    alt="atm-using-character"
+                    draggable={false}
+                    style={{
+                      width: '100%',
+                      height: '100%',
+                      display: 'block',
+                      objectFit: 'contain',
+                      objectPosition: 'center bottom',
+                    }}
+                  />
+                </div>
+              )}
+
+              {(() => {
+                const name = atmUsingPlayer?.nickname || '플레이어';
+                const nickColor = atmUsingCharacter?.color || COLORS.ac.nookCyan;
+
+                return (
+                  <DialogBox
+                    open
+                    className="spectator-wait-dialog"
+                    text={`${name} 님이 ATM을 이용 중입니다\n보안 상의 이유로 잠시만 대기해주세요`}
+                    highlights={[{ text: name, color: nickColor }]}
+                    typingSpeed={30}
+                    optionDisabled
+                    options={[]}
+                  />
+                );
+              })()}
+            </div>
           )}
 
           {/* 무파니 UI(턴 무관 선택 구간 포함) */}
@@ -609,6 +645,7 @@ const GamePage = () => {
                 player={currentPlayer}
                 isMyTurn={isMyTurn}
                 currentPlayerName={currentPlayer?.nickname}
+                currentPlayerCharacterId={currentPlayer?.characterId}
                 userBell={currentPlayer?.bell || 0}
                 userLoan={currentPlayer?.loan || 0}
                 timeoutSeconds={gameState.timeoutSeconds || 0}
@@ -686,7 +723,6 @@ const GamePage = () => {
             )}
 
             {/* 스왑 */}
-            {/* 스왑 */}
             {gameState.status === 'WAITING_SWAP' && (
               <Swap
                 isMyTurn={isMyTurn}
@@ -697,17 +733,6 @@ const GamePage = () => {
                 onExit={handleEventComplete}
               />
             )}
-            {/*{gameState.status === 'WAITING_SWAP' && (*/}
-            {/*  <div style={{ pointerEvents: isMyTurn ? 'auto' : 'none' }}>*/}
-            {/*    <Swap*/}
-            {/*      isMyTurn={isMyTurn}*/}
-            {/*      player={currentPlayer}*/}
-            {/*      resultText={gameState?.actionDataStr}*/}
-            {/*      onConfirm={() => handleAction('SWAP_CONFIRM', {})}*/}
-            {/*      onExit={handleEventComplete}*/}
-            {/*    />*/}
-            {/*  </div>*/}
-            {/*)}*/}
 
             {/* 스타트(이벤트) */}
             {gameState.status === 'WAITING_START' && (
@@ -796,16 +821,20 @@ const GamePage = () => {
             )}
 
             {/* 집 짓기(하우스) */}
-            {gameState.status === 'WAITING_HOUSE' && (
-              <House
-                player={currentPlayer}
-                isMyTurn={isMyTurn}
-                onAction={handleAction}
-                onClose={handleCloseAction}
-                onInventory={() => openInventory('HOUSE')}
-                onATM={() => openAtm('HOUSE')}
-              />
-            )}
+            {gameState.status === 'WAITING_HOUSE' &&
+              !inventoryOpen &&
+              !atmOpen &&
+              !inventoryUsingMemberId &&
+              !atmUsingMemberId && (
+                <House
+                  player={currentPlayer}
+                  isMyTurn={isMyTurn}
+                  onAction={handleAction}
+                  onClose={handleCloseAction}
+                  onInventory={() => openInventory('HOUSE')}
+                  onATM={() => openAtm('HOUSE')}
+                />
+              )}
 
             {/* 무 판매 */}
             {gameState.status === 'WAITING_RADISH_SELL' && (
@@ -824,6 +853,7 @@ const GamePage = () => {
               <Loan
                 isMyTurn={isMyTurn}
                 currentPlayerName={currentPlayer?.nickname}
+                currentPlayerCharacterId={currentPlayer?.characterId}
                 userBell={currentPlayer?.bell || 0}
                 userLoan={currentPlayer?.loan || 0}
                 timeoutSeconds={gameState.timeoutSeconds || 0}
@@ -836,8 +866,8 @@ const GamePage = () => {
             {/* 인벤토리 */}
             {inventoryOpen && <Inventory player={currentPlayer} onClose={closeInventory} />}
 
-            {/* 보드(이동/액션 대기) */}
-            {!isOverlayOpen && ['WAITING_PLAYER_ACTION', 'MOVING'].includes(gameState.status) && (
+            {/* 보드(이동/액션 대기): 관전자 대기여도 보드는 유지, "내가 연 오버레이"만 막기 */}
+            {!isLocalOverlayOpen && ['WAITING_PLAYER_ACTION', 'MOVING'].includes(gameState.status) && (
               <MainBoardPage
                 players={playersArr}
                 movePath={currentPlayer?.movePath}
