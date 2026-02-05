@@ -21,7 +21,7 @@ export default function ResultScreen({ isMyTurn, player, players, onExit }) {
   const p1Name = player1?.nickname || '플레이어1';
   const p2Name = player2?.nickname || '플레이어2';
 
-  const { category, direction, resultAmount, resultCount } = swapData;
+  const { category, direction, resultAmount, resultCount, resultLoanAdded } = swapData;
 
   // 결과 문장 조립
   const buildResultText = () => {
@@ -37,7 +37,11 @@ export default function ResultScreen({ isMyTurn, player, players, onExit }) {
       }
       const from = direction === 'TO_RIGHT' ? p1Name : p2Name;
       const to = direction === 'TO_RIGHT' ? p2Name : p1Name;
-      return `${from} 님의 정성이 담긴 ${resultAmount || 0}벨이\n${to} 님에게 전해졌습니다.${postFix}`;
+      let text = `꿈의 파동이 ${from}님에게서 ${to}님에게로 흘러\n${resultAmount || 0}벨이 전달되었습니다.`;
+      if (resultLoanAdded && resultLoanAdded > 0) {
+        text += `\n"부족한 벨은 미래의 꿈으로 채웠답니다.."\n(${from}님에게 ${resultLoanAdded}벨의 채무가 생겼습니다)`;
+      }
+      return text;
     }
 
     if (category === 'RESOURCE') {

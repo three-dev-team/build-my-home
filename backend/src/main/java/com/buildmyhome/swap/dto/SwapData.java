@@ -25,6 +25,7 @@ public class SwapData {
     // 결과 데이터 (프론트에서 문장 조립용)
     private Integer resultAmount;  // 벨/대출 이동 금액
     private Integer resultCount;   // 재화 이동 개수
+    private Integer resultLoanAdded;   // 대출 추가된 금액 (벨 부족 시)
 
     // 3개 다 선택됐는지 확인
     public boolean isAllSelected() {
