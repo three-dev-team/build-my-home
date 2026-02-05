@@ -185,7 +185,7 @@ export default function Login() {
 
       if (response.status === 200) {
         // 1. id(memberId)를 추가로 받습니다.
-        const { token, nickname, bell, level, id, role, profileImage } = response.data;
+        const { token, nickname, bell, level, id, role, profileImage, isSuspended, suspendedUntil } = response.data;
 
         if (rememberId) {
           localStorage.setItem('savedMemberId', memberId);
@@ -200,6 +200,11 @@ export default function Login() {
         sessionStorage.setItem('role', role);
         if (profileImage) {
           sessionStorage.setItem('profileImage', profileImage);
+        }
+        // 정지 정보 저장
+        sessionStorage.setItem('isSuspended', isSuspended ? 'true' : 'false');
+        if (suspendedUntil) {
+          sessionStorage.setItem('suspendedUntil', suspendedUntil);
         }
 
         openAlert(`${nickname}님 환영합니다!`);

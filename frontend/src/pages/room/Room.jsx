@@ -41,6 +41,15 @@ function Room() {
   const [stompClient, setStompClient] = useState(null);
   const [lockedSlots, setLockedSlots] = useState(new Set()); // 잠긴 슬롯 목록 (1-based)
 
+  // URL 직접 접속 차단 - 정상 경로(RoomList)에서만 입장 가능
+  useEffect(() => {
+    const joinedRoom = sessionStorage.getItem('joinedRoom');
+    if (joinedRoom !== roomId) {
+      // 정상 경로로 입장하지 않은 경우 룸리스트로 리다이렉트
+      navigate('/room-list', { replace: true });
+    }
+  }, [roomId, navigate]);
+
   // 상태 (States)
   const [targetStartTime, setTargetStartTime] = useState(null);
   const [countDown, setCountDown] = useState(null);
@@ -229,6 +238,7 @@ function Room() {
     stompClient?.publish({ destination: '/app/rooms/start-timer', body: JSON.stringify({ roomId: roomId }) });
   const handleLeave = () => {
     leaveRoom(stompClient, roomId);
+    sessionStorage.removeItem('joinedRoom');
     navigate('/room-list');
   };
   // 빈 슬롯 좌클릭 시 잠금 토글 (방장만)
@@ -822,8 +832,9 @@ function Room() {
 
             <button
               onClick={handleReady}
-              className={`w-[15cqw] py-[1cqw] rounded-[1.2cqw] shadow-lg hover:scale-105 transition flex items-center justify-center
-                    ${currentPlayer?.isReady ? 'bg-[#57B47C]' : 'bg-[#EB5757]'}
+              disabled={!currentPlayer?.characterId}
+              className={`w-[15cqw] py-[1cqw] rounded-[1.2cqw] shadow-lg transition flex items-center justify-center
+                    ${!currentPlayer?.characterId ? 'bg-gray-400 cursor-not-allowed opacity-60' : currentPlayer?.isReady ? 'bg-[#57B47C] hover:scale-105' : 'bg-[#EB5757] hover:scale-105'}
                   `}
             >
               <span className="text-white text-[2cqw] font-black">
@@ -834,7 +845,7 @@ function Room() {
             {isHost && allReady && (
               <button
                 onClick={handleStartGame}
-                className="bg-[#4A90E2] w-[15cqw] py-[1cqw] rounded-[1.2cqw] shadow-lg hover:scale-105 transition flex items-center justify-center animate-pulse"
+                className="bg-[#4A90E2] w-[15cqw] py-[1cqw] rounded-[1.2cqw] shadow-lg hover:scale-105 transition flex items-center justify-center"
               >
                 <span className="text-white text-[2cqw] font-black">게임 시작</span>
               </button>

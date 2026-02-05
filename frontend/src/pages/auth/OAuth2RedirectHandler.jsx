@@ -18,6 +18,8 @@ export default function OAuth2RedirectHandler() {
     const nickname = params.get('nickname');
     const bell = params.get('bell');
     const level = params.get('level');
+    const isSuspended = params.get('isSuspended');
+    const suspendedUntil = params.get('suspendedUntil');
 
     // 정지된 계정 에러 처리
     if (error === 'suspended') {
@@ -48,6 +50,12 @@ export default function OAuth2RedirectHandler() {
         }
         sessionStorage.setItem('bell', bell || '0');
         sessionStorage.setItem('level', level || '1');
+
+        // 정지 정보 저장
+        sessionStorage.setItem('isSuspended', isSuspended === 'true' ? 'true' : 'false');
+        if (suspendedUntil) {
+          sessionStorage.setItem('suspendedUntil', suspendedUntil);
+        }
 
         // 5. 메인 화면으로 이동
         setTimeout(() => {

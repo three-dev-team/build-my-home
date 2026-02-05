@@ -2,12 +2,15 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import TopButtons from '../components/common/TopButtons';
 import AspectLayout from '../components/layout/AspectLayout';
+import AlertModal from '../components/common/AlertModal';
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [nickname, setNickname] = useState('');
   const [showUI, setShowUI] = useState(true);
   const [fadeIn, setFadeIn] = useState(false);
+  const [showSuspendModal, setShowSuspendModal] = useState(false);
+  const [suspendedUntil, setSuspendedUntil] = useState(null);
   const navigate = useNavigate();
   const audioRef = useRef(null);
 
@@ -53,11 +56,48 @@ export default function Home() {
       setNickname(savedNickname || '주민');
     }
 
+    // 정지 정보 로드 및 자동 모달 표시
+    const isSuspended = sessionStorage.getItem('isSuspended') === 'true';
+    const suspended = sessionStorage.getItem('suspendedUntil');
+    const modalShown = sessionStorage.getItem('suspendModalShown') === 'true';
+
+    if (suspended) {
+      setSuspendedUntil(suspended);
+    }
+
+    // 정지된 유저는 최초 1회만 자동으로 모달 표시
+    if (isSuspended && !modalShown) {
+      setShowSuspendModal(true);
+      sessionStorage.setItem('suspendModalShown', 'true');
+    }
+
     // 페이지 로드 시 페이드인 효과
     setTimeout(() => {
       setFadeIn(true);
     }, 50);
   }, [navigate]);
+
+  // 게임 시작 버튼 클릭 핸들러
+  const handleGameStart = () => {
+    if (!isLoggedIn) {
+      navigate('/login');
+      return;
+    }
+
+    const isSuspended = sessionStorage.getItem('isSuspended') === 'true';
+    if (isSuspended) {
+      setShowSuspendModal(true);
+    } else {
+      navigate('/room-list');
+    }
+  };
+
+  // 정지 해제 시간 포맷
+  const formatSuspendedUntil = () => {
+    if (!suspendedUntil) return '';
+    const date = new Date(suspendedUntil);
+    return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일 ${date.getHours()}시`;
+  };
 
   const uiTransitionClass = `transition-all duration-1000 ease-out ${
     showUI ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-[1cqw]'
@@ -114,14 +154,21 @@ export default function Home() {
             - Height: 190px -> 9.9cqw
         */}
         <div className={`absolute bottom-[1.25cqw] right-[0.63cqw] z-30 ${uiTransitionClass}`}>
-          <Link to={isLoggedIn ? '/room-list' : '/login'} className="inline-block group">
+          <div onClick={handleGameStart} className="inline-block group cursor-pointer">
             <img
               src="/images/btn-start.png"
               alt="게임 시작 버튼"
               className="w-[28.13cqw] h-[9.9cqw] object-contain hover:scale-105 active:scale-95 transition-transform drop-shadow-[0_0.4cqw_0.2cqw_rgba(0,0,0,0.3)]"
             />
-          </Link>
+          </div>
         </div>
+
+        {/* 정지 안내 모달 */}
+        <AlertModal
+          isOpen={showSuspendModal}
+          message={`🚫 계정이 정지되었습니다.\n\n운영 정책 위반으로 게임 이용이\n제한되었습니다.\n\n정지 해제: ${formatSuspendedUntil()}`}
+          onConfirm={() => setShowSuspendModal(false)}
+        />
       </div>
     </AspectLayout>
   );
