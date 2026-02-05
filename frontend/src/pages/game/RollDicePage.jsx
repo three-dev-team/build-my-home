@@ -1,23 +1,13 @@
-import React from 'react';
 import Dice3D from '../../components/dice/Dice3D.jsx';
 import InstructionText from '../../components/common/InstructionText.jsx';
 import './css/RollDicePage.css';
 import { CHARACTERS } from '../../constants/characters.js';
-import AspectLayout from '../../components/layout/AspectLayout';
 import Shadow from '../../components/common/Shadow.jsx'
+import useSpaceKey from '../../hooks/useSpaceKey.js';
 
 const RollDicePage = ({ currentPlayer, isMyTurn, diceValue, isRolling, onRollComplete, onAnimationEnd }) => {
   // 스페이스바 핸들러
-  const handleKeyDown = (e) => {
-    if (e.code === 'Space' && isMyTurn && !isRolling) {
-      onRollComplete();
-    }
-  };
-
-  React.useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isMyTurn, isRolling]);
+  useSpaceKey(() => onRollComplete(), { enabled: isMyTurn && !isRolling });
 
   const CHARACTER_IMG = CHARACTERS.reduce((acc, char) => {
     acc[Number(char.id)] = char.selectBasicImage;
