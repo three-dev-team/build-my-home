@@ -52,7 +52,7 @@ export default function SelectCategory({ isMyTurn, player, players, onAction }) 
 
       <InstructionText>
         {isMyTurn ? (
-          <span className="swap-instruction-inline">
+          <span className="instruction-inline">
             원하는 옵션을 클릭하세요
             <img
               src={IMG.clickSvg}
@@ -62,7 +62,7 @@ export default function SelectCategory({ isMyTurn, player, players, onAction }) 
               }}
               alt="click"
               draggable={false}
-              className="swap-click-icon"
+              className="instruction-click-icon"
             />
           </span>
         ) : (

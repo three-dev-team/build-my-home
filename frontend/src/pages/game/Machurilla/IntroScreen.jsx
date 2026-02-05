@@ -1,22 +1,51 @@
-const IntroScreen = ({ onSelect, isMyTurn, currentPlayerName }) => {
+import React, { useState } from 'react';
+import Subtitle from '../../../components/common/Subtitle.jsx';
+import { COLORS, withAlpha } from '../../../constants/colors.js';
+import { CHARACTERS } from '../../../constants/characters.js';
+import './Machurilla.css';
+
+const IntroScreen = ({ step, setStep, onSelect, isMyTurn, currentPlayerName, characterId }) => {
+  const [typingDone, setTypingDone] = useState(false);
+  const characterColor = CHARACTERS.find((c) => c.id === characterId)?.color || '#FFFFFF';
+
+  const getContentText = () => {
+    if (step === 0) return '라리추마 라리추마…\n라리추마 시드반…';
+    if (step === 1) return `호오, ${currentPlayerName}…\n보입니다… 보이는군요…`;
+    return '이 마추릴라에게만 보이는\n당신의 기운…\n카드를 뽑아보시겠습니까…';
+  };
+
+  const handleTriangleClick = () => {
+    if (!isMyTurn || !typingDone) return;
+    setTypingDone(false);
+    setStep(step + 1);
+  };
+
+  const highlights = step >= 1 ? [{ text: currentPlayerName, color: characterColor }] : [];
+
+  const options =
+    step === 2
+      ? [
+          { text: '잘 부탁합니다!', onClick: () => isMyTurn && onSelect() },
+          { text: '무서운데…', onClick: () => isMyTurn && onSelect() },
+        ]
+      : [];
+
   return (
-    <div className="bg-purple-800 rounded-3xl p-12 max-w-xl text-center shadow-2xl border-4 border-yellow-400">
-      <h2 className="text-4xl font-bold mb-8 text-yellow-300">🔮 마추릴라</h2>
-
-      <div className="text-xl text-white leading-relaxed space-y-4">
-        <p>"케케라 랏초, 케케라 랏초..."</p>
-        <p>"흐음! {currentPlayerName}... 당신의 운명이 보입니다... 보입니다아..."</p>
-        <p>"자, 당신의 앞날에 빛이 비칠지, 아니면 먹구름이 낄지..."</p>
-        <p>"제가 한 번 들여다보겠습니다. 준비되셨나요?"</p>
-      </div>
-
-      <button
-        onClick={onSelect}
-        disabled={!isMyTurn}
-        className="mt-8 px-8 py-4 bg-yellow-400 text-purple-900 rounded-full text-2xl font-bold hover:bg-yellow-300 disabled:opacity-50"
-      >
-        운명을 점쳐보기
-      </button>
+    <div className="machurilla-bg machurilla-bg-idle">
+      <Subtitle
+        nameText="마추릴라"
+        nameColor={COLORS.characters.machurilla.nameBox}
+        nameTextColor={COLORS.characters.machurilla.nameText}
+        contentBoxColor={withAlpha(COLORS.characters.machurilla.contentBox, 0.9)}
+        contentTextColor={COLORS.characters.machurilla.contentText}
+        contentText={getContentText()}
+        highlights={highlights}
+        showTriangle={step < 2 && typingDone}
+        clickTriangle={handleTriangleClick}
+        onTypingComplete={() => setTypingDone(true)}
+        options={options}
+        optionDisabled={!isMyTurn}
+      />
     </div>
   );
 };

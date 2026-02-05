@@ -93,6 +93,12 @@ public class GameWsController {
                     response = defaultGameResponse("EVENT_TIMEOUT", gameState);
                 }
                 break;
+            case WAITING_MACHURILLA:
+                if (player.getUiStep() >= 4) return;
+                machurillaService.applyCardEffect(gameState, player);
+                player.setUiStep(6); // result-3으로 강제 이동
+                response = defaultGameResponse("MACHURILLA_AUTO_SELECT", gameState);
+                break;
             // 기본은 다음 턴으로 넘어감
             default:
                 gameStateService.turnToNextPlayer(roomId);
@@ -587,7 +593,7 @@ public class GameWsController {
                         break;
                     case "MACHURILLA_SELECT":
                         machurillaService.applyCardEffect(gameState, player);
-                        player.setUiStep(1);
+                        player.setUiStep(3);
                         response.setType("MACHURILLA_SELECTED");
                         break;
                     case "OPEN_INVENTORY":
@@ -718,6 +724,7 @@ public class GameWsController {
             // 2. 건강운 상승(Extra Dice) 체크
             if (player.isExtraDice()) {
                 player.setExtraDice(false); // 플래그 소모
+                player.clearTurnData();
                 gameState.setStatus(GameStatus.WAITING_DICE); // 상태를 다시 주사위 대기로
 
                 GameMessage response = defaultGameResponse("EXTRA_DICE_START", gameState);
