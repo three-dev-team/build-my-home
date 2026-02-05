@@ -260,18 +260,32 @@ public class SwapServiceImpl implements SwapService {
         switch (direction) {
             case "TO_RIGHT": {
                 int amount = randomAmount();
-                int actual = Math.min(amount, p1.getBell());
-                p1.setBell(p1.getBell() - actual);
-                p2.setBell(p2.getBell() + actual);
-                swapData.setResultAmount(actual);
+                int have = p1.getBell();
+                if (have >= amount) {
+                    p1.setBell(have - amount);
+                } else {
+                    int shortage = amount - have;
+                    p1.setBell(0);
+                    p1.setLoan(p1.getLoan() + shortage);
+                    swapData.setResultLoanAdded(shortage);
+                }
+                p2.setBell(p2.getBell() + amount);
+                swapData.setResultAmount(amount);
                 break;
             }
             case "TO_LEFT": {
                 int amount = randomAmount();
-                int actual = Math.min(amount, p2.getBell());
-                p2.setBell(p2.getBell() - actual);
-                p1.setBell(p1.getBell() + actual);
-                swapData.setResultAmount(actual);
+                int have = p2.getBell();
+                if (have >= amount) {
+                    p2.setBell(have - amount);
+                } else {
+                    int shortage = amount - have;
+                    p2.setBell(0);
+                    p2.setLoan(p2.getLoan() + shortage);
+                    swapData.setResultLoanAdded(shortage);
+                }
+                p1.setBell(p1.getBell() + amount);
+                swapData.setResultAmount(amount);
                 break;
             }
             case "EXCHANGE": {
