@@ -1,5 +1,6 @@
 package com.buildmyhome.member.controller;
 
+import com.buildmyhome.common.util.NicknameValidator;
 import com.buildmyhome.member.dto.*;
 import com.buildmyhome.member.service.MemberService;
 import java.util.Map;
@@ -16,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 public class MemberController {
 
   private final MemberService memberService;
+  private final NicknameValidator nicknameValidator; // 닉네임 유효성 검사기
 
   @PostMapping("/join")
   public ResponseEntity<Void> join(@RequestBody JoinRequest dto) {
@@ -28,9 +30,22 @@ public class MemberController {
     return ResponseEntity.ok(memberService.login(loginRequest));
   }
 
+  //  @GetMapping("/check-nickname")
+  //  public ResponseEntity<Boolean> checkNickname(@RequestParam String nickname) {
+  //    return ResponseEntity.ok(!memberService.existsByNickname(nickname));
+  //  }
   @GetMapping("/check-nickname")
-  public ResponseEntity<Boolean> checkNickname(@RequestParam String nickname) {
-    return ResponseEntity.ok(!memberService.existsByNickname(nickname));
+  public ResponseEntity<?> checkNickname(@RequestParam String nickname) {
+    NicknameValidator.ValidationResult result = nicknameValidator.validate(nickname);
+    if (!result.isValid()) {
+      return ResponseEntity.badRequest()
+          .body(Map.of("available", false, "message", result.getMessage()));
+    }
+
+    boolean available = !memberService.existsByNickname(nickname);
+    return ResponseEntity.ok(
+        Map.of(
+            "available", available, "message", available ? "사용 가능한 닉네임입니다." : "이미 사용 중인 닉네임입니다."));
   }
 
   @PostMapping("/send-registration-code")
@@ -70,8 +85,14 @@ public class MemberController {
   }
 
   @PutMapping("/nickname")
-  public ResponseEntity<?> updateNickname(@RequestBody NickNameUpdateDto dto, Authentication authentication) {
+  public ResponseEntity<?> updateNickname(
+      @RequestBody NickNameUpdateDto dto, Authentication authentication) {
     String email = authentication.getName(); // 토큰에서 이메일 추출
+
+    NicknameValidator.ValidationResult result = nicknameValidator.validate(dto.getNickname());
+    if (!result.isValid()) {
+      return ResponseEntity.badRequest().body(Map.of("message", result.getMessage()));
+    }
 
     try {
       memberService.updateNickname(email, dto.getNickname());
@@ -95,14 +116,16 @@ public class MemberController {
   }
 
   @DeleteMapping("/social/{provider}")
-  public ResponseEntity<Void> unlinkSocialAccount(@PathVariable String provider, Authentication authentication) {
+  public ResponseEntity<Void> unlinkSocialAccount(
+      @PathVariable String provider, Authentication authentication) {
     String email = authentication.getName();
     memberService.unlinkSocialAccount(email, provider);
     return ResponseEntity.ok().build();
   }
 
   @PostMapping("/profile-image")
-  public ResponseEntity<MemberResponse> uploadProfileImage(@RequestParam("file") MultipartFile file, Authentication authentication) {
+  public ResponseEntity<MemberResponse> uploadProfileImage(
+      @RequestParam("file") MultipartFile file, Authentication authentication) {
     String email = authentication.getName();
     MemberResponse response = memberService.updateProfileImage(email, file);
     return ResponseEntity.ok(response);
