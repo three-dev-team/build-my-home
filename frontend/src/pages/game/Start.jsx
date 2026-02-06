@@ -15,12 +15,8 @@ const Start = ({ isMyTurn = false, player, currentPlayerName = '익명의 주민
   const collectedStamps = player?.collectedStamps || [];
   const stampCount = collectedStamps.length;
 
-  // 내부 대화 단계 관리 (0: 스탬프 개수 안내, 1: 정산 여부 질문)
-  const [dialogStep, setDialogStep] = useState(0);
-
-  // uiStep 0: 프론트에서 미리보기 계산
-  // uiStep 1: 서버에서 받은 실제 값
-  const reward = step === 0 ? STAMP_REWARDS[Math.min(stampCount, 3)] : player?.actionData || 0;
+  // uiStep 0: 첫번째 대화 (스탬프 개수 안내) | 1: 두번째 대화 (정산 여부 질문) | 2: 정산 완료 | 3: 스킵
+  const reward = step <= 1 ? STAMP_REWARDS[Math.min(stampCount, 3)] : player?.actionData || 0;
 
   // 캐릭터 색상
   const yeoul = COLORS.characters.yeoul;
@@ -42,13 +38,11 @@ const Start = ({ isMyTurn = false, player, currentPlayerName = '익명의 주민
   // 삼각형 클릭 핸들러
   const handleTriangleClick = () => {
     if (!isMyTurn) return;
-    if (dialogStep === 0) {
-      setDialogStep(1); // 다음 대화로 진행
-    }
+    onAction('SET_STEP', { uiStep: 1 });
   };
 
   // TODO: 프론트 타이머 대신 서버 타임아웃 방식으로 변경 필요
-  useGameTimer(step === 1 || step === 2 ? 3 : 0, handleExit);
+  useGameTimer(step === 2 || step === 3 ? 5 : 0, handleExit);
 
   const handleExchange = () => {
     if (!isMyTurn) return;
@@ -93,8 +87,12 @@ const Start = ({ isMyTurn = false, player, currentPlayerName = '익명의 주민
     }
   };
 
-  const nameHighlights = () => {
-    return [{ text: currentPlayerName, color: COLORS.ac.ocean }];
+  const Highlights = () => {
+    const color = character?.color ?? COLORS.ac.ocean;
+    return [
+      { text: currentPlayerName, color },
+      { text: `${reward}벨`, color: COLORS.ac.yellow },
+    ];
   };
 
   return (
@@ -108,47 +106,43 @@ const Start = ({ isMyTurn = false, player, currentPlayerName = '익명의 주민
 
       {/* uiStep 0: 정산 여부 질문 */}
       {step === 0 && (
-        <>
-          {/* 첫 번째 대화: 스탬프 개수 안내 */}
-          {dialogStep === 0 && (
-            <Subtitle
-              nameText="여울"
-              nameColor={yeoul.nameBox}
-              nameTextColor={yeoul.nameText}
-              contentText={getFirstDialogText()}
-              highlights={nameHighlights()}
-              showTriangle
-              clickTriangle={handleTriangleClick} // 삼각형 클릭 핸들러
-            />
-          )}
-
-          {/* 두 번째 대화: 정산 여부 질문 */}
-          {dialogStep === 1 && (
-            <Subtitle
-              nameText="여울"
-              nameColor={yeoul.nameBox}
-              nameTextColor={yeoul.nameText}
-              contentText={getSecondDialogText()}
-              highlights={nameHighlights()}
-              options={getOptions()}
-              optionDisabled={!isMyTurn}
-            />
-          )}
-        </>
+        <Subtitle
+          nameText="여울"
+          nameColor={yeoul.nameBox}
+          nameTextColor={yeoul.nameText}
+          contentText={getFirstDialogText()}
+          highlights={Highlights()}
+          showTriangle
+          clickTriangle={handleTriangleClick} // 삼각형 클릭 핸들러
+        />
       )}
 
-      {/* uiStep 1: 정산 완료 */}
+      {/* uiStep 1: 두 번째 대화 - 정산 여부 질문 */}
       {step === 1 && (
         <Subtitle
           nameText="여울"
           nameColor={yeoul.nameBox}
           nameTextColor={yeoul.nameText}
-          contentText={`축하드립니다! 여기 정산하신 ${reward}벨이에요!\n아! 그리고 여기 새로운 방문카드도 준비했답니다!\n자, 그럼 다시 한번 즐거운 여행을 떠나볼까요?`}
+          contentText={getSecondDialogText()}
+          highlights={Highlights()}
+          options={getOptions()}
+          optionDisabled={!isMyTurn}
         />
       )}
 
-      {/* uiStep 2: 스킵 */}
+      {/* uiStep 2: 정산 완료 */}
       {step === 2 && (
+        <Subtitle
+          nameText="여울"
+          nameColor={yeoul.nameBox}
+          nameTextColor={yeoul.nameText}
+          contentText={`축하드립니다! 여기 정산하신 ${reward}벨이에요!\n아! 그리고 여기 새로운 방문카드도 준비했답니다!\n자, 그럼 다시 한번 즐거운 여행을 떠나볼까요?`}
+          highlights={Highlights()}
+        />
+      )}
+
+      {/* uiStep 3: 스킵 */}
+      {step === 3 && (
         <Subtitle
           nameText="여울"
           nameColor={yeoul.nameBox}

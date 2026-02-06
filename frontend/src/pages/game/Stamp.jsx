@@ -96,6 +96,11 @@ const Stamp = ({ isMyTurn = false, player, currentPlayerName = '익명의 주민
   const character = CHARACTERS.find((c) => Number(c.id) === Number(player?.characterId));
   const charImg = character?.stampImage ?? null;
 
+  const nameHighlights = () => {
+    const color = character?.color ?? COLORS.ac.ocean;
+    return [{ text: currentPlayerName, color, },];
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -116,6 +121,7 @@ const Stamp = ({ isMyTurn = false, player, currentPlayerName = '익명의 주민
             nameTextColor={COLORS.characters[npcColorKey]?.nameText}
             contentText={config.greeting(currentPlayerName)}
             contentColor={COLORS.subtitle.contentBox}
+            highlights={nameHighlights()}
             contentTextColor={COLORS.subtitle.contentText}
             options={[
               { text: '빨리 찍어', onClick: () => setStep(1) },
@@ -195,6 +201,7 @@ const Stamp = ({ isMyTurn = false, player, currentPlayerName = '익명의 주민
             contentText={isDuplicate ? config.duplicate(currentPlayerName) : config.success(currentPlayerName)}
             contentColor={COLORS.subtitle.contentBox}
             contentTextColor={COLORS.subtitle.contentText}
+            highlights={nameHighlights()}
           />
 
           {/* 중앙 스탬프 카드 */}
