@@ -807,6 +807,18 @@ export default function AdminPage() {
                         <p className="text-[1.04cqw] text-[#594E36] leading-relaxed whitespace-pre-wrap">
                           {selectedInquiry.content}
                         </p>
+
+                        {/* 첨부 이미지 표시 */}
+                        {selectedInquiry.imageUrl && (
+                          <div className="mt-[1.85cqh]">
+                            <h4 className="text-[1.04cqw] font-bold mb-[0.93cqh] text-[#594E36]">📎 첨부 이미지</h4>
+                            <img
+                              src={selectedInquiry.imageUrl}
+                              alt="첨부 이미지"
+                              className="max-w-[30cqw] max-h-[25cqh] rounded-[0.83cqw] border-[0.21cqw] border-[#594E36]/20"
+                            />
+                          </div>
+                        )}
                       </div>
                     </div>
 
