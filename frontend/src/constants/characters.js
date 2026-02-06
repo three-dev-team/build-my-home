@@ -4,13 +4,14 @@ const BASE = {
   character: '/images/character',
 };
 
-function makeCharacter({ id, name, quote, habit, key, color }) {
+function makeCharacter({ id, name, quote, habit, key, color, headY }) {
   return {
     id,
     name,
     quote,
     habit,
     color,
+    headY,
     selectBasicImage: `${BASE.room}/char-${key}-idle.webp`,
     houseImage: `${BASE.room}/char-${key}-house.webp`,
     roomListImage: `${BASE.roomList}/icon-${key}.webp`,
@@ -28,8 +29,20 @@ function makeCharacter({ id, name, quote, habit, key, color }) {
     fishingImage:`${BASE.character}/char-${key}-fishing.webp`,
     successImage:`${BASE.character}/char-${key}-success.webp`,
     failImage:`${BASE.character}/char-${key}-fail.webp`,
+    rewardImage:`${BASE.character}/char-${key}-reward.webp`,
   };
 }
+
+
+
+// makeCharacter({ id: 1, name: '애플',  key: 'apple',   color: '#EB5757', headY: 48, /* ... */ }),
+// makeCharacter({ id: 2, name: '미첼',  key: 'michel',  color: '#34C4D3', headY: 45, /* ... */ }),
+// makeCharacter({ id: 3, name: '메이플', key: 'maple',   color: '#7B6C53', headY: 47, /* ... */ }),
+// makeCharacter({ id: 4, name: '빙티',  key: 'bingti',  color: '#594E36', headY: 44, /* ... */ }),
+// makeCharacter({ id: 5, name: '쭈니',  key: 'zzuni',   color: '#F9F3F9', headY: 46, /* ... */ }),
+// makeCharacter({ id: 6, name: '사이다', key: 'cida',    color: '#34C4D3', headY: 46, /* ... */ }),
+// makeCharacter({ id: 7, name: '리처드', key: 'richard', color: '#F2C94C', headY: 46, /* ... */ }),
+// makeCharacter({ id: 8, name: '뽀야미', key: 'bboyami', color: '#FDFBF6', headY: 46, /* ... */ }),
 
 export const CHARACTERS = [
   makeCharacter({
@@ -39,6 +52,7 @@ export const CHARACTERS = [
     habit: '큐룽',
     key: 'apple',
     color: '#EB5757',
+    headY: 46,
   }),
   makeCharacter({
     id: 2,
@@ -47,6 +61,7 @@ export const CHARACTERS = [
     habit: '동글',
     key: 'michel',
     color: '#34C4D3',
+    headY: 44,
   }),
   makeCharacter({
     id: 3,
@@ -55,6 +70,7 @@ export const CHARACTERS = [
     habit: '저기요',
     key: 'maple',
     color: '#7B6C53',
+    headY: 44,
   }),
   makeCharacter({
     id: 4,
@@ -63,6 +79,7 @@ export const CHARACTERS = [
     habit: '노라줘',
     key: 'bingti',
     color: '#594E36',
+    headY: 46,
   }),
   makeCharacter({
     id: 5,
@@ -74,7 +91,7 @@ export const CHARACTERS = [
   }),
   makeCharacter({
     id: 6,
-    name: '시베리아',
+    name: '사이다',
     quote: '무슨 일이지? 바쁜데',
     habit: '퐁퐁',
     key: 'cida',

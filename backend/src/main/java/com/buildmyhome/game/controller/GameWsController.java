@@ -198,10 +198,10 @@ public class GameWsController {
             for (HarvestType h : HarvestType.values()) {
                 gps.getHarvests().put(h, 10);
             }
-            gps.getItems().add(ItemType.CUSTOM_DICE); // 테스트용 아이템 지급
-            gps.getItems().add(ItemType.CUSTOM_DICE); // 테스트용 아이템 지급
-            gps.getItems().add(ItemType.CUSTOM_DICE); // 테스트용 아이템 지급
-            gps.setSkipNextTurnCount(2);
+            gps.getItems().add(ItemType.GOLD_DICE); // 테스트용 아이템 지급
+            gps.getItems().add(ItemType.GOLD_DICE); // 테스트용 아이템 지급
+            gps.getItems().add(ItemType.GOLD_DICE); // 테스트용 아이템 지급
+            gps.setSkipNextTurnCount(1);
             gameState.addPlayer(gps);
         }
         gameStateService.saveGame(roomId, gameState);
@@ -723,16 +723,24 @@ public class GameWsController {
                         response.setType("MIRROR_COMPLETED");
                         break;
                     case "CUSTOM_DICE_SELECT":
-                        int customDiceValue = message.getActionData();
-                        if (customDiceValue < 1 || customDiceValue > 6) {
-                            System.out.println("⚠️ 비정상 주사위 값 수신: " + customDiceValue + " → 랜덤 강제 적용");
-                            customDiceValue = ThreadLocalRandom.current().nextInt(1, 7); // 잘못된 값이면 랜덤
-                        }
-                        player.setDiceValue(customDiceValue);
-                        moveService.movePlayer(player, customDiceValue);
-                        gameState.setStatus(GameStatus.ROLLING_DICE);
+                        GameStatus customStatus = itemService.rollCustomDice(player, message.getActionData());
+                        moveService.movePlayer(player, player.getDiceValue());
+                        gameState.setStatus(customStatus);
                         response.setType("DICE_ROLLING");
-                        response.setDiceValue(customDiceValue);
+                        response.setDiceValue(player.getDiceValue());
+                        break;
+                    case "GOLD_DICE_ROLL":
+                        GameStatus goldStatus = itemService.rollGoldDice(player);
+                        moveService.movePlayer(player, player.getDiceValue());
+                        gameState.setStatus(goldStatus);
+                        response.setType("GOLD_DICE_ROLLING");
+                        response.setDiceValue(player.getDiceValue());
+                        break;
+                    case "GOLD_DICE_COMPLETE":
+                        if (gameState.getStatus() != GameStatus.ROLLING_GOLD_DICE) break;
+                        gameState.setStatus(GameStatus.MOVING);
+                        response.setType("GOLD_DICE_MOVE_START");
+                        response.setMovePath(player.getMovePath());
                         break;
                 }
 
