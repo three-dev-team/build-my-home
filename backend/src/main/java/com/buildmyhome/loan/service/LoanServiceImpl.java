@@ -12,6 +12,8 @@ public class LoanServiceImpl implements LoanService {
 
   private final GameStateService gameStateService;
 
+  private static final int MAX_LOAN = 9999;
+
   @Override
   public void borrow(Long roomId, Long memberId, int amount, boolean isBankTile) {
     GameState gameState = gameStateService.getGame(roomId);
@@ -23,7 +25,14 @@ public class LoanServiceImpl implements LoanService {
         throw new IllegalArgumentException("플레이어 정보를 찾을 수 없습니다.");
       }
 
-      // 대출 로직: 자산 증가, 대출금 증가
+        int currentLoan = playerState.getLoan();
+
+        // 이미 한도면: 신용불량자
+        if (currentLoan >= MAX_LOAN) {
+            throw new IllegalStateException("신용 불량자라 더 이상 대출을 받을 수 없습니다.");
+        }
+
+        // 대출 로직: 자산 증가, 대출금 증가
       // 은행 칸(isBankTile=true)이면 수수료 없음 (무이자 대출)
       // ATM 등 다른 곳(isBankTile=false)에서는 수수료 10% 추가 부채 (상시 대출) -- 추후 구현 예정
       int debtAmount = amount;
@@ -33,9 +42,14 @@ public class LoanServiceImpl implements LoanService {
         debtAmount = amount; // 은행에서는 원금만 갚으면 됨
       }
 
-      // 사용자가 요청한 대로 '벨'과 '대출금' 모두 증가
-      playerState.setBell(playerState.getBell() + amount);
-      playerState.setLoan(playerState.getLoan() + debtAmount);
+        // 이번 대출로 한도 초과 방지(부채 증가분 기준)
+        if (currentLoan + debtAmount > MAX_LOAN) {
+            throw new IllegalStateException("대출 한도(9,999벨)를 초과할 수 없습니다.");
+        }
+
+        // 한도 통과 후에만 반영(벨/대출금)
+        playerState.setBell(playerState.getBell() + amount);
+        playerState.setLoan(currentLoan + debtAmount);
     }
   }
 

@@ -1,11 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import './css/Mupani.css';
 import Subtitle from '../../components/common/Subtitle.jsx';
 import AspectLayout from '../../components/layout/AspectLayout';
 import NumberPad from '../../components/common/NumberPad.jsx';
 import ExitButton from '../../components/common/ExitButton.jsx';
 import BellPanel from '../../components/common/BellPanel.jsx';
+import AutoMove from '../../components/common/AutoMove.jsx';
 import { COLORS } from '../../constants/colors.js';
+import { CHARACTERS } from '../../constants/characters.js';
 
 // 무파니 칸 당사자(현재 턴 플레이어) 보너스 수량
 const MUPANI_BONUS = 2;
@@ -15,16 +17,10 @@ export default function Mupani({ gameState, myId, onBuy, onSkip }) {
 
   // step 0: 인트로 | 1: 구매 화면 | 2: 첫 확인 | 3: 구매 완료 | 4: 스킵 | 5: 무 보유 중
   const [step, setStep] = useState(0);
-
   const [qty, setQty] = useState(1);
   const [hasDecided, setHasDecided] = useState(false);
-
-  // ✅ status가 바뀌어도 결과 화면 잠깐 유지하기 위한 래치
   const [open, setOpen] = useState(false);
-
-  // ✅ 결과 대사 타이핑 완료 후 “잠시 후 이동합니다” 띄우기
   const [showMovingNotice, setShowMovingNotice] = useState(false);
-
   const radishPrice = Number(gameState?.radishPrice ?? 0);
   const selfId = useMemo(() => Number(myId), [myId]);
 
@@ -64,11 +60,21 @@ export default function Mupani({ gameState, myId, onBuy, onSkip }) {
     return radishPrice * qty;
   }, [radishPrice, qty]);
 
+  // return null 전에 문자열/색상 계산(훅 순서 안전)
+  const totalCostText = String(totalCost.toLocaleString());
+  const ownerNickname = String(myPlayer?.nickname ?? '').trim();
+
+  const ownerCharacterColor = useMemo(() => {
+    const cid = Number(myPlayer?.characterId ?? myPlayer?.character?.id ?? myPlayer?.character ?? 0);
+    const found = (CHARACTERS || []).find((c) => Number(c?.id) === cid);
+    return found?.color || COLORS.ac.nookCyan;
+  }, [myPlayer?.characterId, myPlayer?.character]);
+
   const closeNow = () => {
     setOpen(false);
   };
 
-  // ✅ WAITING_MUPANI 진입하면 열고 초기화
+  // WAITING_MUPANI 진입하면 열고 초기화
   useEffect(() => {
     if (!isWaiting) return;
 
@@ -79,7 +85,7 @@ export default function Mupani({ gameState, myId, onBuy, onSkip }) {
     setShowMovingNotice(false);
   }, [isWaiting]);
 
-  // ✅ 서버 응답으로 내 결정 확정되면 step 3/4로 전환
+  // 서버 응답으로 내 결정 확정되면 step 3/4로 전환
   useEffect(() => {
     if (!open) return;
 
@@ -102,7 +108,7 @@ export default function Mupani({ gameState, myId, onBuy, onSkip }) {
     }
   }, [open, gameState?.type, gameState?.memberId, selfId]);
 
-  // ✅ WAITING이 끝나면(= 서버가 턴 넘김) 그 순간 닫기
+  // WAITING이 끝나면(= 서버가 턴 넘김) 그 순간 닫기
   useEffect(() => {
     if (!open) return;
     if (isWaiting) return;
@@ -111,7 +117,7 @@ export default function Mupani({ gameState, myId, onBuy, onSkip }) {
     closeNow();
   }, [open, isWaiting]);
 
-  // ✅ 결과 대사 타이핑 완료 시: “잠시 후 이동합니다” 표기
+  // 결과 대사 타이핑 완료 시: AutoMove 노출
   const handleResultTypingDone = () => {
     setShowMovingNotice(true);
   };
@@ -161,6 +167,12 @@ export default function Mupani({ gameState, myId, onBuy, onSkip }) {
   };
 
   const showNotice = (step === 3 || step === 4) && showMovingNotice;
+  const colorVars = {
+    '--mupani-question-text': COLORS.text,
+    '--mupani-highlight-price': COLORS.ac.nookCyan,
+    '--mupani-total-price': COLORS.ac.nookCyan,
+    '--mupani-radish-qty': COLORS.ac.white,
+  };
 
   return (
     <div
@@ -174,9 +186,23 @@ export default function Mupani({ gameState, myId, onBuy, onSkip }) {
       }}
     >
       <AspectLayout>
-        <div className="mupani-container">
-          {/* 결과 화면 상단 “잠시 후 이동합니다” */}
-          {showNotice && <div className="mupani-moving-notice">잠시 후 이동합니다…</div>}
+        {step === 1 && (
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              zIndex: 50000,
+              pointerEvents: 'none',
+            }}
+          >
+            <div style={{ pointerEvents: 'auto' }}>
+              <ExitButton onClick={handleExit} />
+            </div>
+          </div>
+        )}
+
+        <div className="mupani-container" style={colorVars}>
+          {showNotice && <AutoMove />}
 
           {/* Step 0 */}
           {step === 0 && (
@@ -185,7 +211,7 @@ export default function Mupani({ gameState, myId, onBuy, onSkip }) {
               nameColor={mupani.nameBox}
               nameTextColor={mupani.nameText}
               contentText={`어디 보자, 오늘은\n무 하나에 ${radishPrice}벨인데\n한번 사보실래?`}
-              highlights={[{ text: `${radishPrice}`, color: COLORS.ac.ocean }]}
+              highlights={[{ text: `${radishPrice}`, color: COLORS.ac.nookCyan }]}
               options={[
                 { text: '살래', onClick: handleBuy },
                 { text: '안살래', onClick: handleSkip },
@@ -218,10 +244,6 @@ export default function Mupani({ gameState, myId, onBuy, onSkip }) {
               />
 
               <BellPanel amount={myBell ?? 0} />
-
-              <div className="mupani-exit-wrap">
-                <ExitButton onClick={handleExit} />
-              </div>
             </div>
           )}
 
@@ -231,12 +253,14 @@ export default function Mupani({ gameState, myId, onBuy, onSkip }) {
               nameText="무파니"
               nameColor={mupani.nameBox}
               nameTextColor={mupani.nameText}
-              contentText={`${qty}무라면...\n다 해서 ${totalCost.toLocaleString()}벨인데 이렇게 사실래?${
-                isMupaniOwner ? `\n할머니가 덤으로 ${MUPANI_BONUS}무를 더 챙겨주래` : ''
+              contentText={`${qty}무라면...\n다 해서 ${totalCostText}벨인데 이렇게 사실래?${
+                isMupaniOwner ? `\n할머니가 ${ownerNickname}은 덤으로 ${MUPANI_BONUS}무 더 챙겨주래` : ''
               }`}
               highlights={[
-                { text: `${totalCost.toLocaleString()}`, color: COLORS.ac.ocean },
-                ...(isMupaniOwner ? [{ text: `${MUPANI_BONUS}`, color: COLORS.ac.ocean }] : []),
+                { text: `${qty}`, color: COLORS.ac.green },
+                { text: totalCostText, color: COLORS.ac.nookCyan },
+                ...(isMupaniOwner && ownerNickname ? [{ text: ownerNickname, color: ownerCharacterColor }] : []),
+                ...(isMupaniOwner ? [{ text: `${MUPANI_BONUS}`, color: COLORS.ac.nookCyan }] : []),
               ]}
               options={[
                 { text: '사실게', onClick: handleFinalConfirm },

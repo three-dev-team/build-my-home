@@ -83,33 +83,46 @@ export const FRUITS = [
   makeItem({ key: 'CHERRY', name: '체리', rewardFile: 'harvest-cherry', iconFile: 'icon-cherry', price: 200 }),
 ];
 
-// 물고기: reward 폴더에 이미지가 없으니 rewardSrc는 null
-// TODO: 버전 1인지 버전 2인지 구분 필요
+// 서버 enum(HarvestType) 기준으로 물고기 KEY/이름/가격/이미지 전부 정합 맞춤
 export const FISHES = [
   makeItem({
-    key: 'FISH_SMALL',
-    name: '작은 물고기',
+    key: 'FISH_SMALL_1',
+    name: '흰동가리',
     rewardFile: 'harvest-fish-small-1',
     iconFile: 'icon-fish-small-1',
-    price: 50,
+    price: 100,
   }),
   makeItem({
-    key: 'FISH_MEDIUM',
-    name: '중간 물고기',
+    key: 'FISH_SMALL_2',
+    name: '송사리',
+    rewardFile: 'harvest-fish-small-2',
+    iconFile: 'icon-fish-small-2',
+    price: 100,
+  }),
+  makeItem({
+    key: 'FISH_MEDIUM_1',
+    name: '농어',
     rewardFile: 'harvest-fish-medium-1',
     iconFile: 'icon-fish-medium-1',
-    price: 150,
+    price: 200,
+  }),
+  makeItem({
+    key: 'FISH_MEDIUM_2',
+    name: '멸치',
+    rewardFile: 'harvest-fish-medium-2',
+    iconFile: 'icon-fish-medium-2',
+    price: 200,
   }),
   makeItem({
     key: 'FISH_LARGE',
-    name: '큰 물고기',
+    name: '개복치',
     rewardFile: 'harvest-fish-large',
     iconFile: 'icon-fish-large',
-    price: 300,
+    price: 500,
   }),
   makeItem({
     key: 'FISH_RARE',
-    name: '희귀 물고기',
+    name: '상어',
     rewardFile: 'harvest-fish-rare',
     iconFile: 'icon-fish-rare',
     price: 1000,
@@ -119,7 +132,14 @@ export const FISHES = [
 // 표시/정렬 순서(서버 enum KEY 그대로)
 export const RESOURCE_ORDER = ['WOOD', 'IRON', 'CLOTH', 'BRICK', 'WALLPAPER', 'CLAY', 'FLOORING'];
 export const FRUIT_ORDER = ['APPLE', 'ORANGE', 'PEAR', 'PEACH', 'CHERRY'];
-export const FISH_ORDER = ['FISH_SMALL', 'FISH_MEDIUM', 'FISH_LARGE', 'FISH_RARE'];
+export const FISH_ORDER = [
+  'FISH_SMALL_1',
+  'FISH_SMALL_2',
+  'FISH_MEDIUM_1',
+  'FISH_MEDIUM_2',
+  'FISH_LARGE',
+  'FISH_RARE',
+];
 
 const ALL = [...RESOURCES, ...FRUITS, ...FISHES];
 

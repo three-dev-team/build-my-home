@@ -1,0 +1,191 @@
+.bmhFishing-root {
+    position: absolute;
+    inset: 0;
+    z-index: 30000;
+    overflow: hidden;
+    font-family: var(--font-gosanja);
+
+    /* ✅ 핵심: Subtitle/InstructionText가 쓰는 var(--s) 공급 */
+    container-type: size;
+    --sx: calc(100cqw / 1920);
+    --sy: calc(100cqh / 1080);
+    --s: min(var(--sx), var(--sy));
+}
+
+/* 배경은 “stage(16:9)” 안에서만 꽉 차게 */
+.bmhFishing-bg {
+    position: absolute;
+    inset: 0;
+    background-image: url('/images/bg-fishing.webp');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    pointer-events: none;
+    user-select: none;
+    z-index: 0;
+}
+
+/* 관전자 입력 차단 */
+.bmhFishing-spectatorBlock {
+    position: absolute;
+    inset: 0;
+    z-index: 50;
+    background: transparent;
+    pointer-events: auto;
+}
+
+/* 타이머 */
+.bmhFishing-timerWrap {
+    position: absolute;
+    top: calc(16px + env(safe-area-inset-top));
+    left: calc(16px + env(safe-area-inset-left));
+    z-index: 40;
+    pointer-events: none;
+}
+
+.bmhFishing-timerPill {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.92);
+    border: 3px solid rgba(130, 204, 221, 0.85);
+    border-radius: 999px;
+    padding: 8px 14px;
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.22);
+}
+
+.bmhFishing-timerLabel {
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: 0.12em;
+    color: rgba(0, 0, 0, 0.45);
+}
+
+.bmhFishing-timerValue {
+    font-size: 18px;
+    font-weight: 900;
+    color: rgba(0, 0, 0, 0.82);
+}
+
+.bmhFishing-timerUrgent {
+    color: #e74c3c;
+    animation: bmhFishingUrgent 0.9s ease-in-out infinite;
+}
+
+@keyframes bmhFishingUrgent {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.06); }
+    100% { transform: scale(1); }
+}
+
+/* ✅ 캐릭터 박스: w=436 h=480 right=652 bottom=328 */
+.bmhFishing-charBox {
+    position: absolute;
+    width: calc(436 * var(--s));
+    height: calc(480 * var(--s));
+    right: calc(652 * var(--s));
+    bottom: calc(328 * var(--s));
+    z-index: 20;
+}
+
+.bmhFishing-charImg {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: contain;
+    object-position: right bottom;
+    user-select: none;
+    pointer-events: none;
+}
+
+/* 하단 HUD */
+.bmhFishing-hudRow {
+    position: absolute;
+    left: 50%;
+    bottom: calc(40 * var(--s));
+    transform: translateX(-50%);
+    display: flex;
+    gap: calc(60 * var(--s));
+    z-index: 30;
+    pointer-events: none;
+}
+
+.bmhFishing-hudLeft,
+.bmhFishing-hudRight {
+    width: calc(560 * var(--s));
+}
+
+.bmhFishing-hudTitle {
+    font-size: calc(32 * var(--s));
+    font-weight: 900;
+    color: rgba(255, 255, 255, 0.92);
+    text-shadow: 0 2px 14px rgba(0, 0, 0, 0.45);
+    margin-bottom: calc(12 * var(--s));
+}
+
+.bmhFishing-gaugeTrack,
+.bmhFishing-dangerTrack {
+    position: relative;
+    width: calc(560 * var(--s));
+    height: calc(80 * var(--s));
+    border-radius: calc(24 * var(--s));
+    background: rgba(0, 0, 0, 0.35);
+    overflow: hidden;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+.bmhFishing-gaugeWindow {
+    position: absolute;
+    top: calc(10 * var(--s));
+    bottom: calc(10 * var(--s));
+    border-radius: calc(20 * var(--s));
+}
+
+.bmhFishing-gaugeMarker {
+    position: absolute;
+    top: 50%;
+    width: calc(10 * var(--s));
+    height: calc(70 * var(--s));
+    transform: translate(-50%, -50%);
+    border-radius: calc(999 * var(--s));
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 0 14px rgba(255, 255, 255, 0.45);
+}
+
+.bmhFishing-dangerFill {
+    height: 100%;
+    border-radius: calc(24 * var(--s));
+}
+
+.bmhFishing-bars {
+    margin-top: calc(14 * var(--s));
+    display: flex;
+    flex-direction: column;
+    gap: calc(10 * var(--s));
+}
+
+.bmhFishing-barLabel {
+    font-size: calc(14 * var(--s));
+    font-weight: 900;
+    color: rgba(255, 255, 255, 0.86);
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+    margin-bottom: calc(6 * var(--s));
+}
+
+.bmhFishing-barTrack {
+    width: calc(560 * var(--s));
+    height: calc(18 * var(--s));
+    border-radius: calc(12 * var(--s));
+    background: rgba(255, 255, 255, 0.15);
+    overflow: hidden;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.bmhFishing-barFill {
+    height: 100%;
+    width: 0%;
+    border-radius: calc(12 * var(--s));
+}

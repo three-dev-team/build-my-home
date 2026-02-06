@@ -1,4 +1,4 @@
-// RadishSell.jsx
+// RadishSell.jsx (풀코드) ✅ 루트 tradeQty/tradeAmount를 받아 0개/0벨 문제 해결
 import React, { useMemo, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
@@ -25,33 +25,35 @@ const getPlayerCharacter = (player) => {
 
 export default function RadishSell({
                                      isMyTurn,
-                                     player,
+                                     player, // ✅ 내 player(입력/판매에 사용)
+                                     actorPlayer, // ✅ 화면 표시 기준 player(현재 턴 플레이어를 넣어주면 관전/전체 동기화됨)
                                      currentPlayerName,
                                      radishPrice = 0,
+
+                                     // ✅ [중요] 서버(GameMessage) 최상위에 오는 값들
+                                     tradeQty, // gameState.quantity
+                                     tradeAmount, // gameState.amount
+                                     tradeMemberId, // gameState.memberId
+
                                      onAction,
                                      onClose,
                                    }) {
-  const step = Number(player?.uiStep ?? 0);
 
+  const viewPlayer = actorPlayer ?? player;
+  const step = Number(viewPlayer?.uiStep ?? 0);
   const radishQty = Number(player?.radishQty ?? 0);
   const canSell = !!isMyTurn && radishQty > 0 && typeof onAction === 'function';
-
   const [sellQty, setSellQty] = useState(1);
-
-  // ✅ "결정" 누른 순간의 확정값(서버 값 오기 전까지 완료 화면에서 사용)
   const [confirmed, setConfirmed] = useState(null); // { qty, amount }
-
   const priceNum = useMemo(() => Number(radishPrice || 0), [radishPrice]);
   const priceText = useMemo(() => priceNum.toLocaleString(), [priceNum]);
 
-  // ✅ 입력(step=1)에서만 owned qty 기준으로 입력값 clamp
   useEffect(() => {
     if (step !== 1) return;
     const max = Math.max(1, radishQty || 1);
     setSellQty((q) => clamp(Number(q) || 1, 1, max));
   }, [radishQty, step]);
 
-  // ✅ step이 0으로 돌아오면 confirmed 초기화
   useEffect(() => {
     if (step === 0) setConfirmed(null);
   }, [step]);
@@ -61,8 +63,6 @@ export default function RadishSell({
     return clamp(Number(sellQty) || 1, 1, max);
   }, [sellQty, radishQty]);
 
-  const expectedAmount = useMemo(() => safeQty * priceNum, [safeQty, priceNum]);
-
   const setStep = (next) => {
     if (!isMyTurn) return;
     onAction?.('SET_STEP', { uiStep: next });
@@ -71,7 +71,6 @@ export default function RadishSell({
   const handleSell = () => {
     if (!canSell) return;
 
-    // ✅ 결정 순간 qty/amount를 확정값으로 저장
     const qty = safeQty;
     const amount = qty * priceNum;
     setConfirmed({ qty, amount });
@@ -79,8 +78,8 @@ export default function RadishSell({
     onAction?.('RADISH_SELL', { quantity: qty });
   };
 
-  const pName = useMemo(() => getPlayerName(player), [player]);
-  const pChar = useMemo(() => getPlayerCharacter(player), [player]);
+  const pName = useMemo(() => getPlayerName(viewPlayer), [viewPlayer]);
+  const pChar = useMemo(() => getPlayerCharacter(viewPlayer), [viewPlayer]);
 
   const playerColor = useMemo(() => {
     const c = String(pChar?.color || '').trim();
@@ -106,20 +105,44 @@ export default function RadishSell({
 
   const overlayDim = useMemo(() => withAlpha(COLORS.ac.black, 0.06), []);
 
-  // ✅ 서버 값이 있으면 서버 값 우선, 없으면 confirmed(결정값) 사용
+  // ✅ [핵심] 서버가 보내는 tradeQty/tradeAmount는 "메시지 최상위"에 있음
+  // - tradeMemberId가 있으면 그 멤버의 거래 결과로 간주
+  // - 없으면(혹은 연결 못 했으면) 내 턴일 때만 confirmed fallback
+  const isTradeForViewPlayer = useMemo(() => {
+    const tId = Number(tradeMemberId);
+    const vId = Number(viewPlayer?.memberId ?? viewPlayer?.id);
+    if (!Number.isFinite(tId) || !Number.isFinite(vId)) return false;
+    return tId === vId;
+  }, [tradeMemberId, viewPlayer]);
+
   const soldQty = useMemo(() => {
-    const serverQty = Number(player?.quantity ?? player?.lastTradeQty);
-    if (Number.isFinite(serverQty) && serverQty > 0) return serverQty;
-    if (confirmed?.qty != null) return Number(confirmed.qty) || 0;
+    const serverQtyRoot = Number(tradeQty);
+    if (Number.isFinite(serverQtyRoot) && serverQtyRoot > 0) {
+      // tradeMemberId가 맞으면 그 값을 보여주고,
+      // tradeMemberId가 없으면(구버전/누락) 내 턴일 때만 보여줌
+      if (isTradeForViewPlayer || (tradeMemberId == null && isMyTurn)) return serverQtyRoot;
+    }
+
+    // ✅ 기존(플레이어 객체 내) 필드도 혹시 있을 수 있으니 남겨둠
+    const serverQtyInPlayer = Number(viewPlayer?.quantity ?? viewPlayer?.lastTradeQty);
+    if (Number.isFinite(serverQtyInPlayer) && serverQtyInPlayer > 0) return serverQtyInPlayer;
+
+    if (isMyTurn && confirmed?.qty != null) return Number(confirmed.qty) || 0;
     return 0;
-  }, [player, confirmed]);
+  }, [tradeQty, tradeMemberId, isTradeForViewPlayer, isMyTurn, viewPlayer, confirmed]);
 
   const soldAmount = useMemo(() => {
-    const serverAmt = Number(player?.amount ?? player?.lastTradeAmount);
-    if (Number.isFinite(serverAmt) && serverAmt >= 0) return serverAmt;
-    if (confirmed?.amount != null) return Number(confirmed.amount) || 0;
+    const serverAmtRoot = Number(tradeAmount);
+    if (Number.isFinite(serverAmtRoot) && serverAmtRoot >= 0) {
+      if (isTradeForViewPlayer || (tradeMemberId == null && isMyTurn)) return serverAmtRoot;
+    }
+
+    const serverAmtInPlayer = Number(viewPlayer?.amount ?? viewPlayer?.lastTradeAmount);
+    if (Number.isFinite(serverAmtInPlayer) && serverAmtInPlayer >= 0) return serverAmtInPlayer;
+
+    if (isMyTurn && confirmed?.amount != null) return Number(confirmed.amount) || 0;
     return 0;
-  }, [player, confirmed]);
+  }, [tradeAmount, tradeMemberId, isTradeForViewPlayer, isMyTurn, viewPlayer, confirmed]);
 
   const renderContent = () => {
     if (step === 0) {

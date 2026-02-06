@@ -409,6 +409,11 @@ public class GameWsController {
                 System.out.println("🏪 아이템 상점 세션 생성: memberId=" + memberId);
             }
 
+            if (nextStatus == GameStatus.WAITING_FISHING) {
+                player.setUiStep(0);
+                player.setActionData(null);
+                player.setActionDataStr(null);
+                fishingService.scheduleWaitingTimeout(roomId, memberId);
             // STAMP 진입 시 UI step 초기화 (이전 이벤트 uiStep 잔존 방지)
             if (nextStatus == GameStatus.WAITING_STAMP) {
                 player.setUiStep(0);
@@ -588,6 +593,7 @@ public class GameWsController {
                         applyTradeResult(response, memberId, tr);
                         if ("RADISH_SOLD".equals(tr.type())) {
                             player.setUiStep(2);
+                            response.setUiStep(2);
                         }
                         response.setPlayers(new ArrayList<>(gameState.getPlayers().values()));
                         break;
@@ -798,14 +804,37 @@ public class GameWsController {
         Long actorId = parseActorIdSafely(principal);
         if (actorId == null) return;
         if (req == null || req.getRoomId() == null) return;
+        Long roomId = req.getRoomId();
+        GameState gameState = gameStateService.getGame(roomId);
+        if (gameState == null) return;
+        boolean useBait;
+        String ht;
+        synchronized (gameState) {
+            if (gameState.getStatus() != GameStatus.WAITING_FISHING) return;
+            if (!actorId.equals(gameState.getCurrentPlayerId())) return;
+            if (gameState.getPlayers().get(actorId) == null) return;
 
-        String ht = req.getHarvestType();
-        if (ht == null || ht.isBlank()) {
-            fishingService.startFishing(req.getRoomId(), actorId);
-            return;
+            useBait = Boolean.TRUE.equals(req.getUseBait());
+            ht = req.getHarvestType();
         }
-
-        fishingService.startFishing(req.getRoomId(), actorId, ht);
+        if (ht == null || ht.isBlank()) {
+            fishingService.startFishing(roomId, actorId, useBait);
+        } else {
+            fishingService.startFishing(roomId, actorId, ht);
+        }
+        GameMessage stepResponse = null;
+        synchronized (gameState) {
+            if (gameState.getStatus() == GameStatus.FISHING_IN_PROGRESS) {
+                GamePlayerState player = gameState.getPlayers().get(actorId);
+                if (player != null) {
+                    player.setUiStep(2);
+                    stepResponse = defaultGameResponse("FISHING_STEP_CHANGED", gameState);
+                }
+            }
+        }
+        if (stepResponse != null) {
+            simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, stepResponse);
+        }
     }
 
     // fishing : /app/games/fishing/action
@@ -814,7 +843,6 @@ public class GameWsController {
         Long actorId = parseActorIdSafely(principal);
         if (actorId == null) return;
         if (req == null || req.getRoomId() == null || req.getAction() == null) return;
-
         fishingService.handleAction(req.getRoomId(), actorId, req.getAction());
     }
 

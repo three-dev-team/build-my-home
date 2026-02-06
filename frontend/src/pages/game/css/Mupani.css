@@ -7,7 +7,7 @@
     --sx: calc(100cqw / 1920);
     --sy: calc(100cqh / 1080);
     --s: min(var(--sx), var(--sy));
-    background-image: url('/images/mupani/bg-mupanitile.jpg');
+    background-image: url('/images/mupani/bg-mupanitile.webp');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -49,7 +49,7 @@
     width: 54.38cqw;
     height: 6.29cqh;
     font-size: 2.7cqw;
-    color: #5C4A3A;
+    color: var(--mupani-question-text);
     text-align: center;
     display: flex;
     align-items: center;
@@ -58,7 +58,7 @@
 }
 
 .highlight-price {
-    color: #4AC1E0;
+    color: var(--mupani-highlight-price);
     font-weight: 900;
 }
 
@@ -74,7 +74,7 @@
     font-size: 3.75cqw;
     top: 23.51cqh;
     right: 42.5cqw;
-    color: white;
+    color: var(--mupani-radish-qty);
 }
 
 /* 총 가격 표시 */
@@ -90,7 +90,7 @@
     display: flex;
     align-items: center;
     justify-content: flex-end;
-    color: #4AC1E0;
+    color: var(--mupani-total-price);
     right: calc(784 * var(--s));
     top: calc(392 * var(--s));
 }

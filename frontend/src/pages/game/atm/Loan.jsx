@@ -1,21 +1,14 @@
-import React, { useMemo, useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-
-import DialogBox from '../../../components/common/DialogBox.jsx';
-import ExitButton from '../../../components/common/ExitButton.jsx';
-import AtmCalculator from './AtmCalculator.jsx';
+import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react';
 
 import { useGameTimer } from '../../../hooks/useGameTimer.js';
-import { MIN_LOAN_AMOUNT } from '../../../constants/gameConstants.js';
 import { CHARACTERS } from '../../../constants/characters.js';
-import { COLORS, withAlpha } from '../../../constants/colors.js';
+import { COLORS } from '../../../constants/colors.js';
 
-const BG_ENTRY = '/images/board/bg-atm.webp';
-const BG_CALC = '/images/board/bg-atm-calculator.webp';
-const BG_LOADING = '/images/board/bg-atm-loading.webp';
-
+import LoanView from './LoanView.jsx';
 const LOADING_MS = 3000;
 const EXIT_AFTER_TYPING_MS = 3000;
+const MAX_LOAN = 9999;
+const WARN_AUTO_HIDE_MS = 2000;
 
 const safeName = (v, fallback = '익명의 주민') => {
   const s = String(v ?? '').trim();
@@ -45,15 +38,11 @@ const fmt = (n) => Number(n || 0).toLocaleString();
 export default function Loan({
                                userBell = 0,
                                userLoan = 0,
-
                                currentPlayerName = '익명의 주민',
                                currentPlayerCharacterId = null,
-
                                isMyTurn = false,
                                timeoutSeconds,
-
                                isBankTile = false,
-
                                onAction,
                                onExit,
                                onClose,
@@ -69,26 +58,23 @@ export default function Loan({
 
   const character = useMemo(() => findCharacter(resolvedCharacterId), [resolvedCharacterId]);
 
-  // ✅ 캐릭터 이름은 characters.js 기준
   const characterName = useMemo(() => {
     const n = String(character?.name ?? '').trim();
     return n ? n : nickname;
   }, [character, nickname]);
 
-  const { timeLeft, isUrgent } = useGameTimer(timeoutSeconds);
-
-  // MENU | CALC_LOAN | CALC_REPAY | LOADING | DONE
+  const { timeLeft } = useGameTimer(timeoutSeconds);
   const [mode, setMode] = useState('MENU');
-  const [calcValue, setCalcValue] = useState(1);
-
+  const [calcValue, setCalcValue] = useState(0);
   const [doneText, setDoneText] = useState('');
   const [doneHighlights, setDoneHighlights] = useState([]);
   const [doneTypingDone, setDoneTypingDone] = useState(false);
-
+  const [warnText, setWarnText] = useState('');
+  const [warnTypingDone, setWarnTypingDone] = useState(false);
+  const prevModeRef = useRef('MENU');
+  const warnHideRef = useRef(null);
   const exitTimerRef = useRef(null);
   const loadingTimerRef = useRef(null);
-
-  // ✅ confirm 중복 실행 방지
   const confirmingRef = useRef(false);
 
   const clearTimers = () => {
@@ -99,6 +85,10 @@ export default function Loan({
     if (loadingTimerRef.current) {
       clearTimeout(loadingTimerRef.current);
       loadingTimerRef.current = null;
+    }
+    if (warnHideRef.current) {
+      clearTimeout(warnHideRef.current);
+      warnHideRef.current = null;
     }
   };
 
@@ -115,12 +105,18 @@ export default function Loan({
     onClose?.();
   };
 
-  // ✅ 나가기 버튼 = 뒤로가기
   const handleBack = () => {
     if (mode === 'CALC_LOAN' || mode === 'CALC_REPAY') {
       confirmingRef.current = false;
       setMode('MENU');
-      setCalcValue(1);
+      setCalcValue(0);
+      return;
+    }
+    if (mode === 'NOTICE' || mode === 'LIMIT_WARN') {
+      confirmingRef.current = false;
+      setDoneTypingDone(false);
+      setWarnTypingDone(false);
+      setMode(prevModeRef.current || 'MENU');
       return;
     }
     if (mode === 'MENU') {
@@ -133,34 +129,14 @@ export default function Loan({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [timeLeft]);
 
-  const rootClass = 'absolute inset-0 z-[30000] overflow-hidden select-none';
+  const remainingDebtCapacity = useMemo(() => Math.max(0, MAX_LOAN - Number(userLoan || 0)), [userLoan]);
 
-  const topTimer = (
-    <div className="absolute top-6 right-6 z-20">
-      <div
-        className="flex items-center gap-3 px-5 py-2 rounded-full"
-        style={{
-          backgroundColor: withAlpha(COLORS.ac.black, 0.55),
-          border: `2px solid ${withAlpha(COLORS.ac.white, 0.35)}`,
-        }}
-      >
-        <span style={{ fontFamily: 'var(--font-gosanja)', fontSize: 18, color: withAlpha(COLORS.ac.white, 0.8) }}>
-          TIME
-        </span>
-        <span
-          style={{
-            fontFamily: 'var(--font-gosanja)',
-            fontSize: 22,
-            color: isUrgent ? COLORS.ac.red : COLORS.ac.white,
-          }}
-        >
-          {timeLeft}s
-        </span>
-      </div>
-    </div>
-  );
-
-  const LOAN_TEST_MAX = 999999999;
+  const remainingBorrowMax = useMemo(() => {
+    const cap = remainingDebtCapacity;
+    if (cap <= 0) return 0;
+    if (isBankTile) return cap;
+    return Math.max(0, Math.floor(cap / 1.1)); // ATM: 수수료 포함 한도
+  }, [remainingDebtCapacity, isBankTile]);
 
   const repayMax = useMemo(
     () => Math.max(0, Math.min(Number(userLoan || 0), Number(userBell || 0))),
@@ -168,130 +144,32 @@ export default function Loan({
   );
 
   const helperTextLoan = useMemo(() => {
-    const fee = Math.floor(Number(calcValue || 0) * 0.1);
-    if (!Number.isFinite(fee) || fee <= 0) return '';
-    const totalDebt = Number(userLoan || 0) + Number(calcValue || 0) + fee;
+    const amount = Number(calcValue || 0);
+    if (!Number.isFinite(amount) || amount <= 0) return '';
+
+    if (isBankTile) {
+      const totalDebt = Number(userLoan || 0) + amount;
+      return `수수료 없음 (총 빚: ${fmt(totalDebt)}벨)`;
+    }
+
+    const fee = Math.floor(amount * 0.1);
+    const totalDebt = Number(userLoan || 0) + amount + fee;
     return `수수료 ${fmt(fee)}벨 발생 (총 빚: ${fmt(totalDebt)}벨)`;
-  }, [calcValue, userLoan]);
+  }, [calcValue, userLoan, isBankTile]);
 
   const helperTextRepay = useMemo(() => {
     const left = Math.max(0, Number(userLoan || 0) - Number(calcValue || 0));
     return `상환 후 남은 빚: ${fmt(left)}벨`;
   }, [calcValue, userLoan]);
 
-  const validate = (type, amount) => {
-    const val = Number(amount);
-
-    if (type === 'LOAN') {
-      if (val < MIN_LOAN_AMOUNT) return `${MIN_LOAN_AMOUNT}벨 부터 거래 가능해.`;
-      if (val % 50 !== 0) return '50벨 단위로만 거래 가능해.';
-      return '';
-    }
-
-    if (val <= 0) return '상환할 금액을 입력해줘.';
-    if (val > repayMax) return '상환 가능한 금액을 초과했어.';
-    if (val % 50 !== 0) return '50벨 단위로만 거래 가능해.';
-    return '';
-  };
-
-  // ✅ colors.js 기반 하이라이트 색(없으면 fallback)
   const C = COLORS?.ac || {};
   const H_AMOUNT = C.yellow ?? C.orange ?? '#f2c94c';
   const H_FEE = C.orange ?? C.yellow ?? '#e76c21';
   const H_DEBT = C.nookCyan ?? C.mint ?? '#00b6a9';
   const H_NAME = character?.color ?? C.nookCyan ?? '#00b6a9';
+  const WARN_RED = C.red ?? '#ff4d4f';
 
-  const doConfirm = (type) => {
-    if (!isMyTurn) return;
-    if (mode === 'LOADING' || mode === 'DONE') return;
-
-    if (confirmingRef.current) return;
-    confirmingRef.current = true;
-
-    const err = validate(type, calcValue);
-    if (err) {
-      confirmingRef.current = false;
-      alert(err);
-      return;
-    }
-
-    clearTimers();
-    setDoneTypingDone(false);
-    setDoneText('');
-    setDoneHighlights([]);
-
-    setMode('LOADING');
-
-    loadingTimerRef.current = setTimeout(() => {
-      const amount = Number(calcValue || 0);
-
-      if (type === 'LOAN') {
-        const fee = Math.floor(amount * 0.1);
-        const newDebt = Number(userLoan || 0) + amount + fee;
-
-        onAction?.('LOAN_BORROW', { amount, isBankTile });
-
-        const amountStr = `${fmt(amount)}벨`;
-        const feeStr = `${fmt(fee)}벨`;
-        const debtStr = `${fmt(newDebt)}벨`;
-
-        setDoneText(
-          `${amountStr}을 ${characterName}의 계좌로 송금했습니다\n` +
-          `수수료 ${feeStr}이 부과되었습니다\n` +
-          `현재 빚은 ${debtStr} 입니다`,
-        );
-
-        setDoneHighlights([
-          { text: amountStr, color: H_AMOUNT },
-          { text: feeStr, color: H_FEE },
-          { text: debtStr, color: H_DEBT },
-          { text: characterName, color: H_NAME },
-        ]);
-      } else {
-        const leftDebt = Math.max(0, Number(userLoan || 0) - amount);
-
-        onAction?.('LOAN_REPAY', { amount, isBankTile });
-
-        const amountStr = `${fmt(amount)}벨`;
-        const debtStr = `${fmt(leftDebt)}벨`;
-
-        setDoneText(`${amountStr}이 상환되었습니다\n현재 빚은 ${debtStr} 입니다`);
-
-        setDoneHighlights([
-          { text: amountStr, color: H_AMOUNT },
-          { text: debtStr, color: H_DEBT },
-        ]);
-      }
-
-      setMode('DONE');
-    }, LOADING_MS);
-  };
-
-  useEffect(() => {
-    if (mode !== 'DONE') return;
-    if (!doneTypingDone) return;
-
-    clearTimers();
-    exitTimerRef.current = setTimeout(() => {
-      confirmingRef.current = false;
-      handleExitReal();
-    }, EXIT_AFTER_TYPING_MS);
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mode, doneTypingDone]);
-
-  const sceneScaleStyle = {
-    position: 'absolute',
-    inset: 0,
-    zIndex: 0,
-    overflow: 'hidden',
-    containerType: 'size',
-    '--sx': 'calc(100cqw / 1920)',
-    '--sy': 'calc(100cqh / 1080)',
-    '--s': 'min(var(--sx), var(--sy))',
-  };
-
-  const rightCharacterBox = character?.rightImage ? (
+  const entryCharacterBox = character?.rightImage ? (
     <div
       style={{
         position: 'absolute',
@@ -318,154 +196,264 @@ export default function Loan({
     </div>
   ) : null;
 
-  const entryScene = (
-    <div style={sceneScaleStyle}>
-      <img src={BG_ENTRY} alt="atm-entry-bg" className="absolute inset-0 w-full h-full object-cover" draggable={false} />
-      {rightCharacterBox}
-    </div>
-  );
+  const showLimitWarn = useCallback((text, returnMode = 'CALC_LOAN') => {
+    clearTimers();
+    prevModeRef.current = returnMode;
+    setWarnTypingDone(false);
+    setWarnText(text);
+    setMode('LIMIT_WARN');
+  }, []);
 
-  const loadingScene = (
-    <div style={sceneScaleStyle}>
-      <img src={BG_LOADING} alt="atm-loading-bg" className="absolute inset-0 w-full h-full object-cover" draggable={false} />
-      <div
-        style={{
-          position: 'absolute',
-          left: '50%',
-          top: '50%',
-          transform: 'translate(-50%, -50%)',
-          fontFamily: 'var(--font-gosanja)',
-          fontSize: 'calc(60 * var(--s))',
-          color: C.green ?? '#43991a',
-          textAlign: 'center',
-          whiteSpace: 'pre-line',
-        }}
-      >
-        처리중입니다...
-      </div>
-    </div>
-  );
+  const showNotice = (text, highlights = []) => {
+    clearTimers();
+    confirmingRef.current = false;
+    setDoneTypingDone(false);
+    setDoneText(text);
+    setDoneHighlights(highlights);
+    prevModeRef.current = 'MENU';
+    setMode('NOTICE');
+  };
 
-  // ✅ 처리중/결과에서는 나가기 버튼 없음
-  const showBackButtonMyTurn = isMyTurn && (mode === 'MENU' || mode === 'CALC_LOAN' || mode === 'CALC_REPAY');
+  const showCreditBlockedNotice = () => {
+    const maxStr = fmt(MAX_LOAN); // "9,999"
+    const text = `${nickname}님은 대출금이 ${maxStr}벨이 있어\n신용불량자가 되었습니다\n더 이상의 대출은 불가능합니다`;
 
-  // ---------------- 관전자 ----------------
-  if (!isMyTurn) {
-    return (
-      <div className={rootClass}>
-        {entryScene}
-        {topTimer}
+    showNotice(text, [
+      { text: nickname, color: H_NAME },
+      { text: `${maxStr}벨`, color: WARN_RED },
+      { text: '신용불량자', color: WARN_RED },
+    ]);
+  };
 
-        <DialogBox
-          open
-          text={`${nickname} 님이 ATM을 이용중입니다\n보안 상의 이유로 잠시만 대기해주세요`}
-          textColor={C.creamWhite ?? '#FDFBF6'}
-          options={[]}
-          optionDisabled
-        />
+  const validate = (type, amount) => {
+    const val = Number(amount);
 
-        <ExitButton onClick={handleExitReal} disabled={false} />
-      </div>
-    );
-  }
+    if (type === 'LOAN') {
+      if (Number(userLoan || 0) >= MAX_LOAN) return 'CREDIT_BLOCK';
+      if (!Number.isFinite(val) || val <= 0) return 'MIN_1';
+      if (val > remainingBorrowMax) return 'LIMIT';
+      return '';
+    }
 
-  const isCalc = mode === 'CALC_LOAN' || mode === 'CALC_REPAY';
+    if (!Number.isFinite(val) || val <= 0) return '상환할 금액을 입력해줘.';
+    if (val > repayMax) return '상환 가능한 금액을 초과했어.';
+    return '';
+  };
+
+  const doConfirm = (type) => {
+    if (!isMyTurn) return;
+    if (mode === 'LOADING' || mode === 'DONE' || mode === 'NOTICE' || mode === 'LIMIT_WARN') return;
+
+    if (confirmingRef.current) return;
+    confirmingRef.current = true;
+
+    const err = validate(type, calcValue);
+    if (err) {
+      confirmingRef.current = false;
+
+      if (type === 'LOAN' && err === 'CREDIT_BLOCK') {
+        showCreditBlockedNotice();
+        return;
+      }
+
+      if (type === 'LOAN' && err === 'MIN_1') {
+        showLimitWarn('1벨부터 대출 가능합니다', 'CALC_LOAN');
+        return;
+      }
+
+      if (type === 'LOAN' && err === 'LIMIT') {
+        const cap = remainingDebtCapacity;
+        if (isBankTile) {
+          showLimitWarn(`대출 한도를 넘었습니다\n대출 한도는 ${fmt(MAX_LOAN)}벨입니다`, 'CALC_LOAN');
+        } else {
+          showLimitWarn(
+            `대출 한도를 넘었습니다\nATM 대출은 수수료 포함으로 한도가 계산됩니다\n남은 한도: ${fmt(cap)}벨`,
+            'CALC_LOAN',
+          );
+        }
+        return;
+      }
+
+      alert(err);
+      return;
+    }
+
+    const amount = Number(calcValue || 0);
+    const baseLoan = Number(userLoan || 0);
+
+    clearTimers();
+    setDoneTypingDone(false);
+    setDoneText('');
+    setDoneHighlights([]);
+
+    if (type === 'LOAN') {
+      onAction?.('LOAN_BORROW', { amount, isBankTile });
+    } else {
+      onAction?.('LOAN_REPAY', { amount, isBankTile });
+    }
+
+    setMode('LOADING');
+
+    loadingTimerRef.current = setTimeout(() => {
+      if (type === 'LOAN') {
+        const fee = isBankTile ? 0 : Math.floor(amount * 0.1);
+        const newDebt = baseLoan + amount + fee;
+
+        const amountStr = `${fmt(amount)}벨`;
+        const feeStr = `${fmt(fee)}벨`;
+        const debtStr = `${fmt(newDebt)}벨`;
+
+        if (isBankTile) {
+          setDoneText(`${amountStr}을 ${characterName}의 계좌로 송금했습니다\n수수료는 없습니다\n현재 빚은 ${debtStr} 입니다`);
+          setDoneHighlights([
+            { text: amountStr, color: H_AMOUNT },
+            { text: debtStr, color: H_DEBT },
+            { text: characterName, color: H_NAME },
+          ]);
+        } else {
+          setDoneText(`${amountStr}을 ${characterName}의 계좌로 송금했습니다\n수수료 ${feeStr}이 부과되었습니다\n현재 빚은 ${debtStr} 입니다`);
+          setDoneHighlights([
+            { text: amountStr, color: H_AMOUNT },
+            { text: feeStr, color: H_FEE },
+            { text: debtStr, color: H_DEBT },
+            { text: characterName, color: H_NAME },
+          ]);
+        }
+      } else {
+        const leftDebt = Math.max(0, baseLoan - amount);
+
+        const amountStr = `${fmt(amount)}벨`;
+        const debtStr = `${fmt(leftDebt)}벨`;
+
+        setDoneText(`${amountStr}이 상환되었습니다\n현재 빚은 ${debtStr} 입니다`);
+        setDoneHighlights([
+          { text: amountStr, color: H_AMOUNT },
+          { text: debtStr, color: H_DEBT },
+        ]);
+      }
+
+      setMode('DONE');
+    }, LOADING_MS);
+  };
+
+  useEffect(() => {
+    if (mode !== 'DONE') return;
+    if (!doneTypingDone) return;
+
+    clearTimers();
+    exitTimerRef.current = setTimeout(() => {
+      confirmingRef.current = false;
+      handleExitReal();
+    }, EXIT_AFTER_TYPING_MS);
+
+  }, [mode, doneTypingDone]);
+
+  useEffect(() => {
+    if (mode !== 'NOTICE') return;
+    if (!doneTypingDone) return;
+
+    clearTimers();
+    exitTimerRef.current = setTimeout(() => {
+      confirmingRef.current = false;
+      setMode('MENU');
+      setCalcValue(0);
+      setDoneTypingDone(false);
+    }, WARN_AUTO_HIDE_MS);
+
+  }, [mode, doneTypingDone]);
+
+  useEffect(() => {
+    if (mode !== 'LIMIT_WARN') return;
+    if (!warnTypingDone) return;
+
+    clearTimers();
+    warnHideRef.current = setTimeout(() => {
+      setMode(prevModeRef.current || 'CALC_LOAN');
+      setWarnTypingDone(false);
+      setWarnText('');
+    }, WARN_AUTO_HIDE_MS);
+
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, warnTypingDone]);
+
+  const onMenuLoan = () => {
+    confirmingRef.current = false;
+
+    if (Number(userLoan || 0) >= MAX_LOAN) {
+      showCreditBlockedNotice();
+      return;
+    }
+
+    setCalcValue(0);
+    setMode('CALC_LOAN');
+  };
+
+  const onMenuRepay = () => {
+    confirmingRef.current = false;
+    setCalcValue(0);
+    setMode('CALC_REPAY');
+  };
+
+  const onChangeLoan = (v) => {
+    const n = Number(v);
+    if (!Number.isFinite(n)) {
+      setCalcValue(0);
+      return;
+    }
+
+    if (n > remainingBorrowMax) {
+      setCalcValue(remainingBorrowMax);
+      if (isBankTile) {
+        showLimitWarn(`대출 한도를 넘었습니다\n대출 한도는 ${fmt(MAX_LOAN)}벨입니다`, 'CALC_LOAN');
+      } else {
+        showLimitWarn(
+          `대출 한도를 넘었습니다\nATM 대출은 (원금+수수료) 포함으로 한도가 계산됩니다\n남은 한도: ${fmt(remainingDebtCapacity)}벨`,
+          'CALC_LOAN',
+        );
+      }
+      return;
+    }
+
+    setCalcValue(Math.max(0, n));
+  };
+
+  const onChangeRepay = (v) => {
+    const n = Number(v);
+    if (!Number.isFinite(n)) {
+      setCalcValue(0);
+      return;
+    }
+    setCalcValue(Math.max(0, Math.min(repayMax || 0, n)));
+  };
 
   return (
-    <div className={rootClass}>
-      {mode === 'LOADING' && loadingScene}
-
-      {isCalc && mode !== 'LOADING' && (
-        <img src={BG_CALC} alt="atm-calc-bg" className="absolute inset-0 w-full h-full object-cover" draggable={false} />
-      )}
-
-      {!isCalc && mode !== 'LOADING' && entryScene}
-
-      {topTimer}
-
-      <AnimatePresence mode="wait">
-        {mode === 'MENU' && (
-          <motion.div key="menu" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-30">
-            <DialogBox
-              open
-              text="어떤 서비스를 이용하시겠습니까?"
-              textColor={C.creamWhite ?? '#FDFBF6'}
-              options={[
-                {
-                  text: '대출',
-                  onClick: () => {
-                    confirmingRef.current = false;
-                    setCalcValue(1);
-                    setMode('CALC_LOAN');
-                  },
-                },
-                {
-                  text: '대출금 상환',
-                  onClick: () => {
-                    confirmingRef.current = false;
-                    setCalcValue(1);
-                    setMode('CALC_REPAY');
-                  },
-                },
-              ]}
-              optionDisabled={!isMyTurn}
-            />
-          </motion.div>
-        )}
-
-        {mode === 'CALC_LOAN' && (
-          <motion.div key="calc_loan" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-30">
-            <AtmCalculator
-              open
-              mode="LOAN"
-              value={calcValue}
-              onChange={(v) => setCalcValue(Math.min(LOAN_TEST_MAX, Math.max(1, Number(v || 1))))}
-              loanRemain={userLoan}
-              currentBell={userBell}
-              max={LOAN_TEST_MAX}
-              confirmText="결정"
-              maxButtonText="전액"
-              helperText={helperTextLoan}
-              onConfirm={() => doConfirm('LOAN')}
-            />
-          </motion.div>
-        )}
-
-        {mode === 'CALC_REPAY' && (
-          <motion.div key="calc_repay" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-30">
-            <AtmCalculator
-              open
-              mode="REPAY"
-              value={calcValue}
-              onChange={(v) => setCalcValue(Math.min(repayMax || 0, Math.max(1, Number(v || 1))))}
-              loanRemain={userLoan}
-              currentBell={userBell}
-              max={repayMax}
-              confirmText="결정"
-              maxButtonText="전액"
-              helperText={helperTextRepay}
-              onConfirm={() => doConfirm('REPAY')}
-            />
-          </motion.div>
-        )}
-
-        {mode === 'DONE' && (
-          <motion.div key="done" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-30">
-            <DialogBox
-              open
-              text={doneText}
-              textColor={C.creamWhite ?? '#FDFBF6'}
-              highlights={doneHighlights}
-              options={[]}
-              optionDisabled
-              typingSpeed={40}
-              onTypingComplete={() => setDoneTypingDone(true)}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {showBackButtonMyTurn && <ExitButton onClick={handleBack} disabled={false} />}
-    </div>
+    <LoanView
+      isMyTurn={isMyTurn}
+      mode={mode}
+      entryCharacterBox={entryCharacterBox}
+      nickname={nickname}
+      userBell={userBell}
+      userLoan={userLoan}
+      calcValue={calcValue}
+      repayMax={repayMax}
+      remainingBorrowMax={remainingBorrowMax}
+      doneText={doneText}
+      doneHighlights={doneHighlights}
+      warnText={warnText}
+      warnRed={WARN_RED}
+      helperTextLoan={helperTextLoan}
+      helperTextRepay={helperTextRepay}
+      onBack={handleBack}
+      onExitReal={handleExitReal}
+      onMenuLoan={onMenuLoan}
+      onMenuRepay={onMenuRepay}
+      onChangeLoan={onChangeLoan}
+      onChangeRepay={onChangeRepay}
+      onConfirmLoan={() => doConfirm('LOAN')}
+      onConfirmRepay={() => doConfirm('REPAY')}
+      onDoneTypingComplete={() => setDoneTypingDone(true)}
+      onNoticeTypingComplete={() => setDoneTypingDone(true)}
+      onWarnTypingComplete={() => setWarnTypingDone(true)}
+    />
   );
 }
