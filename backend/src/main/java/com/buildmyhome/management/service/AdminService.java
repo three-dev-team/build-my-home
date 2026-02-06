@@ -58,6 +58,7 @@ public class AdminService {
       .isOnline(member.getIsOnline())
       .lastLoginAt(member.getLastLoginAt())
       .reportedCount(member.getReportedCount())
+      .warningCount(member.getWarningCount())
       .isSuspended(member.getIsSuspended())
       .createdAt(member.getCreatedAt())
       .build();

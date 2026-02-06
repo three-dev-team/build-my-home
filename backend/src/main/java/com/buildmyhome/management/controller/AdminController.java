@@ -111,6 +111,9 @@ public class AdminController {
       case "bell":
         sortOrder = Sort.by(Sort.Direction.DESC, "bell");
         break;
+      case "warning":
+        sortOrder = Sort.by(Sort.Direction.DESC, "warningCount");
+        break;
       default: // latest
         sortOrder = Sort.by(Sort.Direction.DESC, "createdAt");
     }
@@ -141,9 +144,42 @@ public class AdminController {
     
     member.setIsSuspended(false);
     member.setSuspendedUntil(null);
+    
+    // 경고 5회 이상으로 정지된 경우 경고 초기화
+    if (member.getWarningCount() != null && member.getWarningCount() >= 5) {
+      member.setWarningCount(0);
+    }
+    
     memberRepository.save(member);
     
     return ResponseEntity.ok().body(java.util.Map.of("message", "정지가 해제되었습니다."));
+  }
+
+  // 회원 경고 부여 (5회 누적 시 자동 정지)
+  @PostMapping("/members/{id}/warn")
+  public ResponseEntity<?> warnMember(@PathVariable Long id) {
+    Member member = memberRepository.findById(id)
+        .orElseThrow(() -> new RuntimeException("회원을 찾을 수 없습니다."));
+    
+    // 경고 횟수 증가
+    int newCount = (member.getWarningCount() != null ? member.getWarningCount() : 0) + 1;
+    member.setWarningCount(newCount);
+    
+    // 5회 이상 시 자동 정지 (영구 정지)
+    boolean autoSuspended = false;
+    if (newCount >= 5 && !Boolean.TRUE.equals(member.getIsSuspended())) {
+      member.setIsSuspended(true);
+      member.setSuspendedUntil(null); // 영구 정지 (관리자 해제 필요)
+      autoSuspended = true;
+    }
+    
+    memberRepository.save(member);
+    
+    return ResponseEntity.ok().body(java.util.Map.of(
+        "message", autoSuspended ? "경고 5회 누적으로 계정이 자동 정지되었습니다." : "경고가 부여되었습니다.",
+        "warningCount", newCount,
+        "isSuspended", member.getIsSuspended()
+    ));
   }
 
   // ========== 헬퍼 메서드 ==========

@@ -62,6 +62,9 @@ public class Member extends BaseTimeEntity {
   private Integer reportedCount = 0; // 신고당한 횟수
 
   @Builder.Default
+  private Integer warningCount = 0; // 관리자 경고 횟수
+
+  @Builder.Default
   private Boolean isSuspended = false; // 정지 여부
 
   private java.time.LocalDateTime suspendedUntil; // 정지 해제 시간

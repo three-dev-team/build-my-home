@@ -19,6 +19,43 @@ import AlertModal from './components/common/AlertModal.jsx';
 import ZoomWarningModal from './components/common/ZoomWarningModal.jsx';
 import usePlayTimeWarning from './hooks/usePlayTimeWarning.js';
 
+// 라우트 가드 컴포넌트들 (App 함수 밖에 정의해야 리마운트 방지)
+const ProtectedRoute = ({ children }) => {
+  const token = sessionStorage.getItem('token');
+  if (!token) {
+    return <Navigate to="/" replace />;
+  }
+  return children;
+};
+
+const SuspendedBlockRoute = ({ children }) => {
+  const token = sessionStorage.getItem('token');
+  const isSuspended = sessionStorage.getItem('isSuspended');
+
+  if (!token) {
+    return <Navigate to="/" replace />;
+  }
+
+  if (isSuspended === 'true') {
+    return <Navigate to="/home" replace />;
+  }
+
+  return children;
+};
+
+const ProtectedAdminRoute = ({ children }) => {
+  const userRole = sessionStorage.getItem('role');
+  const token = sessionStorage.getItem('token');
+  if (!token) {
+    return <Navigate to="/" replace />;
+  }
+  if (userRole !== 'ADMIN') {
+    alert('관리자만 접근 가능한 페이지입니다! ⛔');
+    return <Navigate to="/home" replace />;
+  }
+  return children;
+};
+
 function App() {
   const audioRef = useRef(null);
   const [isMuted, setIsMuted] = useState(true);
@@ -54,46 +91,6 @@ function App() {
     document.addEventListener('contextmenu', handleContextMenu);
     return () => document.removeEventListener('contextmenu', handleContextMenu);
   }, []);
-
-  // 로그인 필수 - 토큰 없으면 로그인 페이지로 이동
-  const ProtectedRoute = ({ children }) => {
-    const token = sessionStorage.getItem('token');
-    if (!token) {
-      return <Navigate to="/" replace />;
-    }
-    return children;
-  };
-
-  // 정지 유저 접근 차단 - /home, /config, /user-inquiry 제외 모든 페이지 접근 불가
-  const SuspendedBlockRoute = ({ children }) => {
-    const token = sessionStorage.getItem('token');
-    const isSuspended = sessionStorage.getItem('isSuspended');
-
-    if (!token) {
-      return <Navigate to="/" replace />;
-    }
-
-    // 정지된 유저는 /home으로 리다이렉트 (정지 모달 표시용)
-    if (isSuspended === 'true') {
-      return <Navigate to="/home" replace />;
-    }
-
-    return children;
-  };
-
-  // 권한 확인 - 경로로 admin 페이지로 들어오려고 하면 차단
-  const ProtectedAdminRoute = ({ children }) => {
-    const userRole = sessionStorage.getItem('role');
-    const token = sessionStorage.getItem('token');
-    if (!token) {
-      return <Navigate to="/" replace />;
-    }
-    if (userRole !== 'ADMIN') {
-      alert('관리자만 접근 가능한 페이지입니다! ⛔');
-      return <Navigate to="/home" replace />;
-    }
-    return children;
-  };
 
   // 사용자가 사이트 어디든 처음 클릭하면 재생 시작 (브라우저 정책 대응)
   useEffect(() => {
