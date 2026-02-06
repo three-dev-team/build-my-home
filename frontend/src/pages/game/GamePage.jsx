@@ -38,6 +38,7 @@ import Subtitle from '../../components/common/Subtitle.jsx';
 import DialogBox from '../../components/common/DialogBox.jsx';
 import { COLORS, withAlpha } from '../../constants/colors.js';
 import { CHARACTERS } from '../../constants/characters.js';
+import CustomDice from './itemEffect/CustomDice.jsx';
 
 const GamePage = () => {
   // 라우트 파라미터/네비게이션 핸들러
@@ -824,6 +825,24 @@ const GamePage = () => {
                 actionDataStr={currentPlayer?.actionDataStr}
                 players={playersArr}
                 onAction={handleAction}
+              />
+            )}
+
+            {/* 내 맘대로 주사위 아이템 효과 */}
+            {gameState.status === 'WAITING_CUSTOM_DICE' && (
+              <CustomDice
+                player={currentPlayer}
+                isMyTurn={isMyTurn}
+                onSelect={(value) => {
+                  stompClient.publish({
+                    destination: '/app/games/action',
+                    body: JSON.stringify({
+                      roomId,
+                      type: 'CUSTOM_DICE_SELECT',
+                      actionData: value,
+                    }),
+                  });
+                }}
               />
             )}
 

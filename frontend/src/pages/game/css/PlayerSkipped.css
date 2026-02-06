@@ -89,23 +89,6 @@
     justify-content: center;
 }
 
-/* 상단 메시지 */
-.top-message {
-    position: absolute;
-    top: 5cqh;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(0, 0, 0, 0.6);
-    color: white;
-    padding: 1cqh 3cqw;
-    border-radius: 2cqw;
-    font-family: var(--font-gosanja);
-    font-size: 1.5cqw;
-    font-weight: bold;
-    white-space: nowrap;
-    z-index: 10;
-}
-
 /* 캐릭터 영역 */
 .skipped-character-area {
     position: absolute;
