@@ -296,7 +296,7 @@ export default function UserInquiryPage() {
 
         {/* 메인 컨텐트 카드 - Config.jsx와 동일한 크기 */}
         <div
-          className="w-[70.1cqw] h-[34.58cqw] rounded-[2.08cqw] flex flex-col items-center py-[3.7cqh] px-[4.17cqw] relative mt-[22cqh]"
+          className="w-[70.1cqw] h-[37qw] rounded-[2.08cqw] flex flex-col items-center py-[3.7cqh] px-[4.17cqw] relative mt-[22cqh]"
           style={{ backgroundColor: COLORS.userInquiry.creamPink }}
         >
           {/* 1. 문의 작성 탭 컨텐츠 */}
@@ -390,47 +390,77 @@ export default function UserInquiryPage() {
                     onBlur={(e) => (e.target.style.borderColor = 'transparent')}
                   />
                   {/* 첨부파일 영역 */}
-                  <div className="flex flex-col gap-[0.93cqh]">
-                    <label
-                      htmlFor="imageFile"
-                      className="self-start px-[1.25cqw] py-[0.93cqh] rounded-[1.04cqw] text-[0.83cqw] font-bold cursor-pointer hover:scale-105 transition-transform"
-                      style={{
-                        backgroundColor: COLORS.userInquiry.creamIvory,
-                        color: COLORS.userInquiry.darkBrown,
-                        border: `0.16cqw solid ${COLORS.userInquiry.darkBrown}`,
-                      }}
-                    >
-                      📎 이미지 첨부
-                    </label>
-                    <input
-                      type="file"
-                      id="imageFile"
-                      accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
-                      onChange={handleImageChange}
-                      className="hidden"
-                    />
-                    <span className="text-[0.73cqw] text-[#9CA3AF]">jpg, png, gif, webp 형식만 가능 (최대 5MB)</span>
+                  {!imagePreview ? (
+                    // ✅ 이미지 없을 때는 기존 그대로 (라벨 없음)
+                    <div className="flex flex-col gap-[0.93cqh]">
+                      <label
+                        htmlFor="imageFile"
+                        className="self-start px-[1.25cqw] py-[0.93cqh] rounded-[1.04cqw] text-[0.83cqw] font-bold cursor-pointer hover:scale-105 transition-transform"
+                        style={{
+                          backgroundColor: COLORS.userInquiry.creamIvory,
+                          color: COLORS.userInquiry.darkBrown,
+                          border: `0.16cqw solid ${COLORS.userInquiry.darkBrown}`,
+                        }}
+                      >
+                        📎 이미지 첨부
+                      </label>
+                      <input
+                        type="file"
+                        id="imageFile"
+                        accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                        onChange={handleImageChange}
+                        className="hidden"
+                      />
+                      <span className="text-[0.73cqw] text-[#9CA3AF]">jpg, png, gif, webp 형식만 가능 (최대 5MB)</span>
+                    </div>
+                  ) : (
+                    <div className="relative w-full">
+                      {/* ✅ 라벨은 왼쪽 컬럼 위치로 “떠서” 배치 */}
+                      <span
+                        className="absolute left-[-10.41cqw] text-[1.25cqw] font-bold w-[8.33cqw] text-right mt-[0.93cqh]"
+                        style={{ color: COLORS.userInquiry.darkBrown }}
+                      >
+                        첨부파일
+                      </span>
 
-                    {/* 이미지 미리보기 */}
-                    {imagePreview && (
-                      <div className="relative w-fit">
+                      {/* ✅ 미리보기 박스는 오른쪽 컬럼의 w-full 그대로 사용 */}
+                      <div
+                        className="flex items-center gap-[1.04cqw] p-[1.04cqw] rounded-[1.04cqw] w-full"
+                        style={{ backgroundColor: COLORS.userInquiry.creamIvory }}
+                      >
                         <img
                           src={imagePreview}
                           alt="미리보기"
-                          className="max-w-[20.83cqw] max-h-[18.52cqh] rounded-[1.04cqw] border-[0.21cqw]"
+                          className="w-[5.21cqw] h-[3.21cqw] object-cover rounded-[0.52cqw] border-[0.16cqw]"
                           style={{ borderColor: COLORS.userInquiry.darkBrown }}
                         />
+
+                        <div className="flex-1 min-w-0">
+                          <p
+                            className="text-[0.83cqw] font-bold truncate"
+                            style={{ color: COLORS.userInquiry.darkBrown }}
+                          >
+                            {imageFile?.name}
+                          </p>
+                          <p className="text-[0.73cqw] text-[#9CA3AF]">
+                            {imageFile && (imageFile.size / 1024).toFixed(1)} KB
+                          </p>
+                        </div>
+
                         <button
                           type="button"
                           onClick={handleRemoveImage}
-                          className="absolute top-[0.46cqh] right-[0.52cqw] w-[2.08cqw] h-[2.08cqw] rounded-full flex items-center justify-center text-white font-bold text-[1.04cqw] hover:scale-110 transition-transform"
-                          style={{ backgroundColor: COLORS.userInquiry.darkBrown }}
+                          className="w-[2.5cqw] h-[2.5cqw] rounded-full flex items-center justify-center font-bold text-[1.04cqw] hover:scale-110 transition-transform flex-shrink-0"
+                          style={{
+                            backgroundColor: COLORS.userInquiry.darkBrown,
+                            color: COLORS.userInquiry.creamWhite,
+                          }}
                         >
                           ✕
                         </button>
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
