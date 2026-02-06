@@ -414,6 +414,7 @@ public class GameWsController {
                 player.setActionData(null);
                 player.setActionDataStr(null);
                 fishingService.scheduleWaitingTimeout(roomId, memberId);
+            }
             // STAMP 진입 시 UI step 초기화 (이전 이벤트 uiStep 잔존 방지)
             if (nextStatus == GameStatus.WAITING_STAMP) {
                 player.setUiStep(0);
