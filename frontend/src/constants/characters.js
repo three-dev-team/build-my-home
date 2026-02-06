@@ -25,6 +25,9 @@ function makeCharacter({ id, name, quote, habit, key, color }) {
     rightImage: `${BASE.character}/char-${key}-right.webp`,
     leftImage: `${BASE.character}/char-${key}-left.webp`,
     stampImage: `${BASE.character}/char-${key}-stamp.webp`,
+    fishingImage:`${BASE.character}/char-${key}-fishing.webp`,
+    successImage:`${BASE.character}/char-${key}-success.webp`,
+    failImage:`${BASE.character}/char-${key}-fail.webp`,
   };
 }
 

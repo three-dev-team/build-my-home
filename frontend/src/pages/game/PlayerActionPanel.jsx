@@ -93,7 +93,7 @@ export default function PlayerActionPanel({
         title: '무 판매',
         desc: '무를 판매할 수 있어 (무 보유시)',
         onClick: onMupaniPanel,
-        disabled:  !!itemUsed || typeof onMupaniPanel !== 'function', // !hasRadish ||
+        disabled:  !hasRadish || !!itemUsed || typeof onMupaniPanel !== 'function',
       },
     }),
     [

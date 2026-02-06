@@ -29,7 +29,7 @@ public enum GameStatus {
     WAITING_HARVEST(30), // 수확물칸 이용 중
     WAITING_SHOP(0), // 아이템 상점 이용 중
     WAITING_LOAN(30), // 대출 여부 선택 중
-    WAITING_FISHING(10), // 시작하기 버튼/연출 단계
+    WAITING_FISHING(0), // 시작하기 버튼/연출 단계
     FISHING_IN_PROGRESS(0), // 실제 미니게임 진행(낚시 내부 타이머로 종료)
     WAITING_KK(20), // KK칸 진행 중 (KK 노래 여러개)
     WAITING_MUPANI(100), // 무파니 진행 중

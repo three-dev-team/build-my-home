@@ -17,7 +17,7 @@ import KK from './KK.jsx';
 import ShopPage from './shop/ShopPage.jsx';
 import TurnCounter from './TurnCounter.jsx';
 import House from './house/House.jsx';
-import Fishing from './Fishing.jsx';
+import Fishing from './fishing/Fishing.jsx';
 import Inventory from './Inventory.jsx';
 import RewardTile from './rewardTile/RewardTile.jsx';
 import Start from './Start.jsx';
@@ -74,6 +74,8 @@ const GamePage = () => {
 
   // 상점: 선택 relay 메시지 저장(상점 세션 동기화 보조)
   const [shopRelay, setShopRelay] = useState(null);
+
+  const [radishSellResult, setRadishSellResult] = useState({ qty: 0, amount: 0, memberId: null });
 
   // players가 배열/객체로 올 수 있어서 항상 배열로 정규화
   const playersArr = useMemo(() => {
@@ -206,6 +208,13 @@ const GamePage = () => {
     }
   }, [gameState?.status]);
 
+  // 낚시 상태가 끝나면 ROOM_EVENT 잔상 제거
+  useEffect(() => {
+    const s = gameState?.status;
+    const isFishing = s === 'WAITING_FISHING' || s === 'FISHING_IN_PROGRESS';
+    if (!isFishing) setFishingEventMessage(null);
+  }, [gameState?.status]);
+
   // STOMP 연결 + 구독 + 초기 상태 요청
   useEffect(() => {
     const client = new Client({
@@ -242,6 +251,18 @@ const GamePage = () => {
           }
           if (t === 'SHOP_SELECT_CLEAR') {
             setShopRelay(null);
+            return;
+          }
+
+          if (t === 'RADISH_SOLD') {
+            setRadishSellResult({
+              qty: Number(data?.quantity ?? 0),
+              amount: Number(data?.amount ?? 0),
+              memberId: data?.memberId ?? null,
+            });
+            if (data && typeof data === 'object' && 'status' in data) {
+              setGameState(data);
+            }
             return;
           }
 
@@ -438,13 +459,17 @@ const GamePage = () => {
     setFishingEventMessage(null);
   };
 
+  const handleFishingExitLocal = () => {
+    setFishingEventMessage(null);
+  };
+
   // 낚시 시작(미니게임 start)
-  const handleFishingStart = () => {
+  const handleFishingStart = (useBait = false) => {
     if (!stompClient) return;
 
     stompClient.publish({
       destination: '/app/games/fishing/start',
-      body: JSON.stringify({ roomId: Number(roomId) }),
+      body: JSON.stringify({ roomId: Number(roomId), useBait: !!useBait }),
     });
   };
 
@@ -484,7 +509,7 @@ const GamePage = () => {
   }
 
   // 낚시 페이즈인지(상태 + 소켓 연결 확인)
-  const isFishingPhase = ['WAITING_FISHING', 'FISHING_IN_PROGRESS'].includes(gameState.status) && stompClient;
+  const isFishingPhase = ['WAITING_FISHING', 'FISHING_IN_PROGRESS'].includes(gameState?.status);
   const showInventorySpectatorWait = isSpectatorWait && !!inventoryUsingMemberId;
   const showAtmSpectatorWait = isSpectatorWait && !inventoryUsingMemberId && !!atmUsingMemberId;
 
@@ -687,10 +712,11 @@ const GamePage = () => {
                 key={`${roomId}-${gameState.currentRound}-${gameState.currentPlayerId}`}
                 roomId={roomId}
                 isMyTurn={isMyTurn}
+                currentPlayerCharacterId={currentPlayer?.characterId}
                 currentPlayerName={currentPlayer?.nickname}
                 timeoutSeconds={gameState.timeoutSeconds || 0}
                 eventMessage={fishingEventMessage}
-                onExit={handleEventComplete}
+                onExit={handleFishingExitLocal}
                 onStartFishing={handleFishingStart}
                 onFishingAction={handleFishingAction}
               />
@@ -855,11 +881,15 @@ const GamePage = () => {
             {gameState.status === 'WAITING_RADISH_SELL' && (
               <RadishSell
                 isMyTurn={isMyTurn}
-                player={currentPlayer}
+                player={myPlayerState}
+                actorPlayer={currentPlayer}
                 currentPlayerName={currentPlayer?.nickname}
                 radishPrice={gameState?.radishPrice ?? 0}
                 onAction={handleAction}
                 onClose={handleCloseAction}
+                tradeQty={radishSellResult.qty}
+                tradeAmount={radishSellResult.amount}
+                tradeMemberId={radishSellResult.memberId}
               />
             )}
 
