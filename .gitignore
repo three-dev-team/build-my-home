@@ -44,3 +44,5 @@ dist-ssr
 .history
 
 backend/src/main/resources/
+
+uploads/

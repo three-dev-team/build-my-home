@@ -23,19 +23,29 @@ public class InquiryService {
 
   private final InquiryRepository inquiryRepository;
   private final AnswerRepository answerRepository;
+  private final FileUploadService fileUploadService;
 
-  // 1. 문의 등록 (사용자)
-  public InquiryResponse createInquiry(InquiryRequest request, Member member) {
-    Inquiry inquiry = Inquiry.builder()
-      .member(member)
-      .title(request.getTitle())
-      .content(request.getContent())
-      .category(request.getCategory()) // 카테고리 추가
-      .build();
-    return toResponse(inquiryRepository.save(inquiry));
-  }
+    // 1. 문의 등록 (사용자) - 이미지 업로드 지원
+    public InquiryResponse createInquiry(InquiryRequest request, Member member) {
+        // 이미지 파일 업로드 (있는 경우)
+        String imageUrl = null;
+        if (request.getImageFile() != null && !request.getImageFile().isEmpty()) {
+            String savedFilename = fileUploadService.uploadImage(request.getImageFile());
+            imageUrl = "/uploads/inquiries/" + savedFilename;
+        }
 
-  // 2. 내 문의 목록 (사용자)
+        Inquiry inquiry = Inquiry.builder()
+                .member(member)
+                .title(request.getTitle())
+                .content(request.getContent())
+                .category(request.getCategory())
+                .imageUrl(imageUrl)  // 이미지 URL 저장
+                .build();
+
+        return toResponse(inquiryRepository.save(inquiry));
+    }
+
+    // 2. 내 문의 목록 (사용자)
   @Transactional(readOnly = true)
   public Page<InquiryListResponse> getMyInquiries(Member member, Pageable pageable) {
     return inquiryRepository.findByMemberId(member.getId(), pageable).map(this::toListResponse);
@@ -81,7 +91,7 @@ public class InquiryService {
     List<InquiryCategory> categoryFilter = (categories == null || categories.isEmpty()) ? null : categories;
     List<InquiryStatus> statusFilter = (statuses == null || statuses.isEmpty()) ? null : statuses;
     String keywordFilter = (keyword == null || keyword.trim().isEmpty()) ? null : keyword.trim();
-    
+
     return inquiryRepository.searchInquiries(keywordFilter, categoryFilter, statusFilter, pageable)
         .map(this::toListResponse);
   }
@@ -117,6 +127,7 @@ public class InquiryService {
       .content(inquiry.getContent())
       .status(inquiry.getStatus())
       .category(inquiry.getCategory()) // 카테고리 추가
+            .imageUrl(inquiry.getImageUrl())    // 첨부파일 url
       .memberId(inquiry.getMember().getId())
       .memberNickname(inquiry.getMember().getNickname())
       .createdAt(inquiry.getCreatedAt())

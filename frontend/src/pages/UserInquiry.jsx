@@ -15,6 +15,8 @@ export default function UserInquiryPage() {
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [category, setCategory] = useState('USER_REPORT');
+  const [imageFile, setImageFile] = useState(null); // 이미지 파일
+  const [imagePreview, setImagePreview] = useState(null); // 등록할때 이미지 미리보기
 
   // 문의 목록 상태
   const [myInquiries, setMyInquiries] = useState([]);
@@ -89,6 +91,43 @@ export default function UserInquiryPage() {
     }
   };
 
+  // 이미지 파일 선택 핸들러
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+
+    if (file) {
+      // 이미지 파일 유효성 검사
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        alert('이미지 파일만 업로드 가능합니다. (jpg, png, gif, webp)');
+        e.target.value = '';
+        return;
+      }
+
+      // 파일 크기 체크 (5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('파일 크기는 5MB를 초과할 수 없습니다.');
+        e.target.value = '';
+        return;
+      }
+
+      setImageFile(file);
+
+      // 미리보기 생성
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // 이미지 제거
+  const handleRemoveImage = () => {
+    setImageFile(null);
+    setImagePreview(null);
+  };
+
   // 문의 작성
   const handleSubmitInquiry = async () => {
     if (!title.trim() || !content.trim()) {
@@ -99,16 +138,30 @@ export default function UserInquiryPage() {
     try {
       setLoading(true);
       const token = sessionStorage.getItem('token');
-      await axios.post(
-        '/api/member/inquiries',
-        { title, content, category },
-        { headers: { Authorization: `Bearer ${token}` } },
-      );
+      // FormData 생성
+      const formData = new FormData();
+      formData.append('title', title);
+      formData.append('content', content);
+      formData.append('category', category);
+
+      // 이미지 파일이 있으면 추가
+      if (imageFile) {
+        formData.append('imageFile', imageFile);
+      }
+
+      await axios.post('/api/member/inquiries', formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data',
+        },
+      });
 
       alert('문의가 등록되었습니다! 🎉');
       setTitle('');
       setContent('');
       setCategory('USER_REPORT');
+      setImageFile(null);
+      setImagePreview(null);
       setActiveTab('list');
     } catch (error) {
       console.error('문의 등록 실패:', error);
@@ -198,7 +251,7 @@ export default function UserInquiryPage() {
   return (
     <AspectLayout>
       <div className="relative w-full h-full bg-cover bg-center flex flex-col items-center justify-start overflow-hidden font-gosanja bg-[url('/images/user-inquiry/bg-inquiry.jpg')]">
-        {/* TopButtons (우측 상단) 
+        {/* TopButtons (우측 상단)
             - Top: 3.7cqh
             - Right: 2.08cqw
         */}
@@ -336,10 +389,48 @@ export default function UserInquiryPage() {
                     onFocus={(e) => (e.target.style.borderColor = COLORS.userInquiry.yellow)}
                     onBlur={(e) => (e.target.style.borderColor = 'transparent')}
                   />
-                  {/* 첨부파일 버튼 (더미) */}
-                  <button className="self-start px-[0.83cqw] py-[0.46cqh] bg-[#E5E7EB] rounded-[1.04cqw] text-[0.73cqw] font-bold text-[#6B7280] hover:bg-[#D1D5DB]">
-                    첨부파일
-                  </button>
+                  {/* 첨부파일 영역 */}
+                  <div className="flex flex-col gap-[0.93cqh]">
+                    <label
+                      htmlFor="imageFile"
+                      className="self-start px-[1.25cqw] py-[0.93cqh] rounded-[1.04cqw] text-[0.83cqw] font-bold cursor-pointer hover:scale-105 transition-transform"
+                      style={{
+                        backgroundColor: COLORS.userInquiry.creamIvory,
+                        color: COLORS.userInquiry.darkBrown,
+                        border: `0.16cqw solid ${COLORS.userInquiry.darkBrown}`,
+                      }}
+                    >
+                      📎 이미지 첨부
+                    </label>
+                    <input
+                      type="file"
+                      id="imageFile"
+                      accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                      onChange={handleImageChange}
+                      className="hidden"
+                    />
+                    <span className="text-[0.73cqw] text-[#9CA3AF]">jpg, png, gif, webp 형식만 가능 (최대 5MB)</span>
+
+                    {/* 이미지 미리보기 */}
+                    {imagePreview && (
+                      <div className="relative w-fit">
+                        <img
+                          src={imagePreview}
+                          alt="미리보기"
+                          className="max-w-[20.83cqw] max-h-[18.52cqh] rounded-[1.04cqw] border-[0.21cqw]"
+                          style={{ borderColor: COLORS.userInquiry.darkBrown }}
+                        />
+                        <button
+                          type="button"
+                          onClick={handleRemoveImage}
+                          className="absolute top-[0.46cqh] right-[0.52cqw] w-[2.08cqw] h-[2.08cqw] rounded-full flex items-center justify-center text-white font-bold text-[1.04cqw] hover:scale-110 transition-transform"
+                          style={{ backgroundColor: COLORS.userInquiry.darkBrown }}
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -502,6 +593,24 @@ export default function UserInquiryPage() {
                 <p className="text-[0.94cqw] text-[#4B5563] whitespace-pre-wrap leading-relaxed">
                   {selectedInquiry.content}
                 </p>
+
+                {/* 첨부 이미지 표시 */}
+                {selectedInquiry.imageUrl && (
+                  <div className="mt-[1.85cqh]">
+                    <h4
+                      className="text-[0.94cqw] font-bold mb-[0.93cqh]"
+                      style={{ color: COLORS.userInquiry.darkBrown }}
+                    >
+                      📎 첨부 이미지
+                    </h4>
+                    <img
+                      src={selectedInquiry.imageUrl}
+                      alt="첨부 이미지"
+                      className="max-w-full rounded-[1.04cqw] border-[0.21cqw]"
+                      style={{ borderColor: COLORS.userInquiry.darkBrown }}
+                    />
+                  </div>
+                )}
               </div>
 
               {selectedInquiry.answer ? (

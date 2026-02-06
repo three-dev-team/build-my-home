@@ -23,4 +23,5 @@ public class InquiryResponse {
   private LocalDateTime createdAt; // 작성일
   private LocalDateTime updatedAt; // 수정일
   private AnswerResponse answer; // 답변
+    private String imageUrl; // 첨부 이미지 url
 }
