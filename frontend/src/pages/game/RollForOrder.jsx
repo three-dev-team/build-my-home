@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { useGLTF } from '@react-three/drei';
 import useSpaceKey from '../../hooks/useSpaceKey';
 import Dice3D from '../../components/dice/Dice3D.jsx';
@@ -14,38 +14,39 @@ for (let i = 1; i <= 6; i++) {
 }
 
 const RollForOrder = ({ players, myId, onRoll, onOrderComplete }) => {
-  const myDiceValue = players.find((p) => p.memberId === myId)?.orderDiceValue;
   const [animationDone, setAnimationDone] = useState({});
-  const [blackoutOpen, setBlackoutOpen] = useState(false);
+  // 1. 처음 마운트될 때 열리는 애니메이션을 위해 true로 시작
+  const [isOpening, setIsOpening] = useState(true);
+  const [isClosing, setIsClosing] = useState(false);
+  // const [showBlackout, setShowBlackout] = useState(false); // 암전 실행용 스위치
+
+  const characterImages = useMemo(() => {
+    return CHARACTERS.reduce((acc, char) => {
+      acc[Number(char.id)] = char.selectBasicImage;
+      return acc;
+    }, {});
+  }, []);
+
+  const myDiceValue = players.find((p) => p.memberId === myId)?.orderDiceValue;
 
   // 스페이스바: 내 주사위 아직 안 굴렸을 때만
   useSpaceKey(() => onRoll(), { enabled: !myDiceValue });
 
   // 전원 완료 체크
-  const allDiceRolled = players.every((p) => p.orderDiceValue);
-  const allAnimDone = players.every((p) => animationDone[p.memberId]);
+  const allDiceRolled = players.length > 0 && players.every((p) => p.orderDiceValue);
+  const allAnimDone = players.length > 0 && players.every((p) => animationDone[p.memberId]);
 
-  // 전원 애니메이션 끝나면 order-complete 호출 (turnOrder[0]만)
+  // 전원 완료 시 블랙아웃 실행
+  useEffect(() => {
+    // 모든 주사위 애니메이션이 끝났을 때만 showBlackout을 true로!
+    if (allDiceRolled && allAnimDone) {
+      setIsClosing(true);
+    }
+  }, [allDiceRolled, allAnimDone]);
+
   const handleAnimEnd = useCallback((memberId) => {
-    setAnimationDone((prev) => {
-      const next = { ...prev, [memberId]: true };
-
-      // 이 시점에서 전원 체크
-      const everyoneDone = players.every((p) => next[p.memberId]);
-      const everyoneRolled = players.every((p) => p.orderDiceValue);
-
-      if (everyoneDone && everyoneRolled&&!blackoutOpen) {
-        setBlackoutOpen(true); // 바로 전환효과 시작
-      }
-
-      return next;
-    });
-  }, [players]);
-
-  const CHARACTER_IMG = CHARACTERS.reduce((acc, char) => {
-    acc[Number(char.id)] = char.selectBasicImage;
-    return acc;
-  }, {});
+    setAnimationDone((prev) => ({ ...prev, [memberId]: true }));
+  }, []);
 
   // 안내 문구
   const getMessage = () => {
@@ -62,7 +63,7 @@ const RollForOrder = ({ players, myId, onRoll, onOrderComplete }) => {
         {players.map((player) => {
           const diceValue = player.orderDiceValue;
           const isMe = player.memberId === myId;
-          const charImg = player.characterId ? CHARACTER_IMG[player.characterId] : null;
+          const charImg = player.characterId ? characterImages[player.characterId] : null;
 
           return (
             <div key={player.memberId} className="player-unit">
@@ -78,7 +79,7 @@ const RollForOrder = ({ players, myId, onRoll, onOrderComplete }) => {
               </div>
 
               <div className="character-box">
-                <Shadow>
+                <Shadow fill={true}>
                   <img src={charImg} alt={player.nickname} />
                   <div className={`nickname-tag ${isMe ? 'highlight' : ''}`}>{player.nickname}</div>
                 </Shadow>
@@ -87,11 +88,22 @@ const RollForOrder = ({ players, myId, onRoll, onOrderComplete }) => {
           );
         })}
       </div>
+      {/* 4. 여기에 컴포넌트 배치 */}
+      {/* 2. 화면 열기 (등장 연출) */}
       <CircleBlackout
-        open={blackoutOpen}
-        mode="in"
-        durationMs={550}
-        onDone={() => onOrderComplete?.()} // 화면이 완전히 닫히면 서버 호출
+        show={isOpening}
+        type="open"
+        duration={1500} // 1초 동안 부드럽게 열림
+        onDone={() => setIsOpening(false)} // 다 열리면 메모리 확보를 위해 제거
+      />
+      <CircleBlackout
+        show={isClosing}
+        type="close"        // 닫기(암전)
+        duration={1500}     // 1.5초 (원하는 대로 조절)
+        onDone={() => {
+          // 다 닫히면 부모에게 완료 알림
+          onOrderComplete?.();
+        }}
       />
     </div>
   );

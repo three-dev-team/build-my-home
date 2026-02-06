@@ -1,102 +1,85 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 
 export default function CircleBlackout({
-                                         open,
-                                         mode = "in", // "in": 닫힘(Iris-in), "out": 열림(Iris-out)
-                                         center,
-                                         durationMs = 550,
-                                         color = "#000",
-                                         zIndex = 9999,
-                                         blockInput = true,
-                                         onDone,
+                                         show,           // true: 커튼 등장, false: 커튼 제거
+                                         type = "close",   // "close": 닫아서 암전, "open": 열어서 화면 공개
+                                         duration = 1500,   // 애니메이션 속도 (ms)
+                                         color = "#000",   // 배경 색상
+                                         onDone,           // 애니메이션이 완전히 끝났을 때 실행할 함수
                                        }) {
-  const doneRef = useRef(false);
-
-  const [viewport, setViewport] = useState(() => ({
+  const [viewport, setViewport] = useState({
     w: typeof window !== "undefined" ? window.innerWidth : 0,
     h: typeof window !== "undefined" ? window.innerHeight : 0,
-  }));
+  });
 
+  // 브라우저 리사이즈 대응
   useEffect(() => {
-    if (!open) return;
-    doneRef.current = false;
     const onResize = () => setViewport({ w: window.innerWidth, h: window.innerHeight });
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
-  }, [open]);
+  }, []);
 
-  const cx = center?.x ?? Math.floor(viewport.w / 2);
-  const cy = center?.y ?? Math.floor(viewport.h / 2);
+  const cx = viewport.w / 2;
+  const cy = viewport.h / 2;
 
+  // 화면 대각선 길이를 계산해 원이 화면 전체를 덮을 수 있는 반지름(maxR) 구함
   const maxR = useMemo(() => {
-    const dx = Math.max(cx, viewport.w - cx);
-    const dy = Math.max(cy, viewport.h - cy);
-    return Math.ceil(Math.sqrt(dx * dx + dy * dy));
-  }, [cx, cy, viewport.w, viewport.h]);
+    return Math.ceil(Math.sqrt(cx * cx + cy * cy)) + 10;
+  }, [cx, cy]);
 
-  const dur = Math.max(0, durationMs) / 1000;
-  const ease = [0.22, 1, 0.36, 1];
+  // show가 false면 아무것도 렌더링하지 않음
+  if (!show) return null;
 
-  const finishOnce = () => {
-    if (doneRef.current) return;
-    doneRef.current = true;
-    onDone?.();
-  };
-
-  if (!open) return null;
+  // [중요] 애니메이션 설정
+  // close: 큰 구멍(maxR)에서 0으로 작아짐 (화면이 가려짐)
+  // open: 0에서 큰 구멍(maxR)으로 커짐 (화면이 보임)
+  const initialR = type === "close" ? maxR : 0;
+  const animateR = type === "close" ? 0 : maxR;
 
   return createPortal(
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          key="circle-blackout"
-          className="fixed inset-0"
-          style={{
-            zIndex,
-            pointerEvents: blockInput ? "auto" : "none",
-          }}
-          initial={{ opacity: 1 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-        >
-          <svg width="100%" height="100%" style={{ display: "block" }}>
-            <defs>
-              <mask id="circle-iris-mask">
-                {/* 배경: In일 때는 흰색(보임), Out일 때는 검정(가림) */}
-                <rect
-                  width="100%"
-                  height="100%"
-                  fill={mode === "in" ? "white" : "black"}
-                />
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 999999,
+        // 닫힐 때는 클릭을 막고, 열릴 때는 클릭이 투과되도록 설정
+        pointerEvents: type === "close" ? "auto" : "none",
+        backgroundColor: "transparent",
+      }}
+    >
+      <svg width="100%" height="100%" style={{ display: "block" }}>
+        <defs>
+          <mask id="circle-blackout-mask">
+            {/* 기본 배경: 흰색 (마스크에서 흰색은 '보이는 영역'을 의미) */}
+            <rect width="100%" height="100%" fill="white" />
 
-                {/* 애니메이션 원: In일 때는 검정(구멍 닫기), Out일 때는 흰색(구멍 열기) */}
-                <motion.circle
-                  cx={cx}
-                  cy={cy}
-                  r={maxR}
-                  fill={mode === "in" ? "black" : "white"}
-                  initial={{ scale: mode === "in" ? 1 : 0 }}
-                  animate={{ scale: mode === "in" ? 0 : 1 }}
-                  transition={{ duration: dur, ease }}
-                  style={{ transformOrigin: `${cx}px ${cy}px` }}
-                  onAnimationComplete={finishOnce}
-                />
-              </mask>
-            </defs>
-
-            {/* 마스크가 적용된 레이어 */}
-            <rect
-              width="100%"
-              height="100%"
-              fill={color}
-              mask="url(#circle-iris-mask)"
+            {/* 애니메이션 원: 검은색 (마스크에서 검은색은 '구멍 뚫리는 영역'을 의미) */}
+            <motion.circle
+              cx={cx}
+              cy={cy}
+              fill="black"
+              initial={{ r: initialR }}
+              animate={{ r: animateR }}
+              transition={{
+                duration: duration / 1000,
+                ease: [0.65, 0, 0.35, 1], // 부드러운 가속도 곡선
+              }}
+              onAnimationComplete={onDone}
             />
-          </svg>
-        </motion.div>
-      )}
-    </AnimatePresence>,
+          </mask>
+        </defs>
+
+        {/* 실제 검정색 레이어에 위에서 만든 마스크를 입힘 */}
+        <rect
+          width="100%"
+          height="100%"
+          fill={color}
+          mask="url(#circle-blackout-mask)"
+        />
+      </svg>
+    </div>,
     document.body
   );
 }

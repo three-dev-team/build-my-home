@@ -24,13 +24,12 @@ const RollDicePage = ({ currentPlayer, isMyTurn, diceValue, isRolling, onRollCom
           <Dice3D value={diceValue} onAnimationEnd={onAnimationEnd} />
         ) : (
           <img src="" alt="" />
-          // <img src="/images/dice/dice-idle.webp" alt="주사위" className="w-32 h-32 object-contain" />
         )}
       </div>
 
       {/* 사용자 캐릭터 + 안내 문구 */}
       <div className="character-area">
-        <Shadow>
+        <Shadow fill={true}>
           <img src={charImg} alt={currentPlayer?.nickname} className="current-character" />
         </Shadow>
       </div>

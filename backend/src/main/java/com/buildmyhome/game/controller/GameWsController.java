@@ -414,6 +414,11 @@ public class GameWsController {
                 player.setActionData(null);
                 player.setActionDataStr(null);
                 fishingService.scheduleWaitingTimeout(roomId, memberId);
+            // STAMP 진입 시 UI step 초기화 (이전 이벤트 uiStep 잔존 방지)
+            if (nextStatus == GameStatus.WAITING_STAMP) {
+                player.setUiStep(0);
+                player.setActionData(null);
+                player.setActionDataStr(null);
             }
 
             // 도착한 칸이 타임아웃이 설정된 상태라면 스케줄러로 타임아웃 등록
@@ -627,12 +632,12 @@ public class GameWsController {
                         break;
                     case "START_STAMP_EXCHANGE":
                         int reward = stampService.exchangeStamps(player);
-                        player.setUiStep(1);
+                        player.setUiStep(2);
                         player.setActionData(reward);
                         response.setType("START_STAMP_EXCHANGED");
                         break;
                     case "START_STAMP_SKIP":
-                        player.setUiStep(2);
+                        player.setUiStep(3);
                         response.setType("START_STAMP_SKIPPED");
                         break;
                     case "MACHURILLA_SELECT":

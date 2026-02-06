@@ -43,6 +43,7 @@ dist-ssr
 **/dist/
 .history
 
-backend/src/main/resources/
+backend/src/main/resources/*
+!backend/src/main/resources/badwords.json
 
 uploads/
