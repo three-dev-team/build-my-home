@@ -128,6 +128,11 @@ export const COLORS = {
       nameBox: '#ba3aa7',
       nameText: '#fdcbfd',
     },
+    // 도루묵씨(404, 아이템)
+    dorumook: {
+      nameBox: '#ec7c3c',
+      nameText: '#6b1a03',
+    },
     // 기본값
     default: {
       nameBox: '#9B59B6',

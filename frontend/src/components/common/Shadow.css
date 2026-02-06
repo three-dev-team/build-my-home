@@ -33,3 +33,8 @@
     filter: blur(1px);
     pointer-events: none;
 }
+
+.char-shadow-fill {
+    width: 100%;
+    height: 100%;
+}

@@ -198,7 +198,7 @@ export default function SwapBoxes({
       {/* 왼쪽 - 플레이어1 */}
       {selectedPlayer1Id ? (
         <div className={'swap-selected-player1'}>
-          <Shadow opacity={0.4} offsetY={-15} blur={2}>
+          <Shadow fill={true} opacity={0.4} blur={2}>
             <img src={char1.rightImage} alt={char1.name} />
           </Shadow>
         </div>
@@ -242,7 +242,7 @@ export default function SwapBoxes({
       {/* 오른쪽 - 플레이어2 */}
       {selectedPlayer2Id ? (
         <div className="swap-selected-player2">
-          <Shadow opacity={0.4} offsetY={-15} blur={2}>
+          <Shadow fill={true} opacity={0.4} blur={2}>
             <img src={char2.leftImage} alt={char2.name} />
           </Shadow>
         </div>

@@ -64,6 +64,7 @@
 
 /* 캐릭터 영역 */
 .character-area {
+    /*background: #6a4f9c;*/
     position: absolute;
     bottom: 16.1cqh;
     left: 50%;
@@ -77,8 +78,16 @@
 }
 
 .current-character {
+    /*background: #4ecdc4;*/
+    position: absolute;
+    bottom: 0;
+    left: 0;
     width: 100%;
     height: 100%;
     object-fit: contain;
     object-position: bottom;
+}
+
+.character-area .char-shadow {
+    bottom: -2.1cqh;    /* 값 조절해서 원하는 만큼 내려 */
 }
