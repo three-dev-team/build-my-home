@@ -58,11 +58,16 @@ public class ItemServiceImpl implements ItemService {
         return switch (itemType) {
             case PIPE -> applyPipe(player);
             case MIRROR -> applyMirror(gameState, player);
-            case DOUBLE_DICE, CUSTOM_DICE, GOLD_DICE ->
+            case CUSTOM_DICE -> applyCustomDice(player);
+            case DOUBLE_DICE, GOLD_DICE ->
                 // TODO: 마지막주에 구현
                     GameStatus.WAITING_PLAYER_ACTION;
             default -> GameStatus.WAITING_PLAYER_ACTION;
         };
+    }
+
+    private GameStatus applyCustomDice(GamePlayerState player) {
+        return GameStatus.WAITING_CUSTOM_DICE;
     }
 
     // 토관: 랜덤 위치 이동

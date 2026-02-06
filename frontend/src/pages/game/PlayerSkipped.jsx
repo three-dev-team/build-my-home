@@ -4,6 +4,7 @@ import { CHARACTERS } from '../../constants/characters.js';
 import InstructionText from '../../components/common/InstructionText.jsx';
 import './css/PlayerSkipped.css';
 import Shadow from '../../components/common/Shadow.jsx';
+import AutoMove from '../../components/common/AutoMove.jsx';
 
 const PlayerSkipped = ({ isMyTurn, player, onExit }) => {
   const currentPlayerName = player?.nickname || '플레이어';
@@ -15,17 +16,10 @@ const PlayerSkipped = ({ isMyTurn, player, onExit }) => {
 
   return (
     <div className="player-skipped-container">
-      <div className="top-message">잠시 후 자동으로 이동합니다...</div>
-
-      {/* 캐릭터 영역 */}
-      {/*<div className="skipped-character-area">*/}
-      {/*  {charImg && <img src={charImg} alt={currentPlayerName} className="skipped-character" draggable="false" />}*/}
-      {/*  <div className="skipped-character-shadow"></div>*/}
-      {/*</div>*/}
-      {/* 캐릭터 영역 */}
+      <AutoMove />
       <div className="skipped-character-area">
         <Shadow fill={true}>
-          {charImg && <img src={charImg} alt={currentPlayerName} className="skipped-character" draggable="false" />}
+          <img src={charImg} alt={currentPlayerName} className="skipped-character" draggable="false" />
         </Shadow>
       </div>
 

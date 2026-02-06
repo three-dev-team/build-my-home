@@ -31,10 +31,7 @@ import org.springframework.stereotype.Controller;
 
 import java.security.Principal;
 import java.util.*;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 @Controller
 @RequiredArgsConstructor
@@ -201,7 +198,10 @@ public class GameWsController {
             for (HarvestType h : HarvestType.values()) {
                 gps.getHarvests().put(h, 10);
             }
-
+            gps.getItems().add(ItemType.CUSTOM_DICE); // 테스트용 아이템 지급
+            gps.getItems().add(ItemType.CUSTOM_DICE); // 테스트용 아이템 지급
+            gps.getItems().add(ItemType.CUSTOM_DICE); // 테스트용 아이템 지급
+            gps.setSkipNextTurnCount(2);
             gameState.addPlayer(gps);
         }
         gameStateService.saveGame(roomId, gameState);
@@ -721,6 +721,18 @@ public class GameWsController {
                         player.clearTurnData();
                         gameState.setStatus(GameStatus.WAITING_PLAYER_ACTION);
                         response.setType("MIRROR_COMPLETED");
+                        break;
+                    case "CUSTOM_DICE_SELECT":
+                        int customDiceValue = message.getActionData();
+                        if (customDiceValue < 1 || customDiceValue > 6) {
+                            System.out.println("⚠️ 비정상 주사위 값 수신: " + customDiceValue + " → 랜덤 강제 적용");
+                            customDiceValue = ThreadLocalRandom.current().nextInt(1, 7); // 잘못된 값이면 랜덤
+                        }
+                        player.setDiceValue(customDiceValue);
+                        moveService.movePlayer(player, customDiceValue);
+                        gameState.setStatus(GameStatus.ROLLING_DICE);
+                        response.setType("DICE_ROLLING");
+                        response.setDiceValue(customDiceValue);
                         break;
                 }
 
