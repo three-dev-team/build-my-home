@@ -4,11 +4,13 @@ import com.buildmyhome.house.constants.HouseLevel;
 
 import java.util.*;
 
-        import lombok.*;
+import lombok.*;
 
 @Getter
 @Setter
 public class GamePlayerState {
+
+    private static final int MAX_LOAN = 9999;
 
     // 기본 정보
     private Long memberId;
@@ -66,6 +68,11 @@ public class GamePlayerState {
         for (HarvestType type : HarvestType.values()) {
             harvests.put(type, 0);
         }
+    }
+
+    public void setLoan(int loan) {
+        if (loan < 0) loan = 0;
+        this.loan = Math.min(loan, MAX_LOAN);
     }
 
     public void clearTurnData() {

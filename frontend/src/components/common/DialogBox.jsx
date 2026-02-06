@@ -59,7 +59,12 @@ export default function DialogBox({
                                   }) {
   const [displayedText, setDisplayedText] = useState('');
   const [isTyping, setIsTyping] = useState(true);
+
   const timerRef = useRef(null);
+  const onTypingCompleteRef = useRef(onTypingComplete);
+  useEffect(() => {
+    onTypingCompleteRef.current = onTypingComplete;
+  }, [onTypingComplete]);
 
   const hasOptions = Array.isArray(options) && options.length > 0;
 
@@ -73,6 +78,12 @@ export default function DialogBox({
 
     const contentText = String(text ?? '');
 
+    // 기존 타이머 정리
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+
     if (!contentText) {
       setDisplayedText('');
       setIsTyping(false);
@@ -83,28 +94,37 @@ export default function DialogBox({
     setIsTyping(true);
 
     let idx = 0;
-    timerRef.current = setInterval(() => {
+    const timerId = setInterval(() => {
       if (idx < contentText.length) {
         setDisplayedText(contentText.slice(0, idx + 1));
         idx += 1;
       } else {
-        clearInterval(timerRef.current);
+        clearInterval(timerId);
+        if (timerRef.current === timerId) timerRef.current = null;
         setIsTyping(false);
-        onTypingComplete?.();
+        onTypingCompleteRef.current?.();
       }
     }, typingSpeed);
 
-    return () => clearInterval(timerRef.current);
-  }, [open, text, typingSpeed, onTypingComplete]);
+    timerRef.current = timerId;
+
+    return () => {
+      clearInterval(timerId);
+      if (timerRef.current === timerId) timerRef.current = null;
+    };
+  }, [open, text, typingSpeed]);
 
   const handleSkipTyping = () => {
     if (!open) return;
 
     if (isTyping) {
-      clearInterval(timerRef.current);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
       setDisplayedText(String(text ?? ''));
       setIsTyping(false);
-      onTypingComplete?.();
+      onTypingCompleteRef.current?.();
     }
   };
 
