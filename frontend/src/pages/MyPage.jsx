@@ -201,20 +201,37 @@ export default function MyPage() {
     }
   };
 
+  // const handleSaveNickname = async () => {
+  //   try {
+  //     await updateNickname({ nickname: editNickname });
+  //     alert('닉네임이 변경되었습니다! 다시 로그인해 주세요.');
+  //     sessionStorage.clear();
+  //     navigate('/');
+  //   } catch (e) {
+  //     if (e.response && e.response.status === 409) {
+  //       alert('이미 사용 중인 닉네임입니다.');
+  //     } else {
+  //       alert('변경에 실패했습니다.');
+  //     }
+  //   }
+  // };
+
   const handleSaveNickname = async () => {
     try {
       await updateNickname({ nickname: editNickname });
-      alert('닉네임이 변경되었습니다! 다시 로그인해 주세요.');
+      alert('닉네임이 변경되었습니다\n다시 로그인해 주세요');
       sessionStorage.clear();
       navigate('/');
     } catch (e) {
-      if (e.response && e.response.status === 409) {
-        alert('이미 사용 중인 닉네임입니다.');
+      if (e.response?.data?.message) {
+        alert(e.response.data.message);
       } else {
-        alert('변경에 실패했습니다.');
+        alert('변경에 실패했습니다');
       }
     }
   };
+
+
 
   const closeModal = () => {
     setIsModalOpen(false);
@@ -291,7 +308,7 @@ export default function MyPage() {
   return (
     <AspectLayout>
       <div className="relative w-full h-full bg-cover bg-center flex items-center justify-center overflow-hidden bg-[url('/images/mypage/bg-mypage.jpg')]">
-        {/* TopButtons (우측 상단) 
+        {/* TopButtons (우측 상단)
             - Moved inside aspect-ratio container
             - top-[3.7cqh] (~40px on 1080h), right-[2.08cqw] (~40px on 1920w)
         */}
@@ -322,7 +339,7 @@ export default function MyPage() {
 
         {/* --- 주민증 카드 (메인 영역) --- */}
 
-        {/* 1. 캐릭터 이미지 영역 
+        {/* 1. 캐릭터 이미지 영역
             - Left: 420px -> 21.875cqw
             - Width: 292px -> 15.21cqw
             - Radius: 64px -> 3.33cqw
@@ -359,12 +376,12 @@ export default function MyPage() {
           />
         </div>
 
-        {/* 등록일 
+        {/* 등록일
             - Top 80.4%, Left 30%
         */}
         <div className="absolute top-[80.4%] left-[30%] text-[1.46cqw] font-bold text-[#8B7D6B]">2026년 01월 28일</div>
 
-        {/* 2. 우측 정보 영역 
+        {/* 2. 우측 정보 영역
             - Top 33%, Left 43%
         */}
         <div className="absolute top-[33%] left-[43%] flex flex-col items-start gap-[1.67cqw]">
@@ -462,7 +479,7 @@ export default function MyPage() {
           </div>
         </div>
 
-        {/* --- 좌측 하단 탈퇴하기 버튼 --- 
+        {/* --- 좌측 하단 탈퇴하기 버튼 ---
             - Bottom 10px, Left 10px (나가기 버튼과 대칭)
             - 나가기 버튼과 동일한 사이즈: w=204/1920=10.63cqw, h=62/1920=3.23cqw, r=32/1920=1.67cqw
         */}

@@ -62,20 +62,20 @@ export default function Join() {
 
   // 1. 인증번호 발송
   const handleSendVerification = async () => {
-    if (!email) return openModal('이메일을 입력해주세요! 📧');
+    if (!email) return openModal('이메일을 입력해주세요');
 
     setIsSending(true);
-    openModal('이메일 중복 확인 및\n인증번호 발송 중... 🕊️', false);
+    openModal('이메일 중복 확인 및\n인증번호 발송 중 입니다', false);
 
     try {
       await axios.post(`${API_BASE_URL}/send-registration-code`, { email });
       // 성공 시: 버튼이 있는 모달로 내용 업데이트
-      openModal('사용 가능한 이메일입니다! ✨\n인증번호를 발송했습니다.🕊️', true);
+      openModal('사용 가능한 이메일입니다\n인증번호를 발송했습니다', true);
       setIsEmailSent(true);
       setTimeLeft(300);
     } catch (error) {
       // 실패 시: 에러 메시지와 함께 버튼 노출
-      const errorMsg = error.response?.data || '메일 발송에 실패했습니다. 😢';
+      const errorMsg = error.response?.data || '메일 발송에 실패했습니다';
       openModal(errorMsg, true);
     } finally {
       setIsSending(false);
@@ -84,54 +84,75 @@ export default function Join() {
 
   // 2. 인증번호 확인
   const handleVerifyCode = async () => {
-    if (!authCode) return openModal('인증번호를 입력해주세요! 🔑');
-    if (timeLeft <= 0) return openModal('인증 시간이 만료되었습니다. ⏳');
+    if (!authCode) return openModal('인증번호를 입력해주세요');
+    if (timeLeft <= 0) return openModal('인증 시간이 만료되었습니다');
     try {
       const response = await axios.post(`${API_BASE_URL}/verify-code`, { email, code: authCode });
       if (response.data === true) {
-        openModal('이메일 인증이 완료되었습니다! ✅');
+        openModal('이메일 인증이 완료되었습니다');
         setIsEmailVerified(true);
         setTimeLeft(0);
       } else {
-        openModal('인증번호가 일치하지 않습니다. ❌');
+        openModal('인증번호가 일치하지 않습니다');
       }
     } catch (error) {
-      openModal('인증 확인 중 오류가 발생했습니다.');
+      openModal('인증 확인 중 오류가 발생했습니다');
     }
   };
 
   // 3. 닉네임 중복 체크
+  // const handleCheckNickname = async () => {
+  //   if (!nickname) return openModal('닉네임을 입력해주세요! 🍃');
+  //   try {
+  //     const response = await axios.get(`${API_BASE_URL}/check-nickname`, { params: { nickname } });
+  //     if (response.data === true) {
+  //       openModal('멋진 이름이네요! ✨\n사용 가능한 닉네임입니다.');
+  //       setIsNicknameChecked(true);
+  //     } else {
+  //       openModal('이미 사용 중인 이름입니다. 😢');
+  //     }
+  //   } catch (error) {
+  //     openModal('닉네임 체크 중 오류가 발생했습니다.');
+  //   }
+  // };
+
+  // 변경(금칙어 추가)
   const handleCheckNickname = async () => {
-    if (!nickname) return openModal('닉네임을 입력해주세요! 🍃');
+    if (!nickname) return openModal('닉네임을 입력해주세요');
     try {
       const response = await axios.get(`${API_BASE_URL}/check-nickname`, { params: { nickname } });
-      if (response.data === true) {
-        openModal('멋진 이름이네요! ✨\n사용 가능한 닉네임입니다.');
+      if (response.data.available) {
+        openModal('사용 가능한 닉네임입니다');
         setIsNicknameChecked(true);
       } else {
-        openModal('이미 사용 중인 이름입니다. 😢');
+        openModal(response.data.message);
       }
     } catch (error) {
-      openModal('닉네임 체크 중 오류가 발생했습니다.');
+      // 400 Bad Request = 금칙어/유효성 실패
+      if (error.response?.data?.message) {
+        openModal(error.response.data.message);
+      } else {
+        openModal('사용할 수 없는 닉네임 입니다');
+      }
     }
   };
 
   // 4. 최종 회원가입
   const handleJoin = async (e) => {
     e.preventDefault();
-    if (!isEmailVerified) return openModal('이메일 인증을 완료해주세요! 🔒');
-    if (isPasswordInvalid) return openModal('비밀번호 규칙을 지켜주세요! 🔒');
-    if (isPasswordMismatch) return openModal('비밀번호가 일치하지 않습니다! ❌');
-    if (!isNicknameChecked) return openModal('닉네임 중복 체크를 완료해주세요! 🔒');
+    if (!isEmailVerified) return openModal('이메일 인증을 완료해주세요');
+    if (isPasswordInvalid) return openModal('비밀번호 규칙을 지켜주세요');
+    if (isPasswordMismatch) return openModal('비밀번호가 일치하지 않습니다');
+    if (!isNicknameChecked) return openModal('닉네임 중복 체크를 완료해주세요');
 
     try {
       const response = await axios.post(`${API_BASE_URL}/join`, { email, password, nickname });
       if (response.status === 200 || response.status === 201) {
-        openModal('마이홈의 주민이 되신 것을 환영합니다! 🎉');
+        openModal('마이홈의 주민이\n되신 것을 환영합니다!');
         setTimeout(() => navigate('/'), 2000);
       }
     } catch (error) {
-      openModal('회원가입에 실패했습니다.');
+      openModal('회원가입에 실패했습니다');
     }
   };
 
