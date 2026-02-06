@@ -1,0 +1,110 @@
+.mupaniSell-root {
+    position: absolute;
+    inset: 0;
+    z-index: 30000;
+    overflow: hidden;
+    font-family: var(--font-gosanja);
+}
+
+.mupaniSell-bubble {
+    position: absolute;
+    left: calc(188 * var(--s, 1));
+    top: calc(40 * var(--s, 1));
+    width: calc(1545 * var(--s, 1));
+    height: calc(491 * var(--s, 1));
+    pointer-events: none;
+    user-select: none;
+}
+
+.mupaniSell-topRightImg {
+    position: absolute;
+    top: calc(12 * var(--s, 1));
+    right: calc(28 * var(--s, 1));
+    width: calc(283 * var(--s, 1));
+    height: calc(168 * var(--s, 1));
+    display: block;
+    pointer-events: none;
+    user-select: none;
+    z-index: 10;
+    transform: rotate(2deg);
+    transform-origin: center;
+}
+
+.mupaniSell-topRightQty {
+    position: absolute;
+    right: calc(68 * var(--s, 1));
+    top: calc(92 * var(--s, 1));
+    width: calc(200 * var(--s, 1));
+    height: calc(68 * var(--s, 1));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: calc(52 * var(--s, 1));
+    font-weight: 700;
+    color: var(--ms-white);
+    text-align: center;
+    white-space: nowrap;
+    z-index: 11;
+    pointer-events: none;
+    user-select: none;
+    transform: rotate(2deg);
+    transform-origin: center;
+    text-shadow: 0 0 calc(6 * var(--s, 1)) var(--ms-shadow);
+}
+
+.mupaniSell-titleBox {
+    position: absolute;
+    left: 50%;
+    top: calc(120 * var(--s, 1));
+    transform: translateX(-50%);
+    width: calc(1046 * var(--s, 1));
+    height: calc(68 * var(--s, 1));
+    pointer-events: none;
+}
+
+.mupaniSell-titleText {
+    width: 100%;
+    height: 100%;
+    font-size: calc(52 * var(--s, 1));
+    line-height: calc(68 * var(--s, 1));
+    color: var(--ms-titleText);
+    text-align: left;
+    white-space: nowrap;
+}
+
+.mupaniSell-accent {
+    color: var(--accentColor);
+    font-weight: 900;
+}
+
+.mupaniSell-qtyText {
+    position: absolute;
+    left: calc(924 * var(--s, 1));
+    top: calc(254 * var(--s, 1));
+    width: calc(180 * var(--s, 1));
+    height: calc(72 * var(--s, 1));
+    font-size: calc(72 * var(--s, 1));
+    line-height: calc(72 * var(--s, 1));
+    font-weight: 900;
+    color: var(--ms-white);
+    text-align: right;
+    padding-right: calc(18 * var(--s, 1));
+    box-sizing: border-box;
+    pointer-events: none;
+    white-space: nowrap;
+}
+
+.mupaniSell-sumValue {
+    position: absolute;
+    left: calc(984 * var(--s, 1));
+    top: calc(392 * var(--s, 1));
+    width: calc(152 * var(--s, 1));
+    height: calc(64 * var(--s, 1));
+    font-size: calc(48 * var(--s, 1));
+    line-height: calc(64 * var(--s, 1));
+    font-weight: 900;
+    color: var(--accentColor);
+    text-align: right;
+    pointer-events: none;
+    white-space: nowrap;
+}

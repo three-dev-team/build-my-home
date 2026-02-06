@@ -1,33 +1,161 @@
-@keyframes stamp-slam {
-  0% {
-    transform: scale(2) rotate(-15deg);
-    opacity: 0;
-  }
-  50% {
-    transform: scale(1.2) rotate(5deg);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1) rotate(0deg);
-    opacity: 1;
-  }
+/* 배경 컨테이너 */
+.stamp-container {
+    position: absolute;
+    inset: 0;
+    width: 100cqw;
+    height: 100cqh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    overflow: hidden;
 }
 
-.animate-stamp-slam {
-  animation: stamp-slam 0.5s ease-out;
+.stamp-player-character {
+    position: absolute;
+    left: 40cqw;
+    bottom: 31.48cqh;
+    width: 14.58cqw;
+    height: 44.44cqh;
+    pointer-events: none;
+}
+
+.stamp-character-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: bottom right;
+}
+
+/* Step 1: 방문카드 화면 */
+.stamp-card-wrapper {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 101;
+}
+
+.stamp-card-container {
+    position: relative;
+    width: 83.33cqw;
+    height: auto;
+}
+
+.stamp-card-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.stamp-card-title {
+    position: absolute;
+    top: 10%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 2.08cqw;
+    color: #594e36;
+    text-align: center;
+    white-space: nowrap;
+    z-index: 10;
+}
+
+/* 스탬프 오버레이 */
+.stamp-overlay {
+    position: absolute;
+    inset: 0;
+}
+
+/* 개별 스탬프 위치 */
+.stamp-position {
+    position: absolute;
+}
+
+.stamp-position-airport {
+    left: 11.06cqw;
+    bottom: 35.06cqh;
+    width: 16.26cqw;
+    aspect-ratio: 1 / 1;
+}
+
+.stamp-position-gapdol {
+    left: 34.6cqw;
+    bottom: 18.5cqh;
+    width: 16.26cqw;
+    aspect-ratio: 1 / 1;
+}
+
+.stamp-position-museum {
+    right: 10.3cqw;
+    bottom: 43.3cqh;
+    width: 16.26cqw;
+    aspect-ratio: 1 / 1;
+}
+
+/* 스탬프 이미지 */
+.stamp-image-wrap {
+    width: 100%;
+    height: 100%;
+    transform: scale(0.9);
+    transform-origin: 50% 50%;
+}
+
+.stamp-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* 스탬프 찍기 애니메이션 */
+.stamp-image.animate-stamp-slam {
+    animation: stamp-slam 0.5s ease-out;
+}
+
+@keyframes stamp-slam {
+    0% {
+        transform: scale(2.22) rotate(-15deg);
+        opacity: 0;
+    }
+    50% {
+        transform: scale(1.33) rotate(5deg);
+        opacity: 1;
+    }
+    100% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+    }
+}
+.animate-puff-out {
+    animation: puff-out 0.5s ease-out forwards;
 }
 
 @keyframes puff-out {
-  0% {
-    transform: scale(1);
-    opacity: 0.5;
-  }
-  100% {
-    transform: scale(2);
-    opacity: 0;
-  }
+    0% {
+        transform: scale(1);
+        opacity: 0.5;
+    }
+    100% {
+        transform: scale(0.9);
+        opacity: 0;
+    }
 }
 
-.animate-puff-out {
-  animation: puff-out 0.5s ease-out forwards;
+.stamp-instruction-wrapper {
+    position: absolute;
+    bottom: 15.04cqh;
+    left: 25%;
+    transform: translateX(-50%);
+    z-index: 150;
+}
+
+/* Step 2: 결과 화면 */
+.stamp-result-card {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 83.33cqw;
+    z-index: 50;
 }

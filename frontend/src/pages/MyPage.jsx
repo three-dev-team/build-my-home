@@ -1,17 +1,17 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getMemberInfo, updateNickname, withdraw, unlinkSocialAccount } from '../api/memberApi';
+import ExitButton from '../components/common/ExitButton';
+import TopButtons from '../components/common/TopButtons';
+import HomeButton from '../components/common/HomeButton';
+import { CameraIcon } from '@heroicons/react/24/solid';
+import AspectLayout from '../components/layout/AspectLayout';
+import Cropper from 'react-easy-crop';
 
-// --- 소셜 아이콘 컴포넌트 ---
-const GoogleIcon = ({ width = '56', height = '56' }) => (
-  <svg width={width} height={height} viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+// --- 소셜 아이콘 컴포넌트 - 크기는 부모에서 제어하므로 w/h는 100%로 설정하거나 상속받음 ---
+const GoogleIcon = () => (
+  <svg width="100%" height="100%" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
     <g filter="url(#filter0_d_1_2)">
-      <path
-        d="M28 50C40.1503 50 50 40.1503 50 28C50 15.8497 40.1503 6 28 6C15.8497 6 6 15.8497 6 28C6 40.1503 15.8497 50 28 50Z"
-        fill="#FFFCEF"
-        stroke="#DED0A6"
-        strokeWidth="3"
-      />
       <path
         d="M28 13C29.9 13 31.7 13.7 33 14.9L38.4 9.5C35.6 6.9 32 5.3 28 5.3C19.3 5.3 11.9 10.8 9.2 18.5L15.5 23.4C17.4 17.4 22.3 13 28 13Z"
         fill="#EA4335"
@@ -28,54 +28,38 @@ const GoogleIcon = ({ width = '56', height = '56' }) => (
         d="M50 28C50 26.4 49.8 24.8 49.4 23.3H28V32H40.7C40.2 34.9 38.3 38.3 37.3 40.6L43.2 45.2C47 41.6 50 35.6 50 28Z"
         fill="#4285F4"
       />
-      <path
-        d="M28 4C14.7452 4 4 14.7452 4 28C4 41.2548 14.7452 52 28 52C41.2548 52 52 41.2548 52 28C52 14.7452 41.2548 4 28 4ZM28 49.3333C16.2176 49.3333 6.66667 39.7824 6.66667 28C6.66667 16.2176 16.2176 6.66667 28 6.66667C39.7824 6.66667 49.3333 16.2176 49.3333 28C49.3333 39.7824 39.7824 49.3333 28 49.3333Z"
-        fill="#9E8F5C"
-        opacity="0.3"
-      />
     </g>
   </svg>
 );
 
-const KakaoIcon = ({ width = '56', height = '56' }) => (
-  <svg width={width} height={height} viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <g filter="url(#filter0_d_1_3)">
-      <path
-        d="M28 50C40.1503 50 50 40.1503 50 28C50 15.8497 40.1503 6 28 6C15.8497 6 6 15.8497 6 28C6 40.1503 15.8497 50 28 50Z"
-        fill="#FAE100"
-        stroke="#E3CD12"
-        strokeWidth="3"
-      />
-      <path
-        fillRule="evenodd"
-        clipRule="evenodd"
-        d="M28 15C19.1634 15 12 20.7622 12 27.871C12 32.4842 14.9388 36.561 19.3891 38.8687C19.1416 40.4074 18.2435 44.2045 18.0667 44.8962C17.9252 45.5413 18.6675 45.9298 19.2042 45.5539C20.4777 44.6644 24.5772 41.8398 26.6997 40.354C27.1272 40.3952 27.5606 40.4187 28 40.4187C36.8366 40.4187 44 34.6565 44 27.5478C44 20.439 36.8366 15 28 15Z"
-        fill="#371D1E"
-      />
-      <path
-        d="M28 4C14.7452 4 4 14.7452 4 28C4 41.2548 14.7452 52 28 52C41.2548 52 52 41.2548 52 28C52 14.7452 41.2548 4 28 4ZM28 49.3333C16.2176 49.3333 6.66667 39.7824 6.66667 28C6.66667 16.2176 16.2176 6.66667 28 6.66667C39.7824 6.66667 49.3333 16.2176 49.3333 28C49.3333 39.7824 39.7824 49.3333 28 49.3333Z"
-        fill="#9E8F5C"
-        opacity="0.3"
-      />
-    </g>
+const KakaoIcon = () => (
+  <svg width="100%" height="100%" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <path
+      fillRule="evenodd"
+      clipRule="evenodd"
+      d="M12 3C6.477 3 2 6.918 2 11.75C2 14.932 4.062 17.729 7.16 19.16L5.972 23.362C5.875 23.704 6.297 23.951 6.578 23.714L11.516 19.553C11.676 19.563 11.837 19.568 12 19.568C17.523 19.568 22 15.65 22 10.818C22 5.986 17.523 3 12 3Z"
+      fill="#371D1E"
+    />
+    <text
+      x="12"
+      y="12.5"
+      textAnchor="middle"
+      dominantBaseline="middle"
+      fill="#FAE100"
+      fontSize="6.5"
+      fontWeight="900"
+      fontFamily="sans-serif"
+      style={{ letterSpacing: '-0.5px' }}
+    >
+      TALK
+    </text>
   </svg>
 );
 
-const NaverIcon = ({ width = '56', height = '56' }) => (
-  <svg width={width} height={height} viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+const NaverIcon = () => (
+  <svg width="100%" height="100%" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
     <g filter="url(#filter0_d_1_4)">
-      <path
-        d="M28 50C40.1503 50 50 40.1503 50 28C50 15.8497 40.1503 6 28 6C15.8497 6 6 15.8497 6 28C6 40.1503 15.8497 50 28 50Z"
-        fill="#03C75A"
-        stroke="#02A449"
-        strokeWidth="3"
-      />
       <path d="M16.4 16H24.8L33.2 28.5V16H39.6V40H31.2L22.8 27.5V40H16.4V16Z" fill="white" />
-      <path
-        d="M28 4C14.7452 4 4 14.7452 4 28C4 41.2548 14.7452 52 28 52C41.2548 52 52 41.2548 52 28C52 14.7452 41.2548 4 28 4ZM28 49.3333C16.2176 49.3333 6.66667 39.7824 6.66667 28C6.66667 16.2176 16.2176 6.66667 28 6.66667C39.7824 6.66667 49.3333 16.2176 49.3333 28C49.3333 39.7824 39.7824 49.3333 28 49.3333Z"
-        fill="#02A449"
-        opacity="0.3"
-      />
     </g>
   </svg>
 );
@@ -84,30 +68,78 @@ export default function MyPage() {
   const navigate = useNavigate();
   const nicknameInputRef = useRef(null);
 
-  const [activeTab, setActiveTab] = useState('account');
   const [userData, setUserData] = useState({
     nickname: '',
     email: '',
     bell: 0,
     level: 1,
     role: 'MEMBER',
+    characterId: 1,
   });
   const [isLoading, setIsLoading] = useState(true);
 
-  // 설정 및 문의 상태 관리
-  const [bgmVolume, setBgmVolume] = useState(Number(localStorage.getItem('bgmVolume')) || 50);
-  const [sfxVolume, setSfxVolume] = useState(Number(localStorage.getItem('sfxVolume')) || 50);
-  const [inquiryTitle, setInquiryTitle] = useState('');
-  const [inquiryContent, setInquiryContent] = useState('');
-
-  // 닉네임 모달 상태
+  // 모달 상태
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editNickname, setEditNickname] = useState('');
   const [isConfirmStep, setIsConfirmStep] = useState(false);
 
-  // 회원 탈퇴 모달 상태
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
   const [isWithdrawConfirmStep, setIsWithdrawConfirmStep] = useState(false);
+
+  const [isUnlinkModalOpen, setIsUnlinkModalOpen] = useState(false);
+  const [unlinkProvider, setUnlinkProvider] = useState('');
+
+  // 프로필 이미지 업로드 상태
+  const [isProfileImageModalOpen, setIsProfileImageModalOpen] = useState(false);
+  const [selectedImageFile, setSelectedImageFile] = useState(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState(null);
+
+  // 이미지 크롭 상태
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1.3);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+
+  const onCropComplete = useCallback((croppedArea, croppedAreaPixels) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  }, []);
+
+  // 크롭된 이미지 생성 함수
+  const getCroppedImg = async (imageSrc, pixelCrop) => {
+    const image = new Image();
+    image.src = imageSrc;
+    await new Promise((resolve) => {
+      image.onload = resolve;
+    });
+
+    const canvas = document.createElement('canvas');
+    canvas.width = pixelCrop.width;
+    canvas.height = pixelCrop.height;
+    const ctx = canvas.getContext('2d');
+
+    ctx.drawImage(
+      image,
+      pixelCrop.x,
+      pixelCrop.y,
+      pixelCrop.width,
+      pixelCrop.height,
+      0,
+      0,
+      pixelCrop.width,
+      pixelCrop.height,
+    );
+
+    return new Promise((resolve) => {
+      canvas.toBlob((blob) => {
+        resolve(blob);
+      }, 'image/png');
+    });
+  };
+
+  // 캐릭터 이미지 매핑
+  const getCharacterImage = (id) => {
+    // TODO: 실제 characterId 기반 이미지 매핑
+    return '/images/room/char-apple-idle.webp';
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -124,31 +156,11 @@ export default function MyPage() {
       } catch (e) {
         console.error(e);
         setIsLoading(false);
-        // 401 처리는 interceptor가 하므로 여기서는 별도 처리 안 함
       }
     };
     fetchData();
   }, [navigate]);
 
-  // 설정 변경 핸들러
-  const handleVolumeChange = (type, value) => {
-    if (type === 'BGM') {
-      setBgmVolume(value);
-      localStorage.setItem('bgmVolume', value);
-    } else {
-      setSfxVolume(value);
-      localStorage.setItem('sfxVolume', value);
-    }
-  };
-
-  const handleLogout = () => {
-    if (window.confirm('로그아웃 하시겠습니까? 🍃')) {
-      sessionStorage.clear();
-      navigate('/');
-    }
-  };
-
-  // 회원 탈퇴 처리
   const handleWithdraw = async () => {
     try {
       await withdraw();
@@ -162,25 +174,14 @@ export default function MyPage() {
     }
   };
 
-  // 소셜 계정 연동 요청 핸들러
   const handleLinkAccount = (provider) => {
-    // 1. 유저 ID 확인 (필수)
     if (!userData.id) {
-      console.error('Link Account Failed: userData.id is missing', userData);
-      alert('계정 식별 정보를 불러오지 못했습니다.\n잠시 후 다시 시도하거나 페이지를 새로고침해주세요.');
+      alert('계정 식별 정보를 불러오지 못했습니다. 다시 시도해주세요.');
       return;
     }
-
-    // 2. 쿠키 설정
     document.cookie = `LINK_MEMBER_ID=${userData.id}; path=/; max-age=600`;
-
-    // 3. 소셜 로그인 페이지로 리다이렉트
     window.location.href = `/oauth2/authorization/${provider}`;
   };
-
-  // 연동 해제 모달 상태
-  const [isUnlinkModalOpen, setIsUnlinkModalOpen] = useState(false);
-  const [unlinkProvider, setUnlinkProvider] = useState('');
 
   const handleUnlinkClick = (provider) => {
     setUnlinkProvider(provider);
@@ -194,37 +195,43 @@ export default function MyPage() {
       window.location.reload();
     } catch (e) {
       console.error(e);
-      const errorMsg = e.response?.data?.message || e.response?.data || e.message || 'Unknown Error';
-      alert(`연동 해제 실패: ${errorMsg}`);
+      alert(`연동 해제 실패: ${e.message}`);
     } finally {
       setIsUnlinkModalOpen(false);
     }
   };
 
-  // --- 닉네임 변경 성공 시 로그아웃 처리 ---
+  // const handleSaveNickname = async () => {
+  //   try {
+  //     await updateNickname({ nickname: editNickname });
+  //     alert('닉네임이 변경되었습니다! 다시 로그인해 주세요.');
+  //     sessionStorage.clear();
+  //     navigate('/');
+  //   } catch (e) {
+  //     if (e.response && e.response.status === 409) {
+  //       alert('이미 사용 중인 닉네임입니다.');
+  //     } else {
+  //       alert('변경에 실패했습니다.');
+  //     }
+  //   }
+  // };
+
   const handleSaveNickname = async () => {
     try {
       await updateNickname({ nickname: editNickname });
-
-      // 1. 사용자에게 알림
-      alert('닉네임이 성공적으로 변경되었습니다! ✨\n보안을 위해 다시 로그인해 주세요.');
-
-      // 2. 세션 정보 삭제 (로그아웃)
+      alert('닉네임이 변경되었습니다\n다시 로그인해 주세요');
       sessionStorage.clear();
-
-      // 3. 메인 또는 로그인 페이지로 이동
       navigate('/');
     } catch (e) {
-      if (e.response && e.response.status === 409) {
-        alert('이미 사용 중인 닉네임입니다. 다른 이름을 입력해주세요! 😢');
-        setEditNickname('');
-        setIsConfirmStep(false);
-        setTimeout(() => nicknameInputRef.current?.focus(), 100);
+      if (e.response?.data?.message) {
+        alert(e.response.data.message);
       } else {
-        alert('변경에 실패했습니다. 다시 시도해주세요.');
+        alert('변경에 실패했습니다');
       }
     }
   };
+
+
 
   const closeModal = () => {
     setIsModalOpen(false);
@@ -232,434 +239,468 @@ export default function MyPage() {
     setEditNickname(userData.nickname);
   };
 
-  const closeWithdrawModal = () => {
-    setIsWithdrawModalOpen(false);
-    setIsWithdrawConfirmStep(false);
+  // 프로필 이미지 업로드 핸들러
+  const handleImageSelect = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      // 이미지 파일 타입 검증
+      if (!file.type.startsWith('image/')) {
+        alert('이미지 파일만 업로드 가능합니다.');
+        return;
+      }
+      // 파일 크기 검증 (5MB 제한)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('이미지 크기는 5MB 이하여야 합니다.');
+        return;
+      }
+      setSelectedImageFile(file);
+      setImagePreviewUrl(URL.createObjectURL(file));
+    }
   };
 
-  const handleInquirySubmit = () => {
-    alert('문의가 접수되었습니다. (기능 구현 예정)');
-    setInquiryTitle('');
-    setInquiryContent('');
+  const handleImageUpload = async () => {
+    if (!imagePreviewUrl || !croppedAreaPixels) {
+      alert('이미지를 선택하고 영역을 조정해주세요.');
+      return;
+    }
+
+    try {
+      // 크롭된 이미지 생성
+      const croppedBlob = await getCroppedImg(imagePreviewUrl, croppedAreaPixels);
+
+      const formData = new FormData();
+      formData.append('file', croppedBlob, 'profile.png');
+
+      const token = sessionStorage.getItem('token');
+      const response = await fetch('/api/member/profile-image', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
+
+      if (!response.ok) throw new Error('업로드 실패');
+
+      const updatedMember = await response.json();
+      console.log('UPLOAD SUCCESS:', updatedMember);
+
+      setUserData(updatedMember);
+      alert('프로필 이미지가 변경되었습니다.');
+      handleProfileImageModalClose();
+    } catch (error) {
+      console.error('프로필 이미지 업로드 실패:', error);
+      alert('이미지 업로드에 실패했습니다.');
+    }
   };
 
-  if (isLoading)
-    return (
-      <div className="h-screen flex items-center justify-center bg-[#FFFCEF]">
-        <div className="text-center">
-          <div className="text-4xl animate-bounce mb-4">🍃</div>
-          <div className="text-xl font-black text-[#8b5a2b]">주민 정보를 불러오는 중...</div>
-        </div>
-      </div>
-    );
+  const handleProfileImageModalClose = () => {
+    setIsProfileImageModalOpen(false);
+    setSelectedImageFile(null);
+    if (imagePreviewUrl) {
+      URL.revokeObjectURL(imagePreviewUrl);
+      setImagePreviewUrl(null);
+    }
+  };
+
+  if (isLoading) return null;
 
   return (
-    <div className="relative w-full h-screen flex items-center justify-center overflow-hidden font-sans">
-      <div
-        className="absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: "url('/images/background.jpg')" }}
-      />
-
-      {/* --- 닉네임 변경 모달 --- */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
-          <div className="bg-[#FFFCEF] w-[380px] p-8 rounded-[40px] border-[6px] border-[#8b5a2b] shadow-2xl">
-            {!isConfirmStep ? (
-              <div className="space-y-6 text-center">
-                <h3 className="text-2xl font-black text-[#8b5a2b]">이름 변경하기 🍃</h3>
-                <input
-                  ref={nicknameInputRef}
-                  type="text"
-                  value={editNickname}
-                  onChange={(e) => setEditNickname(e.target.value)}
-                  className="w-full p-4 rounded-2xl bg-white border-4 border-[#efe7d1] text-[#5d4037] font-bold text-center outline-none focus:border-[#bc8a5f]"
-                  placeholder="새 이름을 입력하세요"
-                />
-                <div className="flex gap-3">
-                  <button
-                    onClick={closeModal}
-                    className="flex-1 py-3 bg-[#DED0A6] text-[#5d4037] rounded-2xl font-bold"
-                  >
-                    취소
-                  </button>
-                  <button
-                    onClick={() => setIsConfirmStep(true)}
-                    className="flex-1 py-3 bg-[#8b5a2b] text-white rounded-2xl font-bold"
-                  >
-                    변경
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-6 text-center">
-                <h3 className="text-2xl font-black text-[#8b5a2b]">정말 바꿀까요?</h3>
-                <p className="text-[#5d4037] font-bold text-lg">
-                  <span className="text-[#bc8a5f]">"{editNickname}"</span>(으)로
-                  <br />
-                  결정하시겠습니까?
-                </p>
-                <p className="text-xs text-[#8b5a2b] font-bold">* 변경 시 다시 로그인해야 합니다.</p>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => setIsConfirmStep(false)}
-                    className="flex-1 py-3 bg-[#DED0A6] text-[#5d4037] rounded-2xl font-bold"
-                  >
-                    아니오
-                  </button>
-                  <button
-                    onClick={handleSaveNickname}
-                    className="flex-1 py-3 bg-[#e2f0a1] border-4 border-[#8b5a2b] rounded-2xl font-black text-[#8b5a2b]"
-                  >
-                    네!
-                  </button>
-                </div>
-              </div>
-            )}
+    <AspectLayout>
+      <div className="relative w-full h-full bg-cover bg-center flex items-center justify-center overflow-hidden bg-[url('/images/mypage/bg-mypage.jpg')]">
+        {/* TopButtons (우측 상단)
+            - Moved inside aspect-ratio container
+            - top-[3.7cqh] (~40px on 1080h), right-[2.08cqw] (~40px on 1920w)
+        */}
+        <div className="absolute top-[3.7cqh] right-[2.08cqw] z-50">
+          <div style={{ transform: 'scale(1)', transformOrigin: 'top right' }}>
+            <TopButtons
+              nickname={userData.nickname || '주민'}
+              profileImage={userData.profileImage || sessionStorage.getItem('profileImage')}
+              onProfileClick={() => {}}
+              onBellClick={() => navigate('/notifications')}
+              onConfigClick={() => navigate('/config')}
+              showShadow={false}
+              colors={{
+                text: '#594E36',
+                badgeBg: '#7B6C53', // coffeeBrown
+                badgeText: '#FFFEE0', // creamIvory
+              }}
+            />
           </div>
         </div>
-      )}
 
-      {/* --- 회원 탈퇴 모달 --- */}
-      {isWithdrawModalOpen && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="bg-[#FFFCEF] w-[380px] p-8 rounded-[40px] border-[6px] border-[#D32F2F] shadow-2xl animate-in zoom-in-95">
-            {!isWithdrawConfirmStep ? (
-              <div className="space-y-6 text-center">
-                <h3 className="text-2xl font-black text-[#D32F2F]">마이홈을 떠나시나요? 😢</h3>
-                <p className="text-[#5d4037] font-bold">
-                  탈퇴 시 모든 게임 데이터와
-                  <br />
-                  벨(Bell)이 영구 삭제됩니다.
-                </p>
-                <div className="flex gap-3">
-                  <button onClick={closeWithdrawModal} className="flex-1 py-3 bg-gray-200 rounded-2xl font-bold">
-                    취소
-                  </button>
-                  <button
-                    onClick={() => setIsWithdrawConfirmStep(true)}
-                    className="flex-1 py-3 bg-[#D32F2F] text-white rounded-2xl font-bold"
-                  >
-                    탈퇴하기
-                  </button>
+        {/* --- 상단 아이콘 영역 --- */}
+
+        {/* 홈 버튼 (좌측 상단) - Top 3.7cqh, Left 2.08cqw */}
+        <div className="absolute top-[3.7cqh] left-[2.08cqw] z-50">
+          <HomeButton />
+        </div>
+
+        {/* --- 주민증 카드 (메인 영역) --- */}
+
+        {/* 1. 캐릭터 이미지 영역
+            - Left: 420px -> 21.875cqw
+            - Width: 292px -> 15.21cqw
+            - Radius: 64px -> 3.33cqw
+        */}
+        <div
+          className="absolute aspect-square bg-[#FFD7D7] flex items-center justify-center group shadow-inner"
+          style={{
+            top: '36.5%',
+            left: '21.875cqw',
+            width: '15.21cqw',
+            borderRadius: '3.33cqw',
+          }}
+        >
+          <img
+            src={userData.profileImage || '/images/default-profile.png'}
+            alt="character or profile"
+            className="w-full h-full rounded-[3.33cqw] object-cover object-contain drop-shadow-md"
+          />
+
+          {/* 역할 배지 - 100*40px (5.21cqw * 3.7cqh), Radius 20px (1.04cqw), Font 24px (1.25cqw) */}
+          <div
+            className={`absolute -bottom-[22%] -left-[2%] w-[5.21cqw] h-[3.7cqh] rounded-[1.04cqw] flex items-center justify-center text-white text-[1.25cqw] font-bold z-10 shadow-md ${
+              userData.role === 'ADMIN' ? 'bg-[#FF4F4F]' : 'bg-[#00C73C]'
+            }`}
+          >
+            {userData.role === 'ADMIN' ? '관리자' : '주민'}
+          </div>
+
+          {/* 프로필 사진 변경 아이콘 */}
+          <CameraIcon
+            onClick={() => setIsProfileImageModalOpen(true)}
+            className="absolute -bottom-[23%] -right-[2%] w-[2.5cqw] h-[2.5cqw] text-[#6B5B45] hover:scale-110 transition cursor-pointer drop-shadow-md"
+            title="프로필 사진 변경"
+          />
+        </div>
+
+        {/* 등록일
+            - Top 80.4%, Left 30%
+        */}
+        <div className="absolute top-[80.4%] left-[30%] text-[1.46cqw] font-bold text-[#8B7D6B]">2026년 01월 28일</div>
+
+        {/* 2. 우측 정보 영역
+            - Top 33%, Left 43%
+        */}
+        <div className="absolute top-[33%] left-[43%] flex flex-col items-start gap-[1.67cqw]">
+          {/* 닉네임 섹션 */}
+          <div className="flex flex-col gap-0">
+            <span className="text-[1.04cqw] font-bold text-[#594E36] opacity-80 pl-[0.1cqw]">닉네임</span>
+            <div className="flex items-center gap-[0.83cqw]">
+              <span className="text-[2.6cqw] font-black text-[#594E36] leading-none pt-[0.2cqw]">
+                {userData.nickname}
+              </span>
+
+              {/* 닉네임 수정 버튼 */}
+              <button
+                onClick={() => setIsModalOpen(true)}
+                className="w-[1.98cqw] h-[1.98cqw] bg-[#7A7061] rounded-full flex items-center justify-center hover:scale-110 transition mt-[0.2cqw]"
+                title="닉네임 변경"
+              >
+                <svg
+                  width="50%"
+                  height="50%"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="white"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M12 20h9" />
+                  <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          {/* 이메일 섹션 */}
+          <div className="flex flex-col gap-0 mt-[1.5cqw]">
+            <span className="text-[1.04cqw] font-bold text-[#594E36] opacity-80 pl-[0.1cqw]">연결된 이메일</span>
+            <span className="text-[1.46cqw] font-black text-[#7A7061] leading-tight pt-[0.2cqw]">
+              {userData.email || '이메일 정보 없음'}
+            </span>
+          </div>
+
+          {/* 소셜 계정 섹션 */}
+          <div className="flex flex-col gap-[0.4cqw] mt-[0.8cqw]">
+            <div className="flex items-end gap-[0.4cqw] mb-[0.2cqw]">
+              <span className="text-[1.04cqw] font-bold text-[#594E36] pl-[0.1cqw]">소셜 계정 연동</span>
+              <span className="text-[0.73cqw] font-bold text-[#8B7D6B] pb-[0.2cqw]">
+                *아이콘을 눌러 연동하세요 (재클릭 시 해제)
+              </span>
+            </div>
+
+            <div className="flex gap-[0.83cqw]">
+              {/* Google */}
+              <button
+                onClick={() => (userData.googleId ? handleUnlinkClick('google') : handleLinkAccount('google'))}
+                className={`w-[2.92cqw] h-[2.92cqw] rounded-[0.73cqw] flex items-center justify-center transition hover:scale-110 ${userData.googleId ? '' : 'opacity-40 grayscale hover:grayscale-0 hover:opacity-100'}`}
+                style={{
+                  backgroundColor: '#FFFFFF',
+                  boxShadow: '0 0.15cqw 0.25cqw rgba(0,0,0,0.1)',
+                }}
+              >
+                <div className="w-[70%] h-[70%]">
+                  <GoogleIcon />
                 </div>
-              </div>
-            ) : (
-              <div className="space-y-6 text-center">
-                <h3 className="text-2xl font-black text-[#D32F2F]">마지막 확인!</h3>
-                <p className="text-[#5d4037] font-bold text-lg">
-                  정말로 모든 정보를 삭제하고
-                  <br />
-                  주민 등록을 해지할까요?
-                </p>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => setIsWithdrawConfirmStep(false)}
-                    className="flex-1 py-3 bg-gray-200 rounded-2xl font-bold"
-                  >
-                    아니오
-                  </button>
-                  <button
-                    onClick={handleWithdraw}
-                    className="flex-1 py-3 bg-[#FFB3B3] border-4 border-[#D32F2F] rounded-2xl font-black text-[#D32F2F]"
-                  >
-                    네, 탈퇴합니다.
-                  </button>
+              </button>
+
+              {/* Kakao */}
+              <button
+                onClick={() => (userData.kakaoId ? handleUnlinkClick('kakao') : handleLinkAccount('kakao'))}
+                className={`w-[2.92cqw] h-[2.92cqw] rounded-[0.73cqw] flex items-center justify-center transition hover:scale-110 ${userData.kakaoId ? '' : 'opacity-40 grayscale hover:grayscale-0 hover:opacity-100'}`}
+                style={{
+                  backgroundColor: '#FAE100',
+                  boxShadow: '0 0.15cqw 0.25cqw rgba(0,0,0,0.1)',
+                }}
+              >
+                <div className="w-[70%] h-[70%]">
+                  <KakaoIcon />
                 </div>
-              </div>
-            )}
+              </button>
+
+              {/* Naver */}
+              <button
+                onClick={() => (userData.naverId ? handleUnlinkClick('naver') : handleLinkAccount('naver'))}
+                className={`w-[2.92cqw] h-[2.92cqw] rounded-[0.73cqw] flex items-center justify-center transition hover:scale-110 ${userData.naverId ? '' : 'opacity-40 grayscale hover:grayscale-0 hover:opacity-100'}`}
+                style={{
+                  backgroundColor: '#03C75A',
+                  boxShadow: '0 0.15cqw 0.25cqw rgba(0,0,0,0.1)',
+                }}
+              >
+                <div className="w-[70%] h-[70%]">
+                  <NaverIcon />
+                </div>
+              </button>
+            </div>
           </div>
         </div>
-      )}
 
-      {/* --- 연동 해제 모달 --- */}
-      {isUnlinkModalOpen && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-          <div className="bg-[#FFFCEF] w-[380px] p-8 rounded-[40px] border-[6px] border-[#8b5a2b] shadow-2xl animate-in zoom-in-95">
-            <div className="space-y-6 text-center">
-              <h3 className="text-2xl font-black text-[#8b5a2b]">{unlinkProvider} 연동 해제 🔗</h3>
-              <p className="text-[#5d4037] font-bold">
-                연동을 해제하면 이메일로만
-                <br />
-                로그인할 수 있습니다.
-              </p>
-              <div className="flex gap-3">
+        {/* --- 좌측 하단 탈퇴하기 버튼 ---
+            - Bottom 10px, Left 10px (나가기 버튼과 대칭)
+            - 나가기 버튼과 동일한 사이즈: w=204/1920=10.63cqw, h=62/1920=3.23cqw, r=32/1920=1.67cqw
+        */}
+        <button
+          onClick={() => setIsWithdrawModalOpen(true)}
+          className="absolute bottom-[20px] left-[20px] bg-[#FDFBF6] w-[10.63cqw] h-[3.23cqw] rounded-[1.67cqw] flex items-center justify-center text-[1.67cqw] font-bold text-[#7B6C53] hover:bg-[#F2E8D5] transition active:scale-95"
+        >
+          탈퇴하기
+        </button>
+
+        {/* --- 우측 하단 나가기 버튼 --- */}
+        <ExitButton onClick={() => navigate('/home')} showShadow={false} />
+
+        {/* --- 모달들 --- */}
+
+        {/* 닉네임 변경 모달 */}
+        {isModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+            <div className="bg-[#FFFCEF] w-[22cqw] p-[2cqw] rounded-[1.5cqw] border-[0.21cqw] border-[#8b5a2b] shadow-2xl text-center">
+              {!isConfirmStep ? (
+                <>
+                  <h3 className="text-[1.35cqw] font-black text-[#594E36] mb-[1.5cqh]">이름 변경하기</h3>
+                  <input
+                    ref={nicknameInputRef}
+                    type="text"
+                    value={editNickname}
+                    onChange={(e) => setEditNickname(e.target.value)}
+                    className="w-full p-[0.94cqw] rounded-[0.83cqw] bg-white border-[0.16cqw] border-[#8b5a2b] text-[#594E36] font-bold text-center text-[1.04cqw] mb-[1.8cqh] outline-none focus:border-[#594E36] focus:ring-[0.16cqw] focus:ring-[#594E36]/20"
+                    placeholder="새 이름을 입력하세요"
+                  />
+                  <div className="flex gap-[0.83cqw]">
+                    <button
+                      onClick={closeModal}
+                      className="flex-1 py-[0.94cqw] bg-[#EEE9DB] hover:bg-[#E5E0D0] rounded-[0.83cqw] font-bold text-[#594E36] text-[1.04cqw] transition-colors"
+                    >
+                      취소
+                    </button>
+                    <button
+                      onClick={() => setIsConfirmStep(true)}
+                      className="flex-1 py-[0.94cqw] bg-[#594E36] hover:bg-[#6d5d43] rounded-[0.83cqw] font-bold text-white text-[1.04cqw] transition-colors shadow-md"
+                    >
+                      변경
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <h3 className="text-[1.35cqw] font-black text-[#594E36] mb-[1cqh]">정말 바꿀까요?</h3>
+                  <p className="text-[#594E36] text-[0.94cqw] font-medium mb-[1.8cqh] leading-relaxed">
+                    <span className="text-[#8b5a2b] font-bold">"{editNickname}"</span>(으)로
+                    <br />
+                    결정하시겠습니까?
+                  </p>
+                  <div className="flex gap-[0.83cqw]">
+                    <button
+                      onClick={() => setIsConfirmStep(false)}
+                      className="flex-1 py-[0.94cqw] bg-[#EEE9DB] hover:bg-[#E5E0D0] rounded-[0.83cqw] font-bold text-[#594E36] text-[1.04cqw] transition-colors"
+                    >
+                      아니오
+                    </button>
+                    <button
+                      onClick={handleSaveNickname}
+                      className="flex-1 py-[0.94cqw] bg-[#594E36] hover:bg-[#6d5d43] rounded-[0.83cqw] font-bold text-white text-[1.04cqw] transition-colors shadow-md"
+                    >
+                      네!
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* 탈퇴 모달 */}
+        {isWithdrawModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+            <div className="bg-[#FFFCEF] w-[20.8cqw] p-[1.67cqw] rounded-[2cqw] border-[0.3cqw] border-[#D32F2F]  text-center">
+              {!isWithdrawConfirmStep ? (
+                <>
+                  <h3 className="text-[1.25cqw] font-black text-[#D32F2F] mb-[0.7cqw]">마이홈을 떠나시나요?</h3>
+                  <p className="text-[#5d4037] mb-[1.1cqw] font-bold text-[0.83cqw]">모든 데이터가 삭제됩니다.</p>
+                  <div className="flex gap-[0.83cqw]">
+                    <button
+                      onClick={() => setIsWithdrawModalOpen(false)}
+                      className="flex-1 py-[1.1cqw] bg-gray-200 rounded-[0.83cqw] font-bold text-[0.83cqw]"
+                    >
+                      취소
+                    </button>
+                    <button
+                      onClick={() => setIsWithdrawConfirmStep(true)}
+                      className="flex-1 py-[1.1cqw] bg-[#D32F2F] text-white rounded-[0.83cqw] font-bold text-[0.83cqw]"
+                    >
+                      탈퇴하기
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <h3 className="text-[1.25cqw] font-black text-[#D32F2F] mb-[0.7cqw]">마지막 확인!</h3>
+                  <p className="text-[#5d4037] mb-[1.1cqw] font-bold text-[0.83cqw]">정말로 탈퇴하시겠습니까?</p>
+                  <div className="flex gap-[0.83cqw]">
+                    <button
+                      onClick={() => setIsWithdrawConfirmStep(false)}
+                      className="flex-1 py-[1.1cqw] bg-gray-200 rounded-[0.83cqw] font-bold text-[0.83cqw]"
+                    >
+                      아니오
+                    </button>
+                    <button
+                      onClick={handleWithdraw}
+                      className="flex-1 py-[1.1cqw] bg-[#FFB3B3] text-[#D32F2F] border-[0.16cqw] border-[#D32F2F] rounded-[0.83cqw] font-bold text-[0.83cqw]"
+                    >
+                      네, 탈퇴합니다
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* 연동 해제 모달 */}
+        {isUnlinkModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+            <div className="bg-[#FFFCEF] w-[20.8cqw] p-[1.67cqw] rounded-[2cqw] border-[0.3cqw] border-[#8b5a2b] text-center">
+              <h3 className="text-[1.25cqw] font-black text-[#8b5a2b] mb-[0.7cqw]">{unlinkProvider} 연동 해제</h3>
+              <p className="text-[#5d4037] mb-[1.1cqw] font-bold text-[0.83cqw]">연동을 해제하시겠습니까?</p>
+              <div className="flex gap-[0.83cqw]">
                 <button
                   onClick={() => setIsUnlinkModalOpen(false)}
-                  className="flex-1 py-3 bg-gray-200 rounded-2xl font-bold"
+                  className="flex-1 py-[1.1cqw] bg-gray-200 rounded-[0.83cqw] font-bold text-[0.83cqw]"
                 >
                   취소
                 </button>
-                <button onClick={confirmUnlink} className="flex-1 py-3 bg-[#8b5a2b] text-white rounded-2xl font-bold">
+                <button
+                  onClick={confirmUnlink}
+                  className="flex-1 py-[1.1cqw] bg-[#8b5a2b] text-white rounded-[0.83cqw] font-bold text-[0.83cqw]"
+                >
                   해제하기
                 </button>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      <div className="relative z-10 w-[95%] max-w-[850px] bg-[#efe7d1] p-8 rounded-[50px] border-[8px] border-[#8b5a2b] shadow-[15px_15px_0px_rgba(139,90,43,0.15)]">
-        <div className="flex flex-row gap-6">
-          <div className="flex flex-col gap-3 min-w-[150px]">
-            {[
-              { id: 'account', label: '계정 정보' },
-              { id: 'settings', label: '설정' },
-              { id: 'inquiry', label: '문의하기' },
-              ...(userData.role?.includes('ADMIN') ? [{ id: 'admin', label: '관리자' }] : []),
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => {
-                  if (tab.id === 'admin') {
-                    navigate('/admin');
-                  } else if (tab.id === 'inquiry') {
-                    navigate('/user-inquiry');
-                  } else {
-                    setActiveTab(tab.id);
-                  }
-                }}
-                className={`py-4 px-6 rounded-[25px] font-black text-lg transition-all shadow-sm ${
-                  activeTab === tab.id
-                    ? 'bg-[#e2f0a1] text-[#8b5a2b] border-[4px] border-[#8b5a2b] translate-x-2'
-                    : 'bg-white text-[#8b5a2b] hover:bg-[#FFFCEF]'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
+        {/* 프로필 이미지 업로드 모달 */}
+        {isProfileImageModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+            <div className="bg-[#FFFCEF] w-[26cqw] p-[2cqw] rounded-[1.5cqw] border-[0.21cqw] border-[#8b5a2b] shadow-2xl text-center">
+              <h3 className="text-[1.35cqw] font-black text-[#594E36] mb-[1.5cqh]">프로필 사진 변경</h3>
 
-          <div className="flex-1 bg-[#FFFCEF] rounded-[40px] p-8 border-4 border-[#8b5a2b]/20 shadow-inner h-[450px] overflow-y-auto">
-            {activeTab === 'account' && (
-              <div className="space-y-6">
-                <div className="flex justify-between items-center bg-white p-6 rounded-[30px] border-2 border-[#DED0A6]">
-                  <div className="space-y-1">
-                    <p className="text-3xl font-black text-[#8b5a2b]">Lv. {userData.level}</p>
-                    <p className="font-bold text-[#5d4037] text-lg">{userData.bell.toLocaleString()} Bell 💰</p>
-                  </div>
-                  <span className="px-4 py-1 bg-[#8b5a2b] text-white rounded-full text-xs font-bold uppercase">
-                    {userData.role}
-                  </span>
-                </div>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-black text-[#8b5a2b] ml-2">주민 이름</label>
-                    <div className="flex gap-3">
-                      <input
-                        type="text"
-                        value={userData.nickname}
-                        readOnly
-                        className="flex-1 bg-[#F4F0D7] rounded-2xl p-4 font-bold text-[#8d7b6d] outline-none cursor-default border-2 border-transparent"
-                      />
-                      <button
-                        onClick={() => setIsModalOpen(true)}
-                        className="bg-[#bc8a5f] text-white px-8 rounded-2xl font-black hover:bg-[#8b5a2b] shadow-md transition-all active:scale-95"
-                      >
-                        변경
-                      </button>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-black text-[#8b5a2b] ml-2">연결된 이메일</label>
-                    <input
-                      type="text"
-                      value={userData.email || '정보 없음'}
-                      readOnly
-                      className="w-full bg-[#F4F0D7] rounded-2xl p-4 font-bold text-[#8d7b6d] outline-none cursor-default"
-                    />
-                  </div>
-
-                  {/* 소셜 계정 연동 섹션 */}
-                  <div className="space-y-4 pt-6 border-t-2 border-[#DED0A6]">
-                    <div className="flex items-center justify-between">
-                      <label className="text-sm font-black text-[#8b5a2b] ml-2">소셜 계정 연동</label>
-                      <span className="text-xs font-bold text-[#a67c52]">
-                        * 아이콘을 눌러 연동하세요 (재클릭 시 해제)
-                      </span>
-                    </div>
-
-                    <div className="flex justify-center gap-6 py-2">
-                      {/* 1. Google */}
-                      {(userData.googleId || (!userData.kakaoId && !userData.naverId)) && (
-                        <div className="flex flex-col items-center gap-2">
-                          {userData.googleId ? (
-                            <button
-                              onClick={() => handleUnlinkClick('google')}
-                              className="relative group cursor-pointer transition-transform active:scale-95"
-                              title="연동 해제하기"
-                            >
-                              <div className="grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all">
-                                <GoogleIcon width="64" height="64" />
-                              </div>
-                              <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-[#8b5a2b] text-white text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap shadow-sm">
-                                연동됨
-                              </span>
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => handleLinkAccount('google')}
-                              className="hover:scale-110 transition-transform active:translate-y-1"
-                              title="구글 계정 연동하기"
-                            >
-                              <GoogleIcon width="64" height="64" />
-                            </button>
-                          )}
-                        </div>
-                      )}
-
-                      {/* 2. Kakao */}
-                      {(userData.kakaoId || (!userData.googleId && !userData.naverId)) && (
-                        <div className="flex flex-col items-center gap-2">
-                          {userData.kakaoId ? (
-                            <button
-                              onClick={() => handleUnlinkClick('kakao')}
-                              className="relative group cursor-pointer transition-transform active:scale-95"
-                              title="연동 해제하기"
-                            >
-                              <div className="grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all">
-                                <KakaoIcon width="64" height="64" />
-                              </div>
-                              <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-[#8b5a2b] text-white text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap shadow-sm">
-                                연동됨
-                              </span>
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => handleLinkAccount('kakao')}
-                              className="hover:scale-110 transition-transform active:translate-y-1"
-                              title="카카오 계정 연동하기"
-                            >
-                              <KakaoIcon width="64" height="64" />
-                            </button>
-                          )}
-                        </div>
-                      )}
-
-                      {/* 3. Naver */}
-                      {(userData.naverId || (!userData.googleId && !userData.kakaoId)) && (
-                        <div className="flex flex-col items-center gap-2">
-                          {userData.naverId ? (
-                            <button
-                              onClick={() => handleUnlinkClick('naver')}
-                              className="relative group cursor-pointer transition-transform active:scale-95"
-                              title="연동 해제하기"
-                            >
-                              <div className="grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 transition-all">
-                                <NaverIcon width="64" height="64" />
-                              </div>
-                              <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-[#8b5a2b] text-white text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap shadow-sm">
-                                연동됨
-                              </span>
-                            </button>
-                          ) : (
-                            <button
-                              onClick={() => handleLinkAccount('naver')}
-                              className="hover:scale-110 transition-transform active:translate-y-1"
-                              title="네이버 계정 연동하기"
-                            >
-                              <NaverIcon width="64" height="64" />
-                            </button>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex gap-3 mt-4 pt-6 border-t-2 border-[#DED0A6]">
-                  <button
-                    onClick={handleLogout}
-                    className="flex-1 bg-[#e2f0a1] py-4 rounded-[25px] font-black text-[#5d7a22] shadow-sm hover:bg-[#d4e68d] transition-all"
-                  >
-                    로그아웃
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setIsWithdrawModalOpen(true);
-                      setIsWithdrawConfirmStep(false);
+              {/* 이미지 크롭 영역 */}
+              <div className="relative w-full aspect-square max-w-[20cqw] mx-auto mb-[1.5cqh] bg-[#FFD7D7] rounded-[1.5cqw] overflow-hidden border-[0.21cqw] border-[#EAD7B8]">
+                {imagePreviewUrl ? (
+                  <Cropper
+                    image={imagePreviewUrl}
+                    crop={crop}
+                    zoom={zoom}
+                    minZoom={0.5}
+                    maxZoom={3}
+                    aspect={1}
+                    cropShape="rect"
+                    showGrid={false}
+                    onCropChange={setCrop}
+                    onCropComplete={onCropComplete}
+                    onZoomChange={setZoom}
+                    onWheelRequest={(e) => e.ctrlKey}
+                    restrictPosition={false}
+                    objectFit="cover"
+                    style={{
+                      cropAreaStyle: {
+                        border: 'none',
+                      },
                     }}
-                    className="flex-1 bg-[#FFB3B3] py-4 rounded-[25px] font-black text-[#D32F2F] shadow-sm hover:bg-[#FF9999] transition-all text-sm"
-                  >
-                    주민 탈퇴
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'settings' && (
-              <div className="space-y-10 py-4">
-                <h3 className="text-2xl font-black text-[#8b5a2b] border-b-2 border-[#DED0A6] pb-2">환경 설정 ⚙️</h3>
-                <div className="space-y-8">
-                  <div className="space-y-3">
-                    <div className="flex justify-between font-black text-[#8b5a2b]">
-                      <span>배경음악 (BGM)</span>
-                      <span>{bgmVolume}%</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="0"
-                      max="100"
-                      value={bgmVolume}
-                      onChange={(e) => handleVolumeChange('BGM', e.target.value)}
-                      className="w-full h-4 bg-[#F4F0D7] rounded-lg appearance-none cursor-pointer accent-[#8b5a2b]"
-                    />
-                  </div>
-                  <div className="space-y-3">
-                    <div className="flex justify-between font-black text-[#8b5a2b]">
-                      <span>효과음 (SFX)</span>
-                      <span>{sfxVolume}%</span>
-                    </div>
-                    <input
-                      type="range"
-                      min="0"
-                      max="100"
-                      value={sfxVolume}
-                      onChange={(e) => handleVolumeChange('SFX', e.target.value)}
-                      className="w-full h-4 bg-[#F4F0D7] rounded-lg appearance-none cursor-pointer accent-[#8b5a2b]"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {activeTab === 'inquiry' && (
-              <div className="space-y-6 py-4 flex flex-col h-full">
-                <h3 className="text-2xl font-black text-[#8b5a2b] border-b-2 border-[#DED0A6] pb-2">도움센터 📮</h3>
-                <div className="space-y-4 flex-1 flex flex-col">
-                  <input
-                    type="text"
-                    placeholder="문의 제목을 입력하세요."
-                    value={inquiryTitle}
-                    onChange={(e) => setInquiryTitle(e.target.value)}
-                    className="w-full p-4 rounded-2xl bg-white border-2 border-[#DED0A6] text-[#5d4037] font-bold outline-none focus:border-[#bc8a5f]"
                   />
-                  <textarea
-                    placeholder="문의 내용을 상세히 적어주시면 확인 후 답변 드릴게요! 🍃"
-                    value={inquiryContent}
-                    onChange={(e) => setInquiryContent(e.target.value)}
-                    className="w-full flex-1 p-4 rounded-2xl bg-white border-2 border-[#DED0A6] text-[#5d4037] font-bold outline-none focus:border-[#bc8a5f] resize-none"
-                  />
-                  <button
-                    onClick={handleInquirySubmit}
-                    className="w-full bg-[#bc8a5f] text-white py-4 rounded-2xl font-black text-lg shadow-md hover:bg-[#8b5a2b] transition-all"
-                  >
-                    문의 제출하기
-                  </button>
-                </div>
+                ) : (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-[0.83cqw]">
+                    <CameraIcon className="w-[4.17cqw] h-[4.17cqw] text-[#6B5B45] opacity-30" />
+                    <span className="text-[0.94cqw] text-[#6B5B45] opacity-50 font-bold">이미지를 선택해주세요</span>
+                  </div>
+                )}
               </div>
-            )}
+
+              {/* 파일 선택 버튼 */}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageSelect}
+                className="hidden"
+                id="profile-image-input"
+              />
+              <label
+                htmlFor="profile-image-input"
+                className="block w-full py-[0.94cqw] mb-[1.1cqh] bg-[#EEE9DB] hover:bg-[#E0D9C8] rounded-[0.83cqw] font-bold text-[#594E36] text-[1.04cqw] cursor-pointer transition-colors"
+              >
+                📁 이미지 선택
+              </label>
+
+              {/* 버튼 영역 */}
+              <div className="flex gap-[0.83cqw]">
+                <button
+                  onClick={handleProfileImageModalClose}
+                  className="flex-1 py-[0.94cqw] bg-[#EEE9DB] hover:bg-[#E0D9C8] rounded-[0.83cqw] font-bold text-[#8E8E8E] text-[1.04cqw] transition-colors"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={handleImageUpload}
+                  disabled={!imagePreviewUrl}
+                  className={`flex-1 py-[0.94cqw] rounded-[0.83cqw] font-bold text-white text-[1.04cqw] transition-colors shadow-md ${
+                    imagePreviewUrl
+                      ? 'bg-[#594E36] hover:bg-[#6d5d43] cursor-pointer'
+                      : 'bg-gray-300 cursor-not-allowed opacity-50'
+                  }`}
+                >
+                  업로드
+                </button>
+              </div>
+            </div>
           </div>
-        </div>
-        <div className="mt-8 flex justify-center">
-          <button
-            onClick={() => navigate('/home')}
-            className="bg-white/90 hover:bg-white text-[#5d4037] px-24 py-3 rounded-full font-black text-xl border-4 border-[#8b5a2b]/30 shadow-md transition-all active:scale-95"
-          >
-            마이홈으로 돌아가기
-          </button>
-        </div>
+        )}
       </div>
-    </div>
+    </AspectLayout>
   );
 }

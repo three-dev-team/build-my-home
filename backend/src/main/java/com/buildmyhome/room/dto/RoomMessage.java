@@ -15,6 +15,10 @@ public class RoomMessage {
   private Long characterId;
   private Long autoStartTime; // 자동 시작 예정 시간
   private Integer maxPlayers; // [NEW] 최대 인원 변경 시 사용
+  private Integer totalRounds; // [NEW] 판수 변경 시 사용
   private List<RoomPlayerState> players; // 방에 있는 플레이어 목록
   private String message; // [NEW] 채팅 메시지 내용
+  private Integer targetIndex; // [NEW] 자리 이동 시 대상 인덱스 (0-based)
+  private java.util.Set<Integer> lockedSlots; // [NEW] 잠긴 슬롯 목록 (1-based)
+  private Integer slotIndex; // [NEW] 슬롯 잠금 토글 시 대상 인덱스 (1-based)
 }

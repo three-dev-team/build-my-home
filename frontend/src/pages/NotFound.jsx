@@ -1,19 +1,36 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import AspectLayout from '../components/layout/AspectLayout';
+import Subtitle from '../components/common/Subtitle';
+import { COLORS } from '../constants/colors.js';
 
 const NotFound = () => {
+  const navigate = useNavigate();
+  const [showOptions, setShowOptions] = useState(false);
+
+  const fullText = '거긴 길이 없다고!\n갑자기 툭 튀어나오면 어쩌자는 거야!\n제대로 된 주소 치고 돌아가!';
+
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-[#f5f5dc] text-[#5d4037]">
-      <div className="text-9xl mb-4">🏠</div>
-      <h1 className="text-6xl font-bold mb-4 font-['Gamja_Flower']">404</h1>
-      <p className="text-2xl mb-8 font-['Gamja_Flower']">길을 잃으셨나요? 페이지를 찾을 수 없습니다.</p>
-      <Link
-        to="/home"
-        className="px-6 py-3 bg-[#8d6e63] text-white rounded-lg hover:bg-[#6d4c41] transition-colors font-bold shadow-md"
+    <AspectLayout>
+      <div
+        className="relative w-full h-full flex flex-col items-center justify-center overflow-hidden bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: 'url(/images/404.jpg)' }}
       >
-        마이홈으로 돌아가기
-      </Link>
-    </div>
+        <Subtitle
+          nameText="도루묵씨"
+          nameColor={COLORS.characters.dorumook.nameBox}
+          nameTextColor={COLORS.characters.dorumook.nameText}
+          contentText={fullText}
+          onTypingComplete={() => setShowOptions(true)}
+          showTriangle={!showOptions}
+          options={
+            showOptions
+              ? [{ text: '돌아가자..', onClick: () => navigate('/home') }]
+              : []
+          }
+        />
+      </div>
+    </AspectLayout>
   );
 };
 

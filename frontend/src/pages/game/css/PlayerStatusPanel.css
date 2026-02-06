@@ -1,69 +1,198 @@
-.player-status-panel {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  display: flex;
-  justify-content: center;
-  gap: 15px;
-  padding: 15px 20px;
+.ps-container {
+    position: absolute;
+    left: 50%;
+    bottom: 1.1111cqh; /* 12px */
+    width: 86.4583cqw; /* 1660px */
+    height: 14.4444cqh; /* 156px */
+    transform: translateX(-50%);
+    transform-origin: bottom center;
+    font-family: var(--font-gosanja);
+    z-index: 1800;
+    pointer-events: none;
 }
 
-.player-card {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 10px 15px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 12px;
-  border: 2px solid transparent;
-  min-width: 180px;
+.f1 {
+    font-family: var(--font-formula);
 }
 
-.player-card.current-turn {
-  border-color: #ffd700;
-  background: rgba(255, 215, 0, 0.2);
+/* 카드 행 */
+.ps-row {
+    height: 100%;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 3.75cqw; /* 72px */
 }
 
-.player-card.my-card {
-  background: rgba(100, 200, 255, 0.2);
+/* 카드 */
+.ps-card {
+    width: 18.8021cqw; /* 361px */
+    height: 14.4444cqh; /* 156px */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 1.1111cqh; /* 12px */
 }
 
-.player-card.current-turn.my-card {
-  background: rgba(255, 215, 0, 0.3);
+/* 패널 박스 */
+.ps-box {
+    width: 18.8021cqw; /* 361px */
+    height: 10.7407cqh; /* 116px */
+    padding: 0.3704cqh 1.0417cqw; /* 4px 20px */
+    border-radius: 1.5625cqw; /* 30px */
+    border: 0.1563cqw solid var(--ps-box-border); /* (기존 rgba(0,0,0,0.3)) */
+    background: var(--ps-box-bg); /* (기존 rgba(255,255,255,0.3)) */
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 0.625cqw; /* 12px */
+    pointer-events: none;
 }
 
-.rank {
-  font-size: 1.2rem;
-  font-weight: bold;
-  color: #ffd700;
-  min-width: 30px;
+/* 좌측(집+랭크) */
+.ps-left {
+    width: 3.5417cqw; /* 68px */
+    height: 8.1481cqh; /* 88px */
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
 }
 
-.player-info {
-  flex: 1;
+.ps-house {
+    width: 2.2917cqw; /* 44px */
+    height: 4.0741cqh; /* 44px */
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.nickname {
-  font-weight: bold;
-  color: black;
-  margin-bottom: 5px;
+.ps-house-dot {
+    width: 0.4167cqw; /* 8px */
+    height: 0.7407cqh; /* 8px */
+    border-radius: 99cqw;
+    background: var(--ps-dot-30);
+    display: inline-block;
 }
 
-.stats {
-  display: flex;
-  gap: 10px;
-  font-size: 0.9rem;
-  color: black;
+.ps-house-img {
+    width: 2.2917cqw; /* 44px */
+    height: 4.0741cqh; /* 44px */
+    object-fit: contain;
 }
 
-.items {
-  margin-top: 5px;
-  font-size: 0.85rem;
-  color: black;
+/* 랭크 */
+.ps-rank {
+    width: 3.5417cqw; /* 68px */
+    flex: 1 1 auto;
+    display: flex;
+    align-items: flex-end;
+    justify-content: flex-start;
+    font-size: 1.6667cqw; /* 32px */
+    line-height: 1;
+    color: var(--ps-text-white-95);
+    -webkit-text-stroke: 0.3125cqw var(--ps-stroke-30); /* 6px */
+    paint-order: stroke fill;
 }
 
-.no-items {
-  font-style: italic;
-  color: black;
+/* 캐릭터 */
+.ps-char {
+    width: 3.75cqw; /* 72px */
+    height: 8.1481cqh; /* 88px */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ps-char-img,
+.ps-char-ph {
+    width: 3.75cqw; /* 72px */
+    height: 8.1481cqh; /* 88px */
+    object-fit: contain;
+}
+
+.ps-char-ph {
+    background: var(--ps-ph-bg);
+    border-radius: 0.625cqw; /* 12px */
+}
+
+/* 돈(벨/대출) */
+.ps-money {
+    width: 5.8333cqw; /* 112px */
+    height: 8.1481cqh; /* 88px */
+    display: flex;
+    flex-direction: column;
+}
+
+.ps-money-row {
+    flex: 1 1 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.2083cqw; /* 4px */
+}
+
+.ps-money-icon {
+    width: 1.6667cqw; /* 32px */
+    height: auto;
+    object-fit: contain;
+}
+
+.ps-money-val {
+    font-size: 1.25cqw; /* 24px */
+    line-height: 1;
+    text-align: left;
+    color: var(--ps-text-white-95);
+    letter-spacing: 0.0781cqw; /* 1.5px */
+    -webkit-text-stroke: 0.3125cqw var(--ps-stroke-30); /* 6px */
+    paint-order: stroke fill;
+    white-space: nowrap;
+}
+
+/* 아이템 3슬롯 */
+.ps-items {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.3704cqh; /* 4px */
+    margin-left: auto;
+}
+
+.ps-item-slot {
+    width: 1.6667cqw; /* 32px */
+    height: 2.9630cqh; /* 32px */
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ps-item-img {
+    width: 1.6667cqw; /* 32px */
+    height: 2.9630cqh; /* 32px */
+    object-fit: contain;
+}
+
+.ps-item-dot {
+    width: 0.4167cqw; /* 8px */
+    height: 0.7407cqh; /* 8px */
+    border-radius: 99cqw;
+    background: var(--ps-dot-30);
+    display: inline-block;
+}
+
+/* 닉네임 */
+.ps-nickname {
+    width: 10.4167cqw; /* 200px */
+    height: 2.5926cqh; /* 28px */
+    border-radius: 99cqw;
+    background: var(--ps-nickname-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8333cqw; /* 16px */
+    color: var(--ps-text-white-92);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }

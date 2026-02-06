@@ -1,0 +1,48 @@
+.instruction-wrapper {
+  position: absolute;
+  left: 0;
+  right: 0;
+  --u: calc(100cqw / 1920);
+  bottom: calc(148 * var(--u));
+  display: flex;
+  justify-content: center;
+  z-index: 99999;
+  animation: instruction-float 1.5s ease-in-out infinite;
+}
+
+.instruction-wrapper.two-lines {
+  padding-bottom: calc(60 * var(--u));
+}
+
+.instruction-text {
+  font-family: var(--font-gosanja);
+  font-size: calc(40 * var(--u));
+  color: #fff;
+  text-shadow: 0 calc(2 * var(--u)) calc(40 * var(--u)) rgba(0, 0, 0, 0.7);
+  white-space: pre-line;
+  line-height: 1.2;
+  text-align: center;
+}
+
+@keyframes instruction-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(calc(-5 * var(--u)));
+  }
+}
+
+.instruction-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(8 * var(--u));
+}
+
+.instruction-click-icon {
+  width: calc(36 * var(--u));
+  height: calc(36 * var(--u));
+  object-fit: contain;
+  filter: brightness(0) invert(1);
+}

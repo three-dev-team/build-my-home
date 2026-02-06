@@ -22,4 +22,7 @@ public interface RoomRepository extends JpaRepository<Room, Long> {
 
   // 제목 검색 (정확히 일치, 최신순)
   List<Room> findByStatusAndTitleOrderByIdDesc(Room.Status status, String title, Pageable pageable);
+
+  // 초대 코드로 방 조회
+  Optional<Room> findByInviteCode(String inviteCode);
 }

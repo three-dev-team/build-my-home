@@ -11,7 +11,8 @@ import java.util.Set;
 @Setter
 public class ShopSession {
 
-  private String shopSessionId;                 // 세션 고유 ID
-  private Long memberId;                        // 누가 이용 중인지
-  private Set<ShopItemType> purchasedItems = EnumSet.noneOf(ShopItemType.class);;     // 이미 구매한 아이템 종류
+    private String shopSessionId;                 // 세션 고유 ID
+    private Long memberId;                        // 누가 이용 중인지
+    private Set<ShopItemType> purchasedItems = EnumSet.noneOf(ShopItemType.class); // 이미 구매한 아이템 종류
+    private boolean introShown = false;           // 인트로 자막 표시 여부
 }

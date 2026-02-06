@@ -1,0 +1,154 @@
+.rewardtile-root {
+    position: fixed;
+    inset: 0;
+    z-index: 24000;
+    overflow: hidden;
+}
+
+/* AspectLayout 내부 16:9 화면 컨테이너 */
+.rewardtile-screen {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    --u: calc(1cqw / 19.2);
+    --v: calc(1cqh / 10.8);
+    --char-scale: 1.0;
+    --slot-px: 200;
+    --slot: calc(var(--slot-px) * var(--u));
+    --items-top-px: 190;
+    --char-offset-px: 160;
+    --inst-bottom-px: 148;
+    --slot-pad-px: 14;
+    --slot-pad: calc(var(--slot-pad-px) * var(--u));
+}
+
+/* 배경 */
+.rewardtile-bg {
+    position: absolute;
+    inset: 0;
+    background: center/cover no-repeat;
+    filter: saturate(1.05);
+    z-index: 0;
+}
+
+.rewardtile-bg.resource {
+    background-image: url('/images/reward/bg-resource.webp');
+}
+
+.rewardtile-bg.fruit {
+    background-image: url('/images/reward/bg-fruit.webp');
+}
+
+/* 화면 레이어 */
+.rewardtile-layer {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+}
+
+/* 상단 보상 슬롯 2개 */
+.reward-top-items {
+    position: absolute;
+    top: calc(var(--items-top-px) * var(--v));
+    left: 50%;
+    transform: translateX(-50%);
+    width: calc(880 * var(--u));
+    height: var(--slot);
+    display: grid;
+    grid-template-columns:
+        var(--slot)
+        calc(60 * var(--u))
+        calc(360 * var(--u))
+        calc(60 * var(--u))
+        var(--slot);
+    align-items: center;
+    pointer-events: none;
+    z-index: 110;
+}
+
+/* 슬롯 박스(좌/우 끝) */
+.reward-item-box {
+    position: relative;
+    width: var(--slot);
+    height: var(--slot);
+    overflow: visible;
+}
+
+/* 좌측 슬롯 위치 */
+.reward-top-items .reward-item-box:first-child {
+    grid-column: 1;
+}
+
+/* 우측 슬롯 위치 */
+.reward-top-items .reward-item-box:last-child {
+    grid-column: 5;
+}
+
+/* 슬롯 내부 패딩 영역 */
+.reward-item-inner,
+.slot-drop-wrap {
+    position: absolute;
+    inset: var(--slot-pad);
+    display: grid;
+    place-items: center;
+    pointer-events: none;
+    overflow: visible;
+}
+
+/* 슬롯 이미지(컨테인) */
+.reward-item-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: 50% 50%;
+    user-select: none;
+    pointer-events: none;
+}
+
+/* Complete(step1) 캐릭터: 화면 중앙 기준 오프셋 */
+.reward-character-wrap {
+    position: absolute;
+    left: 50%;
+    top: calc(50% + (var(--char-offset-px) * var(--v)));
+    transform: translate(-50%, -50%);
+    width: calc(360 * var(--u));
+    height: calc(660 * var(--v));
+    pointer-events: none;
+    z-index: 60;
+}
+
+/* Discover(step0) 캐릭터: 발끝 기준 bottom 정렬 */
+.reward-character-wrap-bottom {
+    position: absolute;
+    left: 50%;
+    bottom: calc(120 * var(--v));
+    transform: translateX(-50%);
+    width: calc(360 * var(--u));
+    height: calc(660 * var(--v));
+    pointer-events: none;
+    z-index: 60;
+}
+
+/* 캐릭터 박스: 하단(발) 기준 정렬 */
+.reward-character-box {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    pointer-events: none;
+}
+
+/* 캐릭터 이미지: 바닥 기준 스케일 */
+.reward-character-img {
+    height: 100%;
+    width: auto;
+    max-width: 100%;
+    object-fit: contain;
+    object-position: 50% 100%;
+    transform-origin: 50% 100%;
+    transform: scale(var(--char-scale));
+    user-select: none;
+    pointer-events: none;
+}

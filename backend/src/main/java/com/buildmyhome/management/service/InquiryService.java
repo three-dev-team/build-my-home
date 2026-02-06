@@ -3,6 +3,7 @@ package com.buildmyhome.management.service;
 import com.buildmyhome.management.dto.*;
 import com.buildmyhome.management.entity.Answer;
 import com.buildmyhome.management.entity.Inquiry;
+import com.buildmyhome.management.entity.InquiryCategory;
 import com.buildmyhome.management.entity.InquiryStatus;
 import com.buildmyhome.management.repository.AnswerRepository;
 import com.buildmyhome.management.repository.InquiryRepository;
@@ -22,19 +23,29 @@ public class InquiryService {
 
   private final InquiryRepository inquiryRepository;
   private final AnswerRepository answerRepository;
+  private final FileUploadService fileUploadService;
 
-  // 1. 문의 등록 (사용자)
-  public InquiryResponse createInquiry(InquiryRequest request, Member member) {
-    Inquiry inquiry = Inquiry.builder()
-      .member(member)
-      .title(request.getTitle())
-      .content(request.getContent())
-      .category(request.getCategory()) // 카테고리 추가
-      .build();
-    return toResponse(inquiryRepository.save(inquiry));
-  }
+    // 1. 문의 등록 (사용자) - 이미지 업로드 지원
+    public InquiryResponse createInquiry(InquiryRequest request, Member member) {
+        // 이미지 파일 업로드 (있는 경우)
+        String imageUrl = null;
+        if (request.getImageFile() != null && !request.getImageFile().isEmpty()) {
+            String savedFilename = fileUploadService.uploadImage(request.getImageFile());
+            imageUrl = "/uploads/inquiries/" + savedFilename;
+        }
 
-  // 2. 내 문의 목록 (사용자)
+        Inquiry inquiry = Inquiry.builder()
+                .member(member)
+                .title(request.getTitle())
+                .content(request.getContent())
+                .category(request.getCategory())
+                .imageUrl(imageUrl)  // 이미지 URL 저장
+                .build();
+
+        return toResponse(inquiryRepository.save(inquiry));
+    }
+
+    // 2. 내 문의 목록 (사용자)
   @Transactional(readOnly = true)
   public Page<InquiryListResponse> getMyInquiries(Member member, Pageable pageable) {
     return inquiryRepository.findByMemberId(member.getId(), pageable).map(this::toListResponse);
@@ -61,6 +72,28 @@ public class InquiryService {
   @Transactional(readOnly = true)
   public Page<InquiryListResponse> getAllInquiries(Pageable pageable) {
     return inquiryRepository.findAll(pageable).map(this::toListResponse);
+  }
+
+  // 3-1. 제목으로 검색 (관리자) - 추가
+  @Transactional(readOnly = true)
+  public Page<InquiryListResponse> searchInquiriesByTitle(String keyword, Pageable pageable) {
+    return inquiryRepository.findByTitleContaining(keyword, pageable).map(this::toListResponse);
+  }
+
+  // 3-2. 필터/정렬 검색 (관리자) - 추가
+  @Transactional(readOnly = true)
+  public Page<InquiryListResponse> searchInquiries(
+      String keyword,
+      List<InquiryCategory> categories,
+      List<InquiryStatus> statuses,
+      Pageable pageable) {
+    // 빈 리스트는 null로 변환 (쿼리에서 IS NULL 조건 사용)
+    List<InquiryCategory> categoryFilter = (categories == null || categories.isEmpty()) ? null : categories;
+    List<InquiryStatus> statusFilter = (statuses == null || statuses.isEmpty()) ? null : statuses;
+    String keywordFilter = (keyword == null || keyword.trim().isEmpty()) ? null : keyword.trim();
+
+    return inquiryRepository.searchInquiries(keywordFilter, categoryFilter, statusFilter, pageable)
+        .map(this::toListResponse);
   }
 
   // 4. 상세 조회 (공통)
@@ -94,6 +127,7 @@ public class InquiryService {
       .content(inquiry.getContent())
       .status(inquiry.getStatus())
       .category(inquiry.getCategory()) // 카테고리 추가
+            .imageUrl(inquiry.getImageUrl())    // 첨부파일 url
       .memberId(inquiry.getMember().getId())
       .memberNickname(inquiry.getMember().getNickname())
       .createdAt(inquiry.getCreatedAt())
@@ -107,7 +141,7 @@ public class InquiryService {
       .id(inquiry.getId())
       .title(inquiry.getTitle())
       .status(inquiry.getStatus())
-      .category(inquiry.getCategory()) // 카테고리 추가
+      .category(inquiry.getCategory()) // 카테고리
       .memberNickname(inquiry.getMember().getNickname())
       .createdAt(inquiry.getCreatedAt())
       .hasAnswer(inquiry.getAnswer() != null)

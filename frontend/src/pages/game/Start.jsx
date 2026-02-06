@@ -1,6 +1,11 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useGameTimer } from '../../hooks/useGameTimer.js';
+import Subtitle from '../../components/common/Subtitle.jsx';
+import { COLORS } from '../../constants/colors.js';
+import { CHARACTERS } from '../../constants/characters.js';
+import './css/Start.css';
+import AspectLayout from '../../components/layout/AspectLayout';
 
 // TODO: GameConstants.java와 일치해야 함
 const STAMP_REWARDS = [0, 50, 200, 1000];
@@ -9,9 +14,16 @@ const Start = ({ isMyTurn = false, player, currentPlayerName = '익명의 주민
   const step = player?.uiStep || 0;
   const collectedStamps = player?.collectedStamps || [];
   const stampCount = collectedStamps.length;
-  // uiStep 0: 프론트에서 미리보기 계산
-  // uiStep 1: 서버에서 받은 실제 값
-  const reward = step === 0 ? STAMP_REWARDS[Math.min(stampCount, 3)] : player?.actionData || 0;
+
+  // uiStep 0: 첫번째 대화 (스탬프 개수 안내) | 1: 두번째 대화 (정산 여부 질문) | 2: 정산 완료 | 3: 스킵
+  const reward = step <= 1 ? STAMP_REWARDS[Math.min(stampCount, 3)] : player?.actionData || 0;
+
+  // 캐릭터 색상
+  const yeoul = COLORS.characters.yeoul;
+
+  // 현재 플레이어의 캐릭터 정보 가져오기
+  const character = CHARACTERS.find((c) => Number(c.id) === Number(player?.characterId));
+  const charImg = character?.seatImage ?? null;
 
   // 자동 나가기 처리 (중복 방지)
   const hasExited = useRef(false);
@@ -23,8 +35,14 @@ const Start = ({ isMyTurn = false, player, currentPlayerName = '익명의 주민
     onExit();
   };
 
+  // 삼각형 클릭 핸들러
+  const handleTriangleClick = () => {
+    if (!isMyTurn) return;
+    onAction('SET_STEP', { uiStep: 1 });
+  };
+
   // TODO: 프론트 타이머 대신 서버 타임아웃 방식으로 변경 필요
-  useGameTimer(step === 1 || step === 2 ? 3 : 0, handleExit);
+  useGameTimer(step === 2 || step === 3 ? 5 : 0, handleExit);
 
   const handleExchange = () => {
     if (!isMyTurn) return;
@@ -36,95 +54,103 @@ const Start = ({ isMyTurn = false, player, currentPlayerName = '익명의 주민
     onAction('START_STAMP_SKIP', {});
   };
 
+  // 컨텐츠 텍스트 생성 - 첫번째 대화
+  const getFirstDialogText = () => {
+    if (stampCount === 3) {
+      return `와아아~! 대단해요 ${currentPlayerName} 님!\n세상에, 스탬프 카드를 빈틈없이 전부 채워오셨군요! 정말 축하드려요!`;
+    } else if (stampCount > 0) {
+      return `와아~! ${currentPlayerName} 님!\n그동안 스탬프를 무려 ${stampCount}개 모아오셨네요!`;
+    } else {
+      return `어머나, ${currentPlayerName} 님!\n아직 모아오신 스탬프가 하나도 없으시네요...\n아쉽지만 벨로 정산해드리기가 어렵답니다.`;
+    }
+  };
+
+  // 두 번째 컨텐츠 텍스트 - 정산 여부 질문
+  const getSecondDialogText = () => {
+    if (stampCount > 0) {
+      return `지금 정산하시면 ${reward}벨을 받으실 수 있는데...\n지금 정산해 드릴까요?`;
+    }
+    else {
+      return `천천히 여행하시면서 도장들을 모아와 주세요!\n${currentPlayerName} 님이 첫 스탬프를 찍어오실 때까지\n저 여울이가 여기서 기다리고 있을게요!`;
+    }
+  };
+
+  // 옵션 생성
+  const getOptions = () => {
+    if (stampCount > 0) {
+      return [
+        { text: '응 지금 할게', onClick: handleExchange },
+        { text: '다음에 할게', onClick: handleSkip },
+      ];
+    } else {
+      return [{ text: '다음에 보자', onClick: handleExit }];
+    }
+  };
+
+  const Highlights = () => {
+    const color = character?.color ?? COLORS.ac.ocean;
+    return [
+      { text: currentPlayerName, color },
+      { text: `${reward}벨`, color: COLORS.ac.yellow },
+    ];
+  };
+
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="fixed inset-0 w-screen h-screen flex flex-col items-center justify-center z-[100] overflow-hidden bg-blue-200"
-    >
-      {/* uiStep 0: 정산 여부 질문 */}
-      {step === 0 && (
-        <div className="bg-[#FFF8DC] rounded-3xl p-12 max-w-xl text-center shadow-2xl">
-          <h2 className="text-4xl font-bold mb-8 text-blue-600">여울사무소</h2>
-          <p className="text-2xl leading-relaxed mb-8">
-            {currentPlayerName}!<br />
-            {stampCount === 3 ? (
-              <>
-                스탬프를 다 모았구나 대단해!
-                <br />
-                스탬프를 다 모았으니 무려 <span className="font-bold text-yellow-600">{reward}벨</span>을 받을 수
-                있다고!
-                <br />
-                정산할래?
-              </>
-            ) : stampCount > 0 ? (
-              <>
-                스탬프 {stampCount}개 모았네.
-                <br />
-                정산하면 <span className="font-bold text-yellow-600">{reward}벨</span> 받아!
-                <br />
-                정산할래?
-              </>
-            ) : (
-              <>
-                아직 스탬프가 없네...
-                <br />
-                다음에 또 오렴!
-                <br />
-              </>
-            )}
-          </p>
-          <div className="flex gap-4 justify-center">
-            {stampCount > 0 ? (
-              <>
-                <button
-                  onClick={handleExchange}
-                  disabled={!isMyTurn}
-                  className="px-8 py-4 bg-green-500 text-white rounded-full text-2xl font-bold disabled:opacity-50"
-                >
-                  응! 지금 할게
-                </button>
-                <button
-                  onClick={handleSkip}
-                  disabled={!isMyTurn}
-                  className="px-8 py-4 bg-gray-400 text-white rounded-full text-2xl font-bold disabled:opacity-50"
-                >
-                  다음에 할게
-                </button>
-              </>
-            ) : (
-              <button
-                onClick={handleSkip}
-                disabled={!isMyTurn}
-                className="px-8 py-4 bg-gray-400 text-white rounded-full text-2xl font-bold disabled:opacity-50"
-              >
-                다음에 보자
-              </button>
-            )}
-          </div>
-        </div>
-      )}
-      {/* TODO: 스탬프를 3개 다 모았을 때 정산 버튼을 누르면, 단순한 메시지 창보다는 폭죽이 터지거나 돈다발이 쏟아지는 애니메이션 uiStep 1에 추가*/}
-      {/* uiStep 1: 정산 완료 */}
-      {step === 1 && (
-        <div className="bg-[#FFF8DC] rounded-3xl p-12 max-w-xl text-center shadow-2xl">
-          <p className="text-2xl leading-relaxed">
-            <span className="font-bold text-yellow-600">{reward}벨</span>을 송금했어!
-            <br />
-            여기 새로운 카드를 줄게.
-            <br />또 모으면 좋은 일이 생길거야! 다음에 또 보자!
-          </p>
-          <p className="text-gray-400 text-lg mt-8">잠시 후 자동으로 닫힙니다...</p>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="start-container">
+      {/* 플레이어 캐릭터 추가 */}
+      {charImg && (
+        <div className="start-player-character">
+          {charImg && <img src={charImg} alt={currentPlayerName} className="start-character-img" draggable="false" />}
         </div>
       )}
 
-      {/* uiStep 2: 스킵 */}
+      {/* uiStep 0: 정산 여부 질문 */}
+      {step === 0 && (
+        <Subtitle
+          nameText="여울"
+          nameColor={yeoul.nameBox}
+          nameTextColor={yeoul.nameText}
+          contentText={getFirstDialogText()}
+          highlights={Highlights()}
+          showTriangle
+          clickTriangle={handleTriangleClick} // 삼각형 클릭 핸들러
+        />
+      )}
+
+      {/* uiStep 1: 두 번째 대화 - 정산 여부 질문 */}
+      {step === 1 && (
+        <Subtitle
+          nameText="여울"
+          nameColor={yeoul.nameBox}
+          nameTextColor={yeoul.nameText}
+          contentText={getSecondDialogText()}
+          highlights={Highlights()}
+          options={getOptions()}
+          optionDisabled={!isMyTurn}
+        />
+      )}
+
+      {/* uiStep 2: 정산 완료 */}
       {step === 2 && (
-        <div className="bg-[#FFF8DC] rounded-3xl p-12 max-w-xl text-center shadow-2xl">
-          <h2 className="text-4xl font-bold mb-8 text-gray-600">알겠어!</h2>
-          <p className="text-2xl leading-relaxed">스탬프 더 모아서 와!</p>
-          <p className="text-gray-400 text-lg mt-8">잠시 후 자동으로 닫힙니다...</p>
-        </div>
+        <Subtitle
+          nameText="여울"
+          nameColor={yeoul.nameBox}
+          nameTextColor={yeoul.nameText}
+          contentText={`축하드립니다! 여기 정산하신 ${reward}벨이에요!\n아! 그리고 여기 새로운 방문카드도 준비했답니다!\n자, 그럼 다시 한번 즐거운 여행을 떠나볼까요?`}
+          highlights={Highlights()}
+        />
+      )}
+
+      {/* uiStep 3: 스킵 */}
+      {step === 3 && (
+        <Subtitle
+          nameText="여울"
+          nameColor={yeoul.nameBox}
+          nameTextColor={yeoul.nameText}
+          contentText={
+            '아, 지금은 그냥 간직하고 싶으신 거군요?\n정산하고 싶어지면 언제든 저에게 말씀해 주세요.\n남은 시간도 즐겁게 보내시길 바랄게요!'
+          }
+        />
       )}
     </motion.div>
   );

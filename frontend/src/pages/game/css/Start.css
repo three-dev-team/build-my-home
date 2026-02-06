@@ -1,0 +1,32 @@
+.start-container{
+    width: 100cqw;
+    height: 100cqh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    overflow: hidden;
+
+    background-image: url("/images/bg-start.jpeg");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.start-player-character{
+    position: absolute;
+    right: 42.08cqw; /* 오른쪽에서 808px */
+    bottom: 24.44cqh; /* 아래에서 264px */
+    width: 14.58cqw; /* 280px */
+    height: 44.44cqh; /* 480px */
+    pointer-events: none;
+    z-index: 50; /* Subtitle보다 뒤에 */
+}
+
+.start-character-img{
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: bottom center;
+}

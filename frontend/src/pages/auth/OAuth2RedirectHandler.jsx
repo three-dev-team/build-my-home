@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
+import Loading from '../../components/common/Loading';
 
 export default function OAuth2RedirectHandler() {
   const location = useLocation();
@@ -12,10 +13,19 @@ export default function OAuth2RedirectHandler() {
 
     // 2. URL 파라미터에서 데이터 추출
     const params = new URLSearchParams(location.search);
+    const error = params.get('error');
     const token = params.get('token');
     const nickname = params.get('nickname');
     const bell = params.get('bell');
     const level = params.get('level');
+    const isSuspended = params.get('isSuspended');
+    const suspendedUntil = params.get('suspendedUntil');
+
+    // 정지된 계정 에러 처리
+    if (error === 'suspended') {
+      window.location.href = '/?error=suspended';
+      return;
+    }
 
     if (token) {
       try {
@@ -26,10 +36,12 @@ export default function OAuth2RedirectHandler() {
         const base64Payload = token.split('.')[1];
         const payload = JSON.parse(atob(base64Payload));
         const memberId = payload.memberId;
+        const role = payload.role;
 
         // 4. 세션 스토리지 저장 (로그인 정보 유지)
         sessionStorage.setItem('token', token);
         sessionStorage.setItem('memberId', memberId);
+        sessionStorage.setItem('role', role);
         try {
           sessionStorage.setItem('nickname', decodeURIComponent(nickname || '주민'));
         } catch (e) {
@@ -39,9 +51,16 @@ export default function OAuth2RedirectHandler() {
         sessionStorage.setItem('bell', bell || '0');
         sessionStorage.setItem('level', level || '1');
 
+        // 정지 정보 저장
+        sessionStorage.setItem('isSuspended', isSuspended === 'true' ? 'true' : 'false');
+        if (suspendedUntil) {
+          sessionStorage.setItem('suspendedUntil', suspendedUntil);
+        }
+
         // 5. 메인 화면으로 이동
-        // 세션 정보가 확실히 반영되도록 강제 리다이렉트 방식을 사용합니다.
-        window.location.href = '/home';
+        setTimeout(() => {
+          window.location.href = '/home';
+        }, 1000);
       } catch (error) {
         console.error('인증 처리 중 오류 발생:', error);
         window.location.href = '/'; // 오류 발생 시 로그인 페이지로 복귀
@@ -52,13 +71,5 @@ export default function OAuth2RedirectHandler() {
     }
   }, [location]);
 
-  return (
-    <div className="w-full h-screen flex items-center justify-center bg-[#fdf6e3]">
-      <div className="flex flex-col items-center gap-4">
-        {/* 애니메이션 효과로 처리 중임을 알림 */}
-        <div className="text-3xl animate-bounce">🍃</div>
-        <div className="text-2xl font-black text-[#8b5a2b]">주민 등록증을 확인 중입니다...</div>
-      </div>
-    </div>
-  );
+  return <Loading message="주민 등록증을 확인 중입니다..." backgroundImage="/images/bg-loading-1.jpg" />;
 }

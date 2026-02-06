@@ -1,0 +1,51 @@
+.houseStep4Root {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+
+    /* UI(1420x920) 중앙 배치 기준 좌상단 오프셋 */
+    --uiOffsetX: calc((100cqw - (1420 * var(--s))) / 2);
+    --uiOffsetY: calc((100cqh - (920 * var(--s))) / 2);
+}
+
+.houseStep4Ui {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: calc(1420 * var(--s));
+    height: calc(920 * var(--s));
+    transform: translate(-50%, -50%);
+    object-fit: fill;
+}
+
+/* 타이틀 박스(설명 영역) */
+.houseStep4TitleBox {
+    position: absolute;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+}
+
+.houseStep4Title {
+    font-family: var(--font-gosanja);
+    font-size: calc(36 * var(--s));
+    line-height: 1.35;
+}
+
+/* 집 이미지 박스(가로 중앙, 세로 바닥 정렬) */
+.houseStep4ImageBox {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+}
+
+/* 집 이미지(박스 기준 하단 중앙) */
+.houseStep4HouseImg {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center bottom;
+}

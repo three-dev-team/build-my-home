@@ -1,0 +1,292 @@
+.game-root {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.game-bg {
+    position: absolute;
+    inset: 0;
+    background:
+            var(--bg-image, url('/images/bg-home.png')) center / cover no-repeat,
+            radial-gradient(62.5cqw 55.56cqh at 50% 30%, var(--bg-radial, rgba(255, 255, 255, 0.1)), transparent 60%),
+            linear-gradient(180deg, var(--bg-linear-top, rgba(6, 18, 28, 0.55)), var(--bg-linear-bottom, rgba(6, 18, 28, 0.78)));
+}
+
+.game-stage {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: var(--font-gosanja);
+}
+
+.f1 {
+    font-family: var(--font-formula);
+}
+
+.game-main {
+    position: absolute;
+    inset: 0;
+    z-index: 1000;
+}
+
+.hud-time {
+    position: absolute;
+    left: 1.0417cqw;
+    top: 1.8519cqh;
+    display: flex;
+    align-items: center;
+    gap: 0.4167cqw;
+    z-index: 2000;
+    pointer-events: none;
+    user-select: none;
+}
+
+.hud-time-icon {
+    width: 3.75cqw;
+    height: 3.4259cqh;
+    object-fit: contain;
+    opacity: 0.9;
+}
+
+.hud-time-text {
+    font-size: clamp(0.8333cqw, 1.6667cqw, 2.0833cqw);
+    letter-spacing: 0.02em;
+    color: rgba(255, 255, 255, 0.65);
+    text-shadow: 0 0.4167cqw 0.8333cqw rgba(0, 0, 0, 0.25);
+}
+
+.hud-round {
+    position: absolute;
+    right: 1.0417cqw;
+    top: 1.8519cqh;
+    width: 6.25cqw;
+    height: 9.2593cqh;
+    border-radius: 0.8333cqw;
+    background: rgba(255, 255, 255, 0.14);
+    backdrop-filter: blur(1.0417cqw);
+    box-shadow: 0 1.5625cqw 3.125cqw rgba(0, 0, 0, 0.2);
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.9259cqh;
+    pointer-events: none;
+    user-select: none;
+}
+
+.hud-round-title {
+    font-size: clamp(0.7292cqw, 1.4583cqw, 1.875cqw);
+    color: rgba(255, 255, 255, 0.88);
+}
+
+.hud-round-value {
+    font-size: clamp(0.8333cqw, 1.6667cqw, 2.0833cqw);
+    color: rgba(255, 255, 255, 0.95);
+    display: flex;
+    align-items: baseline;
+    gap: 0.25cqw;
+}
+
+.hud-round-slash {
+    font-size: clamp(0.625cqw, 1.25cqw, 1.5625cqw);
+    opacity: 0.85;
+}
+
+.hud-radish {
+    position: absolute;
+    right: 1.0417cqw;
+    top: 18.5185cqh;
+    width: 10.4167cqw;
+    z-index: 2000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.8889cqh;
+    user-select: none;
+    pointer-events: none;
+}
+
+.hud-radish-icon-wrap {
+    width: 5.2083cqw;
+    height: 9.2593cqh;
+    border-radius: 99cqw;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(1.0417cqw);
+    box-shadow: 0 1.5625cqw 3.125cqw rgba(0, 0, 0, 0.18);
+    display: grid;
+    place-items: center;
+}
+
+.hud-radish-icon {
+    width: 4.1667cqw;
+    height: 7.4074cqh;
+    object-fit: contain;
+}
+
+.hud-radish-body {
+    width: 10.4167cqw;
+    border-radius: 0.8333cqw;
+    padding: 1.3889cqh 0.8333cqw;
+    background: rgba(255, 255, 255, 0.18);
+    backdrop-filter: blur(1.1458cqw);
+    box-shadow: 0 1.5625cqw 3.125cqw rgba(0, 0, 0, 0.18);
+    text-align: center;
+}
+
+.hud-radish-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 0.35cqw;
+    color: rgba(255, 255, 255, 0.95);
+}
+
+.hud-radish-label {
+    font-size: clamp(0.625cqw, 1.0417cqw, 1.25cqw);
+    opacity: 0.9;
+}
+
+.hud-radish-price {
+    font-size: clamp(0.8333cqw, 1.6667cqw, 2.0833cqw);
+    font-weight: 700;
+}
+
+.hud-radish-unit {
+    font-size: clamp(0.625cqw, 1.0417cqw, 1.25cqw);
+    opacity: 0.9;
+}
+
+.hud-radish-sub {
+    margin-top: 0.5556cqh;
+    display: flex;
+    justify-content: center;
+    align-items: baseline;
+    gap: 0.35cqw;
+    color: rgba(255, 255, 255, 0.92);
+}
+
+.hud-radish-own {
+    font-size: clamp(0.625cqw, 0.9375cqw, 1.0417cqw);
+    opacity: 0.9;
+}
+
+.hud-radish-own-val {
+    font-size: clamp(0.7292cqw, 1.25cqw, 1.5625cqw);
+    font-weight: 700;
+}
+
+.hud-radish-own-unit {
+    font-size: clamp(0.625cqw, 0.9375cqw, 1.0417cqw);
+    opacity: 0.9;
+}
+
+.hud-radish-guide {
+    margin-top: 0.7407cqh;
+    font-size: clamp(0.625cqw, 0.8333cqw, 0.9375cqw);
+    opacity: 0.88;
+}
+
+.hud-common {
+    position: absolute;
+    left: 1.0417cqw;
+    top: 4.1667cqh;
+    z-index: 2200;
+}
+
+.hud-turncounter {
+    position: absolute;
+    right: 1.0417cqw;
+    top: 7.8704cqh;
+    z-index: 2100;
+}
+
+.reward-character {
+    position: absolute;
+    left: 50%;
+    top: 20.3704cqh;
+    transform: translateX(-50%);
+    z-index: 2500;
+    pointer-events: none;
+    user-select: none;
+}
+
+.reward-character img {
+    width: 11.4583cqw;
+    height: 20.3704cqh;
+    object-fit: contain;
+    filter: drop-shadow(0 1.5625cqw 2.3438cqw rgba(0, 0, 0, 0.25));
+}
+
+.hud-bottom {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1800;
+}
+
+.left-hud {
+    position: absolute;
+    left: 5.2083cqw;
+    bottom: 0;
+    width: 16.6667cqw;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    gap: 5.5556cqh;
+    z-index: 1500;
+    pointer-events: none;
+    user-select: none;
+}
+
+.left-hud .player-action-panel {
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
+    transform: none !important;
+    pointer-events: auto !important;
+}
+
+.left-hud-action-spacer {
+    width: 15.625cqw;
+    height: 38.8889cqh;
+}
+
+.left-hud .turn-character {
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
+    bottom: auto !important;
+    width: 16.6667cqw !important;
+    height: 48.1481cqh !important;
+    border-radius: 0 !important;
+    overflow: hidden;
+}
+
+.left-hud .turn-character-glass,
+.left-hud .turn-character-fade {
+    display: none !important;
+}
+
+.left-hud .turn-character-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: top center;
+    transform: none !important;
+    filter: none !important;
+}
+.spectator-wait {
+    position: absolute;
+    inset: 0;
+    z-index: 25000;
+    pointer-events: none;
+    container-type: size;
+    --sx: calc(100cqw / 1920);
+    --sy: calc(100cqh / 1080);
+    --s: min(var(--sx), var(--sy));
+}

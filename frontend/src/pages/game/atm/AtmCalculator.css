@@ -1,0 +1,103 @@
+.atmCalc-root {
+    position: absolute;
+    inset: 0;
+    z-index: 30;
+    overflow: hidden;
+    container-type: size;
+    --sx: calc(100cqw / 1920);
+    --sy: calc(100cqh / 1080);
+    --s: min(var(--sx), var(--sy));
+    font-family: var(--font-gosanja);
+}
+
+.atmCalc-title {
+    position: absolute;
+    left: 50%;
+    top: calc(60 * var(--s));
+    transform: translateX(-50%);
+    font-size: calc(44 * var(--s));
+    color: var(--atm-title-color);
+    text-align: center;
+}
+
+.atmCalc-balanceLayer {
+    position: absolute;
+    left: 50%;
+    top: calc(228 * var(--s));
+    transform: translateX(-50%);
+    width: calc(388 * var(--s));
+    height: calc((74 * 2 + 28) * var(--s));
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: calc(28 * var(--s));
+    padding: 0;
+    background: transparent;
+}
+
+.atmCalc-balanceRow {
+    width: 100%;
+    height: calc(74 * var(--s));
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.atmCalc-balanceLabel {
+    font-size: calc(40 * var(--s));
+    color: var(--atm-label-color);
+    line-height: 1;
+}
+
+.atmCalc-balanceValue {
+    font-size: calc(40 * var(--s));
+    color: var(--atm-value-color);
+    font-weight: 700;
+    line-height: 1;
+}
+
+.atmCalc-inputWrap {
+    position: absolute;
+    left: 50%;
+    top: calc(468 * var(--s));
+    transform: translateX(-50%);
+    width: calc((388) * var(--s));
+    height: calc(74 * var(--s));
+}
+
+.atmCalc-inputTextOnly {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: calc(388 * var(--s));
+    height: calc(74 * var(--s));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: calc(44 * var(--s));
+    color: var(--atm-input-color);
+    font-weight: 700;
+    line-height: 1;
+    background: transparent;
+}
+
+.atmCalc-unitText {
+    position: absolute;
+    left: calc((388 + 26) * var(--s));
+    top: calc(37 * var(--s));
+    transform: translate(-50%, -50%);
+    width: calc(52 * var(--s));
+    height: calc(52 * var(--s));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: calc(28 * var(--s));
+    color: var(--atm-unit-color);
+    font-weight: 700;
+    line-height: 1;
+    background: transparent;
+}
+
+.atmCalc-helper {
+    display: none;
+}

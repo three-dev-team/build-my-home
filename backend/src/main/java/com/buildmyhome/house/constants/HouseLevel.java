@@ -8,38 +8,34 @@ import java.util.Map;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
-// TODO : 업데이트 시 houseLevel.js 도 같이 수정할 것
-
 @Getter
 @RequiredArgsConstructor
 public enum HouseLevel {
     NONE(0, "없음", 0, Map.of()),
     LAND(1, "땅", 300, Map.of()),
-    TENT(2, "텐트", 400, Map.of(ResourceType.CLOTH, 1, ResourceType.IRON, 1)),
-    HOUSE_1(3, "집(1)", 1000, Map.of(ResourceType.IRON, 1, ResourceType.CLAY, 1)),
-    HOUSE_2(
-            4,
-            "집(2)",
-            1800,
-            Map.of(ResourceType.IRON, 3, ResourceType.CLAY, 3, ResourceType.WOOD, 3, ResourceType.BRICK, 3)
-    ),
-    HOUSE_3(
-            5,
-            "집(3)",
-            3000,
-            Map.of(
-                    ResourceType.IRON,
-                    5,
-                    ResourceType.CLAY,
-                    5,
-                    ResourceType.BRICK,
-                    5,
-                    ResourceType.WALLPAPER,
-                    5,
-                    ResourceType.FLOORING,
-                    5
-            )
-    );
+    TENT(2, "텐트", 500, Map.of(
+            ResourceType.CLOTH, 1,
+            ResourceType.IRON, 1
+    )),
+    HOUSE_1(3, "작은집", 1000, Map.of(
+            ResourceType.IRON, 2,
+            ResourceType.CLAY, 2,
+            ResourceType.WOOD, 2
+    )),
+    HOUSE_2(4, "큰집", 1800, Map.of(
+            ResourceType.IRON, 3,
+            ResourceType.CLAY, 3,
+            ResourceType.WOOD, 3,
+            ResourceType.BRICK, 3
+    )),
+    HOUSE_3(5, "마이홈", 3000, Map.of(
+            ResourceType.IRON, 5,
+            ResourceType.CLAY, 5,
+            ResourceType.BRICK, 5,
+            ResourceType.CLOTH, 5,
+            ResourceType.WALLPAPER, 5,
+            ResourceType.FLOORING, 5
+    ));
 
     private final int level;
     private final String name;

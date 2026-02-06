@@ -1,0 +1,230 @@
+/* 공통 컨테이너 */
+.swap-container {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  container-type: size;
+  --s: calc(100cqw / 1920);
+}
+
+/* EntryScreen 배경 */
+.swap-entry {
+  background-image: url('/images/swap/bg-swap-entry.jpg');
+}
+
+/* 나머지 stage 배경 */
+.swap-main {
+  background-image: url('/images/swap/bg-swap.jpg');
+}
+
+/* 박스 공통 */
+.swap-box {
+  position: absolute;
+  top: calc(400 * var(--s));
+}
+
+.swap-box.clickable {
+  cursor: pointer;
+}
+
+.swap-box-frame {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  z-index: 2;
+  pointer-events: none;
+}
+
+.swap-box-white-area {
+  position: absolute;
+  background: white;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.swap-box-icon-area {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.swap-box-icon {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* 왼쪽 박스 */
+.swap-box-left {
+  left: calc(311 * var(--s));
+  width: calc(331 * var(--s));
+  height: calc(280 * var(--s));
+}
+
+.swap-box-left .swap-box-white-area {
+  left: calc(27 * var(--s));
+  top: calc(30 * var(--s));
+  width: calc(220 * var(--s));
+  height: calc(210 * var(--s));
+}
+
+.swap-box-left .swap-box-icon-area {
+  left: calc(31 * var(--s));
+  top: calc(30 * var(--s));
+  width: calc(160 * var(--s));
+  height: calc(150 * var(--s));
+}
+
+/* 가운데 박스 */
+.swap-box-center {
+  left: calc(822 * var(--s));
+  width: calc(277 * var(--s));
+  height: calc(280 * var(--s));
+}
+
+.swap-box-center .swap-box-white-area {
+  left: calc(28 * var(--s));
+  top: calc(30 * var(--s));
+  width: calc(220 * var(--s));
+  height: calc(210 * var(--s));
+}
+
+.swap-box-center .swap-box-icon-area {
+  left: calc(30 * var(--s));
+  top: calc(30 * var(--s));
+  width: calc(160 * var(--s));
+  height: calc(150 * var(--s));
+}
+
+/* 오른쪽 박스 */
+.swap-box-right {
+  left: calc(1279 * var(--s));
+  width: calc(331 * var(--s));
+  height: calc(280 * var(--s));
+}
+
+.swap-box-right .swap-box-white-area {
+  left: calc(85 * var(--s));
+  top: calc(30 * var(--s));
+  width: calc(220 * var(--s));
+  height: calc(220 * var(--s));
+}
+
+.swap-box-right .swap-box-icon-area {
+  left: calc(29 * var(--s));
+  top: calc(30 * var(--s));
+  width: calc(160 * var(--s));
+  height: calc(150 * var(--s));
+}
+
+/* ============ 선택 완료된 캐릭터/아이콘 ============ */
+
+.swap-selected-player1 {
+  position: absolute;
+  left: calc(400 * var(--s));
+  top: calc(244 * var(--s));
+  width: calc(230 * var(--s));
+  height: calc(520 * var(--s));
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.swap-selected-player2 {
+  position: absolute;
+  left: calc(1290 * var(--s));
+  top: calc(244 * var(--s));
+  width: calc(230 * var(--s));
+  height: calc(520 * var(--s));
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.swap-selected-player1 img,
+.swap-selected-player2 img {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: bottom center;
+}
+
+.swap-selected-arrow {
+  position: absolute;
+  left: calc(812 * var(--s));
+  top: calc(373 * var(--s));
+  width: calc(300 * var(--s));
+  height: calc(300 * var(--s));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.swap-selected-arrow img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* ============ 선택 완료된 캐릭터/아이콘 끝 ============ */
+/* 1. 몽환적이고 두꺼운 빛 애니메이션 정의 */
+@keyframes dream-drop-shadow {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 calc(10 * var(--s)) rgba(135, 206, 250, 0.8))
+      drop-shadow(0 0 calc(25 * var(--s)) rgba(100, 149, 237, 0.5));
+  }
+  50% {
+    filter: drop-shadow(0 0 calc(20 * var(--s)) rgba(135, 206, 250, 1))
+      drop-shadow(0 0 calc(45 * var(--s)) rgba(255, 215, 0, 0.6)); /* 금색 빛이 강해짐 */
+  }
+}
+
+/* 2. 활성화된 룰렛 박스 설정 수정 */
+.swap-box.active {
+  position: relative;
+  z-index: 10;
+  border: none;
+  animation: dream-drop-shadow 2s infinite ease-in-out;
+  transition: transform 0.3s ease;
+  transform: scale(1.08); /* 조금 더 확실하게 강조 */
+}
+
+/* 3. 박스 내부의 프레임 이미지 자체에 효과를 걸어 더 뚜렷하게 */
+.swap-box.active .swap-box-frame {
+  /* 이미지가 있다면 이미지 라인을 따라 빛이 나게 됩니다. */
+  filter: brightness(1.1);
+}
+
+/* 4. 박스 뒤 안개 효과 - 더 넓고 진하게 수정 */
+.swap-box.active::after {
+  content: '';
+  position: absolute;
+  /* 영역을 훨씬 넓게 잡아서 빛이 뒤에서 뿜어져 나오는 느낌 유도 */
+  top: -30%;
+  left: -30%;
+  right: -30%;
+  bottom: -30%;
+  background: radial-gradient(circle, rgba(135, 206, 250, 0.5) 0%, transparent 75%);
+  filter: blur(calc(30 * var(--s)));
+  z-index: -1;
+  animation: pulse 2s infinite;
+  pointer-events: none;
+}
+
+.swap-selected-player1 .char-shadow,
+.swap-selected-player2 .char-shadow {
+    bottom: -2cqh;
+}

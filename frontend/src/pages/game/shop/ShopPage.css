@@ -1,0 +1,290 @@
+.shop-page {
+  position: relative; /* ⭐ 자식 absolute 기준점 */
+  width: 100%;
+  height: 100%;
+  background-image: url('/images/shop/bg-shop.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+/* ==============================  탭 ============================== */
+
+/* 탭 */
+.shop-tabs {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.shop-tabs button {
+  position: absolute;
+  top: 5.83cqh; /* 63px */
+  width: 12.24cqw; /* 235px */
+  height: 7.41cqh; /* 80px */
+  background: none;
+  border: none;
+  cursor: pointer;
+  pointer-events: auto;
+}
+.shop-tabs button:first-child {
+  left: 37.29cqw; /* 716px - 구매탭 */
+}
+
+.shop-tabs button:last-child {
+  left: 50.57cqw; /* 971px - 판매탭 */
+}
+
+.shop-tabs .tab-bg {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.shop-tabs .tab-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 7.81cqw; /* 150px */
+  height: 4.44cqh; /* 48px */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.63cqw; /* 12px */
+}
+
+/* 구매 아이콘 */
+.shop-tabs button:first-child .tab-icon {
+  width: 2.34cqw; /* 45px */
+  height: 3.33cqh; /* 36px */
+}
+
+/* 판매 아이콘 */
+.shop-tabs button:last-child .tab-icon {
+  width: 1.88cqw; /* 36px */
+  height: 3.33cqh; /* 36px */
+}
+
+.shop-tabs .tab-content span {
+  font-size: 1.88cqw; /* 36px */
+}
+
+.shop-tabs button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* 구매 아이콘: 45x36 */
+.tab-icon-buy {
+  width: 2.34cqw;
+  height: 3.33cqh;
+}
+
+/* 판매 아이콘: 36x36 */
+.tab-icon-sell {
+  width: 1.88cqw;
+  height: 3.33cqh;
+}
+
+/* 탭 활성화 비활성화 */
+.shop-tabs button {
+  opacity: 0.5;
+}
+
+.shop-tabs button.active {
+  opacity: 0.9;
+}
+
+/* ============================== 아이템 목록 패널 ============================== */
+
+/* 아이템 패널 컨테이너 */
+.items-panel {
+  position: absolute;
+  left: 20.57cqw; /* 395px */
+  top: 13.24cqh; /* 143px */
+  width: 59.38cqw; /* 1140px */
+  height: 58.15cqh; /* 628px */
+  background-image: url('/images/shop/ui-shop-itempanel.webp');
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  opacity: 0.9;
+}
+
+/* 스크롤 영역 */
+.items-scroll {
+  position: absolute;
+  top: 5.56cqh; /* 60px */
+  left: 3.13cqw; /* 60px */
+  right: 3.13cqw; /* 60px */
+  bottom: 5.56cqh; /* 60px */
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* 스크롤바 스타일 */
+.items-scroll::-webkit-scrollbar {
+  width: 0.42cqw; /* 8px */
+}
+
+.items-scroll::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 0.21cqw;
+}
+
+.items-scroll::-webkit-scrollbar-thumb {
+  background: rgba(52, 196, 211, 0.6); /* nook cyan */
+  border-radius: 0.21cqw;
+}
+
+/* 아이템 그리드 */
+.items-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0 0; /* gap 제거, 마진으로 제어 */
+}
+
+/* 한 줄 (4개 아이템 + 노란선) */
+.item-row {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  gap: 0;
+}
+
+/* 노란 구분선 */
+.item-row-divider {
+  width: 52.08cqw; /* 1000px */
+  height: 0.74cqh; /* 8px */
+  background-color: #f9f0a3; /* soft yellow */
+  margin: 0 auto;
+  margin-top: 1.11cqh; /* 12px */
+  margin-bottom: 3.15cqh; /* 34px */
+}
+
+/* 아이템 카드 */
+.item-card {
+  width: 12.5cqw; /* 240px */
+  height: 22.22cqh; /* 240px */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  border-radius: 2.08cqw; /* 40px */
+}
+
+.item-card:not(.readonly):hover,
+.item-card.selected {
+  background-color: rgba(52, 196, 211); /* nook cyan 40% */
+}
+
+/* 아이템 이미지 영역 */
+.shop-item-image {
+  width: 7.92cqw; /* 152px */
+  height: 14.07cqh; /* 152px */
+  margin-top: 1.85cqh; /* 20px */
+  margin-bottom: 0.74cqh; /* 8px */
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+/* 아이템 텍스트 영역 */
+.item-info {
+  width: 7.81cqw; /* 150px */
+  height: 5.56cqh; /* 60px */
+  display: flex;
+  align-items: center; /* 세로 가운데 */
+  justify-content: center; /* 가로 가운데 */
+  gap: 0.42cqw; /* 8px */
+}
+
+.item-info .bell-icon {
+  width: 1.67cqw; /* 32px */
+  height: 3.24cqh; /* 35px */
+  flex-shrink: 0; /* 추가: 아이콘 크기 유지 */
+  transform: translateY(-0.4cqh); /* 미세 조정 */
+}
+
+.item-price {
+  font-size: 1.88cqw; /* 36px */
+  color: #fdfbf6;
+  line-height: 1; /* 추가: 텍스트 높이 맞춤 */
+  display: flex; /* 추가 */
+  align-items: center; /* 추가 */
+}
+
+/* ============================== 아이템 구매 패널 ============================== */
+/* 구매/판매 패널 */
+.buy-panel {
+  position: absolute;
+  left: 10.1cqw; /* 194px */
+  top: 50.09cqh; /* 541px */
+  width: 80.47cqw; /* 1545px */
+  height: 45.46cqh; /* 491px */
+  background-image: url('/images/shop/ui-shop-buypanel.webp');
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+  z-index: 5;
+}
+
+.buy-panel-text {
+  position: absolute;
+  left: 13.46cqw; /* 220px */
+  bottom: 32.04cqh; /* 400px */
+  font-size: 2.41cqw; /* 52px */
+  color: #594e36;
+}
+
+/* 수량 조절 버튼 */
+.buy-panel .quantity-btn {
+  position: absolute;
+  top: 19cqh; /* (755-541)/1080*100 = 214px */
+  font-size: 3.6cqw; /* 72px */
+  color: #594e36; /* dark brown */
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.buy-panel .quantity-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.buy-panel .quantity-btn.minus {
+  left: 31.9cqw; /* (800-194)/1920*100 = 606px */
+}
+
+.buy-panel .quantity-btn.plus {
+  left: 45.8cqw; /* (1068-194)/1920*100 = 874px */
+}
+
+/* 수량 표시 */
+.buy-panel .quantity-display {
+  position: absolute;
+  left: 35.94cqw; /* (884-194)/1920*100 = 690px → 35.94cqw */
+  top: 19.2cqh; /* (744-541)/1080*100 = 203px → 18.80cqh */
+  width: 7.92cqw; /* 152px */
+  height: 8.33cqh; /* 90px */
+  font-size: 3.75cqw; /* 72px */
+  display: flex;
+  align-items: center; /* 세로 가운데 */
+  justify-content: center; /* 가로 가운데 */
+}
+
+/* 합계 벨 */
+.buy-panel .total-bell {
+  position: absolute;
+  left: 37.4cqw; /* (912-194)/1920*100 = 718px */
+  top: 32.06cqh; /* (898-541)/1080*100 = 357px */
+  font-size: 2.5cqw; /* 48px */
+}
+
+.buy-panel-text .text-small {
+  font-size: 1.88cqw; /* 36px (52px보다 작게) */
+}

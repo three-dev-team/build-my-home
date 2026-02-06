@@ -80,9 +80,6 @@ public class GameWsController {
             case WAITING_MUPANI:
                 mupaniService.onTimeout(roomId, gameState);
                 return;
-            case WAITING_SWAP:
-                swapService.onTimeout(roomId);
-                return;
             case WAITING_START:
                 if (player.getRemainingMoves() > 0) {
                     int remaining = player.getRemainingMoves();
@@ -96,18 +93,34 @@ public class GameWsController {
                     response = defaultGameResponse("EVENT_TIMEOUT", gameState);
                 }
                 break;
+            case WAITING_MACHURILLA:
+                if (player.getUiStep() >= 4) return;
+                machurillaService.applyCardEffect(gameState, player);
+                player.setUiStep(6); // result-3으로 강제 이동
+                response = defaultGameResponse("MACHURILLA_AUTO_SELECT", gameState);
+                break;
             // 기본은 다음 턴으로 넘어감
             default:
                 gameStateService.turnToNextPlayer(roomId);
                 response = defaultGameResponse("EVENT_TIMEOUT", gameState);
                 break;
+
         }
 
         simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
     }
+    private void refreshHouseInfos(GameState gameState) {
+        if (gameState == null || gameState.getPlayers() == null) return;
+
+        for (GamePlayerState p : gameState.getPlayers().values()) {
+            if (p == null) continue;
+            houseService.updateHouseInfo(p); // canUpgradeHouse/nextHouseLevel/requiredResources 최신화
+        }
+    }
 
     // 서버메모리 -> 프론트로 전달하는 공통 응답 DTO 생성하는 메서드
     private GameMessage defaultGameResponse(String type, GameState gameState) {
+        refreshHouseInfos(gameState);
         GameMessage response = new GameMessage();
         response.setType(type);
         response.setCurrentPlayerId(gameState.getCurrentPlayerId());
@@ -157,6 +170,11 @@ public class GameWsController {
         Long roomId = message.getRoomId();
         RoomState room = roomStateService.getRoom(roomId);
 
+        // 모든 플레이어가 준비 완료 상태인지 확인 (카운트다운 중 준비 해제 시 게임 시작 방지)
+        if (!room.isAllReady()) {
+            return; // 준비 안 된 플레이어가 있으면 게임 시작 X
+        }
+
         // DB 상태를 PLAYING으로 변경 (중도 입장 방지)
         roomListService.startGame(roomId);
 
@@ -168,7 +186,23 @@ public class GameWsController {
         gameState.setTotalRounds(room.getTotalRounds());
 
         for (RoomPlayerState player : room.getPlayers().values()) {
-            gameState.addPlayer(new GamePlayerState(player.getMemberId(), player.getNickname(), player.getCharacterId()));
+        // Todo: 테스트용입니다!!! 지울 것!!!!
+            GamePlayerState gps = new GamePlayerState(
+                    player.getMemberId(),
+                    player.getNickname(),
+                    player.getCharacterId()
+            );
+            // 모든 자원 10개씩
+            for (ResourceType t : ResourceType.values()) {
+                gps.getResources().put(t, 10);
+            }
+
+            // 모든 수확물 1개씩
+            for (HarvestType h : HarvestType.values()) {
+                gps.getHarvests().put(h, 10);
+            }
+
+            gameState.addPlayer(gps);
         }
         gameStateService.saveGame(roomId, gameState);
 
@@ -222,10 +256,27 @@ public class GameWsController {
 
                 gameState.setTurnOrder(sortedTurnOrder);
                 gameState.setCurrentPlayerId(sortedTurnOrder.get(0));
-                gameState.setStatus(GameStatus.WAITING_PLAYER_ACTION); // 서버 상태 변경
+//                gameState.setStatus(GameStatus.WAITING_PLAYER_ACTION); // 서버 상태 변경
             }
 
             GameMessage response = defaultGameResponse(allDone ? "ALL_DICE_ROLLED" : "DICE_ROLLED", gameState);
+            simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
+        }
+    }
+
+    @MessageMapping("/games/order-complete")
+    public void orderComplete(GameMessage message) {
+        Long roomId = message.getRoomId();
+        GameState gameState = gameStateService.getGame(roomId);
+        if (gameState == null) return;
+
+        synchronized (gameState) {
+            if (gameState.getStatus() != GameStatus.DETERMINING_ORDER) return;
+            if (gameState.getTurnOrder() == null || gameState.getTurnOrder().isEmpty()) return;
+
+            gameState.setStatus(GameStatus.WAITING_PLAYER_ACTION);
+
+            GameMessage response = defaultGameResponse("ORDER_COMPLETE", gameState);
             simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
         }
     }
@@ -351,18 +402,24 @@ public class GameWsController {
                 mupaniService.startSession(roomId, gameState);
             }
 
-            // SWAP(몽셰르) 세션 시작(2단계 룰렛/5초 자동확정은 서비스에서 처리)
-            if (nextStatus == GameStatus.WAITING_SWAP) {
-                swapService.start(roomId);
-            }
-
-            RewardService.RewardResult reward = rewardService.grantRewardsForStatus(nextStatus, player);
-            Map<ResourceType, Integer> gainedResources = reward.gainedResources();
-            Map<HarvestType, Integer> gainedHarvests = reward.gainedHarvests();
+            rewardService.prepareReward(nextStatus, player);
 
             if (nextStatus == GameStatus.WAITING_SHOP) {
                 shopService.startShopSession(roomId, memberId);
                 System.out.println("🏪 아이템 상점 세션 생성: memberId=" + memberId);
+            }
+
+            if (nextStatus == GameStatus.WAITING_FISHING) {
+                player.setUiStep(0);
+                player.setActionData(null);
+                player.setActionDataStr(null);
+                fishingService.scheduleWaitingTimeout(roomId, memberId);
+            }
+            // STAMP 진입 시 UI step 초기화 (이전 이벤트 uiStep 잔존 방지)
+            if (nextStatus == GameStatus.WAITING_STAMP) {
+                player.setUiStep(0);
+                player.setActionData(null);
+                player.setActionDataStr(null);
             }
 
             // 도착한 칸이 타임아웃이 설정된 상태라면 스케줄러로 타임아웃 등록
@@ -388,9 +445,6 @@ public class GameWsController {
 
 
             GameMessage response = defaultGameResponse("MOVE_COMPLETE", gameState);
-            // 이번에 얻은 보상을 메시지에 실어 보냄(프론트에서 토스트/연출 가능)
-            response.setGainedResources(gainedResources);
-            response.setGainedHarvests(gainedHarvests);
             simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
         }
     }
@@ -436,7 +490,18 @@ public class GameWsController {
                         player.setUiStep(2);
                         response.setType(canCollectStamp ? "STAMP_ADDED" : "STAMP_DUPLICATE");
                         break;
+                    case "SHOP_INTRO_DONE":
+                        shopService.updateIntroShown(roomId);
+                        response.setType("SHOP_INTRO_DONE");
+                        break;
+                    case "SHOP_TAB_CHANGE":
+                        shopService.updateIntroShown(roomId);
+                        player.setUiStep(message.getUiStep());
+                        response.setType("SHOP_TAB_CHANGED");
+                        break;
                     case "SHOP_SELECT":
+                        shopService.updateIntroShown(roomId);
+                        // relay는 현재 턴 플레이어가 아이템 선택했을 때, 그 정보를 다른 플레이어들에게 전달하는 메시지
                         GameMessage relay = shopService.relayMessage(roomId, memberId, message);
                         response = relay;
                         break;
@@ -461,9 +526,47 @@ public class GameWsController {
                         player.setUiStep(2);
                         response.setType("KK_FEE_PAID");
                         break;
-                    case "SWAP_CONFIRM":
-                        swapService.confirm(roomId, memberId);
-                        return;
+                    case "SWAP_START_PLAYER1_ROULETTE":
+                        swapService.startPlayer1Roulette(roomId, memberId);
+                        response.setType("SWAP_PLAYER1_ROULETTE_STARTED");
+                        break;
+                    case "SWAP_START_PLAYER2_ROULETTE":
+                        swapService.startPlayer2Roulette(roomId, memberId);
+                        response.setType("SWAP_PLAYER2_ROULETTE_STARTED");
+                        break;
+                    case "SWAP_START_ARROW_ROULETTE":
+                        swapService.startArrowRoulette(roomId, memberId);
+                        response.setType("SWAP_ARROW_ROULETTE_STARTED");
+                        break;
+                    case "SWAP_PLAYER1_CONFIRM":
+                        swapService.confirmPlayer1(roomId, memberId, message.getPlayer1Id());
+                        response.setType("SWAP_PLAYER1_CONFIRMED");
+                        break;
+                    case "SWAP_PLAYER2_CONFIRM":
+                        swapService.confirmPlayer2(roomId, memberId, message.getPlayer2Id());
+                        response.setType("SWAP_PLAYER2_CONFIRMED");
+                        break;
+                    case "SWAP_ARROW_CONFIRM":
+                        swapService.confirmArrow(roomId, memberId, message.getCategory(), message.getDirection());
+                        response.setType("SWAP_ARROW_CONFIRMED");
+                        break;
+                    case "REWARD_CONFIRM": {
+                        if (gameState.getStatus() == GameStatus.WAITING_RESOURCES
+                                || gameState.getStatus() == GameStatus.WAITING_HARVEST) {
+                            player.setUiStep(1);
+                            response.setType("REWARD_CONFIRMED");
+                        }
+                        break;
+                    }
+                    case "REWARD_NEXT": {
+                        if (gameState.getStatus() == GameStatus.WAITING_RESOURCES
+                                || gameState.getStatus() == GameStatus.WAITING_HARVEST) {
+                            player.setUiStep(1);
+                            response.setType("REWARD_NEXT");
+                        }
+                        break;
+                    }
+
                     case "BUILD_HOUSE":
                         player.setUiStep(0);
                         houseService.updateHouseInfo(player);
@@ -475,11 +578,24 @@ public class GameWsController {
                         player.setUiStep(4);
                         response.setType("HOUSE_UPGRADED");
                         break;
+                    case "OPEN_RADISH_SELL":
+                        gameState.setStatus(GameStatus.WAITING_RADISH_SELL);
+                        player.setUiStep(0);
+                        player.setActionData(0);
+                        response.setType("RADISH_SELL_OPENED");
+                        break;
                     case "RADISH_SELL": {
+                        if (gameState.getStatus() != GameStatus.WAITING_RADISH_SELL) {
+                            response.setType("RADISH_SELL_INVALID_STATUS");
+                            break;
+                        }
                         int qty = Math.max(1, message.getQuantity());
                         MupaniService.TradeResult tr = mupaniService.sell(gameState, memberId, qty);
                         applyTradeResult(response, memberId, tr);
-
+                        if ("RADISH_SOLD".equals(tr.type())) {
+                            player.setUiStep(2);
+                            response.setUiStep(2);
+                        }
                         response.setPlayers(new ArrayList<>(gameState.getPlayers().values()));
                         break;
                     }
@@ -487,32 +603,27 @@ public class GameWsController {
                         int qty = Math.max(1, message.getQuantity());
                         MupaniService.MupaniActionResult ar = mupaniService.buy(roomId, gameState, memberId, qty);
                         applyTradeResult(response, memberId, ar.trade());
-
-                        if (ar.becameAllDecided()) {
-                            endMupaniAfterSend = true;
-                        }
-
                         response.setPlayers(new ArrayList<>(gameState.getPlayers().values()));
                         break;
                     }
                     case "RADISH_SKIP": {
                         MupaniService.MupaniActionResult ar = mupaniService.skip(roomId, gameState, memberId);
                         applyTradeResult(response, memberId, ar.trade());
-
-                        if (ar.becameAllDecided()) {
-                            endMupaniAfterSend = true;
-                        }
-
                         response.setPlayers(new ArrayList<>(gameState.getPlayers().values()));
                         break;
                     }
                     case "OPEN_ATM":
-                        gameState.setStatus(GameStatus.WAITING_ATM);
                         response.setType("ATM_OPENED");
+                        response.setMemberId(memberId);
+                        break;
+                    case "CLOSE_ATM":
+                        response.setType("ATM_CLOSED");
+                        response.setMemberId(memberId);
                         break;
                     case "CLOSE_ACTION":
                         gameState.clearCurrentTimeout();
                         player.setUiStep(0); // UI 스텝 초기화
+                        player.setActionDataStr(null); // 이전 이벤트 연출 데이터 정리(잔상 방지)
                         gameState.setStatus(GameStatus.WAITING_PLAYER_ACTION);
                         response.setType("ACTION_CLOSED");
                         break;
@@ -522,49 +633,61 @@ public class GameWsController {
                         break;
                     case "START_STAMP_EXCHANGE":
                         int reward = stampService.exchangeStamps(player);
-                        player.setUiStep(1);
+                        player.setUiStep(2);
                         player.setActionData(reward);
                         response.setType("START_STAMP_EXCHANGED");
                         break;
                     case "START_STAMP_SKIP":
-                        player.setUiStep(2);
+                        player.setUiStep(3);
                         response.setType("START_STAMP_SKIPPED");
                         break;
                     case "MACHURILLA_SELECT":
                         machurillaService.applyCardEffect(gameState, player);
-                        player.setUiStep(1);
+                        player.setUiStep(3);
                         response.setType("MACHURILLA_SELECTED");
                         break;
-                    case "GET_RANDOM_ITEM":
+                    case "OPEN_INVENTORY":
+                        response.setType("INVENTORY_OPENED");
+                        response.setMemberId(memberId);
+                        break;
+                    case "CLOSE_INVENTORY":
+                        response.setType("INVENTORY_CLOSED");
+                        response.setMemberId(memberId);
+                        break;
+                    case "GET_RANDOM_ITEM": {
                         ItemType item = itemService.getRandomItem(player);
                         player.setActionDataStr(item.name());
-
-                        if (player.getItems().size() < 3) {
+                        gameState.setStatus(GameStatus.WAITING_ITEMS);
+                        boolean invFull = player.getItems() != null && player.getItems().size() >= 3;
+                        if (!invFull) {
                             itemService.addItem(player, item);
-                            player.setUiStep(2);  // GetScreen
+                            player.setUiStep(3);
                         } else {
-                            player.setUiStep(1);  // SelectScreen
+                            player.setUiStep(1);
                         }
                         response.setType("RANDOM_ITEM_SELECTED");
                         break;
-                    case "HANDLE_INVENTORY_FULL":
+                    }
+                    case "HANDLE_INVENTORY_FULL": {
                         int selectedIdx = message.getActionData();
+                        boolean invFull = player.getItems() != null && player.getItems().size() >= 3;
+                        if (!invFull) return;
                         if (selectedIdx < 3) {
-                            // 기존 아이템 버리고 새 아이템 받기
                             ItemType dropItem = player.getItems().get(selectedIdx);
                             ItemType newItem = ItemType.valueOf(player.getActionDataStr());
                             itemService.swapItem(player, dropItem, newItem);
-                            player.setUiStep(2); // GetScreen
                         } else {
-                            // selectedIdx == 3이면 새 아이템 포기 (아무것도 안 함)
-                            player.setUiStep(3);  // CompleteScreen
+                            player.setActionDataStr(null);
                         }
+                        player.setUiStep(3);
                         response.setType("INVENTORY_HANDLED");
                         break;
-                    case "SELECT_ITEM_TO_DROP":
-                        player.setActionData(message.getActionData());  // 선택한 인덱스 저장
+                    }
+                    case "SELECT_ITEM_TO_DROP": {
+                        player.setActionData(message.getActionData());
                         response.setType("ITEM_DROP_SELECTED");
                         break;
+                    }
                     case "OPEN_ITEM_INVENTORY":
                         gameState.setStatus(GameStatus.WAITING_USING_ITEM);
                         response.setType("ITEM_INVENTORY_OPENED");
@@ -601,13 +724,14 @@ public class GameWsController {
                         break;
                 }
 
-                response.setStatus(gameState.getStatus().name());
-                simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
-                // 무파니 전원 결정 완료면 응답 전송 후 즉시 턴 종료(TURN_COMPLETED 브로드캐스트)
-                if (endMupaniAfterSend) {
-                    mupaniService.endTurnNow(roomId, gameState);
-                    return;
+                // 상점 상태 인트로 관련 내용
+                if (gameState.getStatus() == GameStatus.WAITING_SHOP) {
+                    response.setShopSession(gameState.getShopSession());
                 }
+
+                response.setStatus(gameState.getStatus().name());
+                response.setPlayers(new ArrayList<>(gameState.getPlayers().values()));
+                simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
             } catch (Exception e) {
                 // 에러 발생 시 에러 메시지 전송
                 GameMessage errorResponse = defaultGameResponse("ACTION_ERROR", gameState);
@@ -645,6 +769,7 @@ public class GameWsController {
             // 2. 건강운 상승(Extra Dice) 체크
             if (player.isExtraDice()) {
                 player.setExtraDice(false); // 플래그 소모
+                player.clearTurnData();
                 gameState.setStatus(GameStatus.WAITING_DICE); // 상태를 다시 주사위 대기로
 
                 GameMessage response = defaultGameResponse("EXTRA_DICE_START", gameState);
@@ -680,14 +805,37 @@ public class GameWsController {
         Long actorId = parseActorIdSafely(principal);
         if (actorId == null) return;
         if (req == null || req.getRoomId() == null) return;
+        Long roomId = req.getRoomId();
+        GameState gameState = gameStateService.getGame(roomId);
+        if (gameState == null) return;
+        boolean useBait;
+        String ht;
+        synchronized (gameState) {
+            if (gameState.getStatus() != GameStatus.WAITING_FISHING) return;
+            if (!actorId.equals(gameState.getCurrentPlayerId())) return;
+            if (gameState.getPlayers().get(actorId) == null) return;
 
-        String ht = req.getHarvestType();
-        if (ht == null || ht.isBlank()) {
-            fishingService.startFishing(req.getRoomId(), actorId);
-            return;
+            useBait = Boolean.TRUE.equals(req.getUseBait());
+            ht = req.getHarvestType();
         }
-
-        fishingService.startFishing(req.getRoomId(), actorId, ht);
+        if (ht == null || ht.isBlank()) {
+            fishingService.startFishing(roomId, actorId, useBait);
+        } else {
+            fishingService.startFishing(roomId, actorId, ht);
+        }
+        GameMessage stepResponse = null;
+        synchronized (gameState) {
+            if (gameState.getStatus() == GameStatus.FISHING_IN_PROGRESS) {
+                GamePlayerState player = gameState.getPlayers().get(actorId);
+                if (player != null) {
+                    player.setUiStep(2);
+                    stepResponse = defaultGameResponse("FISHING_STEP_CHANGED", gameState);
+                }
+            }
+        }
+        if (stepResponse != null) {
+            simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, stepResponse);
+        }
     }
 
     // fishing : /app/games/fishing/action
@@ -696,7 +844,6 @@ public class GameWsController {
         Long actorId = parseActorIdSafely(principal);
         if (actorId == null) return;
         if (req == null || req.getRoomId() == null || req.getAction() == null) return;
-
         fishingService.handleAction(req.getRoomId(), actorId, req.getAction());
     }
 

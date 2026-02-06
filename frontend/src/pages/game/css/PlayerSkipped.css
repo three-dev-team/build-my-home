@@ -1,0 +1,145 @@
+/*.player-skipped-container {*/
+/*    width: 100%;*/
+/*    height: 100vh;*/
+/*    position: relative;*/
+/*    overflow: hidden;*/
+/*    background-image: url("/images/bg-rolldice.jpg");*/
+/*    background-size: cover;*/
+/*    background-position: center;*/
+/*    background-repeat: no-repeat;*/
+/*    display: flex;*/
+/*    flex-direction: column;*/
+/*    align-items: center;*/
+/*    justify-content: center;*/
+/*}*/
+
+/*!* 상단 메시지 *!*/
+/*.top-message {*/
+/*    position: absolute;*/
+/*    top: 5vh;*/
+/*    left: 50%;*/
+/*    transform: translateX(-50%);*/
+/*    background: rgba(0, 0, 0, 0.6);*/
+/*    color: white;*/
+/*    padding: 1vh 3vw;*/
+/*    border-radius: 2rem;*/
+/*    font-family: var(--font-gosanja);*/
+/*    font-size: 1.2rem;*/
+/*    font-weight: bold;*/
+/*    white-space: nowrap;*/
+/*    z-index: 10;*/
+/*}*/
+
+/*!* 캐릭터 영역 *!*/
+/*.skipped-character-area {*/
+/*    position: absolute;*/
+/*    bottom: 20vh;*/
+/*    left: 50%;*/
+/*    transform: translateX(-50%);*/
+/*    width: 15vw;*/
+/*    height: 45vh;*/
+/*    display: flex;*/
+/*    flex-direction: column;*/
+/*    align-items: center;*/
+/*    justify-content: flex-end;*/
+/*}*/
+
+/*.skipped-character {*/
+/*    width: 100%;*/
+/*    height: 100%;*/
+/*    object-fit: contain;*/
+/*    object-position: bottom;*/
+/*    filter: grayscale(20%);*/
+/*}*/
+
+/*.skipped-character-shadow {*/
+/*    width: 80%;*/
+/*    height: 1.85vh;*/
+/*    background: rgba(0, 0, 0, 0.3);*/
+/*    border-radius: 50%;*/
+/*    position: absolute;*/
+/*    top: 85%;*/
+/*    left: 50%;*/
+/*    transform: translateX(-50%);*/
+/*    z-index: -1;*/
+/*    filter: blur(0.28vh);*/
+/*}*/
+
+/*@keyframes float {*/
+/*    0%, 100% {*/
+/*        transform: translateX(-50%) translateY(0);*/
+/*    }*/
+/*    50% {*/
+/*        transform: translateX(-50%) translateY(-2vh);*/
+/*    }*/
+/*}*/
+
+.player-skipped-container {
+    width: 100cqw;
+    height: 100cqh;
+    position: relative;
+    overflow: hidden;
+    background-image: url("/images/bg-rolldice.jpg");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+/* 상단 메시지 */
+.top-message {
+    position: absolute;
+    top: 5cqh;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    padding: 1cqh 3cqw;
+    border-radius: 2cqw;
+    font-family: var(--font-gosanja);
+    font-size: 1.5cqw;
+    font-weight: bold;
+    white-space: nowrap;
+    z-index: 10;
+}
+
+/* 캐릭터 영역 */
+.skipped-character-area {
+    position: absolute;
+    bottom: 20cqh;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 15cqw;
+    height: 45cqh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.skipped-character {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: bottom;
+    filter: grayscale(20%);
+}
+
+.skipped-character-area .char-shadow {
+    bottom: -2cqh;
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateX(-50%) translateY(0);
+    }
+    50% {
+        transform: translateX(-50%) translateY(-2cqh);
+    }
+}

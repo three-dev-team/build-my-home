@@ -1,50 +1,46 @@
-import React from 'react';
 import Dice3D from '../../components/dice/Dice3D.jsx';
+import InstructionText from '../../components/common/InstructionText.jsx';
+import './css/RollDicePage.css';
+import { CHARACTERS } from '../../constants/characters.js';
+import Shadow from '../../components/common/Shadow.jsx'
+import useSpaceKey from '../../hooks/useSpaceKey.js';
 
 const RollDicePage = ({ currentPlayer, isMyTurn, diceValue, isRolling, onRollComplete, onAnimationEnd }) => {
   // 스페이스바 핸들러
-  const handleKeyDown = (e) => {
-    if (e.code === 'Space' && isMyTurn && !isRolling) {
-      onRollComplete();
-    }
-  };
+  useSpaceKey(() => onRollComplete(), { enabled: isMyTurn && !isRolling });
 
-  React.useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isMyTurn, isRolling]);
+  const CHARACTER_IMG = CHARACTERS.reduce((acc, char) => {
+    acc[Number(char.id)] = char.selectBasicImage;
+    return acc;
+  }, {});
+
+  const charImg = currentPlayer?.characterId ? CHARACTER_IMG[currentPlayer.characterId] : null;
 
   return (
-    <div className="fixed inset-0 w-screen h-screen flex flex-col items-center justify-center bg-gray-100">
+    <div className="roll-dice-container">
       {/* 주사위 영역 */}
-      <div className="w-64 h-48 flex items-center justify-center mb-8">
+      <div className="dice-area">
         {isRolling && diceValue ? (
           <Dice3D value={diceValue} onAnimationEnd={onAnimationEnd} />
         ) : (
-          <img src="/images/dice/dice-idle.png" alt="주사위" className="w-32 h-32 object-contain" />
+          <img src="" alt="" />
         )}
       </div>
 
       {/* 사용자 캐릭터 + 안내 문구 */}
-      <div className="w-64 h-64 bg-[#6b8e5e] flex flex-col items-center justify-center text-white rounded-2xl">
-        <div className="flex-1 flex items-center justify-center">
-          <img
-            src={`/assets/characters/char_${currentPlayer?.characterId}.png`}
-            alt={currentPlayer?.nickname}
-            className="w-24 h-24 object-contain"
-          />
-        </div>
-
-        <div className="pb-4 text-sm text-center">
-          {isRolling ? (
-            <span>{diceValue}칸 이동!</span>
-          ) : isMyTurn ? (
-            <span>스페이스바를 눌러 주사위를 굴리세요</span>
-          ) : (
-            <span>{currentPlayer?.nickname}의 차례입니다...</span>
-          )}
-        </div>
+      <div className="character-area">
+        <Shadow fill={true}>
+          <img src={charImg} alt={currentPlayer?.nickname} className="current-character" />
+        </Shadow>
       </div>
+
+      <InstructionText>
+        {isRolling
+          ? ``
+          : isMyTurn
+            ? '스페이스바를 눌러 주사위를 굴리기'
+            : `${currentPlayer?.nickname}이 주사위를 굴리고 있어요`}
+      </InstructionText>
     </div>
   );
 };

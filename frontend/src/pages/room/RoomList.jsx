@@ -2,8 +2,12 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Client } from '@stomp/stompjs';
+import TopButtons from '../../components/common/TopButtons';
+import HomeButton from '../../components/common/HomeButton';
+import AspectLayout from '../../components/layout/AspectLayout';
 
 import { CHARACTERS } from '../../constants/characters.js';
+import { COLORS } from '../../constants/colors.js';
 
 const API_BASE = ''; // Vite proxy 쓰면 "" 유지
 
@@ -12,34 +16,10 @@ const WS_TOPIC_ROOMS = '/topic/roomlist/rooms';
 
 const CHARACTER_BY_ID = new Map(CHARACTERS.map((c) => [Number(c.id), c]));
 
-// ✅ 너가 원한 "캐릭터 선택 → 동물 이모지" 매핑
-const EMOJI_BY_CHARACTER_ID = {
-  1: '🐹', // 애플
-  2: '🐱', // 빙티
-  3: '🐻', // 메이플
-  4: '🐰', // 미첼
-};
-
-// 공통 톤(동숲 느낌)
-const TONE = {
-  brownText: 'text-[#4b3a2e]',
-  brownText2: 'text-[#6a5342]',
-  label: 'text-[#7a5c44]',
-  cardBg: 'bg-[#f7f0e4]',
-  innerBg: 'bg-[#fff8ea]',
-  border: 'border-[#d6b98a]',
-  borderSoft: 'border-[#ead7b8]',
-  chipBg: 'bg-[#efe2c8]',
-  greenBtn: 'bg-[#7bb46b] hover:bg-[#6aa65a] border-[#5a8f4e]',
-};
-
 export default function RoomList() {
   const navigate = useNavigate();
 
-  const [menuOpen, setMenuOpen] = useState(false);
   const [createOpen, setCreateOpen] = useState(false);
-
-  // ✅ 입장 모달
   const [joinOpen, setJoinOpen] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState(null);
 
@@ -47,24 +27,20 @@ export default function RoomList() {
   const [loading, setLoading] = useState(false);
   const [keyword, setKeyword] = useState(''); // 검색어 상태
 
-  // ✅ 검색 모달
   const [searchOpen, setSearchOpen] = useState(false);
-
-  // ✅ 전환(입장/생성) 로딩 오버레이
+  const [inviteCodeOpen, setInviteCodeOpen] = useState(false); // 초대코드 입력 모달
   const [transitioning, setTransitioning] = useState(false);
 
   const [toast, setToast] = useState(null);
   const toastTimerRef = useRef(null);
 
   const stompRef = useRef(null);
-
-  // ✅ create 요청 식별자(ROOM_CREATED 이벤트 매칭용)
   const pendingCreateIdRef = useRef(null);
   const transitionTimerRef = useRef(null);
 
-  // ✅ 리스트에서 "참여 주민 이모지" 보여주기 위해, roomId -> players[] 캐시
   const [roomPlayersMap, setRoomPlayersMap] = useState({});
   const roomPlayersMapRef = useRef({});
+
   useEffect(() => {
     roomPlayersMapRef.current = roomPlayersMap;
   }, [roomPlayersMap]);
@@ -78,8 +54,6 @@ export default function RoomList() {
   const startTransition = () => {
     setTransitioning(true);
     if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
-
-    // 안전장치: 이벤트 못 받아도 6초 지나면 로딩 해제
     transitionTimerRef.current = setTimeout(() => {
       setTransitioning(false);
       pendingCreateIdRef.current = null;
@@ -115,9 +89,7 @@ export default function RoomList() {
       : { 'Content-Type': 'application/json' };
   };
 
-  // ✅ REST: @RequestMapping("/api/roomlists") 고정이므로 여기 경로도 맞춤
   const refreshRooms = async (searchKeyword) => {
-    // 인자로 넘어온 값이 문자열이면 우선 사용, 없으면 state의 keyword 사용
     const finalKeyword = typeof searchKeyword === 'string' ? searchKeyword : keyword;
 
     setLoading(true);
@@ -142,24 +114,18 @@ export default function RoomList() {
 
   useEffect(() => {
     refreshRooms('');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ✅ 방별 players 프리패치(리스트에서 참여 주민 이모지 표시용)
   useEffect(() => {
     if (!rooms || rooms.length === 0) return;
-
     const currentMap = roomPlayersMapRef.current;
     const ids = rooms.map((r) => r?.id).filter(Boolean);
-
-    // 이미 캐시된 건 제외
     const missing = ids.filter((id) => currentMap[id] === undefined);
     if (missing.length === 0) return;
 
     const ac = new AbortController();
 
     const fetchRoomPlayers = async (roomId) => {
-      // /players 엔드포인트가 인증 필요한 경우가 많아서 Authorization 붙임
       const res = await fetch(`${API_BASE}/api/rooms/${roomId}/players`, {
         method: 'GET',
         headers: authHeaders(),
@@ -172,7 +138,6 @@ export default function RoomList() {
 
     (async () => {
       const results = await Promise.allSettled(missing.map(async (id) => [id, await fetchRoomPlayers(id)]));
-
       if (ac.signal.aborted) return;
 
       setRoomPlayersMap((prev) => {
@@ -188,10 +153,8 @@ export default function RoomList() {
     })();
 
     return () => ac.abort();
-    // rooms가 바뀔 때만 (WS 스냅샷도 rooms 바꾸니 자동 대응)
   }, [rooms]);
 
-  // WS 연결: RoomsSnapshot / Error / RoomCreatedEvent 받기
   useEffect(() => {
     const token = sessionStorage.getItem('token');
     const wsProto = window.location.protocol === 'https:' ? 'wss' : 'ws';
@@ -208,27 +171,22 @@ export default function RoomList() {
       client.subscribe(WS_TOPIC_ROOMS, (message) => {
         try {
           const payload = JSON.parse(message.body);
-
-          // ✅ 섬 목록 스냅샷
           if (payload?.type === 'ROOMS_SNAPSHOT') {
             const list = Array.isArray(payload.rooms) ? payload.rooms : [];
             setRooms(list.map(normalizeRoom));
             return;
           }
-
-          // ✅ 섬 생성 완료 이벤트(요청한 사람만 clientRequestId로 매칭)
           if (payload?.type === 'ROOM_CREATED') {
             const reqId = pendingCreateIdRef.current;
             if (reqId && payload?.clientRequestId === reqId && payload?.roomId) {
               pendingCreateIdRef.current = null;
               endTransition();
               setCreateOpen(false);
+              sessionStorage.setItem('joinedRoom', String(payload.roomId));
               navigate(`/rooms/${payload.roomId}/select`);
             }
             return;
           }
-
-          // ✅ 에러
           if (payload?.type === 'ERROR') {
             endTransition();
             pendingCreateIdRef.current = null;
@@ -256,11 +214,9 @@ export default function RoomList() {
         // ignore
       }
       stompRef.current = null;
-
       if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
       if (transitionTimerRef.current) clearTimeout(transitionTimerRef.current);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [navigate]);
 
   const publish = (destination, bodyObj) => {
@@ -281,29 +237,72 @@ export default function RoomList() {
       const aj = a.joinable ? 0 : 1;
       const bj = b.joinable ? 0 : 1;
       if (aj !== bj) return aj - bj;
-
       const af = a.currentPlayers >= a.maxPlayers ? 1 : 0;
       const bf = b.currentPlayers >= b.maxPlayers ? 1 : 0;
       if (af !== bf) return af - bf;
-
       const at = a.createdAt ? new Date(a.createdAt).getTime() : a.id;
       const bt = b.createdAt ? new Date(b.createdAt).getTime() : b.id;
       return bt - at;
     });
   }, [rooms]);
 
-  const openJoinModal = (room) => {
+  // 초대코드로 방 입장 처리
+  const handleInviteCode = async (code) => {
+    const token = sessionStorage.getItem('token');
+    if (!token) {
+      showToast('로그인이 필요해.');
+      return;
+    }
+    try {
+      const res = await fetch(`${API_BASE}/api/rooms/invite/${code}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        if (res.status === 404) {
+          showToast('유효하지 않은 초대코드야.');
+        } else {
+          showToast('방 정보를 불러올 수 없어.');
+        }
+        return;
+      }
+      const room = await res.json();
+      if (room.status !== 'WAITING') {
+        showToast('이미 게임이 시작된 섬이야.');
+        return;
+      }
+      setInviteCodeOpen(false);
+      sessionStorage.setItem('joinedRoom', String(room.id));
+      navigate(`/rooms/${room.id}/select`);
+    } catch (err) {
+      console.error('초대코드 처리 에러:', err);
+      showToast('초대코드 처리 중 오류가 발생했어.');
+    }
+  };
+
+  const openJoinModal = async (room) => {
     const isFull = room.currentPlayers >= room.maxPlayers;
     if (isFull || !room.joinable) return;
+
+    // 모달 열기 전 최신 플레이어 목록 재조회
+    try {
+      const res = await fetch(`${API_BASE}/api/rooms/${room.id}/players`, {
+        method: 'GET',
+        headers: authHeaders(),
+      });
+      if (res.ok) {
+        const players = await res.json();
+        setRoomPlayersMap((prev) => ({ ...prev, [room.id]: Array.isArray(players) ? players : [] }));
+      }
+    } catch (e) {
+      // 조회 실패해도 기존 캐시로 모달 열기
+    }
+
     setSelectedRoom(room);
     setJoinOpen(true);
   };
 
-  // ✅ 입장 모달에서 "참여하기" 눌렀을 때: 로딩 -> join publish -> CharacterSelect로 이동
-  // ✅ 입장 모달에서 "참여하기" 눌렀을 때: 로딩 -> join publish -> CharacterSelect로 이동
   const confirmJoin = async (password) => {
     if (!selectedRoom) return;
-
     const isFull = selectedRoom.currentPlayers >= selectedRoom.maxPlayers;
     if (isFull || !selectedRoom.joinable) {
       showToast('입장할 수 없는 섬이야.');
@@ -313,7 +312,6 @@ export default function RoomList() {
 
     startTransition();
 
-    // ✅ 비밀방이면 REST API로 비밀번호 검증 먼저 수행 (틀리면 이동 방지)
     if (selectedRoom.isPrivate) {
       try {
         const res = await fetch(`${API_BASE}/api/roomlists/rooms/${selectedRoom.id}/verify`, {
@@ -341,446 +339,894 @@ export default function RoomList() {
     }
 
     setJoinOpen(false);
+    sessionStorage.setItem('joinedRoom', String(selectedRoom.id));
     navigate(`/rooms/${selectedRoom.id}/select`);
   };
 
+  // 상단 우측 아이콘 박스 스타일 - 80px = 4.17cqw, 3px = 0.16cqw
+  const iconBtnStyle =
+    'w-[4.17cqw] h-[4.17cqw] bg-white rounded-full flex items-center justify-center shadow-lg hover:scale-105 transition-transform cursor-pointer border-[0.16cqw] border-white';
+
   return (
-    <div className="relative w-full min-h-screen overflow-hidden">
-      {/* 배경(동숲 느낌: 하늘 -> 잔디 + 구름 블랍) */}
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,#bfe8ff_0%,#e8f7ff_24%,#dff6d8_55%,#bfe9b6_100%)]" />
-      <div className="absolute -top-24 -left-24 w-[520px] h-[320px] rounded-[999px] bg-white/55 blur-2xl" />
-      <div className="absolute top-10 right-[-140px] w-[560px] h-[340px] rounded-[999px] bg-white/50 blur-2xl" />
-      <div className="absolute bottom-[-120px] left-1/2 -translate-x-1/2 w-[820px] h-[420px] rounded-[999px] bg-white/20 blur-3xl" />
-      <div className="absolute bottom-[-140px] -right-28 w-[520px] h-[520px] rounded-full bg-[#7bb46b]/25 blur-3xl" />
-
-      {/* ✅ 전환 로딩 오버레이 */}
-      {transitioning && (
-        <div className="fixed inset-0 z-[9999] bg-black/35 flex items-center justify-center">
-          <div
-            className={[
-              'px-6 py-5 flex items-center gap-3',
-              TONE.cardBg,
-              'border-[3px] rounded-[22px] shadow-2xl',
-              TONE.border,
-            ].join(' ')}
-          >
-            <div className="w-5 h-5 rounded-full border-2 border-[#d6b98a] border-t-[#7bb46b] animate-spin" />
-            <div className={`font-black ${TONE.brownText}`}>이동 중...</div>
-          </div>
+    <AspectLayout>
+      <div className="relative w-full h-full overflow-hidden bg-[url('/images/bg-roomlist.jpg')] bg-cover bg-center font-gosanja flex items-center justify-center">
+        {/* 1. 상단 아이콘 및 프로필 영역 - 40px = 2.08cqw, 3.7cqh */}
+        <div className="absolute top-[3.7cqh] left-[2.08cqw] z-50">
+          <HomeButton iconColor={COLORS.roomList.textMain} bgColor="white" />
         </div>
-      )}
 
-      {/* 토스트 */}
-      {toast && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50">
-          <div
-            className={[
-              'px-5 py-3 rounded-full font-black shadow-lg',
-              TONE.cardBg,
-              'border-2',
-              TONE.border,
-              TONE.brownText,
-            ].join(' ')}
-          >
-            🍃 {toast}
-          </div>
+        <div className="absolute top-[3.7cqh] right-[2.08cqw] z-50">
+          <TopButtons
+            nickname={sessionStorage.getItem('nickname') || '주민'}
+            profileImage={sessionStorage.getItem('profileImage')}
+            onProfileClick={() => navigate('/mypage')}
+            onConfigClick={() => navigate('/config')}
+            colors={{
+              text: COLORS.roomList.textMain,
+              iconBg: 'white',
+              badgeBg: COLORS.roomList.btnMain,
+              badgeText: 'white',
+              dropdownBorder: COLORS.roomList.border, // #B39DDB
+              dropdownHoverBg: COLORS.roomList.bgMain, // #EAD8F9
+              dropdownText: COLORS.roomList.textMain, // #6A4F9C
+            }}
+          />
         </div>
-      )}
 
-      {/* 상단 아이콘 영역 */}
-      <div className="absolute top-6 left-0 right-0 px-8 z-20 flex items-start justify-between">
-        {/* 1. 좌측 홈 버튼 (복구) */}
-        <button className="group flex flex-col items-center gap-1" onClick={() => navigate('/home')} title="홈">
-          <div
-            className={[
-              'w-12 h-12 rounded-full flex items-center justify-center',
-              TONE.cardBg,
-              'border-[3px] shadow-[0_10px_24px_rgba(0,0,0,0.12)]',
-              TONE.border,
-              'group-hover:brightness-[0.98] transition',
-            ].join(' ')}
-          >
-            <span className="text-xl">🏠</span>
-          </div>
-          <div className={`text-xs font-extrabold ${TONE.brownText2}`}>홈</div>
-        </button>
+        <div className="relative w-[66.67cqw] flex flex-col items-center overflow-visible mt-[3.7cqh]">
+          {/* [상단 섹션] 헤더 (Title & Meta) - 60px = 3.13cqw, 56px = 5.19cqh, 16px = 1.48cqh */}
+          <div className="w-full flex flex-col items-center shrink-0 relative z-10">
+            <h1
+              className="text-[3.13cqw] font-black leading-none mb-[5.19cqh]"
+              style={{ color: COLORS.roomList.textMain }}
+            >
+              발견한 <span style={{ color: COLORS.roomList.textHighlight }}>섬</span> 리스트
+            </h1>
 
-        {/* 2. 상단 우측 메뉴 (유저, 알람 - Home 스타일 유지) */}
-        <div className="flex gap-4 md:gap-8 items-start">
-          {/* 유저(마이페이지) 버튼 */}
-          <button
-            onClick={() => navigate('/mypage')}
-            className="flex flex-col items-center gap-2 group"
-            title="마이페이지"
-          >
-            <div className="w-12 h-12 md:w-16 md:h-16 bg-[#efe7d1] border-[4px] border-[#a67c52] rounded-full flex items-center justify-center shadow-md group-hover:scale-110 transition-transform overflow-hidden relative">
-              <img src="/images/villager_avatar.png" alt="유저 아바타" className="w-full h-full object-cover" />
-            </div>
-            <span className="text-[10px] md:text-sm font-black text-[#8b5a2b] bg-white/90 px-3 py-0.5 rounded-full shadow-sm">
-              마이페이지
-            </span>
-          </button>
-
-          {/* 알람 버튼 */}
-          <button className="flex flex-col items-center gap-2 group" title="알림">
-            <div className="w-12 h-12 md:w-16 md:h-16 bg-[#efe7d1] border-[4px] border-[#a67c52] rounded-full flex items-center justify-center text-2xl md:text-3xl shadow-md group-hover:scale-110 transition-transform">
-              🔔
-            </div>
-            <span className="text-[10px] md:text-sm font-black text-[#8b5a2b] bg-white/90 px-3 py-0.5 rounded-full shadow-sm">
-              알림
-            </span>
-          </button>
-        </div>
-      </div>
-
-      {/* 중앙 패널 */}
-      <div className="relative z-10 px-6 pb-10 pt-28">
-        <div className="max-w-5xl mx-auto mt-6 flex justify-center">
-          <div
-            className={[
-              'w-full max-w-4xl rounded-[44px] px-8 py-7',
-              TONE.cardBg,
-              'border-[5px] shadow-[0_30px_80px_rgba(0,0,0,0.18)]',
-              TONE.border,
-            ].join(' ')}
-          >
-            {/* 제목 */}
-            <div className="flex items-center justify-between">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#f2e6cf] border-2 border-[#e2cfae]">
-                <span className="text-xl">🏝️</span>
-                <span className="text-[#5b4636] font-black">발견된 섬 목록</span>
+            <div className="flex justify-between w-full px-[2.08cqw] items-end mb-[1.48cqh]">
+              <div
+                className="flex items-baseline gap-[0.42cqw] text-[1.25cqw] font-bold"
+                style={{ color: COLORS.roomList.textMain }}
+              >
+                총 <span className="text-[1.46cqw]">{rooms.length}</span>개
               </div>
+              <div className="text-[1.25cqw] font-bold" style={{ color: COLORS.roomList.textMain }}>
+                스크롤해서 더보기 ↓
+              </div>
+            </div>
+          </div>
 
-              {/* 검색 및 새로고침 */}
-              <div className="flex items-center gap-2">
-                {/* 검색 버튼 (모달 열기) */}
+          {/* [하단 컨테이너] 리스트 + 푸터 (배경색 적용) - 800px = 74.07cqh, 60px = 3.13cqw */}
+          <div
+            className="w-full h-[74.07cqh] flex flex-col items-center rounded-[3.13cqw] relative overflow-hidden"
+            style={{ backgroundColor: COLORS.roomList.bgMainTransparent }}
+          >
+            {/* [중앙 섹션] 리스트 스크롤 영역 - flex-1, 40px = 2.08cqw */}
+            <div
+              className={`w-full flex-1 overflow-y-auto px-[2.08cqw] scrollbar-hide ${
+                rooms.length === 0 && !loading ? 'flex flex-col items-center justify-center' : ''
+              }`}
+            >
+              {rooms.length === 0 && !loading ? (
+                <div className="flex flex-col items-center opacity-60 mt-[15cqh] pb-[3.7cqh]">
+                  <span className="text-[1.67cqw] font-bold text-[#7B5EA7]">아직 만들어진 섬이 없어!</span>
+                  <span className="text-[1.25cqw] text-[#9B7EC4] mt-[0.19cqh]">직접 새로운 섬을 만들어볼까? 🏝️</span>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center pb-[1.85cqh] pt-[3.7cqh]">
+                  {sortedRooms.map((room) => {
+                    const isFull = room.currentPlayers >= room.maxPlayers;
+                    const disabled = isFull || !room.joinable;
+                    const btnText = room.status === 'PLAYING' ? '마감' : isFull ? '마감' : '입장';
+                    const playersPreview = roomPlayersMap[room.id] || [];
+
+                    return (
+                      <div key={room.id} className="w-full flex flex-col items-center">
+                        {/* 리스트 아이템 - 1200px = 62.5cqw, 92px = 8.52cqh, 40px = 2.08cqw radius, 12px = 1.11cqh margin */}
+                        <div className="w-[62.5cqw] h-[8.52cqh] bg-white rounded-[2.08cqw] flex items-center px-[2.08cqw] shadow-sm relative my-[1.11cqh] shrink-0 hover:scale-[1.01] transition-transform">
+                          {/* [좌측 영역] 잠금 + 제목 - 400px = 20.83cqw, 40px = 2.08cqw, 20px = 1.04cqw gap, 32px = 1.67cqw text, 320px = 16.67cqw max-width */}
+                          <div className="flex items-center gap-[1.04cqw] w-[20.83cqw]">
+                            {room.isPrivate ? (
+                              <div
+                                className="w-[2.08cqw] h-[2.08cqw]"
+                                style={{
+                                  backgroundColor: COLORS.roomList.lock,
+                                  maskImage: `url("/images/roomlist/icon-lock.svg")`,
+                                  WebkitMaskImage: `url("/images/roomlist/icon-lock.svg")`,
+                                  maskSize: 'contain',
+                                  WebkitMaskSize: 'contain',
+                                  maskRepeat: 'no-repeat',
+                                  WebkitMaskRepeat: 'no-repeat',
+                                  maskPosition: 'center',
+                                  WebkitMaskPosition: 'center',
+                                }}
+                              />
+                            ) : (
+                              <div className="w-[2.08cqw] h-[2.08cqw]" />
+                            )}
+                            <span
+                              className="text-[1.67cqw] font-bold truncate max-w-[16.67cqw] pt-[0.09cqh]"
+                              style={{ color: COLORS.roomList.textSub }}
+                            >
+                              {room.title}
+                            </span>
+                          </div>
+
+                          {/* [중앙 영역] 주사위 + 정보 그룹 - 48px = 2.5cqw, 52px = 2.71cqw gap, 24px = 1.25cqw text */}
+                          <div className="absolute left-[50%] -translate-x-1/2 flex items-center gap-[2.71cqw]">
+                            {/* 주사위 */}
+                            <div
+                              className="w-[2.5cqw] h-[2.5cqw] bg-[#8B5E83]"
+                              style={{
+                                maskImage: `url("/images/room-waiting/icon-dice-${room.totalRounds}.png")`,
+                                WebkitMaskImage: `url("/images/room-waiting/icon-dice-${room.totalRounds}.png")`,
+                                maskSize: 'contain',
+                                maskRepeat: 'no-repeat',
+                                maskPosition: 'center',
+                                WebkitMaskRepeat: 'no-repeat',
+                                WebkitMaskPosition: 'center',
+                              }}
+                            />
+                            {/* 방장/인원 정보 - 24px = 1.25cqw, 120px = 6.25cqw max-width */}
+                            <div className="flex flex-col gap-[0.09cqh]">
+                              <div
+                                className="flex items-center gap-[0.42cqw] text-[1.25cqw] font-bold"
+                                style={{ color: '#8B5E83' }}
+                              >
+                                <div
+                                  className="w-[1.25cqw] h-[1.25cqw] bg-[#8B5E83]"
+                                  style={{
+                                    maskImage: `url("/images/roomlist/icon-leaf.webp")`,
+                                    WebkitMaskImage: `url("/images/roomlist/icon-leaf.webp")`,
+                                    maskSize: 'contain',
+                                  }}
+                                />
+                                <span className="truncate max-w-[6.25cqw]">{room.hostNickname}</span>
+                              </div>
+                              <div
+                                className="flex items-center gap-[0.42cqw] text-[1.25cqw] font-bold"
+                                style={{ color: '#8B5E83' }}
+                              >
+                                <div
+                                  className="w-[1.25cqw] h-[1.25cqw] bg-[#8B5E83]"
+                                  style={{
+                                    maskImage: `url("/images/roomlist/icon-people.svg")`,
+                                    WebkitMaskImage: `url("/images/roomlist/icon-people.svg")`,
+                                    maskSize: 'contain',
+                                  }}
+                                />
+                                <span>
+                                  {room.currentPlayers}/{room.maxPlayers}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* [우측 영역] 캐릭터 프리뷰 + 입장 버튼 - 40px = 2.08cqw gap */}
+                          <div className="ml-auto flex items-center gap-[2.08cqw]">
+                            {/* 캐릭터 프리뷰 - 60px = 3.13cqw 슬롯 */}
+                            <RoomCharacterImages players={playersPreview} maxSlots={Math.min(room.maxPlayers, 4)} />
+
+                            {/* 입장 버튼 - 120px = 6.25cqw, 64px = 5.93cqh, 32px = 1.67cqw text/radius */}
+                            <button
+                              onClick={() => openJoinModal(room)}
+                              disabled={disabled}
+                              className={`w-[6.25cqw] h-[5.93cqh] rounded-[1.67cqw] font-black text-[1.67cqw] flex items-center justify-center transition-all active:scale-95 shadow-md ${disabled ? 'cursor-not-allowed opacity-50' : 'hover:brightness-105'}`}
+                              style={{
+                                backgroundColor: disabled ? COLORS.roomList.btnDisabled : COLORS.roomList.btnMain,
+                                color: 'white',
+                              }}
+                            >
+                              {btnText}
+                            </button>
+                          </div>
+                        </div>
+                        {/* 점선 구분선 - 1160px = 60.42cqw, 24px = 2.22cqh, 4px stroke, 12 12 dash */}
+                        <div className="w-[60.42cqw] h-[2.22cqh] opacity-30 flex items-center">
+                          <svg width="100%" height="100%">
+                            <line
+                              x1="2"
+                              y1="3"
+                              x2="100%"
+                              y2="3"
+                              stroke={COLORS.roomList.textMain}
+                              strokeWidth="0.21cqw"
+                              strokeLinecap="round"
+                              strokeDasharray="0.63cqw 0.63cqw"
+                            />
+                          </svg>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* [하단 섹션] 액션 바 (Footer) - 148px = 13.7cqh, 80px = 4.17cqw padding, 10px = 0.93cqh pb */}
+            <div className="w-full h-[13.7cqh] px-[4.17cqw] flex justify-between items-center shrink-0 pb-[0.93cqh]">
+              {/* 좌측: 검색 버튼 + 초대코드 버튼 */}
+              <div className="flex gap-[1.25cqw] flex-1">
                 <button
                   onClick={() => setSearchOpen(true)}
-                  className={[
-                    'w-10 h-10 flex items-center justify-center rounded-full border-2 text-xl shadow-sm transition',
-                    'bg-[#f2e6cf] border-[#e2cfae] hover:scale-105 active:scale-95 text-[#4b3a2e]',
-                    keyword ? 'ring-2 ring-[#7bb46b]' : '', // 검색어 있으면 강조
-                  ].join(' ')}
-                  title="검색"
+                  className="flex flex-col items-center hover:scale-110 transition-transform p-[0.21cqw]"
                 >
-                  🔍
+                  <div
+                    className="w-[2.92cqw] h-[2.92cqw] bg-[#8B5E83]"
+                    style={{
+                      maskImage: `url("/images/roomlist/icon-search.svg")`,
+                      WebkitMaskImage: `url("/images/roomlist/icon-search.svg")`,
+                      maskSize: 'contain',
+                      WebkitMaskSize: 'contain',
+                    }}
+                  />
                 </button>
-
-                {/* 새로고침 */}
                 <button
-                  onClick={() => {
-                    setKeyword('');
-                    refreshRooms('');
-                  }}
-                  disabled={loading}
-                  className="w-10 h-10 flex items-center justify-center rounded-full bg-[#f2e6cf] border-2 border-[#e2cfae] text-xl shadow-sm hover:scale-105 active:scale-95 transition"
-                  title="목록 새로고침"
+                  onClick={() => setInviteCodeOpen(true)}
+                  className="flex flex-col items-center hover:scale-110 transition-transform p-[0.21cqw]"
+                  title="초대코드 입력"
                 >
-                  <span className={loading ? 'animate-spin' : ''}>🔄</span>
+                  <div
+                    className="w-[2.92cqw] h-[2.92cqw] bg-[#8B5E83]"
+                    style={{
+                      maskImage: `url("/images/roomlist/icon-mail.svg")`,
+                      WebkitMaskImage: `url("/images/roomlist/icon-mail.svg")`,
+                      maskSize: 'contain',
+                      WebkitMaskSize: 'contain',
+                    }}
+                  />
                 </button>
               </div>
-            </div>
 
-            {/* 리스트 컨테이너 */}
-            <div className="mt-6">
-              <div
-                className={[
-                  'rounded-[28px] p-4',
-                  TONE.innerBg,
-                  'border-[3px] shadow-[0_18px_40px_rgba(0,0,0,0.10)]',
-                  TONE.borderSoft,
-                ].join(' ')}
-              >
-                <div className="flex items-center justify-between px-2 pb-3">
-                  <div className={`text-sm font-extrabold ${TONE.brownText2}`}>
-                    {loading ? '목록 불러오는 중...' : `총 ${sortedRooms.length}개`}
-                  </div>
-                  <div className={`text-xs font-bold ${TONE.label}`}>스크롤해서 더 보기</div>
-                </div>
-
-                <div className="max-h-[420px] overflow-y-auto pr-1">
-                  <div className="flex flex-col gap-3">
-                    {sortedRooms.map((room) => {
-                      const isFull = room.currentPlayers >= room.maxPlayers;
-                      const disabled = isFull || !room.joinable;
-
-                      const btnText = room.status === 'PLAYING' ? '진행중' : isFull ? '마감' : '입장';
-                      const lockIcon = room.isPrivate ? '🔒' : '🔓'; // (현재 백엔드에 공개/비공개 값이 없어서 UI만 유지) -> 이제 있음
-
-                      const playersPreview = roomPlayersMap[room.id] || [];
-
-                      return (
-                        <div
-                          key={room.id}
-                          className={[
-                            'rounded-[22px] px-4 py-4 flex items-center gap-4',
-                            'border-[3px] shadow-[0_14px_26px_rgba(0,0,0,0.10)]',
-                            disabled
-                              ? 'bg-[#f2e6cf] border-[#e2cfae] opacity-70'
-                              : `${TONE.innerBg} ${TONE.borderSoft}`,
-                          ].join(' ')}
-                        >
-                          {/* 공개/비공개(아이콘만) */}
-                          <div className="w-12 flex flex-col items-center justify-center">
-                            <div className={disabled ? 'text-[#6a5342]/60' : 'text-[#6a5342]'}>{lockIcon}</div>
-                            <div
-                              className={
-                                disabled
-                                  ? 'text-[10px] font-bold text-[#6a5342]/50'
-                                  : 'text-[10px] font-bold text-[#6a5342]/80'
-                              }
-                            >
-                              {room.isPrivate ? '비공개' : '공개'}
-                            </div>
-                          </div>
-
-                          {/* 제목/정보 */}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-3">
-                              <div
-                                className={
-                                  disabled
-                                    ? `font-black ${TONE.brownText} truncate opacity-70`
-                                    : `font-black ${TONE.brownText} truncate`
-                                }
-                              >
-                                {room.title || '이름 없는 섬'}
-                              </div>
-                              <div className={`flex items-center gap-1 text-xs font-extrabold ${TONE.label}`}>
-                                <span>🎲</span>
-                                <span>{room.totalRounds ? `${room.totalRounds}판` : '-'}</span>
-                              </div>
-                            </div>
-
-                            <div className={`mt-1 flex items-center gap-3 text-xs font-extrabold ${TONE.brownText2}`}>
-                              <span>{room.hostNickname ? `섬장 ${room.hostNickname}` : '섬장 -'}</span>
-                              <span className="opacity-60">·</span>
-                              <span>
-                                {room.currentPlayers}/{room.maxPlayers}
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* ✅ 리스트에도 참여 주민 캐릭터(이모지) 표시 */}
-                          <RoomCharacterPreview
-                            players={playersPreview}
-                            maxSlots={Math.min(room.maxPlayers || 0, 4)}
-                            currentPlayers={room.currentPlayers}
-                            disabled={disabled}
-                          />
-
-                          {/* 입장 버튼 */}
-                          <button
-                            disabled={disabled || room.status === 'PLAYING'}
-                            onClick={() => openJoinModal(room)}
-                            className={[
-                              'shrink-0 px-5 py-2 rounded-full font-black',
-                              'border-2 shadow-[0_10px_18px_rgba(0,0,0,0.10)] transition',
-                              disabled || room.status === 'PLAYING'
-                                ? 'bg-[#efe2c8] text-[#6a5342]/60 border-[#e2cfae] cursor-not-allowed'
-                                : 'bg-[#7bb46b] hover:bg-[#6aa65a] text-white border-[#5a8f4e]',
-                            ].join(' ')}
-                            title={disabled ? '입장 불가' : '입장'}
-                          >
-                            {btnText}
-                          </button>
-                        </div>
-                      );
-                    })}
-
-                    {sortedRooms.length === 0 && (
-                      <div className={`text-center ${TONE.brownText2} font-extrabold py-16`}>
-                        아직 발견된 섬이 없어.
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* 하단 버튼 */}
-            <div className="mt-6 flex items-center justify-center">
+              {/* 중앙: 섬 만들기 버튼 */}
               <button
                 onClick={() => setCreateOpen(true)}
-                className={[
-                  'px-10 py-3 rounded-full font-black',
-                  'border-2 shadow-[0_12px_20px_rgba(0,0,0,0.12)] transition',
-                  'bg-[#efe2c8] hover:bg-[#e9d7b5] text-[#4b3a2e] border-[#e2cfae]',
-                ].join(' ')}
+                className="w-[15.63cqw] h-[7.41cqh] rounded-[2.08cqw] text-[1.67cqw] font-black text-white shadow-xl hover:brightness-105 active:scale-95 transition-all"
+                style={{ backgroundColor: COLORS.roomList.btnMain }}
               >
                 섬 만들기
               </button>
+
+              {/* 우측: 새로고침 버튼 */}
+              <div className="flex gap-[1.25cqw] flex-1 justify-end">
+                <button
+                  onClick={() => refreshRooms('')}
+                  className="flex flex-col items-center hover:rotate-180 transition-transform duration-500 p-[0.21cqw]"
+                >
+                  <div
+                    className="w-[2.92cqw] h-[2.92cqw] bg-[#8B5E83]"
+                    style={{
+                      maskImage: `url("/images/roomlist/icon-refresh.svg")`,
+                      WebkitMaskImage: `url("/images/roomlist/icon-refresh.svg")`,
+                      maskSize: 'contain',
+                      WebkitMaskSize: 'contain',
+                    }}
+                  />
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* ✅ 섬 만들기 모달 */}
-      {createOpen && (
-        <CreateIslandModal
-          onClose={() => setCreateOpen(false)}
-          onCreate={(payload) => {
-            const reqId =
-              (typeof crypto !== 'undefined' && crypto.randomUUID && crypto.randomUUID()) ||
-              `${Date.now()}-${Math.random().toString(16).slice(2)}`;
-
-            pendingCreateIdRef.current = reqId;
-
-            startTransition();
-
-            const ok = publish(`${WS_APP_PREFIX}/create`, {
-              ...payload,
-              clientRequestId: reqId,
-            });
-
-            if (!ok) {
-              pendingCreateIdRef.current = null;
-              endTransition();
-              return;
-            }
-
-            setCreateOpen(false);
-          }}
-        />
-      )}
-
-      {/* ✅ 섬 입장 모달 */}
-      {joinOpen && selectedRoom && (
-        <JoinIslandModal
-          room={selectedRoom}
-          initialPlayers={roomPlayersMap[selectedRoom.id] || []}
-          onClose={() => setJoinOpen(false)}
-          onConfirm={confirmJoin}
-          authHeaders={authHeaders}
-        />
-      )}
-
-      {/* ✅ 검색 모달 */}
-      {searchOpen && (
-        <SearchModal
-          initialKeyword={keyword}
-          onClose={() => setSearchOpen(false)}
-          onSearch={(newKeyword) => {
-            setKeyword(newKeyword);
-            setSearchOpen(false);
-            refreshRooms(newKeyword);
-          }}
-        />
-      )}
-    </div>
-  );
-}
-
-/** ✅ 리스트에서 참여 주민 캐릭터(이모지) 미리보기 */
-function RoomCharacterPreview({ players, maxSlots, currentPlayers, disabled }) {
-  const list = Array.isArray(players) ? players : [];
-  const slots = Math.max(0, maxSlots || 0);
-  const filled = list.slice(0, slots);
-
-  if (slots <= 0) return <div className="w-[120px]" />;
-
-  return (
-    <div className="w-[120px] flex items-center justify-end">
-      <div className="flex -space-x-2">
-        {Array.from({ length: slots }).map((_, idx) => {
-          const p = filled[idx];
-          const emoji = p?.characterId ? EMOJI_BY_CHARACTER_ID[Number(p.characterId)] : null;
-
-          const isOccupied = idx < Math.min(currentPlayers || 0, slots);
-          const hasPlayer = !!p;
-
-          return (
-            <div
-              key={idx}
-              className={[
-                'w-10 h-10 rounded-full flex items-center justify-center',
-                'border-[3px] shadow-[0_10px_18px_rgba(0,0,0,0.08)]',
-                disabled
-                  ? 'bg-[#efe2c8] border-[#e2cfae] text-[#6a5342]/50'
-                  : hasPlayer
-                    ? 'bg-[#f2e6cf] border-[#d9c2a0] text-[#4b3a2e]'
-                    : 'bg-[#fff8ea] border-[#ead7b8] text-[#6a5342]/50',
-              ].join(' ')}
-              title={
-                hasPlayer
-                  ? emoji
-                    ? `선택됨 ${emoji}`
-                    : '캐릭터 미선택'
-                  : isOccupied
-                    ? '참여 중(정보 없음)'
-                    : '빈 자리'
-              }
-            >
-              {hasPlayer ? (
-                <span className="text-lg">{emoji || '❔'}</span>
-              ) : (
-                <span className="text-base opacity-50">·</span>
-              )}
+        {/* --- 모달들 --- */}
+        {transitioning && (
+          <div className="fixed inset-0 z-[9999] bg-black/40 flex items-center justify-center">
+            <div className="bg-white px-[2.08cqw] py-[1.48cqh] rounded-[2.08cqw] flex flex-col items-center shadow-2xl animate-bounce">
+              <span className="text-[2.08cqw]">✈️</span>
+              <span className="text-[1.25cqw] font-bold text-[#5A4A6F] mt-[0.37cqh]">섬으로 이동 중...</span>
             </div>
-          );
-        })}
+          </div>
+        )}
+
+        {toast && (
+          <div
+            className="fixed top-[0.93cqh] left-1/2 -translate-x-1/2 z-[9999] bg-white/90 backdrop-blur px-[1.67cqw] py-[0.37cqh] rounded-full shadow-xl border-[0.1cqw] animate-in fade-in slide-in-from-top-4"
+            style={{ borderColor: COLORS.roomList.btnMain }}
+          >
+            <span className="text-[1.04cqw] font-bold" style={{ color: COLORS.roomList.textMain }}>
+              📢 {toast}
+            </span>
+          </div>
+        )}
+
+        {createOpen && (
+          <CreateIslandModal
+            onClose={() => setCreateOpen(false)}
+            onCreate={(payload) => {
+              const reqId = `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+              pendingCreateIdRef.current = reqId;
+              startTransition();
+              const ok = publish(`${WS_APP_PREFIX}/create`, { ...payload, clientRequestId: reqId });
+              if (!ok) {
+                pendingCreateIdRef.current = null;
+                endTransition();
+              } else {
+                setCreateOpen(false);
+              }
+            }}
+          />
+        )}
+
+        {joinOpen && selectedRoom && (
+          <JoinIslandModal
+            room={selectedRoom}
+            initialPlayers={roomPlayersMap[selectedRoom.id] || []}
+            onClose={() => setJoinOpen(false)}
+            onConfirm={confirmJoin}
+          />
+        )}
+
+        {searchOpen && (
+          <SearchModal
+            initialKeyword={keyword}
+            onClose={() => setSearchOpen(false)}
+            onSearch={(newKeyword) => {
+              setKeyword(newKeyword);
+              setSearchOpen(false);
+              refreshRooms(newKeyword);
+            }}
+          />
+        )}
+
+        {inviteCodeOpen && <InviteCodeModal onClose={() => setInviteCodeOpen(false)} onSubmit={handleInviteCode} />}
       </div>
+    </AspectLayout>
+  );
+}
+
+// 캐릭터 이미지 프리뷰 - 60px = 3.13cqw 슬롯, 8px = 0.42cqw gap
+function RoomCharacterImages({ players, maxSlots }) {
+  return (
+    <div className="flex gap-[0.42cqw]">
+      {Array.from({ length: 4 }).map((_, idx) => {
+        const p = players[idx];
+        const charInfo = p?.characterId ? CHARACTER_BY_ID.get(Number(p.characterId)) : null;
+        // [Modified] 캐릭터 이미지 우선순위 변경: roomListImage(얼굴 아이콘) 우선
+        const imgSrc = charInfo?.roomListImage || charInfo?.selectBasicImage;
+
+        return (
+          <div
+            key={idx}
+            className={`w-[3.13cqw] h-[3.13cqw] rounded-full overflow-hidden flex items-center justify-center ${idx < maxSlots ? 'bg-[#EAD8F9]' : 'bg-[#D9D9D9] opacity-40'}`}
+          >
+            {imgSrc && <img src={imgSrc} alt="char" className="w-[80%] h-[80%] object-contain" />}
+          </div>
+        );
+      })}
     </div>
   );
 }
 
-/** 검색 모달 */
-function SearchModal({ initialKeyword, onClose, onSearch }) {
-  const [val, setVal] = useState(initialKeyword || '');
+// --------------------------------------------------------------------------------------
+// [MODAL 1: Create Island]
+// --------------------------------------------------------------------------------------
+function CreateIslandModal({ onClose, onCreate }) {
+  const [title, setTitle] = useState('');
+  const [maxPlayers, setMaxPlayers] = useState(4);
+  const [totalRounds, setTotalRounds] = useState(10);
+  const [isPrivate, setIsPrivate] = useState(false);
+  const [password, setPassword] = useState('');
+
+  const canSubmit = title.trim().length > 0 && (!isPrivate || password.trim().length > 0);
+
+  // 라벨 아이콘 - 40px = 2.08cqw, 48px = 4.44cqh
+  const LabelIcon = ({ iconSrc }) => (
+    <div className="w-[2.08cqw] h-[4.44cqh] flex items-center justify-center shrink-0">
+      {iconSrc && (
+        <div
+          className="w-[2.08cqw] h-[4.44cqh]"
+          style={{
+            backgroundColor: COLORS.ac.darkPurple,
+            maskImage: `url("${iconSrc}")`,
+            WebkitMaskImage: `url("${iconSrc}")`,
+            maskSize: 'contain',
+            WebkitMaskSize: 'contain',
+            maskRepeat: 'no-repeat',
+            WebkitMaskRepeat: 'no-repeat',
+            maskPosition: 'center',
+            WebkitMaskPosition: 'center',
+          }}
+        />
+      )}
+    </div>
+  );
+
+  // 라벨 텍스트 - 36px = 1.88cqw
+  const LabelText = ({ text }) => (
+    <span
+      className="text-[1.88cqw] font-bold whitespace-nowrap leading-none pt-[0.09cqh]"
+      style={{ color: COLORS.ac.darkPurple }}
+    >
+      {text}
+    </span>
+  );
 
   return (
-    <div className="fixed inset-0 bg-black/35 flex items-center justify-center px-6 z-50" onMouseDown={onClose}>
+    <div
+      className="fixed inset-0 bg-black/60 z-[200] flex items-center justify-center p-[0.83cqw] backdrop-blur-md overflow-auto"
+      onMouseDown={onClose}
+    >
+      {/* 
+          Modal Spec: 
+          W: 1132px -> 58.96cqw
+          H: 985px -> 91.2cqh
+          Padding Top: 104px -> 9.63cqh
+      */}
       <div
-        className={[
-          'w-full max-w-md rounded-[32px] p-6',
-          'bg-[#f7f0e4] border-[5px] border-[#d6b98a]',
-          'shadow-[0_28px_80px_rgba(0,0,0,0.35)]',
-        ].join(' ')}
+        className="w-[58.96cqw] h-[91.2cqh] flex flex-col shadow-none relative shrink-0"
+        style={{
+          backgroundImage: "url('/images/roomlist/ui-roomlist-modal-1.webp')",
+          backgroundSize: '100% 100%',
+          backgroundColor: 'transparent',
+          paddingTop: '9.63cqh',
+        }}
         onMouseDown={(e) => e.stopPropagation()}
       >
-        <div className="text-center mb-5">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#efe2c8] border border-[#e2cfae]">
-            <span className="text-lg">🔍</span>
-            <span className="text-[#5b4636] font-black">섬 검색</span>
-          </div>
-        </div>
+        {/* 제목 - 56px = 2.92cqw */}
+        <h2
+          className="text-[2.92cqw] font-black mb-[5.56cqh] mt-[3cqh] leading-none text-center w-full"
+          style={{ color: COLORS.ac.darkPurple }}
+        >
+          섬 만들기
+        </h2>
 
-        <div className="bg-[#fff8ea] border-[3px] border-[#ead7b8] rounded-[22px] p-5">
-          <div className="text-sm font-black text-[#7a5c44] mb-2">검색어</div>
-          <div className="relative">
-            <input
-              autoFocus
-              value={val}
-              onChange={(e) => setVal(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') onSearch(val.trim());
-              }}
-              placeholder="찾고 싶은 섬 이름을 입력해줘"
-              className="w-full px-4 py-3 rounded-[14px] bg-[#f2e6cf] border-2 border-[#e2cfae] outline-none text-[#4b3a2e] font-bold placeholder:text-[#6a5342]/60"
-            />
-            {val && (
-              <button
-                onClick={() => setVal('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#8a6e57] hover:text-[#4b3a2e]"
+        {/* 폼 영역 - flex-1로 남은 공간 채우고 중앙 정렬 */}
+        <div className="flex-1 flex flex-col justify-center">
+          {/* 1. 섬 이름 - pl 124px(6.46cqw) */}
+          <div className="flex items-center pl-[6.46cqw]">
+            <LabelIcon iconSrc="/images/roomlist/icon-leaf.webp" />
+            <div className="w-[0.63cqw]" />
+            <LabelText text="섬 이름" />
+            {/* Gap 92px = 4.79cqw */}
+            <div className="w-[4.79cqw]" />
+            {/* Input W 600px = 31.25cqw, H 72px = 6.67cqh */}
+            <div className="relative w-[31.25cqw]">
+              <input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="방 제목"
+                className="w-full h-[6.67cqh] px-[1.25cqw] rounded-[1.04cqw] bg-white text-[1.46cqw] font-bold outline-none placeholder:text-gray-300 shadow-inner"
+                style={{ color: COLORS.ac.darkPurple }}
+                maxLength={18}
+              />
+              <span
+                className="absolute right-[0.83cqw] top-1/2 -translate-y-1/2 text-[0.94cqw] font-bold opacity-50"
+                style={{ color: COLORS.ac.darkPurple }}
               >
-                ✕
-              </button>
-            )}
+                {title.length}/18
+              </span>
+            </div>
           </div>
-        </div>
 
-        <div className="mt-6 flex items-center justify-center gap-4">
+          {/* 2. 인원 수 - mt 40px(3.7cqh) */}
+          <div className="flex items-center pl-[6.46cqw] mt-[3.7cqh]">
+            <LabelIcon iconSrc="/images/roomlist/icon-people.svg" />
+            <div className="w-[0.63cqw]" />
+            <LabelText text="인원수" />
+            {/* Gap 104px = 5.42cqw */}
+            <div className="w-[5.42cqw]" />
+            <div className="flex gap-[0.63cqw]">
+              {[2, 3, 4].map((num) => {
+                const isActive = maxPlayers === num;
+                return (
+                  <button
+                    key={num}
+                    onClick={() => setMaxPlayers(num)}
+                    className="w-[6.25cqw] h-[6.11cqh] rounded-[1.67cqw] text-[1.67cqw] font-bold transition-all shadow-sm flex items-center justify-center leading-none pt-[0.09cqh]"
+                    style={{
+                      backgroundColor: isActive ? COLORS.ac.purple : COLORS.ac.creamWhite,
+                      color: isActive ? COLORS.ac.creamWhite : COLORS.ac.darkPurple,
+                    }}
+                  >
+                    {num}명
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 3. 라운드 수 - mt 40px(3.7cqh) */}
+          <div className="flex items-center pl-[6.46cqw] mt-[3.7cqh]">
+            <LabelIcon iconSrc="/images/roomlist/icon-dice-10.webp" />
+            <div className="w-[0.63cqw]" />
+            <LabelText text="라운드 수" />
+            {/* Gap 60px = 3.13cqw */}
+            <div className="w-[3.13cqw]" />
+            <div className="flex gap-[0.63cqw]">
+              {[10, 20, 30, 40].map((num) => {
+                const isActive = totalRounds === num;
+                return (
+                  <button
+                    key={num}
+                    onClick={() => setTotalRounds(num)}
+                    className="w-[6.25cqw] h-[6.11cqh] rounded-[1.67cqw] text-[1.67cqw] font-bold transition-all shadow-sm flex items-center justify-center leading-none pt-[0.09cqh]"
+                    style={{
+                      backgroundColor: isActive ? COLORS.ac.purple : COLORS.ac.creamWhite,
+                      color: isActive ? COLORS.ac.creamWhite : COLORS.ac.darkPurple,
+                    }}
+                  >
+                    {num}판
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 4. 공개 설정 - mt 40px(3.7cqh) */}
+          <div className="flex items-center pl-[6.46cqw] mt-[3.7cqh] h-[6.67cqh]">
+            <LabelIcon iconSrc="/images/roomlist/icon-lock.svg" />
+            <div className="w-[0.63cqw]" />
+            <LabelText text="공개 설정" />
+            {/* Gap 68px = 3.54cqw */}
+            <div className="w-[3.54cqw]" />
+            <div className="flex items-center gap-[2.08cqw]">
+              {/* 공개 버튼 */}
+              <button onClick={() => setIsPrivate(false)} className="flex items-center gap-[0.63cqw] group">
+                <div className="w-[2.08cqw] h-[2.08cqw] rounded-full flex items-center justify-center transition-colors bg-[#FDFBF6]">
+                  {!isPrivate && (
+                    <div
+                      className="w-[1.25cqw] h-[1.25cqw] rounded-full"
+                      style={{ backgroundColor: COLORS.ac.purple }}
+                    />
+                  )}
+                </div>
+                <span
+                  className="text-[1.88cqw] font-bold pt-[0.09cqh]"
+                  style={{
+                    color: COLORS.ac.darkPurple,
+                    opacity: !isPrivate ? 1 : 0.5,
+                  }}
+                >
+                  공개
+                </span>
+              </button>
+
+              {/* 비공개 버튼 */}
+              <button onClick={() => setIsPrivate(true)} className="flex items-center gap-[0.63cqw] group">
+                <div className="w-[2.08cqw] h-[2.08cqw] rounded-full flex items-center justify-center transition-colors bg-[#FDFBF6]">
+                  {isPrivate && (
+                    <div
+                      className="w-[1.25cqw] h-[1.25cqw] rounded-full"
+                      style={{ backgroundColor: COLORS.ac.purple }}
+                    />
+                  )}
+                </div>
+                <span
+                  className="text-[1.88cqw] font-bold pt-[0.09cqh]"
+                  style={{
+                    color: COLORS.ac.darkPurple,
+                    opacity: isPrivate ? 1 : 0.5,
+                  }}
+                >
+                  비공개
+                </span>
+              </button>
+            </div>
+          </div>
+
+          {/* 5. 비밀번호 (비공개일 때만 표시) */}
+          {/* Indent: 397px = 20.68cqw */}
+          {isPrivate && (
+            <div className="flex items-center mt-[1.85cqh]" style={{ paddingLeft: '20.68cqw' }}>
+              {/* Input W 600px = 31.25cqw, H 72px = 6.67cqh */}
+              <div className="relative w-[31.25cqw]">
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="비밀번호"
+                  className="w-full h-[6.67cqh] px-[1.25cqw] rounded-[1.04cqw] bg-white text-[1.67cqw] font-bold outline-none placeholder:text-gray-300 shadow-inner"
+                  style={{ color: COLORS.ac.darkPurple }}
+                />
+                {/* Lock Icon inside input on right */}
+                <div
+                  className="absolute right-[1.04cqw] top-1/2 -translate-y-1/2 w-[1.88cqw] h-[1.88cqw]"
+                  style={{
+                    backgroundColor: COLORS.ac.darkPurple,
+                    maskImage: `url("/images/roomlist/icon-lock.svg")`,
+                    WebkitMaskImage: `url("/images/roomlist/icon-lock.svg")`,
+                    maskSize: 'contain',
+                    WebkitMaskSize: 'contain',
+                    maskRepeat: 'no-repeat',
+                    WebkitMaskRepeat: 'no-repeat',
+                    maskPosition: 'center',
+                    WebkitMaskPosition: 'center',
+                    opacity: 0.5,
+                  }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+        {/* 폼 영역 래퍼 끝 */}
+
+        {/* 하단 버튼 (뒤로가기 / 섬만들기) - 300x100px (15.63cqw x 9.26cqh), 40px gap (2.08cqw) */}
+        <div className="mt-[5cqh] pb-[6cqh] w-full flex justify-center items-center gap-[2.08cqw]">
           <button
             onClick={onClose}
-            className="px-6 py-2.5 rounded-full bg-[#efe2c8] hover:bg-[#e9d7b5] text-[#4b3a2e] font-black border-2 border-[#e2cfae]"
+            className="w-[15.63cqw] h-[9.26cqh] rounded-[2.6cqw] bg-[#9165AA] text-white text-[2.08cqw] font-black hover:brightness-105 active:scale-95 transition-all leading-none pt-[0.09cqh] flex items-center justify-center gap-[0.42cqw]"
+          >
+            <div
+              className="w-[2.08cqw] h-[2.5cqh]"
+              style={{
+                backgroundColor: 'white',
+                maskImage: `url("/images/roomlist/icon-arrow-back.svg")`,
+                WebkitMaskImage: `url("/images/roomlist/icon-arrow-back.svg")`,
+                maskSize: 'contain',
+                WebkitMaskSize: 'contain',
+                maskRepeat: 'no-repeat',
+                WebkitMaskRepeat: 'no-repeat',
+                maskPosition: 'center',
+                WebkitMaskPosition: 'center',
+              }}
+            />
+            뒤로가기
+          </button>
+
+          <button
+            onClick={() => {
+              if (canSubmit) {
+                onCreate({ title, maxPlayers, totalRounds, isPrivate, password: isPrivate ? password : null });
+              }
+            }}
+            disabled={!canSubmit}
+            className={`w-[15.63cqw] h-[9.26cqh] rounded-[2.6cqw] text-[2.08cqw] font-black transition-all text-center leading-none pt-[0.09cqh] shadow-xl active:scale-95 ${
+              canSubmit
+                ? 'bg-[#744990] text-white hover:brightness-110'
+                : 'bg-[#E0E0E0] text-[#BDBDBD] cursor-not-allowed'
+            }`}
+            style={{ backgroundColor: canSubmit ? COLORS.ac.darkPurple : '#E0E0E0' }}
+          >
+            섬만들기
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --------------------------------------------------------------------------------------
+// [MODAL 2: Join Island]
+// --------------------------------------------------------------------------------------
+function JoinIslandModal({ room, initialPlayers, onClose, onConfirm }) {
+  // room.title (섬 제목), room.hostNickname (방장 닉네임), room.totalRounds, room.isPrivate 등 사용 가능
+  // initialPlayers: [{nickname, characterId}, ...]
+
+  const [password, setPassword] = useState('');
+
+  // 방장 정보 (첫 번째 플레이어가 방장이라고 가정, 혹은 room.hostNickname과 일치하는 플레이어 찾기)
+  // 여기서는 단순히 room.hostNickname 사용 + 첫번째 플레이어 아바타 사용 (fallback)
+  const hostPlayer = initialPlayers.find((p) => p.nickname === room.hostNickname) || initialPlayers[0];
+  const hostCharInfo = hostPlayer?.characterId ? CHARACTER_BY_ID.get(Number(hostPlayer.characterId)) : null;
+  const hostImgSrc = hostCharInfo?.roomListImage || hostCharInfo?.selectBasicImage;
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/60 z-[200] flex items-center justify-center p-[0.83cqw] backdrop-blur-md"
+      onMouseDown={onClose}
+    >
+      {/* 
+          Modal Spec from Image 1:
+          W: 1132px -> 58.96cqw
+          H: 985px -> 91.2cqh
+          Padding Top: 104px -> 9.63cqh 
+      */}
+      <div
+        className="w-[58.96cqw] h-[91.2cqh] flex flex-col items-center shadow-none relative"
+        style={{
+          backgroundImage: "url('/images/roomlist/ui-roomlist-modal-1.webp')", // Same cloud background
+          backgroundSize: '100% 100%',
+          backgroundColor: 'transparent',
+          paddingTop: '9.63cqh',
+        }}
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        {/* Title: "섬제목...에 입장하시겠습니까?" - Font 56px = 2.92cqw */}
+        <div className="w-full text-center px-[2.08cqw] mb-[5.56cqh]">
+          <h2 className="text-[2.92cqw] font-black leading-tight" style={{ color: COLORS.ac.darkPurple }}>
+            <span
+              style={{ color: COLORS.ac.purple }}
+              className="underline-none decoration-[0.21cqw] underline-offset-[0.42cqw]"
+            >
+              {room.title.length > 10 ? room.title.slice(0, 10) + '..' : room.title}
+            </span>
+            에<br />
+            입장하시겠습니까?
+          </h2>
+        </div>
+
+        {/* White Content Box */}
+        {/* W: 799px -> 41.61cqw, H: 436px -> 40.37cqh, Radius: 60px -> 3.13cqw */}
+        <div
+          className="bg-white flex flex-col items-start justify-center shadow-md relative"
+          style={{
+            width: '41.61cqw',
+            height: '40.37cqh',
+            borderRadius: '3.13cqw',
+            paddingLeft: '3.75cqw', // Approx alignment based on image visual
+          }}
+        >
+          {/* Row 1: Host Info -- Gap 148px(7.71cqw) from Label to Value */}
+          <div className="flex items-center mb-[2.22cqh]">
+            {/* Label Icon */}
+            <div
+              className="w-[1.88cqw] h-[1.88cqw]"
+              style={{
+                backgroundColor: COLORS.ac.darkPurple,
+                maskImage: `url("/images/roomlist/icon-leaf.webp")`,
+                WebkitMaskImage: `url("/images/roomlist/icon-leaf.webp")`,
+                maskSize: 'contain',
+                maskRepeat: 'no-repeat',
+              }}
+            />
+            <span className="text-[1.88cqw] font-bold ml-[0.63cqw]" style={{ color: COLORS.ac.darkPurple }}>
+              방장
+            </span>
+
+            <div style={{ width: '7.71cqw' }} />
+
+            {/* Value: Avatar + Nickname */}
+            <div className="flex items-center gap-[0.83cqw]">
+              {/* Avatar 80px = 4.17cqw */}
+              <div className="w-[4.17cqw] h-[4.17cqw] rounded-full overflow-hidden bg-[#EAD8F9] flex items-center justify-center">
+                {hostImgSrc && <img src={hostImgSrc} alt="host" className="w-[80%] h-[80%] object-contain" />}
+              </div>
+              <span className="text-[1.88cqw] font-bold" style={{ color: COLORS.ac.darkPurple }}>
+                {room.hostNickname}
+              </span>
+            </div>
+          </div>
+
+          {/* Row 2: Rounds -- Gap 72px(3.75cqw) */}
+          <div className="flex items-center mb-[2.22cqh]">
+            <div
+              className="w-[1.88cqw] h-[1.88cqw] bg-[#8B5E83]"
+              style={{
+                backgroundColor: COLORS.ac.darkPurple,
+                maskImage: `url("/images/room-waiting/icon-dice-${room.totalRounds}.png")`,
+                WebkitMaskImage: `url("/images/room-waiting/icon-dice-${room.totalRounds}.png")`,
+                maskSize: 'contain',
+                maskRepeat: 'no-repeat',
+                maskPosition: 'center',
+                WebkitMaskRepeat: 'no-repeat',
+                WebkitMaskPosition: 'center',
+              }}
+            />
+            <span className="text-[1.88cqw] font-bold ml-[0.63cqw]" style={{ color: COLORS.ac.darkPurple }}>
+              라운드 수
+            </span>
+
+            <div style={{ width: '3.75cqw' }} />
+
+            <span className="text-[1.88cqw] font-bold">
+              <span style={{ color: COLORS.ac.purple }}>{room.totalRounds}</span>
+              <span style={{ color: COLORS.ac.darkPurple }}> 라운드</span>
+            </span>
+          </div>
+
+          {/* Row 3: Participants -- Gap 72px(3.75cqw) */}
+          <div className="flex items-center">
+            <div
+              className="w-[1.88cqw] h-[1.88cqw]"
+              style={{
+                backgroundColor: COLORS.ac.darkPurple,
+                maskImage: `url("/images/roomlist/icon-people.svg")`,
+                WebkitMaskImage: `url("/images/roomlist/icon-people.svg")`,
+                maskSize: 'contain',
+                maskRepeat: 'no-repeat',
+              }}
+            />
+            <span className="text-[1.88cqw] font-bold ml-[0.63cqw]" style={{ color: COLORS.ac.darkPurple }}>
+              참여 주민
+            </span>
+
+            <div style={{ width: '3.75cqw' }} />
+
+            <div className="flex gap-[0.63cqw]">
+              {Array.from({ length: room.maxPlayers }).map((_, i) => {
+                const p = initialPlayers[i];
+                const charInfo = p?.characterId ? CHARACTER_BY_ID.get(Number(p.characterId)) : null;
+                const imgSrc = charInfo?.roomListImage || charInfo?.selectBasicImage;
+
+                return (
+                  <div
+                    key={i}
+                    className={`w-[4.17cqw] h-[4.17cqw] rounded-full overflow-hidden flex items-center justify-center ${
+                      imgSrc ? 'bg-[#EAD8F9]' : 'bg-[#D9D9D9]'
+                    }`}
+                  >
+                    {imgSrc && <img src={imgSrc} alt="p" className="w-[80%] h-[80%] object-contain" />}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Password Input Overlay (if private) */}
+          {room.isPrivate && (
+            <div className="absolute bottom-[1.48cqh] left-0 w-full flex justify-center">
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="비밀번호 입력"
+                className="w-[20.83cqw] h-[5.56cqh] rounded-[1.04cqw] px-[1.04cqw] text-[1.46cqw] font-bold text-center border-[0.16cqw] border-[#8b5a2b] shadow-inner outline-none"
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Bottom Buttons */}
+        <div className="absolute bottom-[8.4cqh] left-0 w-full flex justify-center items-center gap-[2.08cqw]">
+          <button
+            onClick={onClose}
+            className="w-[15.63cqw] h-[9.26cqh] rounded-[2.6cqw] bg-[#9165AA] text-white text-[2.08cqw] font-black hover:brightness-105 active:scale-95 transition-all leading-none pt-[0.09cqh] flex items-center justify-center gap-[0.42cqw]"
+          >
+            <div
+              className="w-[2.08cqw] h-[2.5cqh]"
+              style={{
+                backgroundColor: 'white',
+                maskImage: `url("/images/roomlist/icon-arrow-back.svg")`,
+                WebkitMaskImage: `url("/images/roomlist/icon-arrow-back.svg")`,
+                maskSize: 'contain',
+                WebkitMaskSize: 'contain',
+                maskRepeat: 'no-repeat',
+                WebkitMaskRepeat: 'no-repeat',
+                maskPosition: 'center',
+                WebkitMaskPosition: 'center',
+              }}
+            />
+            뒤로가기
+          </button>
+          <button
+            onClick={() => onConfirm(password)}
+            className="w-[15.63cqw] h-[9.26cqh] rounded-[2.6cqw] text-[2.08cqw] font-black text-white hover:brightness-110 active:scale-95 transition-all shadow-xl leading-none pt-[0.09cqh]"
+            style={{ backgroundColor: COLORS.ac.darkPurple }}
+          >
+            입장하기
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SearchModal({ initialKeyword, onClose, onSearch }) {
+  const [val, setVal] = useState(initialKeyword);
+
+  return (
+    <div
+      className="fixed inset-0 bg-black/60 z-[200] flex items-center justify-center p-[0.83cqw] backdrop-blur-sm"
+      onMouseDown={onClose}
+    >
+      <div
+        className="bg-white rounded-[2.08cqw] p-[2.08cqw] shadow-2xl w-[41.67cqw] flex flex-col items-center animate-in fade-in zoom-in-95"
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        <h2 className="text-[2.5cqw] font-black mb-[1.85cqh]" style={{ color: COLORS.roomList.textMain }}>
+          섬 검색
+        </h2>
+        <input
+          autoFocus
+          value={val}
+          onChange={(e) => setVal(e.target.value)}
+          placeholder="방 제목을 검색해봐!"
+          className="w-full h-[7.41cqh] px-[1.25cqw] rounded-[1.04cqw] bg-gray-100 text-[1.67cqw] font-bold outline-none mb-[1.85cqh]"
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') onSearch(val);
+          }}
+        />
+        <div className="flex gap-[0.83cqw] w-full">
+          <button
+            onClick={onClose}
+            className="flex-1 h-[6.48cqh] rounded-[1.25cqw] bg-gray-300 text-white text-[1.46cqw] font-bold hover:brightness-105"
           >
             취소
           </button>
           <button
-            onClick={() => onSearch(val.trim())}
-            className={['px-8 py-2.5 rounded-full text-white font-black border-2', TONE.greenBtn, 'shadow-md'].join(
-              ' ',
-            )}
+            onClick={() => onSearch(val)}
+            className="flex-1 h-[6.48cqh] rounded-[1.25cqw] text-white text-[1.46cqw] font-bold hover:brightness-105"
+            style={{ backgroundColor: COLORS.roomList.btnMain }}
           >
             검색
           </button>
@@ -790,332 +1236,58 @@ function SearchModal({ initialKeyword, onClose, onSearch }) {
   );
 }
 
-/** 섬 만들기 모달 */
-function CreateIslandModal({ onClose, onCreate }) {
-  const [title, setTitle] = useState('');
-  const [maxPlayers, setMaxPlayers] = useState(4);
-  const [totalRounds, setTotalRounds] = useState(10);
+// --------------------------------------------------------------------------------------
+// [MODAL 4: Invite Code]
+// --------------------------------------------------------------------------------------
+function InviteCodeModal({ onClose, onSubmit }) {
+  const [code, setCode] = useState('');
 
-  // UI만(백엔드에 필드 없음 → payload에는 포함하지 않음)
-  const [isPrivate, setIsPrivate] = useState(false);
-  const [password, setPassword] = useState('');
-
-  const canSubmit =
-    title.trim().length >= 1 && [2, 3, 4].includes(maxPlayers) && (!isPrivate || password.trim().length > 0);
+  const handleSubmit = () => {
+    if (code.trim().length === 0) return;
+    onSubmit(code.trim().toUpperCase());
+  };
 
   return (
-    <div className="fixed inset-0 bg-black/35 flex items-center justify-center px-6 z-50" onMouseDown={onClose}>
+    <div
+      className="fixed inset-0 bg-black/60 z-[200] flex items-center justify-center p-[0.83cqw] backdrop-blur-md"
+      onMouseDown={onClose}
+    >
       <div
-        className={[
-          'w-full max-w-xl rounded-[44px] shadow-[0_30px_80px_rgba(0,0,0,0.35)] p-8',
-          'bg-[#f7f0e4] border-[5px] border-[#d6b98a]',
-        ].join(' ')}
+        className="w-[31.25cqw] bg-white rounded-[2.08cqw] p-[2.08cqw] shadow-2xl"
         onMouseDown={(e) => e.stopPropagation()}
       >
-        <div className="text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#efe2c8] border border-[#e2cfae]">
-            <span className="text-lg">🪵</span>
-            <span className="text-[#5b4636] font-black">섬 만들기</span>
-            <span className="text-lg">🪵</span>
-          </div>
-        </div>
+        <h2 className="text-[2.08cqw] font-black text-center mb-[2.78cqh]" style={{ color: COLORS.roomList.textMain }}>
+          초대코드 입력
+        </h2>
 
-        <div className="mt-6 bg-[#fff8ea] border-[3px] border-[#ead7b8] rounded-[26px] p-6">
-          {/* 섬 제목 */}
-          <div className="flex items-center gap-4">
-            <div className="w-24 text-sm font-black text-[#7a5c44]">섬 제목</div>
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="섬 제목을 입력해줘"
-              maxLength={20}
-              className="flex-1 px-4 py-3 rounded-[14px] bg-[#f2e6cf] border-2 border-[#e2cfae] outline-none text-[#4b3a2e] placeholder:text-[#6a5342]/70"
-            />
-          </div>
+        <input
+          value={code}
+          onChange={(e) => setCode(e.target.value.toUpperCase())}
+          placeholder="6자리 코드 입력"
+          maxLength={6}
+          className="w-full h-[6.48cqh] px-[1.25cqw] rounded-[1.04cqw] bg-[#F5F0EB] text-[1.67cqw] font-bold text-center tracking-[0.42cqw] outline-none placeholder:text-gray-300"
+          style={{ color: COLORS.roomList.textMain }}
+          onKeyDown={(e) => e.key === 'Enter' && handleSubmit()}
+          autoFocus
+        />
 
-          {/* 인원수 */}
-          <div className="mt-5 flex items-center gap-4">
-            <div className="w-24 text-sm font-black text-[#7a5c44]">인원수</div>
-            <div className="flex items-center gap-3 flex-wrap">
-              {[2, 3, 4].map((v) => (
-                <Chip key={v} active={maxPlayers === v} onClick={() => setMaxPlayers(v)}>
-                  {v}명
-                </Chip>
-              ))}
-            </div>
-          </div>
-
-          {/* 판수 */}
-          <div className="mt-5 flex items-center gap-4">
-            <div className="w-24 text-sm font-black text-[#7a5c44]">판수</div>
-            <div className="flex items-center gap-3 flex-wrap">
-              {[10, 20, 30, 40].map((v) => (
-                <Chip key={v} active={totalRounds === v} onClick={() => setTotalRounds(v)}>
-                  {v}판
-                </Chip>
-              ))}
-            </div>
-          </div>
-
-          {/* 공개 설정 */}
-          <div className="mt-5 flex items-center gap-4">
-            <div className="w-24 text-sm font-black text-[#7a5c44]">공개 설정</div>
-            <div className="flex items-center gap-3 flex-wrap">
-              <Chip active={!isPrivate} onClick={() => setIsPrivate(false)}>
-                공개
-              </Chip>
-              <Chip active={isPrivate} onClick={() => setIsPrivate(true)}>
-                비공개 🔒
-              </Chip>
-            </div>
-          </div>
-
-          {/* 비밀번호 */}
-          <div className="mt-4 flex items-center gap-4">
-            <div className="w-24 text-sm font-black text-[#7a5c44]">비밀번호</div>
-            <div className="flex-1 relative">
-              <input
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder={isPrivate ? '비밀번호를 입력해야 생성이 가능해요' : '공개 섬은 비밀번호가 필요 없어요'}
-                disabled={!isPrivate}
-                className={[
-                  'w-full px-4 py-3 rounded-[14px] border-2 outline-none',
-                  'bg-[#f2e6cf] border-[#e2cfae] text-[#4b3a2e] placeholder:text-[#6a5342]/70',
-                  !isPrivate ? 'opacity-60 cursor-not-allowed' : '',
-                ].join(' ')}
-              />
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[#6a5342]">🔒</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-7 flex items-center justify-center gap-6">
+        <div className="flex gap-[0.83cqw] mt-[2.78cqh]">
           <button
             onClick={onClose}
-            className="px-9 py-3 rounded-full bg-[#efe2c8] hover:bg-[#e9d7b5] text-[#4b3a2e] font-black border-2 border-[#e2cfae]"
+            className="flex-1 h-[6.48cqh] rounded-[1.25cqw] bg-gray-300 text-white text-[1.46cqw] font-bold hover:brightness-105"
           >
             취소
           </button>
           <button
-            onClick={() =>
-              onCreate({
-                title: title.trim(),
-                maxPlayers,
-                totalRounds,
-                password: isPrivate && password ? password.trim() : null,
-              })
-            }
-            disabled={!canSubmit}
-            className={[
-              'px-9 py-3 rounded-full font-black border-2 shadow-[0_10px_18px_rgba(0,0,0,0.12)]',
-              'disabled:opacity-45 disabled:cursor-not-allowed transition',
-              'bg-[#7bb46b] hover:bg-[#6aa65a] text-white border-[#5a8f4e]',
-            ].join(' ')}
+            onClick={handleSubmit}
+            disabled={code.trim().length === 0}
+            className="flex-1 h-[6.48cqh] rounded-[1.25cqw] text-white text-[1.46cqw] font-bold hover:brightness-105 disabled:opacity-50"
+            style={{ backgroundColor: COLORS.roomList.btnMain }}
           >
-            생성
+            입장
           </button>
         </div>
       </div>
-    </div>
-  );
-}
-
-function Chip({ active, onClick, children }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={[
-        'px-4 py-2 rounded-full font-black text-sm border-2 transition',
-        active
-          ? 'bg-[#7bb46b] text-white border-[#5a8f4e]'
-          : 'bg-[#efe2c8] text-[#4b3a2e] border-[#e2cfae] hover:bg-[#e9d7b5]',
-      ].join(' ')}
-    >
-      {children}
-    </button>
-  );
-}
-
-/** 섬 입장 모달 */
-function JoinIslandModal({ room, initialPlayers, onClose, onConfirm, authHeaders }) {
-  const statusText = room.status === 'PLAYING' ? '진행중' : '대기중';
-
-  const [players, setPlayers] = useState(Array.isArray(initialPlayers) ? initialPlayers : []);
-  const [playersLoading, setPlayersLoading] = useState(false);
-  const [password, setPassword] = useState('');
-
-  useEffect(() => {
-    let ignore = false;
-    const ac = new AbortController();
-
-    const fetchPlayers = async () => {
-      if (!room?.id) return;
-      setPlayersLoading(true);
-      try {
-        const res = await fetch(`${API_BASE}/api/rooms/${room.id}/players`, {
-          method: 'GET',
-          headers: authHeaders(),
-          signal: ac.signal,
-        });
-
-        // ✅ 여기서 401/403이면 "왜 안뜨지?"의 정답임 (토큰 헤더 필요)
-        if (!res.ok) throw new Error(`players fetch fail (${res.status})`);
-
-        const data = await res.json();
-        if (ignore) return;
-        setPlayers(Array.isArray(data) ? data : []);
-      } catch {
-        if (ignore) return;
-        // 실패하면 initialPlayers라도 남기고 싶으면 여기에서 비우지 말고 유지해도 됨
-      } finally {
-        if (!ignore) setPlayersLoading(false);
-      }
-    };
-
-    fetchPlayers();
-
-    return () => {
-      ignore = true;
-      ac.abort();
-    };
-  }, [room?.id, authHeaders]);
-
-  const maxSlots = Math.min(room.maxPlayers || 0, 4);
-  const countText = `${players?.length || room.currentPlayers || 0}/${room.maxPlayers || 0}`;
-
-  return (
-    <div className="fixed inset-0 bg-black/35 flex items-center justify-center px-6 z-50" onMouseDown={onClose}>
-      <div
-        className={[
-          'w-full max-w-xl rounded-[40px] p-7',
-          'bg-[#f7f0e4]',
-          'border-[5px] border-[#d6b98a]',
-          'shadow-[0_28px_80px_rgba(0,0,0,0.35)]',
-        ].join(' ')}
-        onMouseDown={(e) => e.stopPropagation()}
-      >
-        {/* 헤더 */}
-        <div className="text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#efe2c8] border border-[#e2cfae]">
-            <span className="text-lg">🍃</span>
-            <span className="text-[#5b4636] font-black">입장 확인</span>
-            <span className="text-lg">🍃</span>
-          </div>
-          <div className="mt-4 text-[22px] font-black text-[#4b3a2e]">
-            {room.title || '이름 없는 섬'}에 입장하시겠습니까?
-          </div>
-        </div>
-
-        {/* 본문 카드 */}
-        <div className="mt-6 bg-[#fff8ea] border-[3px] border-[#ead7b8] rounded-[26px] p-6">
-          <div className="grid grid-cols-[92px_1fr] gap-y-4 gap-x-3">
-            <div className="text-sm font-black text-[#7a5c44]">섬장</div>
-            <div className="font-extrabold text-[#4b3a2e]">{room.hostNickname || '-'}</div>
-
-            <div className="text-sm font-black text-[#7a5c44]">게임 판 수</div>
-            <div className="flex items-center gap-3 font-extrabold text-[#4b3a2e]">
-              <span className="text-lg">🎲</span>
-              <span>{room.totalRounds ? `${room.totalRounds}판` : '-'}</span>
-              <span className="text-[#8a6e57]">({statusText})</span>
-            </div>
-
-            <div className="text-sm font-black text-[#7a5c44]">참여 주민</div>
-            <div className="flex items-center gap-3">
-              <CharacterSlots players={players} maxSlots={maxSlots} loading={playersLoading} />
-              <div className="text-sm font-extrabold text-[#6a5342]">{countText}</div>
-            </div>
-          </div>
-
-          {room.isPrivate && (
-            <div className="mt-4">
-              <div className="text-sm font-black text-[#7a5c44] mb-2">비밀번호</div>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="비밀번호를 입력해주세요"
-                className="w-full px-4 py-3 rounded-[14px] bg-[#f2e6cf] border-2 border-[#e2cfae] outline-none text-[#4b3a2e]"
-              />
-            </div>
-          )}
-
-          {playersLoading && (
-            <div className="mt-4 text-xs font-extrabold text-[#8a6e57]">주민 정보를 불러오는 중...</div>
-          )}
-        </div>
-
-        {/* 버튼 */}
-        <div className="mt-7 flex items-center justify-center gap-6">
-          <button
-            onClick={onClose}
-            className={[
-              'px-9 py-3 rounded-full',
-              'bg-[#efe2c8] hover:bg-[#e9d7b5]',
-              'text-[#4b3a2e] font-black',
-              'border-2 border-[#e2cfae]',
-            ].join(' ')}
-          >
-            뒤로가기
-          </button>
-          <button
-            onClick={() => onConfirm(password)}
-            className={[
-              'px-9 py-3 rounded-full',
-              'text-white font-black border-2',
-              TONE.greenBtn,
-              'shadow-[0_10px_18px_rgba(0,0,0,0.15)]',
-            ].join(' ')}
-          >
-            참여하기
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function CharacterSlots({ players, maxSlots, loading }) {
-  const list = Array.isArray(players) ? players : [];
-  const slots = Math.max(0, maxSlots || 0);
-  const filled = list.slice(0, slots);
-
-  if (slots <= 0) return <div className="w-[88px]" />;
-
-  return (
-    <div className="flex items-center gap-2">
-      {Array.from({ length: slots }).map((_, idx) => {
-        const p = filled[idx];
-        const characterId = p?.characterId ? Number(p.characterId) : null;
-        const emoji = characterId ? EMOJI_BY_CHARACTER_ID[characterId] : null;
-        const characterName = characterId ? CHARACTER_BY_ID.get(characterId)?.name || '' : '';
-
-        return (
-          <div
-            key={idx}
-            className={[
-              'w-12 h-12 rounded-full overflow-hidden',
-              'bg-[#f2e6cf]',
-              'border-[3px]',
-              p ? 'border-[#d9c2a0]' : 'border-[#ead7b8]',
-              'shadow-[0_8px_14px_rgba(0,0,0,0.10)]',
-              'flex items-center justify-center',
-            ].join(' ')}
-            title={
-              loading
-                ? '불러오는 중'
-                : p
-                  ? emoji
-                    ? `${characterName ? characterName + ' ' : ''}${emoji}`.trim()
-                    : '캐릭터 미선택'
-                  : '빈 자리'
-            }
-          >
-            {p ? <span className="text-2xl">{emoji || '❔'}</span> : <span className="text-xl opacity-35">·</span>}
-          </div>
-        );
-      })}
     </div>
   );
 }

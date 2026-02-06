@@ -1,61 +1,182 @@
+import { useEffect, useMemo, useState } from 'react';
 import './css/PlayerActionPanel.css';
-import { ITEM_INFO } from '../../constants/gameConstants.js';
+import { COLORS, withAlpha } from '../../constants/colors.js';
 
-const PlayerActionPanel = ({
-  onSelectDice,
-  onSelectItem,
-  onBuildHouse,
-  onATM,
-  onInventory,
-  items,
-  isMyTurn,
-  itemUsed,
-}) => {
-  if (!isMyTurn) return null;
+const BASE = { board: '/images/board' };
 
-  return (
-    <div className="player-action-panel">
-      <button className="action-btn dice" onClick={onSelectDice} disabled={!isMyTurn}>
-        <span className="icon"></span>
-        <span className="label">주사위</span>
-      </button>
-      <button
-        className="action-btn item"
-        onClick={onSelectItem}
-        disabled={!isMyTurn || !items || items.length === 0 || itemUsed}
-      >
-        <span className="label">아이템</span>
-        {/* 아이템 미리보기 */}
-        <div className="flex gap-2 justify-center mt-1 items-center">
-          {Array.from({ length: 3 }).map((_, idx) => {
-            const itemKey = items && items[idx];
-
-            return (
-              <div key={idx} className="flex items-center justify-center min-w-[1.5rem]">
-                {itemKey ? (
-                  <span className="text-xl animate-pop-in">{ITEM_INFO[itemKey]?.emoji || '📦'}</span>
-                ) : (
-                  <span className="text-[#594E36] opacity-30 font-bold text-lg">·</span>
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </button>
-      <button className="action-btn map" onClick={onBuildHouse} disabled={!isMyTurn || itemUsed}>
-        <span className="icon">🏠</span>
-        <span className="label">마을회관</span>
-      </button>
-      <button className="action-btn map" onClick={onATM} disabled={!isMyTurn || itemUsed}>
-        <span className="icon">🏧</span>
-        <span className="label">ATM</span>
-      </button>
-      <button className="action-btn map" onClick={onInventory} disabled={!isMyTurn || itemUsed}>
-        <span className="icon">📦</span>
-        <span className="label">인벤토리</span>
-      </button>
-    </div>
-  );
+const IMG = {
+  lte: `${BASE.board}/ui-remote-lte.svg`,
+  btn: (key) => `${BASE.board}/btn-remote-${key}.webp`,
 };
 
-export default PlayerActionPanel;
+// 현재 시간을 AM/PM 텍스트로 포맷
+const toAmPm = (d) => {
+  const h = d.getHours();
+  const m = String(d.getMinutes()).padStart(2, '0');
+  const isPm = h >= 12;
+  const hh = h % 12 === 0 ? 12 : h % 12;
+  return `${isPm ? 'PM' : 'AM'} ${String(hh).padStart(2, '0')}:${m}`;
+};
+
+// 괄호 포함 문구를 2줄(괄호 앞/괄호 포함)로 분리
+const splitParenTwoLines = (s) => {
+  if (!s) return ['', ''];
+  const str = String(s).trim();
+  const open = str.indexOf('(');
+  const close = str.lastIndexOf(')');
+  if (open !== -1 && close !== -1 && close > open) {
+    return [str.slice(0, open).trim(), str.slice(open, close + 1).trim()];
+  }
+  return [str, ''];
+};
+
+export default function PlayerActionPanel({
+                                            onSelectDice,
+                                            onSelectItem,
+                                            onBuildHouse,
+                                            onATM,
+                                            onInventory,
+                                            onMupaniPanel,
+                                            items,
+                                            radishQty = 0,
+                                            isMyTurn,
+                                            itemUsed,
+                                          }) {
+  if (!isMyTurn) return null;
+
+  const [timeText, setTimeText] = useState(() => toAmPm(new Date()));
+  const [activeKey, setActiveKey] = useState(null);
+
+  useEffect(() => {
+    const id = setInterval(() => setTimeText(toAmPm(new Date())), 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  // 보유 여부(아이템/무)
+  const hasItem = useMemo(() => Array.isArray(items) && items.length > 0, [items]);
+  const hasRadish = Number(radishQty ?? 0) > 0;
+
+  // 버튼 구성(타이틀/설명/핸들러/비활성 조건)
+  const BTN = useMemo(
+    () => ({
+      dice: {
+        title: '주사위',
+        desc: '주사위를 굴릴 수 있어 (보드판 이동)',
+        onClick: onSelectDice,
+        disabled: false,
+      },
+      naugul: {
+        title: '마을회관',
+        desc: '집을 업그레이드 할 수 있어 (재화, 벨 보유시)',
+        onClick: onBuildHouse,
+        disabled: !!itemUsed || typeof onBuildHouse !== 'function',
+      },
+      item: {
+        title: '아이템',
+        desc: '아이템을 사용할 수 있어 (아이템 소유시)',
+        onClick: onSelectItem,
+        disabled: !hasItem || !!itemUsed || typeof onSelectItem !== 'function',
+      },
+      inventory: {
+        title: '인벤토리',
+        desc: '소지품을 확인할 수 있어 (재화, 과일)',
+        onClick: onInventory,
+        disabled: !!itemUsed || typeof onInventory !== 'function',
+      },
+      atm: {
+        title: 'ATM',
+        desc: '대출을 받을 수 있어 (수수료 10%)',
+        onClick: onATM,
+        disabled: !!itemUsed || typeof onATM !== 'function',
+      },
+      mupani: {
+        title: '무 판매',
+        desc: '무를 판매할 수 있어 (무 보유시)',
+        onClick: onMupaniPanel,
+        disabled:  !hasRadish || !!itemUsed || typeof onMupaniPanel !== 'function',
+      },
+    }),
+    [
+      onSelectDice,
+      onBuildHouse,
+      onSelectItem,
+      onInventory,
+      onATM,
+      onMupaniPanel,
+      hasItem,
+      hasRadish,
+      itemUsed,
+    ]
+  );
+
+  // 버튼 표시 순서
+  const order = ['dice', 'naugul', 'item', 'inventory', 'atm', 'mupani'];
+
+  // 활성 버튼(hover/focus) 기준으로 안내 문구 갱신
+  const activeBtn = activeKey ? BTN[activeKey] : null;
+  const titleText = activeBtn?.title ?? '행동 선택';
+
+  // 설명 문구는 괄호 기준 2줄 분리(없으면 기본 문구)
+  const descLines = useMemo(() => {
+    const base = ['원하는 버튼을 눌러서', '진행해줘'];
+    if (!activeBtn?.desc) return base;
+    const [l1, l2] = splitParenTwoLines(activeBtn.desc);
+    return [l1, l2 || ''];
+  }, [activeBtn]);
+
+  // 버튼 클릭(비활성 상태면 무시)
+  const handleClick = (key) => {
+    const b = BTN[key];
+    if (!b || b.disabled) return;
+    b.onClick?.();
+  };
+
+  const cssVars = useMemo(
+    () => ({
+      '--paa-bg': COLORS.ac.creamWhite,
+      '--paa-text': COLORS.ac.darkBrown,
+      '--paa-time-dim': withAlpha(COLORS.ac.darkBrown, 0.2),
+      '--paa-lte-dim': 0.2,
+      '--paa-disabled-opacity': 0.35,
+      '--paa-focus-outline': withAlpha(COLORS.ac.darkBrown, 0.25),
+    }),
+    []
+  );
+
+  return (
+    <aside className="player-action-panel" aria-label="행동 선택" style={cssVars}>
+      <div className="paa-time">
+        <img className="paa-lte" src={IMG.lte} alt="lte" draggable={false} />
+        <span className="paa-time-text">{timeText}</span>
+      </div>
+
+      <h2 className="paa-title">{titleText}</h2>
+
+      <p className="paa-desc">
+        <span className="paa-desc-line">{descLines[0]}</span>
+        <br />
+        <span className="paa-desc-line">{descLines[1]}</span>
+      </p>
+
+      <div className="paa-grid">
+        {order.map((key) => {
+          const b = BTN[key];
+          return (
+            <button
+              key={key}
+              type="button"
+              className={`paa-btn ${b.disabled ? 'is-disabled' : ''}`}
+              onClick={() => handleClick(key)}
+              onMouseEnter={() => setActiveKey(key)}
+              onMouseLeave={() => setActiveKey(null)}
+              onFocus={() => setActiveKey(key)}
+              onBlur={() => setActiveKey(null)}
+            >
+              <img className="paa-btn-img" src={IMG.btn(key)} alt={b.title} draggable={false} />
+            </button>
+          );
+        })}
+      </div>
+    </aside>
+  );
+}

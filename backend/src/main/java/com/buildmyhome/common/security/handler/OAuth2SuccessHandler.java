@@ -74,8 +74,14 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
         // 쿠키 삭제
         deleteCookie(response, "LINK_MEMBER_ID");
 
+        // 마지막 로그인 시간 갱신
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        member.setLastLoginAt(now);
+        member.setIsOnline(true);
+        memberRepository.save(member);
+
         // 기존 토큰 재발급 (연동 후 유지)
-        String token = tokenProvider.createToken(member.getEmail(), member.getRole().name(), member.getId());
+        String token = tokenProvider.createToken(member.getEmail(), member.getRole().name(), member.getId(), now);
         userSessionStore.registerToken(member.getId(), token);
 
         // 마이페이지로 이동
@@ -126,8 +132,23 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
       throw new RuntimeException("유저를 찾을 수 없습니다. (Login Failed)");
     }
 
+    // ========== 정지 자동 해제 ==========
+    if (Boolean.TRUE.equals(member.getIsSuspended())) {
+      if (member.getSuspendedUntil() != null && member.getSuspendedUntil().isBefore(java.time.LocalDateTime.now())) {
+        // 정지 기간이 지난 경우 자동 해제
+        member.setIsSuspended(false);
+        member.setSuspendedUntil(null);
+      }
+    }
+
+    // 마지막 로그인 시간 갱신
+    java.time.LocalDateTime now = java.time.LocalDateTime.now();
+    member.setLastLoginAt(now);
+    member.setIsOnline(true);
+    memberRepository.save(member);
+
     // 3. JWT 토큰 생성
-    String token = tokenProvider.createToken(member.getEmail(), member.getRole().name(), member.getId());
+    String token = tokenProvider.createToken(member.getEmail(), member.getRole().name(), member.getId(), now);
     userSessionStore.registerToken(member.getId(), token);
 
     // 4. 프론트엔드로 리다이렉트할 URL 생성
@@ -138,13 +159,21 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
       nickname = "Unknown";
     }
 
-    String targetUrl = UriComponentsBuilder.fromUriString(frontBaseUrl + "/oauth2/redirect")
+    UriComponentsBuilder builder = UriComponentsBuilder.fromUriString(frontBaseUrl + "/oauth2/redirect")
       .queryParam("token", token)
       .queryParam("nickname", nickname)
       .queryParam("bell", member.getBell())
-      .queryParam("level", member.getLevel())
-      .build()
-      .toUriString();
+      .queryParam("level", member.getLevel());
+    
+    // 정지 정보 전달
+    if (Boolean.TRUE.equals(member.getIsSuspended())) {
+      builder.queryParam("isSuspended", "true");
+      if (member.getSuspendedUntil() != null) {
+        builder.queryParam("suspendedUntil", member.getSuspendedUntil().toString());
+      }
+    }
+    
+    String targetUrl = builder.build().toUriString();
 
     // 5. 리다이렉트 실행
     getRedirectStrategy().sendRedirect(request, response, targetUrl);

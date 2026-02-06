@@ -1,0 +1,182 @@
+.subtitle-root {
+  position: absolute;
+  inset: 0;
+  z-index: 120;
+  pointer-events: none;
+  --s: calc(1cqw / 19.2);
+}
+
+/* 전체 래퍼 */
+.content-wrap {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  bottom: calc(72 * var(--s));
+  width: calc(1268 * var(--s));
+  height: calc(408 * var(--s));
+  z-index: 110;
+  pointer-events: none;
+}
+
+/* 말풍선 */
+.content-box {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: calc(364 * var(--s));
+  pointer-events: auto;
+  -webkit-mask-image: url('/images/common/ui-bubble-content.svg');
+  mask-image: url('/images/common/ui-bubble-content.svg');
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+/* 텍스트 영역 */
+.content-text {
+  position: absolute;
+  top: calc(76 * var(--s)); /* 120 → 76 (content-box 기준) */
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(1048 * var(--s));
+  height: calc(208 * var(--s));
+  font-family: 'Gosanja', sans-serif;
+  font-size: calc(48 * var(--s));
+  line-height: 1.5;
+  text-align: left;
+  word-break: keep-all;
+  box-sizing: border-box;
+  z-index: 111;
+  overflow: hidden;
+  white-space: pre;
+}
+
+/* 이름 박스 */
+.name-box {
+  position: absolute;
+  left: calc(36 * var(--s));
+  top: 0;
+  width: calc(244 * var(--s));
+  height: calc(96 * var(--s));
+  z-index: 121;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /*transform: rotate(-8deg);*/
+  -webkit-mask-image: url('/images/common/ui-bubble-name.svg');
+  mask-image: url('/images/common/ui-bubble-name.svg');
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+/* 이름 텍스트 */
+.name-text {
+  transform: rotate(-8deg);
+  width: calc(144 * var(--s));
+  height: calc(60 * var(--s));
+  font-family: 'Gosanja', sans-serif;
+  font-size: calc(36 * var(--s));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  overflow: hidden;
+}
+
+/* 화살표 버튼 */
+.triangle-btn {
+  position: absolute;
+  bottom: calc(0 * var(--s));
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(52 * var(--s));
+  height: calc(32 * var(--s));
+  z-index: 150;
+  pointer-events: auto;
+  border: none;
+  padding: 0;
+  margin: 0;
+  -webkit-mask-image: url('/images/common/ui-bubble-arrow.svg');
+  mask-image: url('/images/common/ui-bubble-arrow.svg');
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+/* 옵션 박스 (선택지 말풍선)*/
+.option-box {
+  position: absolute;
+  right: calc(96 * var(--s));
+  bottom: calc(360 * var(--s));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 115;
+  pointer-events: auto;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  mask-position: center;
+  background: #6a4f9c;
+}
+.option-box-small {
+  width: calc(480 * var(--s));
+  height: calc(284 * var(--s));
+  -webkit-mask-image: url('/images/common/ui-bubble-choice-2.svg');
+  mask-image: url('/images/common/ui-bubble-choice-2.svg');
+}
+.option-box-large {
+  width: calc(480 * var(--s));
+  height: calc(340 * var(--s));
+  -webkit-mask-image: url('/images/common/ui-bubble-choice-3.svg');
+  mask-image: url('/images/common/ui-bubble-choice-3.svg');
+}
+/* 옵션 텍스트 */
+.option-text {
+  width: auto;
+  box-sizing: border-box;
+  font-family: 'Gosanja', sans-serif;
+  font-size: calc(42 * var(--s));
+  line-height: calc(80 * var(--s));
+  word-break: keep-all;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  overflow: visible;
+  padding: 0;
+}
+
+.option-row {
+  display: inline-block;
+  white-space: nowrap;
+  pointer-events: auto;
+  position: relative;
+  transition: opacity 0.2s ease;
+  z-index: 0;
+}
+
+.option-row::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 0;
+  height: calc(12 * var(--s)); /* 줄 두께 */
+  background-color: var(--highlight-color, #f9f0a3);
+  z-index: -1;
+  transition: width 0.2s ease;
+}
+
+.option-row:hover::after {
+  width: 100%;
+}

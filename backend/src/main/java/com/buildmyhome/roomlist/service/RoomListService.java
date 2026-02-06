@@ -19,6 +19,8 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
+
 @Service
 @RequiredArgsConstructor
 public class RoomListService {
@@ -28,6 +30,13 @@ public class RoomListService {
   private final RoomRepository roomRepository;
   private final MemberRepository memberRepository;
   private final RoomStateService roomStateService;
+
+  // 멤버 ID로 닉네임 조회
+  public String getNicknameByMemberId(Long memberId) {
+    return memberRepository.findById(memberId)
+        .map(Member::getNickname)
+        .orElse("익명");
+  }
 
   // 방 검사 메소드
   private void validateRoomSettings(String title, Integer maxPlayers, Integer totalRounds) {
@@ -40,20 +49,35 @@ public class RoomListService {
           "라운드 설정이 잘못되었습니다.");
   }
 
+  // 6자리 랜덤 초대 코드 생성 (대문자 + 숫자)
+  private String generateInviteCode() {
+    String chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // 혼동 문자 제외 (0,O,1,I)
+    SecureRandom random = new SecureRandom();
+    StringBuilder code = new StringBuilder(6);
+    for (int i = 0; i < 6; i++) {
+      code.append(chars.charAt(random.nextInt(chars.length())));
+    }
+    return code.toString();
+  }
+
   private RoomListResponse toRoomListResponse(Room room) {
     RoomState roomState = roomStateService.getRoom(room.getId());
 
     int cur = (roomState != null) ? roomState.getPlayers().size() : 0;
     String hostNickname = (roomState != null) ? roomState.getHostNickname() : "";
+    
+    // 열린 슬롯 수 = 4 - 잠긴 슬롯 수
+    int lockedCount = (roomState != null) ? roomState.getLockedSlots().size() : 0;
+    int effectiveMaxPlayers = 4 - lockedCount;
 
     // roomState가 없는 방은(서버 재시작/메모리 유실 등) 실제 입장이 실패할 수 있으니 joinable=false
-    boolean joinable = (roomState != null) && room.getStatus() == Status.WAITING && cur < room.getMaxPlayers();
+    boolean joinable = (roomState != null) && room.getStatus() == Status.WAITING && cur < effectiveMaxPlayers;
 
     return RoomListResponse.builder()
         .roomId(room.getId())
         .title(room.getTitle())
         .currentPlayers(cur)
-        .maxPlayers(room.getMaxPlayers())
+        .maxPlayers(effectiveMaxPlayers) // 잠긴 슬롯 제외한 열린 슬롯 수
         .totalRounds(room.getTotalRounds())
         .joinable(joinable)
         .hostNickname(hostNickname)
@@ -134,6 +158,7 @@ public class RoomListService {
         .status(Status.WAITING)
         .totalRounds(totalRounds)
         .password(password != null && !password.isBlank() ? password.trim() : null)
+        .inviteCode(generateInviteCode())
         .build();
 
     Room saved = roomRepository.save(room);
@@ -270,6 +295,28 @@ public class RoomListService {
         roomState.setMaxPlayers(newMaxPlayers);
     }
     room.setMaxPlayers(newMaxPlayers);
+    // roomRepository.save(room); // Transactional handles save
+  }
+
+  @Transactional
+  public void updateTotalRounds(Long roomId, int newTotalRounds) {
+    // 유효성 검증: 10, 20, 30, 40만 허용
+    if (!List.of(10, 20, 30, 40).contains(newTotalRounds)) {
+      throw new IllegalArgumentException("라운드는 10, 20, 30, 40 중 하나여야 합니다.");
+    }
+
+    Room room = roomRepository.findById(roomId)
+        .orElseThrow(() -> new IllegalArgumentException("Room not found: " + roomId));
+
+    RoomState roomState = roomStateService.getRoom(roomId);
+    
+    // 메모리 상태 업데이트
+    if (roomState != null) {
+      roomState.setTotalRounds(newTotalRounds);
+    }
+    
+    // DB 업데이트
+    room.setTotalRounds(newTotalRounds);
     // roomRepository.save(room); // Transactional handles save
   }
 

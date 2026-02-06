@@ -14,9 +14,12 @@ public enum HarvestType {
   CHERRY(200),
 
   // 생선
-  FISH_SMALL(50),
-  FISH_MEDIUM(150),
-  FISH_LARGE(300);
+  FISH_SMALL_1(100), // 흰동가리
+  FISH_SMALL_2(100), // 송사리
+  FISH_MEDIUM_1(200), // 농어
+  FISH_MEDIUM_2(200), // 멸치
+  FISH_LARGE(500), // 개복치
+  FISH_RARE(1000); // 상어
 
   private final int price;
 }

@@ -3,6 +3,7 @@ package com.buildmyhome.management.service;
 import com.buildmyhome.management.dto.MemberListResponse;
 import com.buildmyhome.member.entity.Member;
 import com.buildmyhome.member.repository.MemberRepository;
+import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,6 +23,28 @@ public class AdminService {
     return members.map(this::toListResponse);
   }
 
+  // 닉네임으로 검색 (관리자용) - 추가
+  public Page<MemberListResponse> searchMembersByNickname(String nickname, Pageable pageable) {
+    Page<Member> members = memberRepository.findByNicknameContainingIgnoreCase(nickname, pageable);
+    return members.map(this::toListResponse);
+  }
+
+  // 필터/정렬 검색 (관리자용) - 추가
+  public Page<MemberListResponse> searchMembers(String keyword, List<String> roleStrings, Boolean suspended, Pageable pageable) {
+    // 역할 문자열을 Enum으로 변환
+    List<Member.Role> roles = null;
+    if (roleStrings != null && !roleStrings.isEmpty()) {
+      roles = roleStrings.stream()
+          .map(Member.Role::valueOf)
+          .toList();
+    }
+    
+    String keywordFilter = (keyword == null || keyword.trim().isEmpty()) ? null : keyword.trim();
+    
+    return memberRepository.searchMembers(keywordFilter, roles, suspended, pageable)
+        .map(this::toListResponse);
+  }
+
   // 변환 메서드
   private MemberListResponse toListResponse(Member member) {
     return MemberListResponse.builder()
@@ -32,7 +55,13 @@ public class AdminService {
       .level(member.getLevel())
       .bell(member.getBell())
       .playCount(member.getPlayCount())
+      .isOnline(member.getIsOnline())
+      .lastLoginAt(member.getLastLoginAt())
+      .reportedCount(member.getReportedCount())
+      .warningCount(member.getWarningCount())
+      .isSuspended(member.getIsSuspended())
       .createdAt(member.getCreatedAt())
       .build();
   }
 }
+

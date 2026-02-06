@@ -1,0 +1,60 @@
+.house-naugul-seatback {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-56%);
+    width: calc(170 * var(--s));
+    height: calc(320 * var(--s));
+    bottom: calc(60 * var(--s));
+    pointer-events: none;
+    z-index: 2;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+}
+
+.house-naugul-seatback-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center bottom;
+    display: block;
+}
+
+.house-naugul-subtitle {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: calc(58 * var(--s));
+    z-index: 5;
+    display: flex;
+    justify-content: center;
+    pointer-events: auto;
+    transform: scale(0.82);
+    transform-origin: center bottom;
+}
+
+/* Subtitle 내부 글자 크기만 이 스코프에서 조정 */
+.house-naugul-subtitle .content-text {
+    font-size: calc(36 * var(--s)) !important;
+    line-height: 1.15 !important;
+}
+
+.house-naugul-subtitle .name-text {
+    font-size: calc(30 * var(--s)) !important;
+}
+
+/* 옵션 말풍선(노란 박스) 위치/크기 보정 */
+.house-naugul-subtitle .option-box {
+    position: absolute !important;
+    right: calc(-380 * var(--s)) !important;
+    top: calc(-160 * var(--s)) !important;
+
+    width: calc(270 * var(--s)) !important;
+    padding: calc(24 * var(--s)) !important;
+    border-radius: calc(26 * var(--s)) !important;
+}
+
+.house-naugul-subtitle .option-text {
+    font-size: calc(32 * var(--s)) !important;
+    line-height: 1.35 !important;
+}

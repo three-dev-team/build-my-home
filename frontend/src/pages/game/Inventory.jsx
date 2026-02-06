@@ -1,288 +1,229 @@
 import { useEffect, useMemo, useRef } from 'react';
+import ExitButton from '../../components/common/ExitButton.jsx';
+import {
+  RESOURCE_ORDER,
+  FRUIT_ORDER,
+  FISH_ORDER,
+  koName,
+  getCount,
+  rewardIconSrc,
+} from '../../constants/reward.js';
+import { COLORS, withAlpha } from '../../constants/colors.js';
+
+const BASE = {
+  inventory: '/images/inventory',
+};
+const RADISH_ICON_SRC = '/images/mupani/radish.webp';
 
 export default function Inventory({ player, onClose }) {
+  if (!player) return null;
+
   const overlayRef = useRef(null);
 
-  // ESC 누르면 인벤 닫기
   useEffect(() => {
-    const onKeyDown = (e) => {
-      if (e.key === 'Escape') onClose?.();
-    };
+    const onKeyDown = (e) => e.key === 'Escape' && onClose?.();
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [onClose]);
 
-  // 오버레이 바깥 클릭하면 닫기
   const handleOverlayMouseDown = (e) => {
     if (e.target === overlayRef.current) onClose?.();
   };
 
-  // player 없으면 렌더링 안 함
-  if (!player) return null;
+  const MODAL_W = 1296;
+  const MODAL_H = 555;
 
-  // 표시 순서(카테고리 내부에서 "끼워넣기" 됨)
-  const RESOURCE_ORDER = ['STONE', 'WOOD', 'IRON', 'CLOTH', 'BRICK', 'WALLPAPER', 'CLAY', 'FLOORING'];
-  const FRUIT_ORDER = ['APPLE', 'ORANGE', 'PEAR', 'PEACH', 'CHERRY'];
-  const FISH_ORDER = ['FISH_SMALL', 'FISH_MEDIUM', 'FISH_LARGE'];
+  const BOX_W = 100;
+  const BOX_H = 96;
 
-  // UI에 표시할 한글 라벨
-  const koName = (key) => {
-    const map = {
-      STONE: '돌',
-      WOOD: '목재',
-      IRON: '철광석',
-      CLOTH: '천',
-      BRICK: '벽돌',
-      WALLPAPER: '벽지',
-      CLAY: '점토',
-      FLOORING: '바닥재',
+  const ICON_W = 84;
+  const ICON_H = 80;
 
-      APPLE: '사과',
-      ORANGE: '오렌지',
-      PEAR: '배',
-      PEACH: '복숭아',
-      CHERRY: '체리',
+  const CIRCLE = 40;
+  const CIRCLE_COLOR = COLORS.inventory;
 
-      FISH_SMALL: '작은 물고기',
-      FISH_MEDIUM: '중간 물고기',
-      FISH_LARGE: '큰 물고기',
-    };
-    return map[key] || key;
-  };
+  const COL_BOTTOM = [48, 68, 88, 104, 112, 112, 104, 88, 68, 48];
+  const COLS = 10;
+  const ROWS = 4;
 
-  // resources/harvests에서 수량 안전하게 읽기
-  const getCount = (mapObj, key) => {
-    if (!mapObj) return 0;
-    const v = mapObj[key];
-    return typeof v === 'number' ? v : 0;
-  };
+  const START_X = Math.round((MODAL_W - COLS * BOX_W) / 2);
 
-  // 가진 것만, ORDER 순서대로 entries 생성
+  const leftPct = (xPx) => `${(xPx / MODAL_W) * 100}%`;
+  const topPct = (yPx) => `${(yPx / MODAL_H) * 100}%`;
+
+  const wByModal = (px) => `calc(var(--modalW) * ${px} / ${MODAL_W})`;
+  const hByModal = (px) => `calc(var(--modalH) * ${px} / ${MODAL_H})`;
+
+  const BOX_CENTERS = useMemo(() => {
+    const out = [];
+    for (let rTop = ROWS - 1; rTop >= 0; rTop--) {
+      for (let c = 0; c < COLS; c++) {
+        const bottom = COL_BOTTOM[c];
+        const colLeft = START_X + c * BOX_W;
+        const cx = colLeft + BOX_W / 2;
+
+        const r = rTop;
+        const cy = MODAL_H - bottom - r * BOX_H - BOX_H / 2;
+
+        out.push([cx, cy]);
+      }
+    }
+    return out;
+  }, []);
+
   const entries = useMemo(() => {
     const list = [];
-
-    const pushIfOwned = (prefix, key, count, imgKey = key) => {
+    const pushIfOwned = (prefix, key, count) => {
       if (!count || count <= 0) return;
-
-      list.push({
-        key: `${prefix}_${key}`,
-        label: koName(key),
-        count,
-        srcCandidates: [`/images/inventory/${imgKey}.webp`, `/images/inventory/${imgKey}.png`],
-      });
+      list.push({ id: `${prefix}_${key}`, key, label: koName(key), count, src: rewardIconSrc(key) });
     };
 
-    for (const k of RESOURCE_ORDER) {
+    for (const k of RESOURCE_ORDER || []) {
+      if (k === 'STONE') continue;
       pushIfOwned('RES', k, getCount(player.resources, k));
     }
-
-    for (const k of FRUIT_ORDER) {
-      pushIfOwned('HAR', k, getCount(player.harvests, k));
-    }
-
-    // 물고기는 낚시로 획득한 게 harvests에 쌓인다는 전제
-    for (const k of FISH_ORDER) {
-      pushIfOwned('FISH', k, getCount(player.harvests, k));
-    }
-
+    for (const k of FRUIT_ORDER || []) pushIfOwned('HAR', k, getCount(player.harvests, k));
+    for (const k of FISH_ORDER || []) pushIfOwned('FISH', k, getCount(player.harvests, k));
+    const radishQty = Number(player?.radishQty ?? 0);
+    if (radishQty > 0) { list.push({ id: 'RADISH_RADISH', key: 'RADISH', label: '무', count: radishQty, src: RADISH_ICON_SRC,});}
     return list;
-  }, [player.resources, player.harvests]);
+  }, [player.resources, player.harvests, player?.radishQty]);
 
-  // 8개 x 3줄 = 24개
-  const DOTS = [
-    [20, 24],
-    [28, 24],
-    [36, 24],
-    [44, 24],
-    [52, 24],
-    [60, 24],
-    [68, 24],
-    [76, 24],
-    [20, 38],
-    [28, 38],
-    [36, 38],
-    [44, 38],
-    [52, 38],
-    [60, 38],
-    [68, 38],
-    [76, 38],
-    [20, 52],
-    [28, 52],
-    [36, 52],
-    [44, 52],
-    [52, 52],
-    [60, 52],
-    [68, 52],
-    [76, 52],
-  ];
+  const slotItems = entries.slice(0, 40);
 
-  const dotItems = entries.slice(0, DOTS.length);
-  const overflowItems = entries.slice(DOTS.length);
+  const BG_SRC = `${BASE.inventory}/ui-inventory.svg`;
+
+  const numFill = COLORS.ac.darkBrown;
+  const numStroke = COLORS.ac.creamIvory;
+
+  const overlayBg = withAlpha(COLORS.ac.black, 0.22);
 
   return (
     <div
       ref={overlayRef}
       onMouseDown={handleOverlayMouseDown}
+      className="absolute inset-0 z-[24000]"
       style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 10000,
-        display: 'flex',
-        alignItems: 'flex-start',
-        justifyContent: 'center',
-        paddingTop: 80,
-        background: 'rgba(0,0,0,0.25)',
+        background: overlayBg,
+        position: 'absolute',
+        containerType: 'size',
       }}
     >
-      <div style={{ position: 'relative', width: 920, maxWidth: '92vw' }}>
-        <img
-          src="/images/inventory/inventory.webp"
-          alt="inventory"
-          style={{
-            width: '100%',
-            height: 'auto',
-            display: 'block',
-            userSelect: 'none',
-          }}
-          draggable={false}
-        />
+      <ExitButton onClick={onClose} />
 
-        <button
-          onClick={onClose}
+      <div className="absolute inset-0">
+        <div
+          className="absolute left-1/2 -translate-x-1/2"
           style={{
-            position: 'absolute',
-            right: '3.2%',
-            top: '50%',
-            transform: 'translateY(-50%)',
-            padding: '8px 12px',
-            borderRadius: 999,
-            border: 'none',
-            background: 'rgba(0,0,0,0.55)',
-            color: 'white',
-            fontWeight: 800,
-            cursor: 'pointer',
+            width: '67.5cqw',
+            height: '51.39cqh',
+            top: '9.26cqh',
+            isolation: 'isolate',
+            pointerEvents: 'auto',
+            '--modalW': '67.5cqw',
+            '--modalH': '51.39cqh',
           }}
         >
-          닫기
-        </button>
+          <img
+            src={BG_SRC}
+            alt=""
+            draggable={false}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'fill',
+              display: 'block',
+              userSelect: 'none',
+              pointerEvents: 'none',
+              filter: 'none',
+            }}
+          />
 
-        {dotItems.map((it, idx) => {
-          const [x, y] = DOTS[idx];
-          return (
+          {BOX_CENTERS.map(([cx, cy], idx) => (
             <div
-              key={it.key}
-              title={`${it.label} : ${it.count}`}
+              key={`slot_${idx}`}
               style={{
                 position: 'absolute',
-                left: `${x}%`,
-                top: `${y}%`,
+                left: leftPct(cx),
+                top: topPct(cy),
                 transform: 'translate(-50%, -50%)',
-                width: 'clamp(26px, 4.2vw, 56px)',
-                height: 'clamp(26px, 4.2vw, 56px)',
+                width: wByModal(BOX_W),
+                height: hByModal(BOX_H),
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 pointerEvents: 'none',
+                zIndex: 2,
               }}
             >
-              <SmartImage
-                srcCandidates={it.srcCandidates}
-                alt={it.label}
+              <div
                 style={{
-                  width: '90%',
-                  height: '90%',
-                  objectFit: 'contain',
-                  filter: 'drop-shadow(0 2px 2px rgba(0,0,0,0.25))',
-                  userSelect: 'none',
+                  width: wByModal(CIRCLE),
+                  height: wByModal(CIRCLE),
+                  borderRadius: 9999,
+                  background: CIRCLE_COLOR,
                 }}
               />
+            </div>
+          ))}
+
+          {slotItems.map((it, idx) => {
+            const [cx, cy] = BOX_CENTERS[idx];
+            return (
               <div
+                key={it.id}
+                title={`${it.label} : ${it.count}`}
                 style={{
                   position: 'absolute',
-                  right: -2,
-                  bottom: -2,
-                  minWidth: 22,
-                  height: 18,
-                  padding: '0 6px',
-                  borderRadius: 999,
-                  background: 'rgba(0,0,0,0.60)',
-                  color: 'white',
-                  fontSize: 12,
-                  fontWeight: 900,
-                  lineHeight: '18px',
-                  textAlign: 'center',
-                }}
-              >
-                {it.count}
-              </div>
-            </div>
-          );
-        })}
-
-        {overflowItems.length > 0 && (
-          <div
-            style={{
-              position: 'absolute',
-              left: '10%',
-              right: '10%',
-              bottom: '6%',
-              padding: '10px 12px',
-              borderRadius: 12,
-              background: 'rgba(0,0,0,0.35)',
-              color: 'white',
-              fontSize: 12,
-              display: 'flex',
-              gap: 10,
-              flexWrap: 'wrap',
-              pointerEvents: 'auto',
-            }}
-          >
-            {overflowItems.map((it) => (
-              <div
-                key={it.key}
-                style={{
+                  left: leftPct(cx),
+                  top: topPct(cy),
+                  transform: 'translate(-50%, -50%)',
+                  width: wByModal(ICON_W),
+                  height: hByModal(ICON_H),
                   display: 'flex',
                   alignItems: 'center',
-                  gap: 6,
-                  padding: '6px 8px',
-                  borderRadius: 10,
-                  background: 'rgba(255,255,255,0.10)',
+                  justifyContent: 'center',
+                  pointerEvents: 'none',
+                  zIndex: 3,
                 }}
               >
-                <SmartImage
-                  srcCandidates={it.srcCandidates}
+                <img
+                  src={it.src}
                   alt={it.label}
-                  style={{ width: 22, height: 22, objectFit: 'contain' }}
+                  draggable={false}
+                  style={{
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'contain',
+                    userSelect: 'none',
+                    filter: 'none',
+                  }}
                 />
-                <span style={{ fontWeight: 800 }}>{it.label}</span>
-                <span style={{ opacity: 0.9 }}>x{it.count}</span>
+
+                <div
+                  style={{
+                    position: 'absolute',
+                    right: wByModal(-4),
+                    bottom: hByModal(-4),
+                    color: numFill,
+                    fontSize: wByModal(32),
+                    fontWeight: 900,
+                    lineHeight: hByModal(32),
+                    WebkitTextStroke: `${wByModal(8)} ${numStroke}`,
+                    paintOrder: 'stroke fill',
+                    textRendering: 'geometricPrecision',
+                    userSelect: 'none',
+                  }}
+                >
+                  {it.count}
+                </div>
               </div>
-            ))}
-          </div>
-        )}
+            );
+          })}
+        </div>
       </div>
     </div>
   );
-}
-
-// 이미지 후보를 순서대로 시도
-function SmartImage({ srcCandidates, alt, style }) {
-  const imgRef = useRef(null);
-  const idxRef = useRef(0);
-
-  const onError = () => {
-    const nextIdx = (idxRef.current || 0) + 1;
-    idxRef.current = nextIdx;
-
-    const next = srcCandidates?.[nextIdx];
-    if (imgRef.current && next) {
-      imgRef.current.src = next;
-      return;
-    }
-
-    if (imgRef.current) imgRef.current.style.opacity = '0';
-  };
-
-  const first = srcCandidates?.[0] || '';
-  return <img ref={imgRef} src={first} alt={alt} style={style} draggable={false} onError={onError} />;
 }

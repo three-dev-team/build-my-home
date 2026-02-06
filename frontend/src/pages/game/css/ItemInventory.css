@@ -1,0 +1,113 @@
+/* ItemInventory.css */
+.item-inventory-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  --s: calc(1cqw / 19.2);
+}
+
+/* 아이콘 컨테이너 */
+.item-inventory-container {
+  width: calc(1200 * var(--s));
+  height: calc(800 * var(--s));
+  border-radius: calc(100 * var(--s));
+  background-color: rgba(253, 251, 246, 0.8);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 calc(20 * var(--s)) calc(60 * var(--s)) rgba(0, 0, 0, 0.3);
+  position: relative;
+}
+
+/* 아이템 박스 영역 */
+.item-inventory-box-area {
+  width: calc(920 * var(--s));
+  height: calc(240 * var(--s));
+  position: absolute;
+  top: calc(160 * var(--s));
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: calc(60 * var(--s));
+}
+
+/* 아이템 카드 */
+.item-inventory-card {
+  width: calc(240 * var(--s));
+  height: calc(240 * var(--s));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: calc(40 * var(--s));
+  transition: all 0.2s ease;
+}
+
+.item-inventory-card.clickable {
+  cursor: pointer;
+}
+
+.item-inventory-card.clickable:hover,
+.item-inventory-card.selected {
+  width: calc(300 * var(--s));
+  height: calc(300 * var(--s));
+  background-color: rgba(52, 196, 211, 0.4);
+  margin: calc(-30 * var(--s));
+}
+
+.item-inventory-image {
+  width: calc(200 * var(--s));
+  height: calc(200 * var(--s));
+  object-fit: contain;
+}
+
+/* 아이템 이름 박스 */
+.item-inventory-name-box {
+  position: absolute;
+  top: calc((160 + 240 + 84) * var(--s));
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Gosanja', sans-serif;
+  font-size: calc(52 * var(--s));
+  color: #594e36;
+  text-align: center;
+}
+
+/* 밑줄 영역 */
+.item-inventory-divider {
+  position: absolute;
+  top: calc((160 + 240 + 84 + 60 + 40) * var(--s));
+  left: 50%;
+  transform: translateX(-50%);
+  width: calc(400 * var(--s));
+  height: calc(4 * var(--s));
+  background-color: #594e36;
+}
+
+/* 아이템 설명 박스 */
+.item-inventory-description-box {
+  position: absolute;
+  top: calc((160 + 240 + 84 + 60 + 40 + 56) * var(--s));
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Gosanja', sans-serif;
+  font-size: calc(32 * var(--s));
+  color: #594e36;
+  text-align: center;
+  width: calc(800 * var(--s));
+}
+
+/* 선택 안 됐을 때 placeholder */
+.item-inventory-placeholder {
+  position: absolute;
+  top: calc(500 * var(--s));
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Gosanja', sans-serif;
+  font-size: calc(40 * var(--s));
+  color: #999;
+  text-align: center;
+}

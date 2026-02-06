@@ -1,23 +1,102 @@
 /* 1. 최상단에 폰트 임포트 */
 @import url('https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap');
 
-/* 2. Tailwind v4 임포트 */
+/* 2. 폰트 설정 */
+@font-face {
+  font-family: 'Gosanja';
+  src: url('/fonts/gosanja.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Formula';
+  src: url('/fonts/Formula1-Bold_web_0.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+}
+
+/* 3. Tailwind v4 임포트 */
 @import 'tailwindcss';
 
-/* 3. Tailwind 테마 확장 (v4 방식) */
+/* 4. Tailwind 테마 확장 (v4 방식) */
 @theme {
   --font-gaegu: 'Gaegu', cursive;
+  --font-gosanja: 'Gosanja', sans-serif;
+  --font-formula: 'Formula', sans-serif;
 }
 
 /* 4. 전역 스타일 */
 @layer base {
   body {
-    @apply m-0 p-0 overflow-hidden;
-    font-family: var(--font-gaegu);
+    @apply m-0 p-0 overflow-hidden bg-black;
+    font-family: var(--font-gosanja);
   }
+}
+
+.font-gosanja {
+  font-family: var(--font-gosanja);
+}
+.font-formula {
+  font-family: var(--font-formula);
+}
+.font-gaegu {
+  font-family: var(--font-gaegu);
 }
 
 /* 5. 커스텀 유틸리티 */
 .wood-panel {
   @apply bg-[#fdf6e3] border-[6px] border-[#8b5a2b] shadow-[8px_8px_0px_rgba(139,90,43,0.2)];
+}
+
+/* 커스텀 스크롤바 */
+.scrollbar-custom::-webkit-scrollbar {
+  width: 13px;
+}
+.scrollbar-custom::-webkit-scrollbar-track {
+  background: transparent;
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+.scrollbar-custom::-webkit-scrollbar-thumb {
+  background-color: #6a4f9c;
+  border-radius: 13px;
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+.scrollbar-custom::-webkit-scrollbar-thumb:hover {
+  background-color: #5a4a6f;
+}
+
+/* 6. 애니메이션 */
+@keyframes wiggle {
+  0%,
+  100% {
+    transform: rotate(-5deg);
+  }
+  50% {
+    transform: rotate(5deg);
+  }
+}
+.animate-wiggle {
+  animation: wiggle 0.5s ease-in-out infinite;
+}
+
+/* 커서 설정 */
+html,
+body {
+  /* 전체 영역 기본 커서 */
+  cursor:
+    url('/images/icon-cursor.svg') 6 6,
+    /* 6 6은 클릭되는 좌표(Hotspot) */ auto;
+}
+
+button:hover,
+a:hover,
+.clickable:hover {
+  /* 포인터 상태 (지금 보내준 흰색/검정 포인터) */
+  /* 10 0 좌표는 손가락 끝이 정확히 버튼을 누르게 만듭니다 */
+  cursor:
+    url('/images/icon-cursor-pointer.svg') 10 0,
+    pointer;
 }

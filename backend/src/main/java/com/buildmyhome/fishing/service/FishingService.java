@@ -1,3 +1,10 @@
+// FishingService.java (풀코드) ✅
+// 변경사항 요약(이번 수정):
+// 0) (핵심) WAITING_FISHING(0)로 바뀐 전제에서, "대기(시작 안 누름) 자동 실패"를 FishingService가 책임지도록 추가
+//    - scheduleWaitingTimeout(roomId, actorId): WAITING_FISHING 진입 시 N초 뒤 자동 실패 처리
+//    - cancelWaitingTimeout(roomId): start 요청이 들어오면 대기 타임아웃 취소
+// 1) 기존 변경사항(떡밥 소모 순서/putIfAbsent 실패 환불/NPE 방어/GAME_OVER 누락 방지)은 그대로 유지
+
 package com.buildmyhome.fishing.service;
 
 import com.buildmyhome.fishing.dto.FishingEventMessage;
@@ -9,11 +16,12 @@ import com.buildmyhome.game.dto.GamePlayerState;
 import com.buildmyhome.game.dto.GameState;
 import com.buildmyhome.game.dto.GameStatus;
 import com.buildmyhome.game.dto.HarvestType;
+import com.buildmyhome.game.dto.ShopItemType;
 import com.buildmyhome.game.service.GameStateService;
 import jakarta.annotation.PreDestroy;
 
 import java.util.ArrayList;
-import java.util.Map;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -26,44 +34,163 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class FishingService {
 
-    private static final long START_DELAY_MIN_MS = 200L; // 시작 지연 최소값(ms)
-    private static final long START_DELAY_MAX_MS = 400L; // 시작 지연 최대값(ms)
+    private static final long START_DELAY_MIN_MS = 200L;
+    private static final long START_DELAY_MAX_MS = 400L;
 
-    private static final long DURATION_SMALL_MS = 6000L; // SMALL 제한 시간(ms)
-    private static final long DURATION_MEDIUM_MS = 8000L; // MEDIUM 제한 시간(ms)
-    private static final long DURATION_LARGE_MS = 10000L; // LARGE 제한 시간(ms)
+    private static final long DURATION_SMALL_MS = 6000L;
+    private static final long DURATION_MEDIUM_MS = 8000L;
+    private static final long DURATION_LARGE_MS = 10000L;
+    private static final long DURATION_RARE_MS = 10000L;
 
-    private static final long TURN_END_AUTO_ADVANCE_MS = 5000L; // event-complete 미수신 대비 자동 턴 진행 지연(ms)
+    // ✅ "낚시 결과" 후 자동 턴 넘김까지 대기(프론트 결과 연출 고려)
+    private static final long TURN_END_AUTO_ADVANCE_MS = 5000L;
+
+    // ✅ WAITING_FISHING에서 "시작하기"를 누르지 않으면 자동 실패 처리(이전 WAITING_FISHING(10)과 동일 의미)
+    private static final long WAITING_START_TIMEOUT_MS = 10000L;
 
     private final SimpMessagingTemplate messagingTemplate;
     private final GameStateService gameStateService;
     private final FishingHandler fishingHandler;
 
-    // roomId 기준 진행 세션 저장소
     private final ConcurrentHashMap<Long, FishingEventSession> sessions = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Long, ScheduledFuture<?>> waitingTimeouts = new ConcurrentHashMap<>();
 
-    // timeout 및 자동 진행 예약 스케줄러
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
 
-    // 서버 종료 시 스케줄러 정리 메소드
     @PreDestroy
     public void shutdown() {
+        // ✅ 진행 중 낚시 세션 타임아웃 취소
+        for (FishingEventSession s : sessions.values()) {
+            if (s != null && s.timeoutFuture != null) {
+                s.timeoutFuture.cancel(false);
+            }
+        }
+        sessions.clear();
+
+        // ✅ 대기 타임아웃 취소
+        for (ScheduledFuture<?> f : waitingTimeouts.values()) {
+            if (f != null) f.cancel(false);
+        }
+        waitingTimeouts.clear();
+
         scheduler.shutdownNow();
     }
 
-    // 낚시 시작 메소드
-    // 소중대 동일 확률 자동 선택
-    public void startFishing(Long roomId, Long actorId) {
-        HarvestType ht = pickAutoHarvestType();
-        startFishing(roomId, actorId, ht.name());
+    // =========================================================
+    // ✅ WAITING_FISHING 대기 타임아웃 (GameStatus 타이머를 쓰지 않으므로 여기서 책임)
+    // =========================================================
+
+    // GameWsController.moveComplete에서 WAITING_FISHING 진입 시 호출
+    public void scheduleWaitingTimeout(Long roomId, Long actorId) {
+        Objects.requireNonNull(roomId, "roomId is required");
+        Objects.requireNonNull(actorId, "actorId is required");
+
+        // 기존 타임아웃 있으면 교체
+        cancelWaitingTimeout(roomId);
+
+        ScheduledFuture<?> future = scheduler.schedule(
+                () -> onWaitingStartTimeout(roomId, actorId),
+                WAITING_START_TIMEOUT_MS,
+                TimeUnit.MILLISECONDS
+        );
+
+        waitingTimeouts.put(roomId, future);
     }
 
-    // 낚시 시작 메소드
-    // 타입 지정 시작
+    // startFishing 요청 들어오면 호출(또는 내부에서 자동 호출)
+    public void cancelWaitingTimeout(Long roomId) {
+        if (roomId == null) return;
+        ScheduledFuture<?> prev = waitingTimeouts.remove(roomId);
+        if (prev != null) prev.cancel(false);
+    }
+
+    private void onWaitingStartTimeout(Long roomId, Long actorId) {
+        // 이미 start가 눌렸으면 cancelWaitingTimeout이 선행되므로 보통 여기 안 옴(방어적으로 체크)
+        waitingTimeouts.remove(roomId);
+
+        GameState game = gameStateService.getGame(roomId);
+        if (game == null) return;
+
+        synchronized (game) {
+            if (game.getCurrentPlayerId() == null) return;
+
+            // ✅ 정확히 "WAITING_FISHING에서 시작 안 눌렀을 때"만 처리
+            if (game.getStatus() != GameStatus.WAITING_FISHING) return;
+            if (!Objects.equals(game.getCurrentPlayerId(), actorId)) return;
+
+            // ✅ 이미 낚시 세션이 있다면(극히 드문 레이스) 여기서 개입하지 않음
+            if (sessions.containsKey(roomId)) return;
+        }
+
+        // ✅ 결과 메시지(세션 없이 fail 처리)
+        FishingEventMessage result = FishingEventMessage.builder()
+                .type("ROOM_EVENT_RESULT")
+                .eventType("FISHING")
+                .roomId(roomId)
+                .actorMemberId(actorId)
+                .success(false)
+                .message("시간 초과로 실패했어!")
+                .build();
+
+        // ✅ 낚시 이벤트 종료 공통 흐름으로 합류
+        markTurnEndPendingIfExists(roomId, actorId);
+        broadcastToGame(roomId, result);
+        scheduleAutoAdvanceTurnIfStillInProgress(roomId, actorId);
+    }
+
+    // =========================================================
+    // ✅ 낚시 시작/진행
+    // =========================================================
+
+    // ✅ 낚시 시작(기본: 떡밥 사용 안 함)
+    public void startFishing(Long roomId, Long actorId) {
+        startFishing(roomId, actorId, false);
+    }
+
+    // ✅ 낚시 시작(떡밥 선택 사용 여부)
+    // - useBait=true면 "검증 통과 + 떡밥 1개 소모 성공"일 때만 확률 부스트 적용
+    public void startFishing(Long roomId, Long actorId, boolean useBait) {
+        Objects.requireNonNull(roomId, "roomId is required");
+        Objects.requireNonNull(actorId, "actorId is required");
+
+        // ✅ 0) start 요청이 들어오면 "대기 타임아웃"은 우선 취소(사용자가 눌렀다는 사실 자체가 중요)
+        //    - 이후 검증 실패해도, 프론트에서 다시 누를 수 있고/원하면 GameWsController에서 재스케줄 가능
+        cancelWaitingTimeout(roomId);
+
+        // ✅ 1) 기본 검증(턴/상태) 먼저
+        if (!canActorStartFishing(roomId, actorId)) {
+            sendError(roomId, "현재 턴 유저만 낚시를 시작할 수 있어요.");
+            // 사용자가 잘못 눌렀고 여전히 WAITING_FISHING이라면 다시 대기 타임아웃을 걸어주고 싶을 수 있음
+            // (컨트롤러에서 진입 시 한번 걸어주니, 여기서는 추가로 재스케줄하지 않음)
+            return;
+        }
+
+        // ✅ 2) 이미 세션 있으면 시작 불가 (소모 전에 컷)
+        if (sessions.containsKey(roomId)) {
+            sendError(roomId, "이미 진행 중인 낚시 이벤트가 있어요.");
+            return;
+        }
+
+        // ✅ 3) 떡밥 소모는 이제 여기서(검증 뒤)
+        boolean baitBoosted = false;
+        if (useBait) {
+            baitBoosted = tryConsumeFishingChanceBait(roomId, actorId);
+        }
+
+        HarvestType ht = pickAutoHarvestType(baitBoosted);
+
+        // ✅ 4) 실제 세션 시작 (putIfAbsent 레이스 실패 시 떡밥 환불 처리 포함)
+        startFishingInternal(roomId, actorId, ht, baitBoosted);
+    }
+
+    // 낚시 시작(타입 지정)
     public void startFishing(Long roomId, Long actorId, String harvestTypeStr) {
         Objects.requireNonNull(roomId, "roomId is required");
         Objects.requireNonNull(actorId, "actorId is required");
         Objects.requireNonNull(harvestTypeStr, "harvestType is required");
+
+        // ✅ 0) start 요청이 들어오면 대기 타임아웃 우선 취소
+        cancelWaitingTimeout(roomId);
 
         HarvestType ht;
         try {
@@ -73,62 +200,67 @@ public class FishingService {
             return;
         }
 
-        // 낚시 허용 타입 검사
-        if (!(ht == HarvestType.FISH_SMALL || ht == HarvestType.FISH_MEDIUM || ht == HarvestType.FISH_LARGE)) {
-            sendError(roomId, "낚시에서는 FISH_SMALL / FISH_MEDIUM / FISH_LARGE 만 사용할 수 있어요: " + harvestTypeStr);
+        if (!isFishingAllowed(ht)) {
+            sendError(roomId, "낚시에서는 FISH_SMALL_1/2 / FISH_MEDIUM_1/2 / FISH_LARGE / FISH_RARE 만 사용할 수 있어요: " + harvestTypeStr);
             return;
         }
 
-        // 시작 가능 여부 검사
         if (!canActorStartFishing(roomId, actorId)) {
             sendError(roomId, "현재 턴 유저만 낚시를 시작할 수 있어요.");
+            return;
+        }
+
+        // ✅ 타입 지정 시작은 떡밥/부스트 개념 없음
+        startFishingInternal(roomId, actorId, ht, false);
+    }
+
+    // ✅ 내부 공통 시작 로직 (ht 확정 이후)
+    // baitConsumed=true면 putIfAbsent 실패 시 환불 시도
+    private void startFishingInternal(Long roomId, Long actorId, HarvestType ht, boolean baitConsumed) {
+        if (!isFishingAllowed(ht)) {
+            sendError(roomId, "낚시에서는 FISH_SMALL_1/2 / FISH_MEDIUM_1/2 / FISH_LARGE / FISH_RARE 만 사용할 수 있어요: " + ht);
+            if (baitConsumed) refundFishingChanceBait(roomId, actorId);
+            return;
+        }
+
+        // 레이스 방어(세션 존재 확인)
+        if (sessions.containsKey(roomId)) {
+            sendError(roomId, "이미 진행 중인 낚시 이벤트가 있어요.");
+            if (baitConsumed) refundFishingChanceBait(roomId, actorId);
             return;
         }
 
         long now = System.currentTimeMillis();
         long startAt = now + ThreadLocalRandom.current().nextLong(START_DELAY_MIN_MS, START_DELAY_MAX_MS + 1);
 
-        // 타입별 제한 시간 계산
-        long durationMs = switch (ht) {
-            case FISH_SMALL -> DURATION_SMALL_MS;
-            case FISH_MEDIUM -> DURATION_MEDIUM_MS;
-            case FISH_LARGE -> DURATION_LARGE_MS;
-            default -> DURATION_SMALL_MS;
-        };
-
+        long durationMs = durationFor(ht);
         long expiresAt = startAt + durationMs;
 
-        // seed 생성 메소드
         long seed = makeSeed(roomId, actorId, startAt);
 
-        // seed 기반 세션 데이터 생성 메소드
-        // NOTE: FishingPolicy는 seed + startAt을 기준으로 "재현 가능한" 룰(게이지/윈도우/펌프)을 만든다.
         FishingSession data = FishingPolicy.createSessionData(ht, seed, startAt);
 
         FishingEventSession session = new FishingEventSession(roomId, actorId, startAt, expiresAt, seed, data);
 
-        // roomId 기준 중복 시작 방지
         FishingEventSession prev = sessions.putIfAbsent(roomId, session);
         if (prev != null) {
+            // ✅ 여기서 레이스로 실패했으면 떡밥 환불
             sendError(roomId, "이미 진행 중인 낚시 이벤트가 있어요.");
+            if (baitConsumed) refundFishingChanceBait(roomId, actorId);
             return;
         }
 
-        // 게임 상태 전환 메소드
+        // ✅ 세션 생성 성공 이후에만 상태 변경
         markFishingInProgressIfExists(roomId, actorId);
 
-        // STARTED 메시지 전송 메소드
         FishingEventMessage started = buildStartedMessage(session, durationMs);
         broadcastToGame(roomId, started);
 
-        // timeout 예약 메소드
         long timeoutDelay = Math.max(0, expiresAt - System.currentTimeMillis());
         ScheduledFuture<?> timeoutFuture = scheduler.schedule(() -> onTimeout(roomId), timeoutDelay, TimeUnit.MILLISECONDS);
         session.setTimeoutFuture(timeoutFuture);
     }
 
-    // 액션 처리 진입 메소드
-    // HIT/REEL_START/REEL_STOP 처리
     public void handleAction(Long roomId, Long actorId, String action) {
         Objects.requireNonNull(roomId, "roomId is required");
         Objects.requireNonNull(actorId, "actorId is required");
@@ -140,10 +272,8 @@ public class FishingService {
             return;
         }
 
-        // 시작한 actor만 조작 허용
         if (!session.actorId.equals(actorId)) return;
 
-        // 턴 및 상태 유효성 검사 메소드
         if (!isCurrentTurnActorIfGameExists(roomId, actorId)) {
             cancelIfRunning(roomId);
             return;
@@ -153,7 +283,6 @@ public class FishingService {
 
         long now = System.currentTimeMillis();
 
-        // 만료 시 timeout 경로 사용
         if (now >= session.expiresAtEpochMs) {
             onTimeout(roomId);
             return;
@@ -163,7 +292,6 @@ public class FishingService {
         synchronized (session.mutex) {
             if (session.resolved.get()) return;
 
-            // 도메인 판정 메소드 호출
             out = fishingHandler.handleAction(
                     session.eventStartTimeMs,
                     session.expiresAtEpochMs,
@@ -182,8 +310,10 @@ public class FishingService {
         if (result != null) resolve(roomId, session, result);
     }
 
-    // 진행 중 세션 정리 메소드
     public void cancelIfRunning(Long roomId) {
+        // ✅ 대기 타임아웃도 같이 정리
+        cancelWaitingTimeout(roomId);
+
         FishingEventSession session = sessions.remove(roomId);
         if (session == null) return;
 
@@ -193,13 +323,11 @@ public class FishingService {
         if (timeoutFuture != null) timeoutFuture.cancel(false);
     }
 
-    // timeout 처리 메소드
     private void onTimeout(Long roomId) {
         FishingEventSession session = sessions.get(roomId);
         if (session == null) return;
         if (session.resolved.get()) return;
 
-        // 턴이 이미 넘어간 상태면 세션만 정리
         if (!isCurrentTurnActorIfGameExists(roomId, session.actorId)) {
             cancelIfRunning(roomId);
             return;
@@ -210,30 +338,23 @@ public class FishingService {
         resolve(roomId, session, result);
     }
 
-    // 결과 확정 처리 메소드
-    // GameState 반영, RESULT 전송, 안전장치 예약, 세션 제거
     private void resolve(Long roomId, FishingEventSession session, FishingEventMessage resultMessage) {
         if (!session.resolved.compareAndSet(false, true)) return;
 
         ScheduledFuture<?> timeoutFuture = session.timeoutFuture;
         if (timeoutFuture != null) timeoutFuture.cancel(false);
 
-        // 수확 결과 반영 메소드
         applyFishingResultToGameStateIfExists(roomId, session.actorId, resultMessage);
 
-        // 결과 확정 후 상태 전환 메소드
         markTurnEndPendingIfExists(roomId, session.actorId);
 
-        // RESULT 메시지 전송 메소드
         broadcastToGame(roomId, resultMessage);
 
-        // event-complete 미수신 대비 자동 턴 진행 예약 메소드
         scheduleAutoAdvanceTurnIfStillInProgress(roomId, session.actorId);
 
         sessions.remove(roomId);
     }
 
-    // 자동 턴 진행 예약 메소드
     private void scheduleAutoAdvanceTurnIfStillInProgress(Long roomId, Long actorId) {
         scheduler.schedule(
                 () -> {
@@ -243,13 +364,29 @@ public class FishingService {
                     synchronized (game) {
                         if (!Objects.equals(game.getCurrentPlayerId(), actorId)) return;
 
-                        // 낚시 관련 상태가 아니면 자동 진행 중단
-                        if (game.getStatus() != GameStatus.FISHING_IN_PROGRESS && game.getStatus() != GameStatus.TURN_END_PENDING) {
+                        if (game.getStatus() != GameStatus.FISHING_IN_PROGRESS
+                                && game.getStatus() != GameStatus.TURN_END_PENDING
+                                && game.getStatus() != GameStatus.WAITING_FISHING) {
+                            // ✅ WAITING_FISHING에서 "대기 타임아웃 실패" 처리 후 TURN_END_PENDING으로 바뀌지만,
+                            //    혹시라도 상태가 남아있으면 안전하게 포함
                             return;
                         }
 
-//          game.nextTurn();
+                        // ✅ 다음 턴으로 넘김
                         gameStateService.turnToNextPlayer(roomId);
+
+                        // ✅ GAME_OVER 처리(이게 기존엔 누락될 수 있었음)
+                        if (game.getCurrentRound() > game.getTotalRounds()) {
+                            game.setGameOver(true);
+                            game.setStatus(GameStatus.FINISHED);
+
+                            // 랭킹 계산(컨트롤러 eventComplete와 동일한 처리)
+                            gameStateService.calculateRanking(roomId);
+
+                            GameMessage over = buildGameSnapshotMessage("GAME_OVER", game, game.getCurrentPlayerId());
+                            broadcastToGame(roomId, over);
+                            return;
+                        }
 
                         GameMessage msg = buildGameSnapshotMessage("TURN_COMPLETED", game, game.getCurrentPlayerId());
                         broadcastToGame(roomId, msg);
@@ -260,11 +397,9 @@ public class FishingService {
         );
     }
 
-    // 시작 가능 여부 검사 메소드
-    // - 운영: GameState가 없는 상황에서 낚시만 단독으로 도는 건 유령 세션 위험이 커서 기본적으로 막는다.
-    // - 개발: DEV_FORCE_MY_TURN 활성화 시에만 단독 테스트 허용
     private boolean canActorStartFishing(Long roomId, Long actorId) {
         GameState game = gameStateService.getGame(roomId);
+        if (game == null) return false;
 
         synchronized (game) {
             if (game.getCurrentPlayerId() == null) return false;
@@ -273,17 +408,15 @@ public class FishingService {
         }
     }
 
-    // 조작 가능 여부 검사 메소드
-    // - 운영: GameState가 없으면 조작도 허용하지 않는다(유령 세션 방지)
-    // - 개발: DEV_FORCE_MY_TURN 활성화 시에만 단독 테스트 허용
     private boolean isCurrentTurnActorIfGameExists(Long roomId, Long actorId) {
         GameState game = gameStateService.getGame(roomId);
+        if (game == null) return false;
 
         synchronized (game) {
             if (game.getCurrentPlayerId() == null) return false;
 
-            // 낚시 관련 상태만 허용
-            if (game.getStatus() != GameStatus.WAITING_FISHING && game.getStatus() != GameStatus.FISHING_IN_PROGRESS) {
+            if (game.getStatus() != GameStatus.WAITING_FISHING
+                    && game.getStatus() != GameStatus.FISHING_IN_PROGRESS) {
                 return false;
             }
 
@@ -291,8 +424,6 @@ public class FishingService {
         }
     }
 
-    // 상태 전환 메소드
-    // WAITING_FISHING -> FISHING_IN_PROGRESS
     private void markFishingInProgressIfExists(Long roomId, Long actorId) {
         GameState game = gameStateService.getGame(roomId);
         if (game == null) return;
@@ -307,8 +438,6 @@ public class FishingService {
         }
     }
 
-    // 상태 전환 메소드
-    // 결과 확정 후 TURN_END_PENDING 전환
     private void markTurnEndPendingIfExists(Long roomId, Long actorId) {
         GameState game = gameStateService.getGame(roomId);
         if (game == null) return;
@@ -317,16 +446,14 @@ public class FishingService {
             if (game.getCurrentPlayerId() == null) return;
             if (!actorId.equals(game.getCurrentPlayerId())) return;
 
-            if (game.getStatus() == GameStatus.WAITING_FISHING || game.getStatus() == GameStatus.FISHING_IN_PROGRESS) {
+            if (game.getStatus() == GameStatus.WAITING_FISHING
+                    || game.getStatus() == GameStatus.FISHING_IN_PROGRESS) {
                 game.setStatus(GameStatus.TURN_END_PENDING);
             }
         }
     }
 
-    // STARTED 메시지 생성 메소드
     private FishingEventMessage buildStartedMessage(FishingEventSession session, long durationMs) {
-        Map<String, Object> params = fishingHandler.buildStartedParams(session.data);
-
         return FishingEventMessage.builder()
                 .type("ROOM_EVENT_STARTED")
                 .eventType("FISHING")
@@ -336,16 +463,14 @@ public class FishingService {
                 .eventStartTimeMs(session.eventStartTimeMs)
                 .durationMs(durationMs)
                 .seed(session.seed)
-                .params(params)
+                .params(fishingHandler.buildStartedParams(session.data))
                 .build();
     }
 
-    // /topic/games/{roomId} 브로드캐스트 메소드
     private void broadcastToGame(Long roomId, Object payload) {
         messagingTemplate.convertAndSend("/topic/games/" + roomId, payload);
     }
 
-    // ERROR 메시지 전송 메소드
     private void sendError(Long roomId, String message) {
         FishingEventMessage err = FishingEventMessage.builder()
                 .type("ERROR")
@@ -357,8 +482,6 @@ public class FishingService {
         broadcastToGame(roomId, err);
     }
 
-    // 결과를 GameState에 반영하는 메소드
-    // 성공 결과만 수확물 누적 처리
     private void applyFishingResultToGameStateIfExists(Long roomId, Long actorId, FishingEventMessage result) {
         GameState game = gameStateService.getGame(roomId);
         if (game == null) return;
@@ -367,17 +490,16 @@ public class FishingService {
             if (game.getCurrentPlayerId() == null) return;
             if (!actorId.equals(game.getCurrentPlayerId())) return;
 
-            // 낚시 관련 상태가 아니면 반영 중단
-            if (game.getStatus() != GameStatus.WAITING_FISHING && game.getStatus() != GameStatus.FISHING_IN_PROGRESS) {
+            if (game.getStatus() != GameStatus.WAITING_FISHING
+                    && game.getStatus() != GameStatus.FISHING_IN_PROGRESS
+                    && game.getStatus() != GameStatus.TURN_END_PENDING) {
                 return;
             }
 
-            if (
-                    result != null &&
-                            Boolean.TRUE.equals(result.getSuccess()) &&
-                            result.getGainedQty() != null &&
-                            result.getGainedQty() > 0
-            ) {
+            if (result != null
+                    && Boolean.TRUE.equals(result.getSuccess())
+                    && result.getGainedQty() != null
+                    && result.getGainedQty() > 0) {
                 try {
                     HarvestType ht = HarvestType.valueOf(result.getHarvestType());
                     GamePlayerState player = game.getPlayers().get(actorId);
@@ -386,13 +508,11 @@ public class FishingService {
                         player.getHarvests().put(ht, prev + result.getGainedQty());
                     }
                 } catch (IllegalArgumentException ignored) {
-                    // harvestType 파싱 실패 무시
                 }
             }
         }
     }
 
-    // GameMessage 스냅샷 생성 메소드
     private GameMessage buildGameSnapshotMessage(String type, GameState gameState, Long actorId) {
         GameMessage msg = new GameMessage();
         msg.setType(type);
@@ -407,17 +527,105 @@ public class FishingService {
         return msg;
     }
 
-    // 소중대 동일 확률 랜덤 선택 메소드
-    private HarvestType pickAutoHarvestType() {
-        int r = ThreadLocalRandom.current().nextInt(3);
-        return switch (r) {
-            case 0 -> HarvestType.FISH_SMALL;
-            case 1 -> HarvestType.FISH_MEDIUM;
-            default -> HarvestType.FISH_LARGE;
-        };
+    // ✅ 확률 기반 자동 선택
+    // - baitBoosted=false: small 40, medium 40, large 20, rare 0
+    // - baitBoosted=true : rare 50, small 20, medium 20, large 10
+    // + small/medium는 1/2를 50:50
+    private HarvestType pickAutoHarvestType(boolean baitBoosted) {
+        int roll = ThreadLocalRandom.current().nextInt(100); // 0..99
+
+        if (!baitBoosted) {
+            if (roll < 40) return pickSmallVariant();
+            if (roll < 80) return pickMediumVariant();
+            return HarvestType.FISH_LARGE;
+        }
+
+        if (roll < 50) return HarvestType.FISH_RARE;
+        if (roll < 70) return pickSmallVariant();
+        if (roll < 90) return pickMediumVariant();
+        return HarvestType.FISH_LARGE;
     }
 
-    // seed 생성 메소드
+    private HarvestType pickSmallVariant() {
+        return ThreadLocalRandom.current().nextBoolean() ? HarvestType.FISH_SMALL_1 : HarvestType.FISH_SMALL_2;
+    }
+
+    private HarvestType pickMediumVariant() {
+        return ThreadLocalRandom.current().nextBoolean() ? HarvestType.FISH_MEDIUM_1 : HarvestType.FISH_MEDIUM_2;
+    }
+
+    // ✅ 떡밥(ShopItemType.FISHING_CHANCE) 있으면 1개 소모 후 true
+    // (GamePlayerState.shopItems: List<ShopItemType> 구조에 맞춤)
+    private boolean tryConsumeFishingChanceBait(Long roomId, Long actorId) {
+        GameState game = gameStateService.getGame(roomId);
+        if (game == null) return false;
+
+        synchronized (game) {
+            GamePlayerState player = game.getPlayers().get(actorId);
+            if (player == null) return false;
+
+            List<ShopItemType> items = player.getShopItems();
+            if (items == null || items.isEmpty()) return false;
+
+            int cnt = countInShopItems(items, ShopItemType.FISHING_CHANCE);
+            if (cnt <= 0) return false;
+
+            return removeOneFromShopItems(items, ShopItemType.FISHING_CHANCE);
+        }
+    }
+
+    // ✅ putIfAbsent 레이스로 세션 생성 실패했을 때 환불용
+    private void refundFishingChanceBait(Long roomId, Long actorId) {
+        GameState game = gameStateService.getGame(roomId);
+        if (game == null) return;
+
+        synchronized (game) {
+            GamePlayerState player = game.getPlayers().get(actorId);
+            if (player == null) return;
+
+            List<ShopItemType> items = player.getShopItems();
+            if (items == null) {
+                items = new ArrayList<>();
+                player.setShopItems(items);
+            }
+            items.add(ShopItemType.FISHING_CHANCE);
+        }
+    }
+
+    private int countInShopItems(List<ShopItemType> items, ShopItemType target) {
+        int c = 0;
+        for (ShopItemType it : items) {
+            if (it == target) c++;
+        }
+        return c;
+    }
+
+    private boolean removeOneFromShopItems(List<ShopItemType> items, ShopItemType target) {
+        // List.remove(Object) 사용 시 첫 매칭 1개 제거
+        return items.remove(target);
+    }
+
+    private boolean isFishingAllowed(HarvestType ht) {
+        if (ht == null) return false;
+        return ht == HarvestType.FISH_SMALL_1
+                || ht == HarvestType.FISH_SMALL_2
+                || ht == HarvestType.FISH_MEDIUM_1
+                || ht == HarvestType.FISH_MEDIUM_2
+                || ht == HarvestType.FISH_LARGE
+                || ht == HarvestType.FISH_RARE;
+    }
+
+    private long durationFor(HarvestType ht) {
+        if (ht == null) return DURATION_SMALL_MS;
+
+        if (ht == HarvestType.FISH_SMALL_1 || ht == HarvestType.FISH_SMALL_2) return DURATION_SMALL_MS;
+        if (ht == HarvestType.FISH_MEDIUM_1 || ht == HarvestType.FISH_MEDIUM_2) return DURATION_MEDIUM_MS;
+        if (ht == HarvestType.FISH_LARGE) return DURATION_LARGE_MS;
+        if (ht == HarvestType.FISH_RARE) return DURATION_RARE_MS;
+
+        return DURATION_SMALL_MS;
+    }
+
     private long makeSeed(Long roomId, Long actorId, long startAt) {
         long x = roomId * 31L + actorId * 131L + startAt * 17L;
         x ^= (x << 13);
@@ -426,7 +634,6 @@ public class FishingService {
         return x;
     }
 
-    // roomId 기준 세션 보관용 내부 클래스
     private static class FishingEventSession {
 
         private final Long roomId;
@@ -436,13 +643,9 @@ public class FishingService {
         private final long seed;
         private final FishingSession data;
 
-        // 세션 데이터 동시 접근 보호용 락
         private final Object mutex = new Object();
-
-        // resolve 중복 방지 플래그
         private final AtomicBoolean resolved = new AtomicBoolean(false);
 
-        // timeout 예약 취소용 핸들
         private volatile ScheduledFuture<?> timeoutFuture;
 
         private FishingEventSession(
@@ -461,7 +664,6 @@ public class FishingService {
             this.data = data;
         }
 
-        // timeoutFuture 설정 메소드
         public void setTimeoutFuture(ScheduledFuture<?> future) {
             this.timeoutFuture = future;
         }
