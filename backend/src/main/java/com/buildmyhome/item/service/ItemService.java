@@ -13,4 +13,8 @@ public interface ItemService {
     void swapItem(GamePlayerState player, ItemType dropItem, ItemType newItem);
 
     GameStatus useItem(GameState gameState, GamePlayerState player, String useItemType, int useItemIdx);
+
+    GameStatus rollGoldDice(GamePlayerState player);
+
+    GameStatus rollCustomDice(GamePlayerState player, Integer actionData);
 }

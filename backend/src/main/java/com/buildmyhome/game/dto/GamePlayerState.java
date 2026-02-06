@@ -75,9 +75,11 @@ public class GamePlayerState {
         this.loan = Math.min(loan, MAX_LOAN);
     }
 
+    // 턴 종료 후 휘발성 데이터 초기화
     public void clearTurnData() {
         this.movePath = null;
         this.uiStep = 0;
+        this.diceValue = null;
         this.actionData = null;
         this.actionDataStr = null;
     }

@@ -59,9 +59,8 @@ public class ItemServiceImpl implements ItemService {
             case PIPE -> applyPipe(player);
             case MIRROR -> applyMirror(gameState, player);
             case CUSTOM_DICE -> applyCustomDice(player);
-            case DOUBLE_DICE, GOLD_DICE ->
-                // TODO: 마지막주에 구현
-                    GameStatus.WAITING_PLAYER_ACTION;
+            case GOLD_DICE -> applyGoldDice(player);
+            case DOUBLE_DICE -> GameStatus.WAITING_DOUBLE_DICE;
             default -> GameStatus.WAITING_PLAYER_ACTION;
         };
     }
@@ -101,6 +100,32 @@ public class ItemServiceImpl implements ItemService {
         player.setActionDataStr("MIRROR:" + other.getMemberId() + ":" + myPosition + ":" + otherPosition);
 
         return GameStatus.WAITING_MIRROR;
+    }
+
+    private GameStatus applyGoldDice(GamePlayerState player) {
+        player.setDiceValue(null);
+        player.setActionData(null);
+        return GameStatus.WAITING_GOLD_DICE;
+    }
+
+    @Override
+    public GameStatus rollGoldDice(GamePlayerState player) {
+        int diceValue = ThreadLocalRandom.current().nextInt(1, 7);
+        int bellReward = diceValue * 100;
+        player.setDiceValue(diceValue);
+        player.setBell(player.getBell() + bellReward);
+        player.setActionData(bellReward);
+        return GameStatus.ROLLING_GOLD_DICE;
+    }
+
+    @Override
+    public GameStatus rollCustomDice(GamePlayerState player, Integer actionData) {
+        if (actionData < 1 || actionData > 6) {
+            System.out.println("⚠️ 비정상 주사위 값 수신: " + actionData + " → 랜덤 강제 적용");
+            actionData = ThreadLocalRandom.current().nextInt(1, 7);
+        }
+        player.setDiceValue(actionData);
+        return GameStatus.ROLLING_DICE;
     }
 
 
