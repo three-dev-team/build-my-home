@@ -174,7 +174,7 @@ function Room() {
     if (loading) return;
     const client = new Client({
       brokerURL: getBrokerURL(),
-      connectHeaders: token ? { Authorization: `Bearer ${token}` } : {},
+      connectHeaders: token ? { Authorization: `Bearer ${token}`, page: 'room' } : {},
       onConnect: () => {
         client.subscribe(`/topic/rooms/${roomId}`, (message) => {
           const data = JSON.parse(message.body);

@@ -212,7 +212,7 @@ const GamePage = () => {
   useEffect(() => {
     const client = new Client({
       brokerURL: getBrokerURL(),
-      connectHeaders: token ? { Authorization: `Bearer ${token}` } : {},
+      connectHeaders: token ? { Authorization: `Bearer ${token}`, page: 'game' } : {},
       onConnect: () => {
         console.log('>>> ✅ WebSocket 연결됨');
         setStompClient(client);
@@ -337,9 +337,10 @@ const GamePage = () => {
 
     // 언마운트 시 연결 해제
     return () => {
-      if (client.active) {
-        // 나가기 전에 서버에 leave 알림
+      if (client.active && client.connected) {
         leaveGame(client, roomId);
+      }
+      if (client.active) {
         client.deactivate();
         setStompClient(null);
         console.log('>>> ❌ WebSocket 연결 해제됨');

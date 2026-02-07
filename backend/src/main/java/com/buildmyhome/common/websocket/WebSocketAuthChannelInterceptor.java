@@ -4,7 +4,11 @@ import com.buildmyhome.common.jwt.JwtTokenProvider;
 import com.buildmyhome.member.entity.Member;
 import com.buildmyhome.member.repository.MemberRepository;
 import java.security.Principal;
+import java.util.HashMap;
+import java.util.Map;
+
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.simp.stomp.StompCommand;
@@ -14,6 +18,7 @@ import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.messaging.support.MessageHeaderAccessor;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 @RequiredArgsConstructor
 public class WebSocketAuthChannelInterceptor implements ChannelInterceptor {
@@ -63,12 +68,23 @@ public class WebSocketAuthChannelInterceptor implements ChannelInterceptor {
       // [1인 1소켓 강제] 이미 접속중인 세션이 있는지 확인
       // sessionId는 헤더에서 가져오거나 시스템이 부여함 (STOMP에서는 session 속성 활용)
       String sessionId = accessor.getSessionId();
-      if (userSessionStore.isDuplicateConnection(member.getId(), sessionId)) {
-        throw new IllegalArgumentException("이미 다른 창에서 게임이 실행 중입니다.");
-      }
+
+        log.info(">>> [WS CONNECT] email: " + email + ", memberId: " + member.getId() + ", sessionId: " + sessionId);
+//      if (userSessionStore.isDuplicateConnection(member.getId(), sessionId)) {
+//        throw new IllegalArgumentException("이미 다른 창에서 게임이 실행 중입니다.");
+//      }
 
       // 접속 허용 시 세션 등록
       userSessionStore.addSession(member.getId(), sessionId);
+
+        // 페이지 정보를 세션 속성에 저장
+        Map<String, Object> attributes = accessor.getSessionAttributes();
+        if (attributes == null) {
+            attributes = new HashMap<>();
+            accessor.setSessionAttributes(attributes);
+        }
+        String page = accessor.getFirstNativeHeader("page");
+        accessor.getSessionAttributes().put("page", page != null ? page : "unknown");
 
       // 이 웹소켓 연결(헤더)에 유저 정보 저장
       accessor.setUser(principal);
