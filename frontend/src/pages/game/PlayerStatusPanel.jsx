@@ -122,6 +122,7 @@ export default function PlayerStatusPanel({ players = [], currentPlayerId, myId,
   const rotatedPlayers = buildTurnRotatedPlayers(players, turnOrder, currentPlayerId);
   // 랭킹 표시용(memberId -> rankNum)
   const rankMap = buildRankMap(players);
+
   const cssVars = useMemo(
     () => ({
       '--ps-box-border': withAlpha(COLORS.ac.black, 0.3),
@@ -147,10 +148,10 @@ export default function PlayerStatusPanel({ players = [], currentPlayerId, myId,
           const iconImg = ch?.roomListImage || null;
           const bell = Number(player?.bell ?? 0);
           const loan = Number(player?.loan ?? 0);
-          const houseIcon = getHouseIconByLevel(player?.houseLevel);
+          // MYHOME(프론트) = HOUSE_3(백엔드)인 경우 캐릭터별 houseImage를 쓰려면 characterId가 필요
+          const houseIcon = getHouseIconByLevel(player?.houseLevel, player?.characterId);
           const rawItems = Array.isArray(player?.items) ? player.items.slice(0, 3) : [];
           const itemMetas = rawItems.map(toItemMeta);
-
           // 카드 index 대신 rankMap 기준 랭크 사용
           const rankNum = rankMap.get(pid) ?? 1;
 

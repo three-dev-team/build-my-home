@@ -20,18 +20,16 @@ export default function RewardGetScreen({
                                           nickname,
                                           nameColor,
                                           characterImage,
-
                                           dropKeys = [],
                                           topKeys = [],
-
                                           showSubtitle = false,
                                           showDrop = false,
                                           dropRunId = 0,
                                           onDropOneDone,
-
                                           viewerNameText,
                                           viewerHouseLevel,
                                           viewerNameColor,
+                                          viewerOwnedResources = {},
                                         }) {
   const [k1, k2] = dropKeys;
 
@@ -49,8 +47,6 @@ export default function RewardGetScreen({
 
   // 관전자 이름(없으면 빈 문자열)
   const viewerName = useMemo(() => String(viewerNameText ?? '').trim(), [viewerNameText]);
-
-  // 서브 문구(과일/재료 분기)
   const { subLine, nextLevelNameForHighlight, viewerNameForHighlight } = useMemo(() => {
     if (kind === 'fruit') {
       const line = viewerName
@@ -64,7 +60,8 @@ export default function RewardGetScreen({
       };
     }
 
-    const { nextLevel, isNeeded } = isAnyRewardNeededForNextLevel(viewerHouseLevel, [k1, k2].filter(Boolean));
+    // resource
+    const { nextLevel, isNeeded } = isAnyRewardNeededForNextLevel(viewerHouseLevel, dropKeys, viewerOwnedResources);
 
     if (!nextLevel) {
       return {
@@ -81,7 +78,7 @@ export default function RewardGetScreen({
       nextLevelNameForHighlight: nextLevel.name,
       viewerNameForHighlight: '',
     };
-  }, [kind, viewerName, viewerHouseLevel, k1, k2]);
+  }, [kind, viewerName, viewerHouseLevel, dropKeys, viewerOwnedResources]);
 
   // Subtitle 본문(2줄)
   const contentText = useMemo(() => `${mainLine}\n${subLine}`, [mainLine, subLine]);

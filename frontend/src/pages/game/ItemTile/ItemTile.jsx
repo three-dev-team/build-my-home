@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence } from 'framer-motion';
 import './ItemTile.css';
@@ -111,28 +111,54 @@ export default function ItemTile({ gameState, myId, isMyTurn = true, onAction, o
   const handleExit = useExitHandler(myTurn, onExit);
 
   // 이벤트 사이클 키(방/현재플레이어/라운드 단위로 리셋)
+  // (tileIndex / eventSeq 같은 게 gameState에 있으면 여기에 꼭 포함하는 게 더 안전함)
   const cycleKey = useMemo(() => {
     return `${gameState?.roomId ?? 'x'}|${gameState?.currentPlayerId ?? 'x'}|${gameState?.currentRound ?? 'x'}|WAITING_ITEMS`;
   }, [gameState?.roomId, gameState?.currentPlayerId, gameState?.currentRound]);
 
   // step이 뒤로 내려가는 프레임 방지(최대 step만 유지)
-  const stepRef = useRef(0);
+  // ⚠️ render 중에 ref를 갱신하지 말고 state로 관리
+  const [stableStep, setStableStep] = useState(0);
+  const stepMaxRef = useRef(0);
 
   useEffect(() => {
-    stepRef.current = 0;
+    // 새 사이클 진입 시 초기화
+    stepMaxRef.current = 0;
+    setStableStep(0);
   }, [cycleKey]);
 
   const isFreshEnter = rawStep === 0 && cp?.actionDataStr == null;
 
   useEffect(() => {
-    if (isFreshEnter) stepRef.current = 0;
+    // 새 진입으로 판단되면 강제 초기화
+    if (isFreshEnter) {
+      stepMaxRef.current = 0;
+      setStableStep(0);
+    }
   }, [isFreshEnter]);
 
-  stepRef.current = Math.max(stepRef.current, rawStep);
-  const step = stepRef.current;
+  useEffect(() => {
+    // rawStep 업데이트에 맞춰 최대 step을 effect에서만 갱신
+    const next = Math.max(stepMaxRef.current, rawStep);
+    if (next !== stepMaxRef.current) {
+      stepMaxRef.current = next;
+      setStableStep(next);
+    } else {
+      // 최대값 변화는 없지만 rawStep이 0으로 내려가는 프레임 등에서
+      // stableStep을 괜히 내리지 않기 위해 아무것도 하지 않음
+    }
+  }, [rawStep]);
+
+  // ✅ 빈 화면 방지용 "안전 표시 step" 계산
+  // - stableStep=1인데 inventoryFull=false가 순간 발생하면 SelectScreen이 렌더 안 돼서 화면이 비었음
+  // - 이 케이스는 DiscoverScreen으로 폴백(혹은 로딩 화면)해서 절대 빈 화면이 안 나오게 함
+  const displayStep = useMemo(() => {
+    if (stableStep === 1 && !inventoryFull) return 0;
+    return stableStep;
+  }, [stableStep, inventoryFull]);
 
   // 완료(step=3)에서만 자동 종료 타이머 동작
-  useGameTimer(myTurn && step === 3 ? 5 : null, handleExit);
+  useGameTimer(myTurn && displayStep === 3 ? 5 : null, handleExit);
 
   // 색상은 CSS 변수로만 전달
   const cssVars = {
@@ -151,17 +177,19 @@ export default function ItemTile({ gameState, myId, isMyTurn = true, onAction, o
         <div className="itemtile-safe" style={cssVars}>
           <div className="itemtile-screen">
             <AnimatePresence mode="wait" initial={false}>
-              {step === 0 && (
+              {displayStep === 0 && (
                 <DiscoverScreen
                   key={`s0-${cycleKey}`}
                   isMyTurn={myTurn}
                   onAction={wrappedAction}
                   characterDeliveryImage={deliveryImage}
                   characterHappyImage={happyImage}
+                  // ✅ candidateKey가 이미 있으면(서버가 먼저 뽑아둔 상태) Discover에서 연타 막는 데도 활용 가능
+                  hasCandidate={Boolean(candidateKey)}
                 />
               )}
 
-              {step === 1 && inventoryFull && (
+              {displayStep === 1 && inventoryFull && (
                 <SelectScreen
                   key={`s1-${cycleKey}`}
                   inventoryKeys={inventoryKeys}
@@ -172,7 +200,7 @@ export default function ItemTile({ gameState, myId, isMyTurn = true, onAction, o
                 />
               )}
 
-              {step === 3 && (
+              {displayStep === 3 && (
                 <CompleteScreen
                   key={`s3-${cycleKey}`}
                   playerName={playerName}

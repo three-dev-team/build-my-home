@@ -225,6 +225,11 @@ export default function Loan({
     ]);
   };
 
+  const showNoDebtNotice = () => {
+    const text = `${nickname}님은 상환할 대출금이 없습니다`;
+    showNotice(text, [{ text: nickname, color: H_NAME }]);
+  };
+
   const validate = (type, amount) => {
     const val = Number(amount);
 
@@ -345,7 +350,6 @@ export default function Loan({
       confirmingRef.current = false;
       handleExitReal();
     }, EXIT_AFTER_TYPING_MS);
-
   }, [mode, doneTypingDone]);
 
   useEffect(() => {
@@ -359,7 +363,6 @@ export default function Loan({
       setCalcValue(0);
       setDoneTypingDone(false);
     }, WARN_AUTO_HIDE_MS);
-
   }, [mode, doneTypingDone]);
 
   useEffect(() => {
@@ -376,6 +379,17 @@ export default function Loan({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, warnTypingDone]);
 
+  useEffect(() => {
+    const debt = Number(userLoan || 0);
+    if (debt > 0) return;
+    if (mode !== 'CALC_REPAY') return;
+
+    confirmingRef.current = false;
+    setCalcValue(0);
+    setMode('MENU');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [userLoan, mode]);
+
   const onMenuLoan = () => {
     confirmingRef.current = false;
 
@@ -390,6 +404,11 @@ export default function Loan({
 
   const onMenuRepay = () => {
     confirmingRef.current = false;
+    if (Number(userLoan || 0) <= 0) {
+      showNoDebtNotice();
+      return;
+    }
+
     setCalcValue(0);
     setMode('CALC_REPAY');
   };

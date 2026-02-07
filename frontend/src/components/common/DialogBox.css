@@ -1,5 +1,5 @@
 .db-root {
-    position: fixed;
+    position: absolute;
     inset: 0;
     z-index: 30050;
     pointer-events: none;
@@ -17,11 +17,6 @@
     --optH3: 340;
     --optRightPush: -180;
     --optBottomFromWrap: 280;
-
-    --db-content-bg: rgba(24, 54, 83, 0.8);
-    --db-option-bg: #fcec9e;
-    --db-option-text: #5b4d33;
-    --db-highlight: #f2c94c;
 }
 
 .db-wrap {
