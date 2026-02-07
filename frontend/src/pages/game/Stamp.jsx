@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useGameTimer } from '../../hooks/useGameTimer.js';
 import { boardTiles } from '../../constants/boardData.js';
@@ -9,6 +9,7 @@ import InstructionText from '../../components/common/InstructionText.jsx';
 import useSpaceKey from '../../hooks/useSpaceKey.js';
 import { COLORS } from '../../constants/colors.js';
 import { CHARACTERS } from '../../constants/characters.js';
+import CircleBlackout from '../../components/common/CircleBlackout.jsx';
 
 const DUPLICATE_REWARD = 20;
 
@@ -19,11 +20,11 @@ const STAMP_CONFIG = {
     image: '/images/stamp/stamp-gapdol.webp',
     bg: '/images/stamp/bg-gapdol.jpeg',
     greeting: (playerName) =>
-      `어이~ ${playerName}씨! 여기까지 오느라 고생 많았당께.\n자, 그... 뭐시기냐, 방문카드 좀 줘보라고.\n내가 기가 막히게 스탬프를 쾅!하고 찍어줄 테니껴~`,
+      `어이~ ${playerName}씨! 여기까지 오느라 고생 많았당께.\n그... 뭐시기냐, 방문카드 좀 줘보라고.\n내가 기가 막히게 스탬프를 쾅!하고 찍어줄껴~`,
     duplicate: (playerName) =>
       `어이쿠, ${playerName}아! 벌써 도장이 꽉 들어찼구마잉.\n빈칸이 없어서 서운하겠지만,\n아쉬운 대로 이거 20벨이라도 챙겨가랑께 껄껄~!`,
     success: (playerName) =>
-      `자~ 아주 기가 막히게 찍혔구마잉~ 껄껄!\n내 스탬프가 들어가니까 카드가 아주 훤칠해졌어.\n남은 칸도 ${playerName}만의 추억으로 꽉꽉 채워보라고.`,
+      `아주 기가 막히게 찍혔구마잉~ 껄껄!\n내 스탬프가 들어가니까 카드가 아주 훤칠해졌어.\n남은 칸도 ${playerName}만의 추억으로 꽉꽉 채워보라고.`,
   },
   MUSEUM: {
     name: '박물관',
@@ -33,9 +34,9 @@ const STAMP_CONFIG = {
     greeting: (playerName) =>
       `호호! ${playerName}님 박물관에 오신 것을 환영합니다!\n괜찮으시다면 방문카드를 보여주시겠습니까?\n귀하의 방문을 기념하는 도장을 찍어드리겠습니다!`,
     duplicate: (playerName) =>
-      `이럴 수가! 이미 완벽하게 수집이 끝난 상태로군요!\n대신, 멀리서 오신 ${playerName}님의 성의를 생각해서 여기\n20벨을 준비했으니 부디 받아주시겠습니까? 호호!`,
+      `이럴 수가! 이미 완벽하게 수집이 끝난 상태로군요!\n대신, 멀리서 오신 ${playerName}님을 생각해서 여기\n20벨을 준비했으니 부디 받아주시겠습니까? 호호!`,
     success: (playerName) =>
-      `호호! 아주 깔끔하고 완벽하게 각인되었습니다!\n이 스탬프가 나중에 ${playerName}님의 소중한 추억을 되새기는\n멋진 전시물이 되기를 바랍니다! 호호!`,
+      `호호! 아주 깔끔하고 완벽하게 각인되었습니다!\n이 스탬프가 ${playerName}님의 소중한 추억을 되새기는\n멋진 전시물이 되기를 바랍니다! 호호!`,
   },
   AIRPORT: {
     name: '비행장',
@@ -68,21 +69,22 @@ const Stamp = ({ isMyTurn = false, player, currentPlayerName = '익명의 주민
   // exit 핸들러 생성, isMyTurn일 때만 onExit(event-complete) 호출
   const handleExit = useExitHandler(isMyTurn, onExit);
   // step 2에서 3초 후 자동 나가기
-  useGameTimer(isMyTurn && step === 2 ? 5 : null, handleExit); // 타이머도 내 턴만
+  useGameTimer(isMyTurn && step === 2 ? 7 : null, handleExit); // 타이머도 내 턴만
 
   const setStep = (newStep) => {
     if (!isMyTurn) return;
     onAction('SET_STEP', { uiStep: newStep });
   };
 
-  // 도장 쾅 버튼 클릭 (uiStep 1 → 2 + 스탬프 획득)
-  const handleStamp = () => {
-    if (!isMyTurn) return;
-    onAction('STAMP_COLLECT', { actionDataStr: stampType });
-  };
-
   // 스페이스바 핸들러
-  useSpaceKey(handleStamp, { enabled: isMyTurn && step === 1 });
+  useSpaceKey(() => {
+      onAction('STAMP_COLLECT', { actionDataStr: stampType });
+    }, { enabled: isMyTurn && step === 1 },
+  );
+
+  // CircleBlackout 상태 관리
+  const [isOpening, setIsOpening] = useState(true); // 처음 열기
+  const [isClosing, setIsClosing] = useState(false); // 나갈 때 닫기
 
   // NPC 이름 → COLORS 키 매핑
   const npcColorKey =
@@ -98,8 +100,17 @@ const Stamp = ({ isMyTurn = false, player, currentPlayerName = '익명의 주민
 
   const nameHighlights = () => {
     const color = character?.color ?? COLORS.ac.ocean;
-    return [{ text: currentPlayerName, color, },];
+    return [{ text: currentPlayerName, color }];
   };
+
+  useEffect(() => {
+    if (step === 2) {
+      const timer = setTimeout(() => {
+        setIsClosing(true);
+      }, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [step]);
 
   return (
     <motion.div
@@ -253,8 +264,22 @@ const Stamp = ({ isMyTurn = false, player, currentPlayerName = '익명의 주민
           </div>
         </>
       )}
+
+      {/* 등장 애니메이션 (열기) */}
+      <CircleBlackout
+        show={isOpening}
+        type="open"
+        duration={1500}onDone={() => setIsOpening(false)} />
+
+      {/* 퇴장 애니메이션 (닫기) */}
+      <CircleBlackout
+        show={isClosing}
+        type="close"
+        duration={1500}
+        onDone={handleExit} // 닫기 완료 후 나가기
+      />
     </motion.div>
   );
-};
+};;
 
 export default Stamp;
