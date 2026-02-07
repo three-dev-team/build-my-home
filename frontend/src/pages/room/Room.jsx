@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Client } from '@stomp/stompjs';
-import { leaveRoom } from '../../utils/roomUtils.js';
+import { leaveRoom } from '../../utils/leaveUtils.js';
 import { getBrokerURL } from '../../utils/ws.js';
 import { getMyIdFromToken } from '../../utils/auth.js';
 import { CHARACTERS } from '../../constants/characters.js';
@@ -174,7 +174,7 @@ function Room() {
     if (loading) return;
     const client = new Client({
       brokerURL: getBrokerURL(),
-      connectHeaders: token ? { Authorization: `Bearer ${token}` } : {},
+      connectHeaders: token ? { Authorization: `Bearer ${token}`, page: 'room' } : {},
       onConnect: () => {
         client.subscribe(`/topic/rooms/${roomId}`, (message) => {
           const data = JSON.parse(message.body);

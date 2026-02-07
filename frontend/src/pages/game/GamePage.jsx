@@ -41,6 +41,7 @@ import { CHARACTERS } from '../../constants/characters.js';
 import CustomDice from './itemEffect/CustomDice.jsx';
 import GoldDice from './itemEffect/GoldDice.jsx';
 import DoubleDice from './itemEffect/DoubleDice.jsx';
+import { leaveGame, leaveGameBeacon } from '../../utils/leaveUtils.js';
 
 const GamePage = () => {
   // 라우트 파라미터/네비게이션 핸들러
@@ -189,6 +190,9 @@ const GamePage = () => {
   }, [atmOpen, atmUsingMemberId, inventoryOpen, inventoryUsingMemberId, status, houseBgUrl]);
   const cssVars = useMemo(() => ({ '--bg-image': bgImage }), [bgImage]);
 
+
+  // ---------------------- [START]: 보안 관련된 코드입니다 수정 시 담당자(@Tiffany) 보고 후 수정 ---------------------- //
+  // 잘못된 경로로 게임 페이지에 들어오는 걸 막는 코드
   useEffect(() => {
     const joinedRoom = sessionStorage.getItem('joinedRoom');
     if (joinedRoom !== roomId) {
@@ -204,25 +208,11 @@ const GamePage = () => {
     }
   }, [token, navigate]);
 
-  // 상점 상태가 아니면 relay 메시지 초기화
-  useEffect(() => {
-    if (gameState?.status !== 'WAITING_SHOP') {
-      setShopRelay(null);
-    }
-  }, [gameState?.status]);
-
-  // 낚시 상태가 끝나면 ROOM_EVENT 잔상 제거
-  useEffect(() => {
-    const s = gameState?.status;
-    const isFishing = s === 'WAITING_FISHING' || s === 'FISHING_IN_PROGRESS';
-    if (!isFishing) setFishingEventMessage(null);
-  }, [gameState?.status]);
-
   // STOMP 연결 + 구독 + 초기 상태 요청
   useEffect(() => {
     const client = new Client({
       brokerURL: getBrokerURL(),
-      connectHeaders: token ? { Authorization: `Bearer ${token}` } : {},
+      connectHeaders: token ? { Authorization: `Bearer ${token}`, page: 'game' } : {},
       onConnect: () => {
         console.log('>>> ✅ WebSocket 연결됨');
         setStompClient(client);
@@ -339,7 +329,7 @@ const GamePage = () => {
         console.error('STOMP 에러:', errorMsg);
 
         alert('게임 연결에 문제가 발생했습니다: ' + errorMsg);
-        navigateRef.current(`/rooms/${roomId}`);
+        navigate(`/rooms/${roomId}`);
       },
     });
 
@@ -347,6 +337,9 @@ const GamePage = () => {
 
     // 언마운트 시 연결 해제
     return () => {
+      if (client.active && client.connected) {
+        leaveGame(client, roomId);
+      }
       if (client.active) {
         client.deactivate();
         setStompClient(null);
@@ -354,6 +347,32 @@ const GamePage = () => {
       }
     };
   }, [roomId, token, navigate, myId]);
+
+  // 탭 닫기/새로고침 시 서버에 leave 알림
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      leaveGameBeacon(roomId);
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [roomId]);
+
+  // ---------------------- [END]: 보안 관련된 코드입니다 수정 시 담당자 보고 후 수정 ---------------------- //
+
+  // 상점 상태가 아니면 relay 메시지 초기화
+  useEffect(() => {
+    if (gameState?.status !== 'WAITING_SHOP') {
+      setShopRelay(null);
+    }
+  }, [gameState?.status]);
+
+  // 낚시 상태가 끝나면 ROOM_EVENT 잔상 제거
+  useEffect(() => {
+    const s = gameState?.status;
+    const isFishing = s === 'WAITING_FISHING' || s === 'FISHING_IN_PROGRESS';
+    if (!isFishing) setFishingEventMessage(null);
+  }, [gameState?.status]);
+
 
   // 인트로 종료 신호(서버에 intro-complete publish)
   const handleIntroComplete = () => {
@@ -763,7 +782,8 @@ const GamePage = () => {
                 stompClient={stompClient}
                 gameState={gameState}
                 isMyTurn={isMyTurn}
-                onStart={() => {}}
+                onStart={() => {
+                }}
                 onClose={() => {
                   if (isMyTurn) handleEventComplete();
                 }}
@@ -858,7 +878,7 @@ const GamePage = () => {
               <GoldDice
                 player={currentPlayer}
                 isMyTurn={isMyTurn}
-                bellAmount = {currentPlayer?.actionData || 0}
+                bellAmount={currentPlayer?.actionData || 0}
                 diceValue={currentPlayer?.diceValue}
                 onRoll={() => {
                   stompClient.publish({
