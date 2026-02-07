@@ -100,9 +100,17 @@ public class GameStateServiceImpl implements GameStateService {
             if (currentPlayer != null) {
                 currentPlayer.clearTurnData();
                 currentPlayer.setItemUsed(false); // 아이템 사용 기록 초기화
+
+                // 스킵 체크 → 바로 PLAYER_SKIPPED
+                if (currentPlayer.getSkipNextTurnCount() > 0) {
+                    currentPlayer.setSkipNextTurnCount(currentPlayer.getSkipNextTurnCount() - 1);
+                    gameState.setStatus(GameStatus.PLAYER_SKIPPED);
+                } else {
+                    gameState.setStatus(GameStatus.WAITING_PLAYER_ACTION);
+                }
             }
 
-            gameState.setStatus(GameStatus.WAITING_PLAYER_ACTION);
+//            gameState.setStatus(GameStatus.WAITING_PLAYER_ACTION);
             gameState.setStatusUpdatedAt(LocalDateTime.now());
         }
     }
