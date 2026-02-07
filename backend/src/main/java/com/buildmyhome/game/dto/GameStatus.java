@@ -24,8 +24,9 @@ public enum GameStatus {
     // --- 아이템 사용 관련 상태 ---
     WAITING_PIPE(0),
     WAITING_MIRROR(0),
-    WAITING_DOUBLE_DICE(0),
     WAITING_CUSTOM_DICE(0),
+    WAITING_DOUBLE_DICE(0),
+    ROLLING_DOUBLE_DICE(0),
     WAITING_GOLD_DICE(0),
     ROLLING_GOLD_DICE(0),
 
