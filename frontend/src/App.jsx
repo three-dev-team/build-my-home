@@ -18,6 +18,7 @@ import Loading from './components/common/Loading.jsx';
 import AlertModal from './components/common/AlertModal.jsx';
 import ZoomWarningModal from './components/common/ZoomWarningModal.jsx';
 import usePlayTimeWarning from './hooks/usePlayTimeWarning.js';
+import NoticePage from './pages/NoticePage.jsx'
 
 // 라우트 가드 컴포넌트들 (App 함수 밖에 정의해야 리마운트 방지)
 const ProtectedRoute = ({ children }) => {
@@ -221,6 +222,12 @@ function App() {
                 <AdminPage />
               </ProtectedAdminRoute>
             }
+          />
+
+          {/* 공지사항 페이지 */}
+          <Route
+            path="/notifications"
+            element={<NoticePage />}
           />
 
           <Route path="*" element={<NotFound />} />

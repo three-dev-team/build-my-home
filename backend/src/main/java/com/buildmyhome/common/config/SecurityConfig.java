@@ -87,7 +87,9 @@ public class SecurityConfig {
             "/api/member/send-code",
             "/api/member/send-registration-code",
             "/api/member/verify-code",
-            "/api/member/reset-password"
+            "/api/member/reset-password",
+            "/api/notices",
+            "/api/notices/**"
           )
           .permitAll()
           // OAuth2 로그인 관련 경로

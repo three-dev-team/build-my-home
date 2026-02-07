@@ -3,6 +3,7 @@ package com.buildmyhome.management.controller;
 import com.buildmyhome.management.dto.*;
 import com.buildmyhome.management.service.AdminService;
 import com.buildmyhome.management.service.InquiryService;
+import com.buildmyhome.management.service.NoticeService;
 import com.buildmyhome.member.entity.Member;
 import com.buildmyhome.member.repository.MemberRepository;
 import java.util.List;
@@ -26,6 +27,7 @@ public class AdminController {
   private final InquiryService inquiryService;
   private final AdminService adminService;
   private final MemberRepository memberRepository;
+  private final NoticeService noticeService;
 
   // ========== 문의 관리 ==========
 
@@ -60,7 +62,7 @@ public class AdminController {
           .map(c -> com.buildmyhome.management.entity.InquiryCategory.valueOf(c))
           .toList();
     }
-    
+
     List<com.buildmyhome.management.entity.InquiryStatus> statusEnums = null;
     if (statuses != null && !statuses.isEmpty()) {
       statusEnums = statuses.stream()
@@ -128,11 +130,11 @@ public class AdminController {
   public ResponseEntity<?> suspendMember(@PathVariable Long id) {
     Member member = memberRepository.findById(id)
         .orElseThrow(() -> new RuntimeException("회원을 찾을 수 없습니다."));
-    
+
     member.setIsSuspended(true);
     member.setSuspendedUntil(java.time.LocalDateTime.now().plusHours(48)); // 48시간 정지
     memberRepository.save(member);
-    
+
     return ResponseEntity.ok().body(java.util.Map.of("message", "회원이 정지되었습니다.", "suspendedUntil", member.getSuspendedUntil()));
   }
 
@@ -141,17 +143,17 @@ public class AdminController {
   public ResponseEntity<?> unsuspendMember(@PathVariable Long id) {
     Member member = memberRepository.findById(id)
         .orElseThrow(() -> new RuntimeException("회원을 찾을 수 없습니다."));
-    
+
     member.setIsSuspended(false);
     member.setSuspendedUntil(null);
-    
+
     // 경고 5회 이상으로 정지된 경우 경고 초기화
     if (member.getWarningCount() != null && member.getWarningCount() >= 5) {
       member.setWarningCount(0);
     }
-    
+
     memberRepository.save(member);
-    
+
     return ResponseEntity.ok().body(java.util.Map.of("message", "정지가 해제되었습니다."));
   }
 
@@ -160,11 +162,11 @@ public class AdminController {
   public ResponseEntity<?> warnMember(@PathVariable Long id) {
     Member member = memberRepository.findById(id)
         .orElseThrow(() -> new RuntimeException("회원을 찾을 수 없습니다."));
-    
+
     // 경고 횟수 증가
     int newCount = (member.getWarningCount() != null ? member.getWarningCount() : 0) + 1;
     member.setWarningCount(newCount);
-    
+
     // 5회 이상 시 자동 정지 (영구 정지)
     boolean autoSuspended = false;
     if (newCount >= 5 && !Boolean.TRUE.equals(member.getIsSuspended())) {
@@ -172,9 +174,9 @@ public class AdminController {
       member.setSuspendedUntil(null); // 영구 정지 (관리자 해제 필요)
       autoSuspended = true;
     }
-    
+
     memberRepository.save(member);
-    
+
     return ResponseEntity.ok().body(java.util.Map.of(
         "message", autoSuspended ? "경고 5회 누적으로 계정이 자동 정지되었습니다." : "경고가 부여되었습니다.",
         "warningCount", newCount,
@@ -182,7 +184,56 @@ public class AdminController {
     ));
   }
 
-  // ========== 헬퍼 메서드 ==========
+    // ========== 공지사항 ==========
+    // 공지사항 작성
+    @PostMapping("/notices")
+    public ResponseEntity<NoticeResponse> createNotice(@RequestBody NoticeRequest request) {
+        Member admin = getCurrentMember();
+        NoticeResponse response = noticeService.createNotice(request, admin);
+        return ResponseEntity.ok(response);
+    }
+
+    // 공지사항 수정
+    @PutMapping("/notices/{id}")
+    public ResponseEntity<NoticeResponse> updateNotice(
+            @PathVariable Long id,
+            @RequestBody NoticeRequest request) {
+        Member admin = getCurrentMember();
+        NoticeResponse response = noticeService.updateNotice(id, request, admin);
+        return ResponseEntity.ok(response);
+    }
+
+    // 공지사항 삭제
+    @DeleteMapping("/notices/{id}")
+    public ResponseEntity<Void> deleteNotice(@PathVariable Long id) {
+        Member admin = getCurrentMember();
+        noticeService.deleteNotice(id, admin);
+        return ResponseEntity.ok().build();
+    }
+
+    // 공지사항 목록 조회 (관리자도 사용)
+    @GetMapping("/notices")
+    public ResponseEntity<Page<NoticeListResponse>> getNotices(
+            @RequestParam(required = false) String keyword,
+            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
+
+        Page<NoticeListResponse> responses;
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            responses = noticeService.searchNotices(keyword, pageable);
+        } else {
+            responses = noticeService.getAllNotices(pageable);
+        }
+        return ResponseEntity.ok(responses);
+    }
+
+    // 공지사항 상세 조회
+    @GetMapping("/notices/{id}")
+    public ResponseEntity<NoticeResponse> getNotice(@PathVariable Long id) {
+        NoticeResponse response = noticeService.getNotice(id);
+        return ResponseEntity.ok(response);
+    }
+
+    // ========== 헬퍼 메서드 ==========
 
   private Member getCurrentMember() {
     Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
