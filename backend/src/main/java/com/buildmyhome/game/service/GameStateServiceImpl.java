@@ -115,6 +115,11 @@ public class GameStateServiceImpl implements GameStateService {
         }
     }
 
+    @Override
+    public Map<Long, GameState> getAllGames() {
+        return gameStates;
+    }
+
     // 라운드 증가 처리 메서드
     private void turnToNextRound(GameState gameState) {
         gameState.setCurrentRound(gameState.getCurrentRound() + 1); // 라운드 증가

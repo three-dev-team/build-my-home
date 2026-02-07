@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Client } from '@stomp/stompjs';
 import { CHARACTERS } from '../../constants/characters.js';
 import { COLORS } from '../../constants/colors.js'; // COLORS import
-import { leaveRoom } from '../../utils/roomUtils.js';
+import { leaveRoom } from '../../utils/leaveUtils.js';
 import { getBrokerURL } from '../../utils/ws.js';
 import ExitButton from '../../components/common/ExitButton';
 import AspectLayout from '../../components/layout/AspectLayout';

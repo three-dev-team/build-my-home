@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Client } from '@stomp/stompjs';
-import { leaveRoom } from '../../utils/roomUtils.js';
+import { leaveRoom } from '../../utils/leaveUtils.js';
 import { getBrokerURL } from '../../utils/ws.js';
 import { getMyIdFromToken } from '../../utils/auth.js';
 import { CHARACTERS } from '../../constants/characters.js';

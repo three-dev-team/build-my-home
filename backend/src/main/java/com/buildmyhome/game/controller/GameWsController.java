@@ -53,6 +53,7 @@ public class GameWsController {
     private final SwapService swapService;
     private final ItemService itemService;
     private final RoomListService roomListService;
+    private final GameLeaveController gameLeaveController;
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
     private final ConcurrentHashMap<Long, ConcurrentHashMap<Long, String>> lastDedupeKeyByRoom = new ConcurrentHashMap<>();
 
@@ -188,6 +189,12 @@ public class GameWsController {
 
         GameMessage response = defaultGameResponse("CURRENT_GAME_STATE", gameState);
         simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
+    }
+
+    @MessageMapping("/games/leave")
+    public void leaveGame(GameMessage message, Principal principal) {
+        Long memberId = Long.parseLong(principal.getName());
+        gameLeaveController.handlePlayerLeave(message.getRoomId(), memberId);
     }
 
     @MessageMapping("/games/start")
