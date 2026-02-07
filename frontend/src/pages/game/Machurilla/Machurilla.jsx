@@ -41,6 +41,7 @@ const Machurilla = ({ isMyTurn = false, player, currentPlayerName = '익명의 �
           onSelect={handleSelect}
           isMyTurn={isMyTurn}
           currentPlayerName={currentPlayerName}
+          characterId={player?.characterId}
         />
       )}
       {step === 3 && <CardSelectScreen isMyTurn={isMyTurn} player={player} onSelect={() => setStep(4)} />}
