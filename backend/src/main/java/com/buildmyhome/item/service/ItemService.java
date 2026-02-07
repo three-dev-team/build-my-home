@@ -17,4 +17,6 @@ public interface ItemService {
     GameStatus rollGoldDice(GamePlayerState player);
 
     GameStatus rollCustomDice(GamePlayerState player, Integer actionData);
+
+    GameStatus rollDoubleDice(GamePlayerState player);
 }

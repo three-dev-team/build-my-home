@@ -60,12 +60,14 @@ public class ItemServiceImpl implements ItemService {
             case MIRROR -> applyMirror(gameState, player);
             case CUSTOM_DICE -> applyCustomDice(player);
             case GOLD_DICE -> applyGoldDice(player);
-            case DOUBLE_DICE -> GameStatus.WAITING_DOUBLE_DICE;
+            case DOUBLE_DICE -> applyDoubleDice(player);
             default -> GameStatus.WAITING_PLAYER_ACTION;
         };
     }
 
     private GameStatus applyCustomDice(GamePlayerState player) {
+        player.setDiceValue(null);
+        player.setActionData(null);
         return GameStatus.WAITING_CUSTOM_DICE;
     }
 
@@ -108,6 +110,12 @@ public class ItemServiceImpl implements ItemService {
         return GameStatus.WAITING_GOLD_DICE;
     }
 
+    private GameStatus applyDoubleDice(GamePlayerState player) {
+        player.setDiceValue(null);
+        player.setActionData(null);
+        return GameStatus.WAITING_DOUBLE_DICE;
+    }
+
     @Override
     public GameStatus rollGoldDice(GamePlayerState player) {
         int diceValue = ThreadLocalRandom.current().nextInt(1, 7);
@@ -127,6 +135,21 @@ public class ItemServiceImpl implements ItemService {
         player.setDiceValue(actionData);
         return GameStatus.ROLLING_DICE;
     }
+
+    @Override
+    public GameStatus rollDoubleDice(GamePlayerState player) {
+        int diceValue = ThreadLocalRandom.current().nextInt(1, 7);
+        // 처음 돌릴때
+        if (player.getActionData() == null || player.getActionData() == 0) {
+            player.setActionData(diceValue); // 첫번째 값 actionData에 저장
+            return GameStatus.WAITING_DOUBLE_DICE;
+        } else {
+            int total = player.getActionData() + diceValue;
+            player.setDiceValue(total);
+            return GameStatus.ROLLING_DOUBLE_DICE; // 2번째 주사위까지 완료
+        }
+    }
+
 
 
 }

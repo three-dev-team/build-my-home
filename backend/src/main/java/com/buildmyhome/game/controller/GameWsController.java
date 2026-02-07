@@ -198,9 +198,9 @@ public class GameWsController {
             for (HarvestType h : HarvestType.values()) {
                 gps.getHarvests().put(h, 10);
             }
-            gps.getItems().add(ItemType.GOLD_DICE); // 테스트용 아이템 지급
-            gps.getItems().add(ItemType.GOLD_DICE); // 테스트용 아이템 지급
-            gps.getItems().add(ItemType.GOLD_DICE); // 테스트용 아이템 지급
+            gps.getItems().add(ItemType.DOUBLE_DICE); // 테스트용 아이템 지급
+            gps.getItems().add(ItemType.DOUBLE_DICE); // 테스트용 아이템 지급
+            gps.getItems().add(ItemType.DOUBLE_DICE); // 테스트용 아이템 지급
             gps.setSkipNextTurnCount(1);
             gameState.addPlayer(gps);
         }
@@ -740,6 +740,24 @@ public class GameWsController {
                         if (gameState.getStatus() != GameStatus.ROLLING_GOLD_DICE) break;
                         gameState.setStatus(GameStatus.MOVING);
                         response.setType("GOLD_DICE_MOVE_START");
+                        response.setMovePath(player.getMovePath());
+                        break;
+                    case "DOUBLE_DICE_ROLL":
+                        GameStatus doubleStatus = itemService.rollDoubleDice(player);
+                        if (doubleStatus == GameStatus.ROLLING_DOUBLE_DICE) {
+                            moveService.movePlayer(player, player.getDiceValue());
+                        }
+                        gameState.setStatus(doubleStatus);
+                        response.setType(doubleStatus == GameStatus.WAITING_DOUBLE_DICE
+                                ? "DOUBLE_DICE_FIRST" : "DOUBLE_DICE_SECOND");
+                        response.setDiceValue(player.getDiceValue()); // 첫번째에는 null 두번째에는 합계
+                        response.setActionData(player.getActionData()); // 첫번째 주사위 값
+                        break;
+
+                    case "DOUBLE_DICE_COMPLETE":
+                        if (gameState.getStatus() != GameStatus.ROLLING_DOUBLE_DICE) break;
+                        gameState.setStatus(GameStatus.MOVING);
+                        response.setType("DOUBLE_DICE_MOVE_START");
                         response.setMovePath(player.getMovePath());
                         break;
                 }

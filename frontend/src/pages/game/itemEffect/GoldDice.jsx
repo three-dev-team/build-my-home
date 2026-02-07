@@ -10,9 +10,8 @@ import BellRewardEffect from '../../../components/effect/BellRewardEffect.jsx';
 
 // TODO: 금주사위 전용 GLB 모델로 교체 (gold-dice-1~6.glb)
 
-const GoldDicePage = ({ player, isMyTurn, diceValue, bellAmount, onRoll, onAnimationEnd, onComplete }) => {
+const GoldDice = ({ player, isMyTurn, diceValue, bellAmount, onRoll, onAnimationEnd, onComplete }) => {
   const [phase, setPhase] = useState('waiting'); // waiting → rolling → reward
-  const [rewardDone, setRewardDone] = useState(false); // 벨 획득 연출 완료 여부
 
   const charImg = useMemo(() => {
     const character = CHARACTERS.find((c) => Number(c.id) === Number(player?.characterId));
@@ -28,11 +27,6 @@ const GoldDicePage = ({ player, isMyTurn, diceValue, bellAmount, onRoll, onAnima
   useSpaceKey(() => {
     onRoll();
   }, { enabled: isMyTurn && phase === 'waiting' });
-
-  // 2. 스페이스바: 벨 확인 후 이동 (연출 끝나야 활성화)
-  useSpaceKey(() => {
-    onComplete();
-  }, { enabled: isMyTurn && phase === 'reward' && rewardDone });
 
   const handleAnimationEnd = () => {
     setPhase('reward');
@@ -69,20 +63,18 @@ const GoldDicePage = ({ player, isMyTurn, diceValue, bellAmount, onRoll, onAnima
         amount={bellAmount}
         show={phase === 'reward'}
         targetY={charImg?.headY ?? 46}
-        onComplete={() => setRewardDone(true)}
+        onComplete={() => setTimeout(() => onComplete(), 1200)}
       />
 
       <InstructionText>
-        {phase === 'reward'
-          ? `스페이스바를 눌러 출발하기`
-          : phase === 'rolling'
-            ? ''
-            : isMyTurn
-              ? '스페이스바를 눌러 금주사위를 굴리기'
-              : `${player?.nickname} 금주사위를 굴리고 있어요`}
+        {phase === 'rolling' || phase === 'reward'
+          ? ''
+          : isMyTurn
+            ? '스페이스바를 눌러 골든 주사위를 굴리기'
+            : `${player?.nickname} 골든 주사위를 굴리고 있어요`}
       </InstructionText>
     </div>
   );
 };
 
-export default GoldDicePage;
+export default GoldDice;

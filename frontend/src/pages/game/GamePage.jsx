@@ -39,7 +39,8 @@ import DialogBox from '../../components/common/DialogBox.jsx';
 import { COLORS, withAlpha } from '../../constants/colors.js';
 import { CHARACTERS } from '../../constants/characters.js';
 import CustomDice from './itemEffect/CustomDice.jsx';
-import GoldDicePage from './itemEffect/GoldDicePage.jsx';
+import GoldDice from './itemEffect/GoldDice.jsx';
+import DoubleDice from './itemEffect/DoubleDice.jsx';
 
 const GamePage = () => {
   // 라우트 파라미터/네비게이션 핸들러
@@ -849,7 +850,7 @@ const GamePage = () => {
 
             {/* 골드 주사위 효과 */}
             {(gameState.status === 'WAITING_GOLD_DICE' || gameState.status === 'ROLLING_GOLD_DICE') && (
-              <GoldDicePage
+              <GoldDice
                 player={currentPlayer}
                 isMyTurn={isMyTurn}
                 bellAmount = {currentPlayer?.actionData || 0}
@@ -867,6 +868,19 @@ const GamePage = () => {
                     body: JSON.stringify({ roomId, type: 'GOLD_DICE_COMPLETE' }),
                   });
                 }}
+              />
+            )}
+            {/* 더블 주사위 효과 */}
+            {/* 서버 - 첫번째 주사위, 최종 합계만 계산, 프론트에서 2번째 계산 */}
+            {(gameState.status === 'WAITING_DOUBLE_DICE' || gameState.status === 'ROLLING_DOUBLE_DICE') && (
+              <DoubleDice
+                player={currentPlayer}
+                isMyTurn={isMyTurn}
+                firstValue={currentPlayer?.actionData}
+                secondValue={currentPlayer?.diceValue && currentPlayer?.actionData
+                  ? currentPlayer.diceValue - currentPlayer.actionData
+                  : null}
+                onAction={handleAction}
               />
             )}
 
