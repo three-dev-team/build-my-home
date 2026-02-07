@@ -678,7 +678,12 @@ const GamePage = () => {
 
             {/* 스킵 알림 */}
             {gameState.status === 'PLAYER_SKIPPED' && (
-              <PlayerSkipped isMyTurn={isMyTurn} player={currentPlayer} onExit={handleEventComplete} />
+              <PlayerSkipped
+                key={currentPlayer?.memberId}
+                isMyTurn={isMyTurn}
+                player={currentPlayer}
+                onExit={handleEventComplete}
+              />
             )}
 
             {/* 대출(은행 타일) */}

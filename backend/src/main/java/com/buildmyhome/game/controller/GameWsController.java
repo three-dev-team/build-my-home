@@ -300,16 +300,16 @@ public class GameWsController {
             if (player == null) return;
 
             // 건강운 하락(스킵) 체크
-            if (player.getSkipNextTurnCount() > 0) {
-                player.setSkipNextTurnCount(player.getSkipNextTurnCount() - 1);
-                gameState.setStatus(GameStatus.PLAYER_SKIPPED);
-
-                // 프론트에 스킵 알림 전송
-                GameMessage skipResponse = defaultGameResponse("PLAYER_SKIPPED", gameState);
-                simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, skipResponse);
-
-                return;
-            }
+//            if (player.getSkipNextTurnCount() > 0) {
+//                player.setSkipNextTurnCount(player.getSkipNextTurnCount() - 1);
+//                gameState.setStatus(GameStatus.PLAYER_SKIPPED);
+//
+//                // 프론트에 스킵 알림 전송
+//                GameMessage skipResponse = defaultGameResponse("PLAYER_SKIPPED", gameState);
+//                simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, skipResponse);
+//
+//                return;
+//            }
 
             gameState.setStatus(GameStatus.WAITING_DICE);
             simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, defaultGameResponse("DICE_SELECTED", gameState));
