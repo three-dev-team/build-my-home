@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react'
 import { motion } from 'framer-motion';
 import { normalizeItemKey, resolveItemKey } from '../../../constants/items.js';
 import InstructionText from '../../../components/common/InstructionText.jsx';
+import { COLORS } from '../../../constants/colors.js';
 
 const toBool = (v) => v === true || v === 'true';
 
@@ -22,6 +23,13 @@ const normalizeItem = (key, isNew = false) => {
 export default function SelectScreen({ inventoryKeys, newItemKey, selectedIdx, onAction, isMyTurn }) {
   const myTurn = toBool(isMyTurn);
   const submittingRef = useRef(false);
+  const unlockTimerRef = useRef(null);
+
+  useEffect(() => {
+    return () => {
+      if (unlockTimerRef.current) window.clearTimeout(unlockTimerRef.current);
+    };
+  }, []);
 
   // 인벤 3개 + 새 아이템 1개(총 4개) 구성
   const allItems = useMemo(() => {
@@ -81,7 +89,8 @@ export default function SelectScreen({ inventoryKeys, newItemKey, selectedIdx, o
     });
 
     // 서버 전환 지연 대비 안전 잠금 해제
-    window.setTimeout(() => {
+    if (unlockTimerRef.current) window.clearTimeout(unlockTimerRef.current);
+    unlockTimerRef.current = window.setTimeout(() => {
       submittingRef.current = false;
     }, 1200);
   }, [localSelected, onAction, myTurn]);

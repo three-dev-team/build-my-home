@@ -54,6 +54,7 @@ public class GameWsController {
     private final ItemService itemService;
     private final RoomListService roomListService;
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(1);
+    private final ConcurrentHashMap<Long, ConcurrentHashMap<Long, String>> lastDedupeKeyByRoom = new ConcurrentHashMap<>();
 
     // TODO: 추후 GameEventService로 분리 - Tiffany
     // 타임아웃 됐을 때 자동으로 턴이 넘어가는 칸이 아닐 경우 여기서 처리
@@ -150,6 +151,33 @@ public class GameWsController {
         response.setQuantity(tr.quantity());
         response.setAmount(tr.amount());
         response.setRadishPrice(tr.price());
+    }
+
+    // 1) 이 액션은 한 이벤트에서 1번만 허용
+    private boolean isLockOnceAction(String actionType) {
+        return switch (actionType) {
+            case "SWAP_PLAYER1_CONFIRM", "SWAP_PLAYER2_CONFIRM", "SWAP_ARROW_CONFIRM",
+                 "GET_RANDOM_ITEM", "HANDLE_INVENTORY_FULL"
+                    -> true;
+            default -> false;
+        };
+    }
+
+    // 2) 이벤트 키(이벤트가 바뀌면 키가 바뀌도록)
+    private String buildEventKey(GameState gameState) {
+        return gameState.getRoomId() + "|" +
+                gameState.getCurrentRound() + "|" +
+                gameState.getCurrentPlayerId() + "|" +
+                gameState.getStatus().name();
+    }
+
+    // 3) 같은 이벤트+같은 액션 중복이면 false
+    private boolean allowOncePerEvent(Long roomId, Long memberId, String dedupeKey) {
+        var roomMap = lastDedupeKeyByRoom.computeIfAbsent(roomId, k -> new ConcurrentHashMap<>());
+        String prev = roomMap.get(memberId);
+        if (dedupeKey.equals(prev)) return false; // 중복
+        roomMap.put(memberId, dedupeKey);
+        return true;
     }
 
     @MessageMapping("/games/get-state")
@@ -470,6 +498,16 @@ public class GameWsController {
             if (!allowAnyPlayerAction && !memberId.equals(gameState.getCurrentPlayerId())) return;
 
             GamePlayerState player = gameState.getPlayers().get(memberId);
+            if (player == null) return;
+            //  연타/중복 처리 방지(LOCK-ONCE 대상만)
+            if (isLockOnceAction(actionType)) {
+                String eventKey = buildEventKey(gameState);
+                String dedupeKey = eventKey + "|" + actionType;
+                // 같은 이벤트에서 같은 액션 재요청이면 무시
+                if (!allowOncePerEvent(roomId, memberId, dedupeKey)) {
+                    return;
+                }
+            }
 
             try {
                 GameMessage response = defaultGameResponse("ACTION_PROCESSED", gameState);

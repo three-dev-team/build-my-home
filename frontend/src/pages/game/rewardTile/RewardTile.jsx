@@ -34,29 +34,20 @@ const pickCurrentPlayer = (gameState) => {
 const hasAnyPositive = (obj) =>
   !!obj && typeof obj === 'object' && Object.keys(obj).some((k) => Number(obj?.[k] || 0) > 0);
 
-// 관전자(나) 표시용 이름/집레벨/이름색 추출
+// 관전자 표시용 이름/집레벨/이름색 + 보유 재료(resources) 확정 추출
 const pickViewerInfo = (gameState, myId) => {
   const players = Array.isArray(gameState?.players) ? gameState.players : [];
-  const me =
-    players.find((p) => Number(p?.memberId) === Number(myId)) ||
-    players.find((p) => Number(p?.id) === Number(myId)) ||
-    players.find((p) => Number(p?.playerId) === Number(myId)) ||
-    null;
-  const ssNick =
-    (sessionStorage.getItem('nickname') || '').trim() ||
-    (sessionStorage.getItem('nickName') || '').trim() ||
-    (sessionStorage.getItem('userNickname') || '').trim() ||
-    '';
-  const viewerNameText = (me?.nickname && String(me.nickname).trim()) || ssNick || '';
-  const rawLevel =
-    me?.houseLevel ?? me?.houseLevelNumber ?? me?.houseLevelValue ?? me?.houseLv ?? me?.house ?? null;
-  const n = Number(rawLevel);
-  const viewerHouseLevel = Number.isFinite(n) ? n : null;
-  const myCharId = me?.characterId ?? me?.charId ?? null;
+  const me = players.find((p) => Number(p?.memberId) === Number(myId)) || null;
+  const ssNick = (sessionStorage.getItem('nickname') || '').trim();
+  const viewerNameText = (String(me?.nickname ?? '').trim() || ssNick || '').trim();
+  const rawLevel = me?.houseLevel ?? null; // 백엔드: HouseLevel enum이 내려올 것
+  const viewerHouseLevel = rawLevel; // 숫자/문자열/enum 다 올 수 있어서 그대로 전달(houseLevel util이 처리)
+  const myCharId = me?.characterId ?? null;
   const ch = CHARACTERS.find((c) => Number(c.id) === Number(myCharId)) || null;
   const viewerNameColor = ch?.color;
+  const viewerOwnedResources = me?.resources && typeof me.resources === 'object' ? me.resources : {};
 
-  return { viewerNameText, viewerHouseLevel, viewerNameColor };
+  return { viewerNameText, viewerHouseLevel, viewerNameColor, viewerOwnedResources };
 };
 
 export default function RewardTile({ roomId, stompClient, gameState, isMyTurn }) {
@@ -110,7 +101,7 @@ export default function RewardTile({ roomId, stompClient, gameState, isMyTurn })
       })
       .map((p) => ({
         nickname: String(p.nickname).trim(),
-        characterId: p?.characterId ?? p?.charId ?? null,
+        characterId: p?.characterId ?? null,
       }));
 
     if (!pool.length) {
@@ -124,31 +115,27 @@ export default function RewardTile({ roomId, stompClient, gameState, isMyTurn })
 
     const ch = CHARACTERS.find((c) => Number(c.id) === Number(picked.characterId)) || null;
     dialogColorRef.current = ch?.color;
-  }, [
-    myTurn,
-    uiStep,
-    gameState?.currentPlayerId,
-    gameState?.players,
-    myId,
-    viewerInfo?.viewerNameText,
-    viewerInfo?.viewerNameColor,
-  ]);
+  }, [myTurn, uiStep, gameState?.currentPlayerId, gameState?.players, myId, viewerInfo?.viewerNameText, viewerInfo?.viewerNameColor]);
 
   // 화면 표시용 파생 데이터 묶음
   const derived = useMemo(() => {
     const status = gameState?.status;
     const defaultKind = status === 'WAITING_HARVEST' ? 'fruit' : 'resource';
     const kind = parsed?.kind === 'fruit' || parsed?.kind === 'resource' ? parsed.kind : defaultKind;
+
     const ch = CHARACTERS.find((c) => Number(c.id) === Number(cp?.characterId)) || null;
     const idleCharacterImage = ch?.selectBasicImage || '';
     const happyCharacterImage = ch?.happyImage || idleCharacterImage;
+
     const cpNickname = String(cp?.nickname ?? '').trim();
     const nameColor = ch?.color;
+
     const gainedFromServer = parsed?.gained && typeof parsed.gained === 'object' ? parsed.gained : null;
     const hasRes = gameState?.gainedResources && Object.keys(gameState.gainedResources).length > 0;
     const hasHar = gameState?.gainedHarvests && Object.keys(gameState.gainedHarvests).length > 0;
     const gainedFallback =
       kind === 'fruit' ? (hasHar ? gameState.gainedHarvests : null) : hasRes ? gameState.gainedResources : null;
+
     const gained = hasAnyPositive(gainedFromServer) ? gainedFromServer : gainedFallback || {};
 
     let dropKeys = Array.isArray(parsed?.dropKeys) ? parsed.dropKeys.filter(Boolean) : [];
@@ -161,6 +148,7 @@ export default function RewardTile({ roomId, stompClient, gameState, isMyTurn })
   }, [gameState, cp, parsed]);
 
   const { kind, idleCharacterImage, happyCharacterImage, cpNickname, nameColor, dropKeys } = derived;
+
   const [dropRunId, setDropRunId] = useState(0);
   const [fixedKeys, setFixedKeys] = useState([null, null]);
   const prevUiStepRef = useRef(uiStep);
@@ -304,6 +292,7 @@ export default function RewardTile({ roomId, stompClient, gameState, isMyTurn })
                   viewerNameText={dialogViewerName}
                   viewerHouseLevel={viewerInfo?.viewerHouseLevel}
                   viewerNameColor={dialogViewerColor}
+                  viewerOwnedResources={viewerInfo?.viewerOwnedResources}
                 />
               </motion.div>
             )}
