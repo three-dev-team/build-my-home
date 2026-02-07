@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import InstructionText from '../../../components/common/InstructionText.jsx';
+import Shadow from '../../../components/common/Shadow.jsx';
 
 // 보상 발견(Discover) 단계 화면
 export default function RewardDiscoverScreen({ kind, isMyTurn, characterImage }) {
@@ -18,7 +19,9 @@ export default function RewardDiscoverScreen({ kind, isMyTurn, characterImage })
       <div className="reward-character-wrap-bottom" aria-hidden="true">
         <div className="reward-character-box">
           {characterImage ? (
-            <img className="reward-character-img" src={characterImage} alt="" draggable={false} />
+            <Shadow fill={true} offsetY={-1.3} scale={1.5} opacity={1}>
+              <img className="reward-character-img" src={characterImage} alt="" draggable={false} />
+            </Shadow>
           ) : null}
         </div>
       </div>

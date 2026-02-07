@@ -4,6 +4,7 @@ import Subtitle from '../../../components/common/Subtitle.jsx';
 import { COLORS } from '../../../constants/colors.js';
 import './Swap.css';
 import SwapBoxes from './SwapBoxes.jsx';
+import { CHARACTERS } from '../../../constants/characters.js';
 
 export default function ResultScreen({ isMyTurn, player, players, onExit }) {
   // swapData 파싱
@@ -21,14 +22,28 @@ export default function ResultScreen({ isMyTurn, player, players, onExit }) {
   const p1Name = player1?.nickname || '플레이어1';
   const p2Name = player2?.nickname || '플레이어2';
 
+  const highlights = useMemo(() => {
+    const list = [];
+    const ch1 = CHARACTERS.find((c) => Number(c.id) === Number(player1?.characterId));
+    const ch2 = CHARACTERS.find((c) => Number(c.id) === Number(player2?.characterId));
+    if (p1Name) list.push({ text: p1Name, color: ch1?.color || COLORS.primary });
+    if (p2Name) list.push({ text: p2Name, color: ch2?.color || COLORS.primary });
+    return list;
+  }, [p1Name, p2Name, player1?.characterId, player2?.characterId]);
+
   const { category, direction, resultAmount, resultCount, resultLoanAdded } = swapData;
 
   // 결과 문장 조립
   const buildResultText = () => {
-    const postFix = '\n꿈속에서는 그 무엇도 불가능하지 않답니다... 후훗.';
+    const postFix = '\n꿈속에서는 그 무엇도 불가능하지 않답니다... 후훗';
 
     if (category === 'HOUSE') {
-      return `${p1Name} 님과 ${p2Name} 님의\n안식처가 서로 뒤바뀌었군요...${postFix}`;
+      if (direction === 'EXCHANGE') {
+        return `${p1Name} 님과 ${p2Name} 님의\n안식처가 서로 뒤바뀌었군요...${postFix}`;
+      }
+      const from = direction === 'TO_RIGHT' ? p1Name : p2Name;
+      const to = direction === 'TO_RIGHT' ? p2Name : p1Name;
+      return `운명의 장난인가요?\n${from} 님의 안식처가 ${to} 님으로..!${postFix}`;
     }
 
     if (category === 'BELL') {
@@ -82,6 +97,7 @@ export default function ResultScreen({ isMyTurn, player, players, onExit }) {
         nameColor={COLORS.characters.mongsher.nameBox}
         nameTextColor={COLORS.characters.mongsher.nameText}
         contentText={buildResultText()}
+        highlights={highlights}
         showTriangle={isMyTurn}
         clickTriangle={handleClick}
       />

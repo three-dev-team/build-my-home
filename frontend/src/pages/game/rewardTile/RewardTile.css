@@ -13,7 +13,7 @@
     overflow: hidden;
     --u: calc(1cqw / 19.2);
     --v: calc(1cqh / 10.8);
-    --char-scale: 1.0;
+    --char-scale: 0.8;
     --slot-px: 200;
     --slot: calc(var(--slot-px) * var(--u));
     --items-top-px: 190;

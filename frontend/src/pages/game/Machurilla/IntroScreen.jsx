@@ -6,7 +6,7 @@ import './Machurilla.css';
 
 const IntroScreen = ({ step, setStep, onSelect, isMyTurn, currentPlayerName, characterId }) => {
   const [typingDone, setTypingDone] = useState(false);
-  const characterColor = CHARACTERS.find((c) => c.id === characterId)?.color || '#FFFFFF';
+  const characterColor = CHARACTERS.find((c) => Number(c.id) === Number(characterId))?.color || COLORS.primary;
 
   const getContentText = () => {
     if (step === 0) return '라리추마 라리추마…\n라리추마 시드반…';
@@ -19,7 +19,7 @@ const IntroScreen = ({ step, setStep, onSelect, isMyTurn, currentPlayerName, cha
     setTypingDone(false);
     setStep(step + 1);
   };
-
+  console.log('characterId:', characterId, typeof characterId);
   const highlights = step >= 1 ? [{ text: currentPlayerName, color: characterColor }] : [];
 
   const options =

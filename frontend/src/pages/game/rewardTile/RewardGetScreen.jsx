@@ -6,6 +6,7 @@ import AutoMove from '../../../components/common/AutoMove.jsx';
 import { koName, rewardImageSrc, waGwa, iGa } from '../../../constants/reward.js';
 import { isAnyRewardNeededForNextLevel } from '../../../constants/houseLevel.js';
 import { COLORS } from '../../../constants/colors.js';
+import Shadow from '../../../components/common/Shadow.jsx';
 
 // 보상 key -> 이미지 src
 const getRewardSrc = (key) => {
@@ -223,7 +224,11 @@ export default function RewardGetScreen({
           animate={{ y: showSubtitle ? completeY : 0 }}
           transition={{ duration: 0.35, ease: [0.2, 0.8, 0.2, 1] }}
         >
-          {characterImage ? <img className="reward-character-img" src={characterImage} alt="" draggable={false} /> : null}
+          {characterImage ? (
+            <Shadow fill={true}>
+              <img className="reward-character-img" src={characterImage} alt="" draggable={false} />
+            </Shadow>
+          ) : null}
         </motion.div>
       </div>
 

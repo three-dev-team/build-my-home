@@ -33,9 +33,9 @@ public enum GameStatus {
 
     // --- 칸 이벤트별 유저 입력을 기다리는 상태 ---
     WAITING_STAMP(30), // 스탬프칸 이용 중
-    WAITING_RESOURCES(30), // 재화칸 이용 중
-    WAITING_HARVEST(30), // 수확물칸 이용 중
-    WAITING_SHOP(0), // 아이템 상점 이용 중
+    WAITING_RESOURCES(0), // 재화칸 이용 중 (30초)
+    WAITING_HARVEST(0), // 수확물칸 이용 중 (30초)
+    WAITING_SHOP(0), // 아이템 상점 이용 중 (60초)
     WAITING_LOAN(30), // 대출 여부 선택 중
     WAITING_FISHING(0), // 시작하기 버튼/연출 단계
     FISHING_IN_PROGRESS(0), // 실제 미니게임 진행(낚시 내부 타이머로 종료)
@@ -43,8 +43,8 @@ public enum GameStatus {
     WAITING_MUPANI(100), // 무파니 진행 중
     WAITING_START(60), // 시작칸 진행 중 (스탬프 정산)
     WAITING_ITEMS(30),  // 아이템칸 진행 중
-    WAITING_MACHURILLA(100), // 마추릴라 진행 중
-    WAITING_SWAP(0), // 몽셰르(스왑 이벤트) 진행 중
+    WAITING_MACHURILLA(0), // 마추릴라 진행 중 (100초)
+    WAITING_SWAP(0), // 몽셰르(스왑 이벤트) 진행 중 (100초)
 
 
     // --- 다음 턴으로 넘어가기 전 ---
