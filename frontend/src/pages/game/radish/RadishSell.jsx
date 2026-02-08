@@ -1,4 +1,3 @@
-// RadishSell.jsx (풀코드) ✅ 루트 tradeQty/tradeAmount를 받아 0개/0벨 문제 해결
 import React, { useMemo, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
@@ -25,49 +24,63 @@ const getPlayerCharacter = (player) => {
 
 export default function RadishSell({
                                      isMyTurn,
-                                     player, // ✅ 내 player(입력/판매에 사용)
-                                     actorPlayer, // ✅ 화면 표시 기준 player(현재 턴 플레이어를 넣어주면 관전/전체 동기화됨)
+                                     player, // 내 player(입력/판매 액션에 사용)
+                                     actorPlayer, // 화면 표시 기준 player(현재 턴 플레이어 기준으로 보이게 할 때 사용)
                                      currentPlayerName,
                                      radishPrice = 0,
 
-                                     // ✅ [중요] 서버(GameMessage) 최상위에 오는 값들
-                                     tradeQty, // gameState.quantity
-                                     tradeAmount, // gameState.amount
-                                     tradeMemberId, // gameState.memberId
+                                     // 서버(GameMessage) 최상위 trade 값들
+                                     tradeQty,
+                                     tradeAmount,
+                                     tradeMemberId,
 
                                      onAction,
                                      onClose,
                                    }) {
-
+  // 화면에 보여줄 플레이어(턴 플레이어 기준 동기화)
   const viewPlayer = actorPlayer ?? player;
   const step = Number(viewPlayer?.uiStep ?? 0);
-  const radishQty = Number(player?.radishQty ?? 0);
-  const canSell = !!isMyTurn && radishQty > 0 && typeof onAction === 'function';
+
+  // 입력 UI(보유수/최대치)는 항상 viewPlayer(현재 턴 플레이어) 기준
+  const viewRadishQty = Number(viewPlayer?.radishQty ?? 0);
+
+  // 내 턴 + 보유 무 있음 + onAction 가능일 때만 판매 가능
+  const canSell = !!isMyTurn && viewRadishQty > 0 && typeof onAction === 'function';
+
+  // 관전자는 어떤 입력/클릭도 불가
+  const interactive = !!isMyTurn;
+
   const [sellQty, setSellQty] = useState(1);
   const [confirmed, setConfirmed] = useState(null); // { qty, amount }
+
   const priceNum = useMemo(() => Number(radishPrice || 0), [radishPrice]);
   const priceText = useMemo(() => priceNum.toLocaleString(), [priceNum]);
 
+  // step=1(입력 화면)에서 보유 수량이 바뀌면 입력값을 1~max로 보정
   useEffect(() => {
     if (step !== 1) return;
-    const max = Math.max(1, radishQty || 1);
+    const max = Math.max(1, viewRadishQty || 1);
     setSellQty((q) => clamp(Number(q) || 1, 1, max));
-  }, [radishQty, step]);
+  }, [viewRadishQty, step]);
 
+  // step=0(인트로)로 돌아오면 이전 확정값 초기화
   useEffect(() => {
     if (step === 0) setConfirmed(null);
   }, [step]);
 
+  // 현재 입력 수량을 1~보유수로 안전하게 보정
   const safeQty = useMemo(() => {
-    const max = Math.max(1, radishQty || 1);
+    const max = Math.max(1, viewRadishQty || 1);
     return clamp(Number(sellQty) || 1, 1, max);
-  }, [sellQty, radishQty]);
+  }, [sellQty, viewRadishQty]);
 
+  // uiStep 변경은 내 턴에서만 허용
   const setStep = (next) => {
     if (!isMyTurn) return;
     onAction?.('SET_STEP', { uiStep: next });
   };
 
+  // 판매 확정: 로컬 confirmed 저장 + 서버로 판매 액션 전송
   const handleSell = () => {
     if (!canSell) return;
 
@@ -96,6 +109,7 @@ export default function RadishSell({
 
   const BG = '/images/board/bg-mupanisell.webp';
 
+  // 인트로 대사 하이라이트(플레이어 이름/가격)
   const highlightsStep0 = useMemo(() => {
     const hs = [];
     if (pName) hs.push({ text: pName, color: playerColor });
@@ -105,9 +119,7 @@ export default function RadishSell({
 
   const overlayDim = useMemo(() => withAlpha(COLORS.ac.black, 0.06), []);
 
-  // ✅ [핵심] 서버가 보내는 tradeQty/tradeAmount는 "메시지 최상위"에 있음
-  // - tradeMemberId가 있으면 그 멤버의 거래 결과로 간주
-  // - 없으면(혹은 연결 못 했으면) 내 턴일 때만 confirmed fallback
+  // tradeMemberId가 viewPlayer와 동일한 거래인지 판정(관전 동기화용)
   const isTradeForViewPlayer = useMemo(() => {
     const tId = Number(tradeMemberId);
     const vId = Number(viewPlayer?.memberId ?? viewPlayer?.id);
@@ -115,15 +127,13 @@ export default function RadishSell({
     return tId === vId;
   }, [tradeMemberId, viewPlayer]);
 
+  // 판매 수량: 서버 최상위(tradeQty) 우선, 없으면 player 내부 값, 최후에 로컬 confirmed
   const soldQty = useMemo(() => {
     const serverQtyRoot = Number(tradeQty);
     if (Number.isFinite(serverQtyRoot) && serverQtyRoot > 0) {
-      // tradeMemberId가 맞으면 그 값을 보여주고,
-      // tradeMemberId가 없으면(구버전/누락) 내 턴일 때만 보여줌
       if (isTradeForViewPlayer || (tradeMemberId == null && isMyTurn)) return serverQtyRoot;
     }
 
-    // ✅ 기존(플레이어 객체 내) 필드도 혹시 있을 수 있으니 남겨둠
     const serverQtyInPlayer = Number(viewPlayer?.quantity ?? viewPlayer?.lastTradeQty);
     if (Number.isFinite(serverQtyInPlayer) && serverQtyInPlayer > 0) return serverQtyInPlayer;
 
@@ -131,6 +141,7 @@ export default function RadishSell({
     return 0;
   }, [tradeQty, tradeMemberId, isTradeForViewPlayer, isMyTurn, viewPlayer, confirmed]);
 
+  // 판매 금액: 서버 최상위(tradeAmount) 우선, 없으면 player 내부 값, 최후에 로컬 confirmed
   const soldAmount = useMemo(() => {
     const serverAmtRoot = Number(tradeAmount);
     if (Number.isFinite(serverAmtRoot) && serverAmtRoot >= 0) {
@@ -145,6 +156,7 @@ export default function RadishSell({
   }, [tradeAmount, tradeMemberId, isTradeForViewPlayer, isMyTurn, viewPlayer, confirmed]);
 
   const renderContent = () => {
+    // step 0: 인트로(클릭하면 step 1로)
     if (step === 0) {
       const hello = pName ? `${pName} 님` : '손님';
 
@@ -158,16 +170,20 @@ export default function RadishSell({
           }}
         >
           <div
-            role="button"
-            tabIndex={0}
-            onClick={() => setStep(1)}
+            role={interactive ? 'button' : undefined}
+            tabIndex={interactive ? 0 : -1}
+            onClick={() => {
+              if (!interactive) return;
+              setStep(1);
+            }}
             onKeyDown={(e) => {
-              if (!isMyTurn) return;
+              if (!interactive) return;
               if (e.key === 'Enter' || e.key === ' ') setStep(1);
             }}
             style={{
-              pointerEvents: 'auto',
-              cursor: isMyTurn ? 'pointer' : 'default',
+              // 관전자는 클릭 타겟 제거
+              pointerEvents: interactive ? 'auto' : 'none',
+              cursor: interactive ? 'pointer' : 'default',
               outline: 'none',
               display: 'inline-block',
             }}
@@ -193,23 +209,26 @@ export default function RadishSell({
       );
     }
 
+    // step 1: 판매 수량 입력
     if (step === 1) {
       return (
         <RadishSellInput
           open
           price={priceNum}
-          maxQty={Math.max(1, radishQty || 1)}
+          maxQty={Math.max(1, viewRadishQty || 1)}
           value={safeQty}
-          ownedQty={radishQty}
+          ownedQty={viewRadishQty}
           onChange={(v) => setSellQty(v)}
           onConfirm={handleSell}
           canConfirm={canSell}
           confirmText="결정"
           maxButtonText="팔 수 있는 만큼"
+          interactive={interactive}
         />
       );
     }
 
+    // step 2: 판매 완료/결과 표시
     return (
       <RadishSellComplete
         open
@@ -287,6 +306,7 @@ export default function RadishSell({
 
           {renderContent()}
 
+          {/* step=2(완료 화면)에서는 ExitButton 숨김 */}
           {step !== 2 ? (
             <div
               style={{

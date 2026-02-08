@@ -81,6 +81,9 @@ public class GameWsController {
                 return;
             case WAITING_START:
                 if (player.getRemainingMoves() > 0) {
+                    player.setUiStep(0);
+                    player.setActionData(null);
+                    player.setActionDataStr(null);
                     int remaining = player.getRemainingMoves();
                     moveService.movePlayer(player, remaining);
                     gameState.setStatus(GameStatus.MOVING);
@@ -611,7 +614,6 @@ public class GameWsController {
                         }
                         break;
                     }
-
                     case "BUILD_HOUSE":
                         player.setUiStep(0);
                         houseService.updateHouseInfo(player);
@@ -623,6 +625,29 @@ public class GameWsController {
                         player.setUiStep(4);
                         response.setType("HOUSE_UPGRADED");
                         break;
+                    case "HOUSE_FINISH_OK": {
+                        if (gameState.getStatus() != GameStatus.WAITING_HOUSE) break;
+                        if (!memberId.equals(gameState.getCurrentPlayerId())) break;
+                        String mode = message.getActionDataStr();
+                        if ("CLOSE".equals(mode)) {
+                            response.setType("HOUSE_FINISH_OK");
+                            response.setActionDataStr("HOUSE_FINISH_CLOSED");
+                            for (GamePlayerState p : gameState.getPlayers().values()) {
+                                if (p == null) continue;
+                                p.setActionDataStr("HOUSE_FINISH_CLOSED");
+                            }
+                            break;
+                        }
+                        if (!"FINAL".equals(mode)) break;
+                        for (GamePlayerState p : gameState.getPlayers().values()) {
+                            if (p == null) continue;
+                            p.setUiStep(1);
+                            p.setActionDataStr(null);
+                        }
+                        response.setType("HOUSE_FINISH_OK");
+                        response.setActionDataStr(null);
+                        break;
+                    }
                     case "OPEN_RADISH_SELL":
                         gameState.setStatus(GameStatus.WAITING_RADISH_SELL);
                         player.setUiStep(0);
@@ -840,6 +865,9 @@ public class GameWsController {
 
             // 1. 아직 이동이 남았는지 체크 (최우선 순위)
             if (player.getRemainingMoves() > 0) {
+                player.setUiStep(0);
+                player.setActionData(null);
+                player.setActionDataStr(null);
                 int remainingMoves = player.getRemainingMoves();
                 // 남은 이동 칸이 있으면 MOVING 상태로 복귀
                 moveService.movePlayer(player, remainingMoves);

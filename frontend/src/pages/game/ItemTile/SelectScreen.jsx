@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
+import useSpaceKey from '../../../hooks/useSpaceKey.js';
 import { normalizeItemKey, resolveItemKey } from '../../../constants/items.js';
 import InstructionText from '../../../components/common/InstructionText.jsx';
 import { COLORS } from '../../../constants/colors.js';
@@ -22,16 +23,39 @@ const normalizeItem = (key, isNew = false) => {
 
 export default function SelectScreen({ inventoryKeys, newItemKey, selectedIdx, onAction, isMyTurn }) {
   const myTurn = toBool(isMyTurn);
-  const submittingRef = useRef(false);
+
+  // SelectScreen 전용: 확정(스페이스/클릭) 연타 방지 + 일정 시간 후 자동 해제
+  const confirmLockRef = useRef(false);
   const unlockTimerRef = useRef(null);
+
+  const clearUnlockTimer = useCallback(() => {
+    if (unlockTimerRef.current) {
+      window.clearTimeout(unlockTimerRef.current);
+      unlockTimerRef.current = null;
+    }
+  }, []);
+
+  const unlockConfirm = useCallback(() => {
+    confirmLockRef.current = false;
+    clearUnlockTimer();
+  }, [clearUnlockTimer]);
+
+  const lockConfirmWithAutoUnlock = useCallback((ms = 1200) => {
+    confirmLockRef.current = true;
+    clearUnlockTimer();
+    unlockTimerRef.current = window.setTimeout(() => {
+      confirmLockRef.current = false;
+      unlockTimerRef.current = null;
+    }, ms);
+  }, [clearUnlockTimer]);
 
   useEffect(() => {
     return () => {
-      if (unlockTimerRef.current) window.clearTimeout(unlockTimerRef.current);
+      clearUnlockTimer();
     };
-  }, []);
+  }, [clearUnlockTimer]);
 
-  // 인벤 3개 + 새 아이템 1개(총 4개) 구성
+  // 인벤 3개 + 새 아이템 1개(총 4개)로 카드 구성
   const allItems = useMemo(() => {
     const inv = (inventoryKeys || []).map((k) => normalizeItem(k, false));
     const newOne = normalizeItem(newItemKey, true);
@@ -44,9 +68,9 @@ export default function SelectScreen({ inventoryKeys, newItemKey, selectedIdx, o
     return allItems.length > 0 ? 0 : null;
   });
 
-  // 서버 선택값/목록 변경 시 선택 동기화 + 잠금 해제
+  // 서버 선택값/목록 변경 시 선택 동기화 + 진행 중 신호로 보고 잠금 해제
   useEffect(() => {
-    submittingRef.current = false;
+    unlockConfirm();
 
     if (Number.isInteger(selectedIdx)) {
       setLocalSelected(selectedIdx);
@@ -55,48 +79,45 @@ export default function SelectScreen({ inventoryKeys, newItemKey, selectedIdx, o
 
     if (!Number.isInteger(localSelected) && allItems.length > 0) setLocalSelected(0);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedIdx, allItems.length]);
+  }, [selectedIdx, allItems.length, unlockConfirm]);
 
-  // 선택/신규 아이템 변경 시 중복 제출 잠금 해제
+  // 새 아이템이 바뀌면(사이클 변화) 잠금 해제
   useEffect(() => {
-    submittingRef.current = false;
-  }, [localSelected, newItemKey]);
+    unlockConfirm();
+  }, [newItemKey, unlockConfirm]);
 
   // 아이템 카드 선택(내 턴만)
   const handleSelect = useCallback(
     (idx) => {
       if (!myTurn) return;
-      if (submittingRef.current) return;
+      if (!onAction) return;
 
       setLocalSelected(idx);
-      onAction?.('SELECT_ITEM_TO_DROP', { actionData: idx, actionDataStr: String(idx) });
+      onAction('SELECT_ITEM_TO_DROP', { actionData: idx, actionDataStr: String(idx) });
     },
     [onAction, myTurn]
   );
 
-  // 선택 확정(중복 클릭 방지 + 서버 액션 전송)
-  const handleConfirmClick = useCallback(() => {
+  // 선택 확정(서버 액션 전송) - 연타 방지 잠금 적용
+  const handleConfirm = useCallback(() => {
     if (!myTurn) return;
-    if (submittingRef.current) return;
     if (!Number.isInteger(localSelected)) return;
     if (!onAction) return;
 
-    submittingRef.current = true;
+    if (confirmLockRef.current) return;
+    lockConfirmWithAutoUnlock(1200);
 
     onAction('HANDLE_INVENTORY_FULL', {
       actionData: localSelected,
       actionDataStr: String(localSelected),
     });
+  }, [localSelected, onAction, myTurn, lockConfirmWithAutoUnlock]);
 
-    // 서버 전환 지연 대비 안전 잠금 해제
-    if (unlockTimerRef.current) window.clearTimeout(unlockTimerRef.current);
-    unlockTimerRef.current = window.setTimeout(() => {
-      submittingRef.current = false;
-    }, 1200);
-  }, [localSelected, onAction, myTurn]);
+  // 스페이스로 확정(잠금/해제는 SelectScreen에서만 관리)
+  useSpaceKey(handleConfirm, { enabled: myTurn });
 
   // 확정 가능 여부(내 턴 + 선택됨 + 잠금 아님)
-  const canConfirm = Number.isInteger(localSelected) && myTurn && !submittingRef.current;
+  const canConfirm = Number.isInteger(localSelected) && myTurn && !confirmLockRef.current;
 
   return (
     <motion.div
@@ -125,7 +146,7 @@ export default function SelectScreen({ inventoryKeys, newItemKey, selectedIdx, o
                 type="button"
                 className={`itemtile-card ${selected ? 'active' : ''}`}
                 onClick={() => handleSelect(idx)}
-                disabled={!myTurn || submittingRef.current}
+                disabled={!myTurn}
               >
                 {selected ? (
                   <div
@@ -134,7 +155,7 @@ export default function SelectScreen({ inventoryKeys, newItemKey, selectedIdx, o
                     aria-disabled={!canConfirm}
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (canConfirm) handleConfirmClick();
+                      if (canConfirm) handleConfirm();
                     }}
                   >
                     선택하기 ✓
