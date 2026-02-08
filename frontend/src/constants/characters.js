@@ -78,7 +78,7 @@ export const CHARACTERS = [
     quote: '배고파... 샌드위치 먹고 싶어',
     habit: '노라줘',
     key: 'bingti',
-    color: '#594E36',
+    color: '#363c59',
     headY: 46,
   }),
   makeCharacter({
