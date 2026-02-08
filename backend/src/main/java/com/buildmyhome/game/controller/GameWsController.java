@@ -30,6 +30,7 @@ import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
 import java.security.Principal;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -292,7 +293,8 @@ public class GameWsController {
                         .map(GamePlayerState::getMemberId)
                         .toList();
 
-                gameState.setTurnOrder(sortedTurnOrder);
+                gameState.setTurnOrder(new ArrayList<>(sortedTurnOrder));
+                gameState.setOriginalTurnOrder(new ArrayList<>(sortedTurnOrder)); // ★ 원본 백업
                 gameState.setCurrentPlayerId(sortedTurnOrder.get(0));
 //                gameState.setStatus(GameStatus.WAITING_PLAYER_ACTION); // 서버 상태 변경
             }
@@ -862,6 +864,26 @@ public class GameWsController {
                 return;
             }
             GamePlayerState player = gameState.getPlayers().get(memberId);
+            if (player == null) return;
+
+            // 0. PLAYER_LEFT 상태: 이미 다음 플레이어로 세팅 완료, 턴 넘기지 않고 상태만 복귀
+            if (gameState.getStatus() == GameStatus.PLAYER_LEFT) {
+                gameState.setLeftPlayerId(null);
+
+                GamePlayerState nextPlayer = gameState.getPlayers().get(gameState.getCurrentPlayerId());
+                if (nextPlayer != null && nextPlayer.getSkipNextTurnCount() > 0) {
+                    nextPlayer.setSkipNextTurnCount(nextPlayer.getSkipNextTurnCount() - 1);
+                    gameState.setStatus(GameStatus.PLAYER_SKIPPED);
+                } else {
+                    gameState.setStatus(GameStatus.WAITING_PLAYER_ACTION);
+                }
+
+                gameState.setStatusUpdatedAt(LocalDateTime.now());
+                GameMessage response = defaultGameResponse("TURN_COMPLETED", gameState);
+                simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, response);
+                return;
+            }
+
 
             // 1. 아직 이동이 남았는지 체크 (최우선 순위)
             if (player.getRemainingMoves() > 0) {

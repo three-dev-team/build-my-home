@@ -1,7 +1,7 @@
 import React from 'react';
 import './Machurilla.css';
 import InstructionText from '../../../components/common/InstructionText.jsx';
-import { iGa } from '../../../constants/josa.js';
+import { iGa } from '../../../utils/josa.js';
 
 const IMG = {
   clickSvg: '/images/board/icon-click.svg',

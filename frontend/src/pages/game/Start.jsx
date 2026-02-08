@@ -92,6 +92,7 @@ const Start = ({ isMyTurn = false, player, currentPlayerName = '익명의 주민
     return [
       { text: currentPlayerName, color },
       { text: `${reward}벨`, color: COLORS.ac.yellow },
+      { text: `${stampCount}개`, color: COLORS.ac.lilac}
     ];
   };
 

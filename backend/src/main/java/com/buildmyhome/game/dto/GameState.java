@@ -23,7 +23,10 @@ public class GameState {
     private GameStatus status;
 
     // 턴 순서 제어 (플레이어 ID를 순서대로 보관)
-    private List<Long> turnOrder = new ArrayList<>();
+    private List<Long> turnOrder = new ArrayList<>(); // 플레이용 턴순서
+    private List<Long> originalTurnOrder = new ArrayList<>(); // 최초 턴순서 백업 (재접속 복원용)
+    private Long leftPlayerId;  // 이탈한 플레이어 ID (PLAYER_LEFT 연출용)
+
     private int currentTurnIndex = 0;
     private Long currentPlayerId; // 현재 플레이어(주사위 굴리는 플레이어)
 

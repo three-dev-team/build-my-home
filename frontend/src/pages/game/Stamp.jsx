@@ -10,7 +10,7 @@ import useSpaceKey from '../../hooks/useSpaceKey.js';
 import { COLORS } from '../../constants/colors.js';
 import { CHARACTERS } from '../../constants/characters.js';
 import CircleBlackout from '../../components/common/CircleBlackout.jsx';
-import { iGa } from '../../constants/josa.js';
+import { iGa } from '../../utils/josa.js';
 
 const DUPLICATE_REWARD = 20;
 

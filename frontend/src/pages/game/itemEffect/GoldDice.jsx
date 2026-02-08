@@ -1,12 +1,12 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Dice3D from '../../../components/dice/Dice3D.jsx';
 import InstructionText from '../../../components/common/InstructionText.jsx';
 import Shadow from '../../../components/common/Shadow.jsx';
 import { CHARACTERS } from '../../../constants/characters.js';
 import '../css/RollDicePage.css';
 import useSpaceKey from '../../../hooks/useSpaceKey.js';
-import { useMemo } from 'react';
 import BellRewardEffect from '../../../components/effect/BellRewardEffect.jsx';
+import { iGa } from '../../../utils/josa.js';
 
 // TODO: 금주사위 전용 GLB 모델로 교체 (gold-dice-1~6.glb)
 
@@ -71,7 +71,7 @@ const GoldDice = ({ player, isMyTurn, diceValue, bellAmount, onRoll, onAnimation
           ? ''
           : isMyTurn
             ? '스페이스바를 눌러 골든 주사위를 굴리기'
-            : `${player?.nickname} 골든 주사위를 굴리고 있어요`}
+            : `${player?.nickname}${iGa(player?.nickname)} 골든 주사위를 굴리고 있어요`}
       </InstructionText>
     </div>
   );

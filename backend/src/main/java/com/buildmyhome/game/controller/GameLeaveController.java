@@ -13,6 +13,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -71,14 +72,10 @@ public class GameLeaveController {
             return;
         }
 
-        // 이탈 마킹
-        player.setDisconnected(true);
-        player.setDisconnectedAt(LocalDateTime.now());
+        // 1. 서비스에 이탈 처리 위임
+        String result = gameStateService.removePlayerFromGame(roomId, memberId);
 
-        log.info(">>> ✅ 플레이어 이탈 처리 완료 - memberId: {}, roomId: {}, time: {}",
-                memberId, roomId, player.getDisconnectedAt());
-
-        // 다른 플레이어들에게 알림
+        // 2. 다른 플레이어들에게 알림
         messagingTemplate.convertAndSend(
                 "/topic/games/" + roomId,
                 Map.of(
@@ -87,8 +84,10 @@ public class GameLeaveController {
                         "nickname", player.getNickname()
                 )
         );
+
+        // 3. 결과에 따라 gameState 브로드캐스트
+        if ("GAME_OVER".equals(result) || "NEXT_TURN".equals(result)) {
+            messagingTemplate.convertAndSend("/topic/games/" + roomId, gameState);
+        }
     }
-
-
-
 }
