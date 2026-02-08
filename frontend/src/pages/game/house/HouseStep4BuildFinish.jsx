@@ -6,8 +6,8 @@ import {
   HOUSE_LEVEL_MAP,
   getHouseIconByLevel,
   normalizeHouseLevelByAny,
-  roEuro,
 } from '../../../constants/houseLevel.js';
+import { roEuro } from '../../../utils/josa.js';
 import './HouseStep4BuildFinish.css';
 
 const IMG = {

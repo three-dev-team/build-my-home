@@ -6,6 +6,7 @@ import { CHARACTERS } from '../../../constants/characters.js';
 import useSpaceKey from '../../../hooks/useSpaceKey.js';
 import '../css/RollDicePage.css';
 import './DoubleDice.css';
+import { iGa } from '../../../utils/josa.js';
 
 const DoubleDice = ({ player, isMyTurn, firstValue, secondValue, onAction }) => {
   // waiting → first-rolling → first-done → second-rolling → result → done
@@ -94,10 +95,10 @@ const DoubleDice = ({ player, isMyTurn, firstValue, secondValue, onAction }) => 
           : phase === 'first-done'
             ? isMyTurn
               ? '스페이스바를 눌러 두 번째 주사위 굴리기'
-              : `${player?.nickname} 두 번째 주사위를 굴리고 있어요`
+              : `${player?.nickname}${iGa(player?.nickname)} 두 번째 주사위를 굴리고 있어요`
             : isMyTurn
               ? '스페이스바를 눌러 첫 번째 주사위 굴리기'
-              : `${player?.nickname} 첫 번째 주사위를 굴리고 있어요`}
+              : `${player?.nickname}${iGa(player?.nickname)} 첫 번째 주사위를 굴리고 있어요`}
       </InstructionText>
     </div>
   );
