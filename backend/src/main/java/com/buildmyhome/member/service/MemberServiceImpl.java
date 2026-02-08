@@ -15,14 +15,6 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.util.UUID;
-import org.springframework.util.StringUtils;
 
 @Slf4j
 @Service
@@ -45,7 +37,7 @@ public class MemberServiceImpl implements MemberService {
     Member member = Member.builder()
       .email(dto.getEmail())
       .password(passwordEncoder.encode(dto.getPassword()))
-      .nickname(dto.getNickname())
+      .nickname(dto.getNickname().trim())
       .level(1)
       .bell(0)
       .playCount(0)
@@ -142,6 +134,7 @@ public class MemberServiceImpl implements MemberService {
       .naverId(member.getNaverId())
       .googleId(member.getGoogleId())
       .profileImage(member.getProfileImage())
+      .createdAt(member.getCreatedAt())
       .build();
   }
 
@@ -151,10 +144,55 @@ public class MemberServiceImpl implements MemberService {
   }
 
   @Override
+  public boolean existsDeletedByEmail(String email) {
+    return memberRepository.findDeletedByEmail(email).isPresent();
+  }
+
+  @Override
+  @Transactional
+  public void restoreAccount(String email, String password, String nickname) {
+    Member member = memberRepository.findDeletedByEmail(email)
+        .orElseThrow(() -> new IllegalArgumentException("탈퇴한 계정을 찾을 수 없습니다."));
+    member.setIsDel("N");
+    member.setDeletedAt(null);
+    member.setPassword(passwordEncoder.encode(password));
+    member.setNickname(nickname.trim());
+    member.setIsSuspended(false);
+    member.setSuspendedUntil(null);
+    member.setWarningCount(0);
+    log.info("계정 복구 완료: {}", email);
+  }
+
+  @Override
+  @Transactional
+  public void hardDeleteAndRejoin(JoinRequest dto) {
+    // 탈퇴한 계정 조회 (member_id 확인용)
+    Member deleted = memberRepository.findDeletedByEmail(dto.getEmail())
+        .orElseThrow(() -> new IllegalArgumentException("탈퇴한 계정을 찾을 수 없습니다."));
+    Long memberId = deleted.getId();
+
+    // FK 제약조건 해결: answers → inquiries → member 순서로 삭제
+    memberRepository.hardDeleteAnswersByMemberId(memberId);
+    memberRepository.hardDeleteInquiriesByMemberId(memberId);
+    memberRepository.hardDeleteByEmail(dto.getEmail());
+
+    Member member = Member.builder()
+        .email(dto.getEmail())
+        .password(passwordEncoder.encode(dto.getPassword()))
+        .nickname(dto.getNickname().trim())
+        .level(1)
+        .bell(0)
+        .playCount(0)
+        .build();
+    memberRepository.save(member);
+    log.info("계정 하드 삭제 후 재가입 완료: {}", dto.getEmail());
+  }
+
+  @Override
   @Transactional
   public void updateNickname(String email, String newNickname) {
     // 1. 중복 체크
-    if (memberRepository.existsByNickname(newNickname)) {
+    if (memberRepository.existsByNickname(newNickname.trim())) {
       throw new IllegalStateException("이미 사용 중인 닉네임입니다.");
     }
 
@@ -163,13 +201,13 @@ public class MemberServiceImpl implements MemberService {
       .findByEmail(email)
       .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
-    member.setNickname(newNickname);
+    member.setNickname(newNickname.trim());
     // @Transactional이 걸려있으면 save()를 안 써도 메서드 종료 시 DB에 반영됩니다(더티 체킹).
   }
 
   @Override
   public boolean existsByNickname(String nickname) {
-    return memberRepository.existsByNickname(nickname);
+    return memberRepository.existsByNickname(nickname.trim());
   }
 
   private String generateCode() {
@@ -243,54 +281,29 @@ public class MemberServiceImpl implements MemberService {
   }
   @Override
   @Transactional
-  public MemberResponse updateProfileImage(String email, MultipartFile file) {
-    if (file.isEmpty()) {
-      throw new IllegalArgumentException("업로드할 파일이 없습니다.");
-    }
+  public MemberResponse updateProfileImage(String email, String imagePath) {
+    Member member = memberRepository.findByEmail(email)
+        .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+    
+    member.setProfileImage(imagePath);
+    
+    return MemberResponse.builder()
+        .id(member.getId())
+        .email(member.getEmail())
+        .nickname(member.getNickname())
+        .level(member.getLevel())
+        .bell(member.getBell())
+        .role(member.getRole().name())
+        .profileImage(imagePath)
+        .build();
+  }
 
-    try {
-      // 1. 저장 디렉토리 생성
-      String uploadDir = "uploads/profiles/";
-      Path uploadPath = Paths.get(uploadDir);
-      if (!Files.exists(uploadPath)) {
-        Files.createDirectories(uploadPath);
-      }
-
-      // 2. 파일명 생성 (UUID)
-      String originalFilename = StringUtils.cleanPath(file.getOriginalFilename());
-      String extension = "";
-      int dotIndex = originalFilename.lastIndexOf('.');
-      if (dotIndex >= 0) {
-        extension = originalFilename.substring(dotIndex);
-      }
-      String fileName = UUID.randomUUID().toString() + extension;
-
-      // 3. 파일 저장
-      Path filePath = uploadPath.resolve(fileName);
-      Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-
-      // 4. 유저 정보 업데이트
-      Member member = memberRepository.findByEmail(email)
-          .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
-      
-      String profileImageUrl = "/uploads/profiles/" + fileName;
-      member.setProfileImage(profileImageUrl);
-      
-      return MemberResponse.builder()
-          .id(member.getId())
-          .email(member.getEmail())
-          .nickname(member.getNickname())
-          .level(member.getLevel())
-          .bell(member.getBell())
-          .role(member.getRole().name())
-          .kakaoId(member.getKakaoId())
-          .naverId(member.getNaverId())
-          .googleId(member.getGoogleId())
-          .profileImage(profileImageUrl)
-          .build();
-
-    } catch (IOException e) {
-      throw new RuntimeException("파일 저장 중 오류가 발생했습니다.", e);
-    }
+  @Override
+  @Transactional
+  public void logout(String email) {
+    Member member = memberRepository.findByEmail(email)
+        .orElseThrow(() -> new RuntimeException("사용자를 찾을 수 없습니다."));
+    member.setIsOnline(false);
+    memberRepository.save(member);
   }
 }

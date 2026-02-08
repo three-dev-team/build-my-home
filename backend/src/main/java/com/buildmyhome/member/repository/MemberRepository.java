@@ -17,6 +17,25 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
 
   boolean existsByEmail(String email);
 
+  // @Where 필터를 우회하여 탈퇴한 회원 조회
+  @Query(value = "SELECT * FROM members WHERE email = :email AND is_del = 'Y'", nativeQuery = true)
+  Optional<Member> findDeletedByEmail(@Param("email") String email);
+
+  // @Where 필터를 우회하여 탈퇴한 회원 하드 삭제
+  @org.springframework.data.jpa.repository.Modifying(clearAutomatically = true, flushAutomatically = true)
+  @Query(value = "DELETE FROM members WHERE email = :email AND is_del = 'Y'", nativeQuery = true)
+  void hardDeleteByEmail(@Param("email") String email);
+
+  // 회원의 문의에 달린 답변 삭제 (FK: answers → inquiries → members)
+  @org.springframework.data.jpa.repository.Modifying(clearAutomatically = true, flushAutomatically = true)
+  @Query(value = "DELETE FROM answers WHERE inquiry_id IN (SELECT id FROM inquires WHERE member_id = :memberId)", nativeQuery = true)
+  void hardDeleteAnswersByMemberId(@Param("memberId") Long memberId);
+
+  // 회원의 문의 삭제 (FK: inquiries → members)
+  @org.springframework.data.jpa.repository.Modifying(clearAutomatically = true, flushAutomatically = true)
+  @Query(value = "DELETE FROM inquires WHERE member_id = :memberId", nativeQuery = true)
+  void hardDeleteInquiriesByMemberId(@Param("memberId") Long memberId);
+
   boolean existsByNickname(String nickname);
 
   // 닉네임으로 검색 (관리자용) - 추가

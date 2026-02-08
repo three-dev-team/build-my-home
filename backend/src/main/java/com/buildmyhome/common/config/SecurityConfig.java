@@ -59,67 +59,74 @@ public class SecurityConfig {
   }
 
   @Bean
-  public SecurityFilterChain securityFilterChain(
-      HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
-    http.cors(
-            (cors) ->
-                cors.configurationSource(corsConfigurationSource())) // 다른 도메인(프론트 5173)에서 요청 허용
-        .csrf(AbstractHttpConfigurer::disable) // CSRF 보호 끄기 (JWT 쓰니까 불필요)
-        .sessionManagement(
-            (session) ->
-                session.sessionCreationPolicy(
-                    SessionCreationPolicy.STATELESS)) // 세션 안 씀 (JWT로 인증하니까)
-        // [CORS Fix] 401 에러 시 /login으로 리다이렉트되지 않고 그냥 401 반환하도록 설정
-        // 인증 안 된 요청이 오면 로그인 페이지로 리다이렉트하지 말고
-        // 그냥 401 상태코드만 반환해라
-        .exceptionHandling(
-            (e) ->
-                e.authenticationEntryPoint(
-                    new org.springframework.security.web.authentication.HttpStatusEntryPoint(
-                        org.springframework.http.HttpStatus.UNAUTHORIZED)))
-        .authorizeHttpRequests(
-            (auth) ->
-                auth.requestMatchers(HttpMethod.OPTIONS, "/**")
-                    .permitAll()
-                    // 이 경로들은 토큰 없이도 접근 가능
-                    .requestMatchers(
-                        "/api/member/join",
-                        "/api/member/login",
-                        "/api/member/check-nickname",
-                        "/api/member/check-email",
-                        "/api/member/send-code",
-                        "/api/member/send-registration-code",
-                        "/api/member/verify-code",
-                        "/api/member/reset-password",
-                        "/api/notices",
-                        "/api/notices/**",
-                        "/api/games/leave" // 추가: sendBeacon용 (내부에서 토큰 직접 검증)
-                        )
-                    .permitAll()
-                    // OAuth2 로그인 관련 경로도 토큰 없이 접근 가능
-                    .requestMatchers("/oauth2/**", "/login/oauth2/**")
-                    .permitAll()
-                    // WebSocket 엔드포인트도 열어둠
-                    .requestMatchers("/ws/**", "/uploads/**")
-                    .permitAll()
-                    // /api/member/me는 반드시 토큰 필요
-                    .requestMatchers("/api/member/me")
-                    .authenticated()
-                    // 나머지 전부 토큰 필요
-                    .anyRequest()
-                    .authenticated())
-        // OAuth2 로그인 설정
-        .oauth2Login(
-            (oauth2) ->
-                oauth2
-                    // 소셜 로그인 성공 후 사용자 정보를 가져오는 서비스 설정 (DB 저장 등)
-                    .userInfoEndpoint((userInfo) -> userInfo.userService(customOAuth2UserService))
-                    // 로그인 성공 시 JWT 발급 및 프론트엔드 리다이렉트 처리
-                    .successHandler(oAuth2SuccessHandler))
-        // JWT 인증 필터를 UsernamePasswordAuthenticationFilter 앞에 배치
-        // 시큐리티 체인에서만 1번 돌게 한다
-        .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-    // 모든 요청이 들어오면 JWT 필터를 먼저 실행해서 토큰 검증
+  public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter)
+    throws Exception {
+    http
+      .cors((cors) -> cors.configurationSource(corsConfigurationSource()))
+      .csrf(AbstractHttpConfigurer::disable)
+      // 세션을 사용하지 않으므로 STATELESS 설정
+      .sessionManagement((session) -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+      // [CORS Fix] 401 에러 시 /login으로 리다이렉트되지 않고 그냥 401 반환하도록 설정
+      .exceptionHandling((e) ->
+        e.authenticationEntryPoint(
+          new org.springframework.security.web.authentication.HttpStatusEntryPoint(
+            org.springframework.http.HttpStatus.UNAUTHORIZED
+          )
+        )
+      )
+      .authorizeHttpRequests((auth) ->
+        auth
+          .requestMatchers(HttpMethod.OPTIONS, "/**")
+          .permitAll()
+          // SPA 정적 리소스 허용 (npm run build 후 Spring에서 서빙)
+          .requestMatchers(
+            "/", "/index.html", "/vite.svg",
+            "/assets/**", "/fonts/**", "/images/**", "/sounds/**", "/videos/**",
+            "/*.js", "/*.css", "/*.svg", "/*.ico", "/*.png", "/*.jpg", "/*.gif", "/*.webp",
+            "/*.glb", "/*.gltf", "/*.mp3", "/*.wav", "/*.ogg", "/*.ttf", "/*.woff", "/*.woff2"
+          )
+          .permitAll()
+          // 권한 없이 접근 가능한 경로
+          .requestMatchers(
+            "/api/member/join",
+            "/api/member/login",
+            "/api/member/check-nickname",
+            "/api/member/check-email",
+            "/api/member/send-code",
+            "/api/member/send-registration-code",
+            "/api/member/verify-code",
+            "/api/member/reset-password",
+            "/api/member/restore",
+            "/api/member/rejoin",
+            "/api/notices",
+            "/api/notices/**",
+            "/api/games/leave" // sendBeacon용 (내부에서 토큰 직접 검증)
+          )
+          .permitAll()
+          // OAuth2 로그인 관련 경로
+          .requestMatchers("/oauth2/**", "/login/oauth2/**")
+          .permitAll()
+          .requestMatchers("/ws/**", "/uploads/**")
+          .permitAll()
+          // 내 정보 조회는 인증 필수
+          .requestMatchers("/api/member/me")
+          .authenticated()
+          // 그 외 모든 요청은 인증 필수
+          .anyRequest()
+          .authenticated()
+      )
+      // OAuth2 로그인 설정
+      .oauth2Login((oauth2) ->
+        oauth2
+          // 소셜 로그인 성공 후 사용자 정보를 가져오는 서비스 설정 (DB 저장 등)
+          .userInfoEndpoint((userInfo) -> userInfo.userService(customOAuth2UserService))
+          // 로그인 성공 시 JWT 발급 및 프론트엔드 리다이렉트 처리
+          .successHandler(oAuth2SuccessHandler)
+      )
+      // JWT 인증 필터를 UsernamePasswordAuthenticationFilter 앞에 배치
+      // 시큐리티 체인에서만 1번 돌게 한다
+      .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
     return http.build();
   }
 

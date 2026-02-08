@@ -32,7 +32,7 @@ export default function ZoomWarningModal({ onDismiss }) {
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50">
       <div className="bg-[#FDFBF6] rounded-[1.5cqw] p-[2cqw] w-[35cqw] text-center shadow-xl">
         {/* 아이콘 */}
-        <div className="text-[4cqw] mb-[1cqh]">🔍</div>
+        <div className="text-[4cqw] mb-[1cqh]"></div>
 
         {/* 제목 */}
         <h2 className="text-[1.6cqw] font-bold text-[#5d4037] mb-[1cqh]">화면 배율 조정이 필요해요!</h2>

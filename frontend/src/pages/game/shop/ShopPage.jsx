@@ -215,7 +215,7 @@ const ShopPage = ({ gameState, myId, currentPlayer, handleAction, onExit, shopRe
 
     // ✅ 상점 아이템: 종류별 1개 제한
     if (activeTab === 'buy' && selectedItem.category === 'shopItem' && isPurchasedShopItem(selectedItem)) {
-      setErrorMsg('⚠️ 이미 구매한 상점 아이템입니다!');
+      setErrorMsg('이미 구매한 상점 아이템입니다!');
       return;
     }
 

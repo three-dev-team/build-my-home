@@ -42,7 +42,8 @@ public class Member extends BaseTimeEntity {
   private String googleId;
 
   @Column
-  private String profileImage;
+  @Builder.Default
+  private String profileImage = "/images/mypage/char-apple-profile.webp";
 
   @Builder.Default
   private Integer level = 1; // 유저 레벨

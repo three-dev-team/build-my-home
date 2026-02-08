@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { ExclamationTriangleIcon } from '@heroicons/react/24/solid';
 import { COLORS } from '../../constants/colors';
 import AspectLayout from '../../components/layout/AspectLayout';
+import AuthAlertModal from '../../components/common/AuthAlertModal';
 
 // --- 소셜 아이콘 컴포넌트 ---
 const GoogleIcon = () => (
@@ -148,7 +148,7 @@ export default function Login() {
     const params = new URLSearchParams(window.location.search);
     const error = params.get('error');
     if (error === 'suspended') {
-      openAlert('🚫 정지된 계정입니다.\n\n운영 정책 위반으로 로그인이\n제한되었습니다.');
+      openAlert('정지된 계정입니다.\n\n운영 정책 위반으로 로그인이\n제한되었습니다.');
       // URL에서 에러 파라미터 제거
       window.history.replaceState({}, '', '/');
     }
@@ -222,7 +222,7 @@ export default function Login() {
       const errorMsg = error.response?.data?.message || error.response?.data || '';
       // 정지된 계정 에러 메시지 감지
       if (typeof errorMsg === 'string' && errorMsg.includes('정지된 계정')) {
-        openAlert('🚫 정지된 계정입니다.\n\n운영 정책 위반으로 로그인이\n제한되었습니다.');
+        openAlert('정지된 계정입니다.\n\n운영 정책 위반으로 로그인이\n제한되었습니다.');
       } else {
         openAlert('로그인 정보를 확인해주세요.');
       }
@@ -248,18 +248,18 @@ export default function Login() {
   // 인증번호 검증 (시간 만료 체크 추가)
   const handleVerifyCode = async () => {
     if (!authCode) return openAlert('인증번호를 입력해주세요!');
-    if (timeLeft <= 0) return openAlert('인증 시간이 만료되었습니다. \n다시 시도해주세요. ⏳');
+    if (timeLeft <= 0) return openAlert('인증 시간이 만료되었습니다.\n다시 시도해주세요.');
     try {
       const response = await axios.post(`${API_BASE_URL}/verify-code`, {
         email: findEmail,
         code: authCode,
       });
       if (response.data === true) {
-        openAlert('인증 성공! ✨ \n새로운 비밀번호를 설정해주세요.');
+        openAlert('인증 성공!\n새로운 비밀번호를 설정해주세요.');
         setFindStep(3);
         setTimeLeft(0); // 타이머 종료
       } else {
-        openAlert('인증번호가 일치하지 않습니다. ❌');
+        openAlert('인증번호가 일치하지 않습니다.');
       }
     } catch (error) {
       openAlert('검증 중 오류가 발생했습니다.');
@@ -269,8 +269,8 @@ export default function Login() {
   const handleResetPassword = async () => {
     const pwRegex = /^(?=.*[a-zA-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,16}$/;
     if (!pwRegex.test(newPassword))
-      return openAlert('비밀번호 규칙을 확인해주세요! \n(8~16자, 영문/숫자/특수문자 포함) 🔒');
-    if (newPassword !== confirmNewPassword) return openAlert('비밀번호가 일치하지 않습니다. ❌');
+      return openAlert('비밀번호 규칙을 확인해주세요!\n(8~16자, 영문/숫자/특수문자 포함)');
+    if (newPassword !== confirmNewPassword) return openAlert('비밀번호가 일치하지 않습니다.');
 
     try {
       await axios.post(`${API_BASE_URL}/reset-password`, {
@@ -295,56 +295,12 @@ export default function Login() {
   return (
     <AspectLayout>
       <div className="relative w-full h-full bg-cover bg-center flex items-center justify-center overflow-hidden font-gosanja bg-[url('/images/bg-pattern-1.png')]">
-        {/* --- 커스텀 알림 모달 (에러 모달 디자인 적용) --- */}
-        {modal.isOpen && (
-          <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-            <div
-              className="relative flex flex-col items-center justify-center animate-in zoom-in-95 duration-200"
-              style={{
-                width: '25cqw',
-                minHeight: '18.75cqw',
-                borderRadius: '4.17cqw',
-                backgroundColor: '#FFFFFF',
-                padding: '2.08cqw 1.04cqw',
-                boxShadow: '0 1.3cqw 2.6cqw -0.63cqw rgba(0, 0, 0, 0.25)',
-              }}
-            >
-              {/* 경고 아이콘 */}
-              <div className="mb-[1.25cqw]">
-                <ExclamationTriangleIcon className="w-[3.33cqw] h-[3.33cqw] text-[#F2C94C]" />
-              </div>
-
-              {/* 메시지 */}
-              <p
-                className="font-bold text-center whitespace-pre-wrap leading-relaxed mb-[1.67cqw]"
-                style={{
-                  color: COLORS.ac.darkBrown,
-                  fontSize: '1.25cqw',
-                }}
-              >
-                {modal.message}
-              </p>
-
-              {/* 확인 버튼 */}
-              <button
-                onClick={() => setModal({ isOpen: false, message: '' })}
-                className="flex items-center justify-center font-black active:scale-95 transition-all shadow-none hover:brightness-105"
-                style={{
-                  width: '10.42cqw',
-                  height: '4.17cqw',
-                  borderRadius: '2.08cqw',
-                  backgroundColor: COLORS.ac.coffeeBrown,
-                  color: COLORS.ac.creamIvory,
-                  fontSize: '1.46cqw',
-                }}
-              >
-                <span className="relative z-10" style={{ paddingBottom: '0.16cqw' }}>
-                  확인
-                </span>
-              </button>
-            </div>
-          </div>
-        )}
+        {/* --- 커스텀 알림 모달 --- */}
+        <AuthAlertModal
+          isOpen={modal.isOpen}
+          message={modal.message}
+          onClose={() => setModal({ isOpen: false, message: '' })}
+        />
 
         {/* --- 비밀번호 재설정 모달 (디자인 가이드 적용) --- */}
         {showFindModal && (
@@ -460,7 +416,7 @@ export default function Login() {
                         color: COLORS.ac.creamIvory,
                       }}
                     >
-                      인증번호 발송하기
+                      인증하기
                     </button>
 
                     <button

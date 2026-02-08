@@ -888,7 +888,7 @@ function Room() {
         {showInviteModal && (
           <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 animate-fade-in">
             <div className="bg-white rounded-[1.04cqw] p-[2.08cqw] shadow-xl flex flex-col items-center gap-[1.67cqw] min-w-[25cqw] animate-scale-up">
-              <div className="text-[#594E36] font-bold text-[1.46cqw]">🎮 친구 초대하기</div>
+              <div className="text-[#594E36] font-bold text-[1.46cqw]">친구 초대하기</div>
 
               {/* 초대 코드 */}
               <div className="w-full flex flex-col gap-[0.42cqw]">

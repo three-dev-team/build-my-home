@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import AspectLayout from '../components/layout/AspectLayout';
@@ -52,7 +52,36 @@ export default function AdminPage() {
 
   const [loading, setLoading] = useState(false);
 
+  // 알림 모달 상태
+  const [alertModal, setAlertModal] = useState({ isOpen: false, message: '' });
+
   const navigate = useNavigate();
+
+  // 드롭다운 ref (외부 클릭 감지용)
+  const filterRef = useRef(null);
+  const sortRef = useRef(null);
+  const memberFilterRef = useRef(null);
+  const memberSortRef = useRef(null);
+
+  // 외부 클릭 시 드롭다운 닫기
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (filterRef.current && !filterRef.current.contains(e.target)) {
+        setIsFilterOpen(false);
+      }
+      if (sortRef.current && !sortRef.current.contains(e.target)) {
+        setIsSortOpen(false);
+      }
+      if (memberFilterRef.current && !memberFilterRef.current.contains(e.target)) {
+        setIsMemberFilterOpen(false);
+      }
+      if (memberSortRef.current && !memberSortRef.current.contains(e.target)) {
+        setIsMemberSortOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // 카테고리 배지 컴포넌트
   const CategoryBadge = ({ category }) => {
@@ -186,7 +215,7 @@ export default function AdminPage() {
         { headers: { Authorization: `Bearer ${token}` } },
       );
 
-      alert('답변이 등록되었습니다! 🌟');
+      alert('답변이 등록되었습니다!');
       setAnswerContent('');
       setSelectedInquiry(null);
       fetchInquiries(currentPage); // 현재 페이지 갱신
@@ -373,15 +402,18 @@ export default function AdminPage() {
       );
       // 자동 정지 여부에 따른 메시지
       if (response.data.isSuspended) {
-        alert(`경고 ${response.data.warningCount}회 누적! 계정이 자동 정지되었습니다.`);
+        setAlertModal({
+          isOpen: true,
+          message: `경고 ${response.data.warningCount}회 누적! 계정이 자동 정지되었습니다.`,
+        });
       } else {
-        alert(`경고가 부여되었습니다. (현재 ${response.data.warningCount}회)`);
+        setAlertModal({ isOpen: true, message: `경고가 부여되었습니다. (현재 ${response.data.warningCount}회)` });
       }
       // 목록 새로고침
       fetchMembers(memberCurrentPage, memberSearchKeyword, selectedRoles, selectedMemberSort);
     } catch (error) {
       console.error('경고 부여 실패:', error);
-      alert('경고 부여에 실패했습니다.');
+      setAlertModal({ isOpen: true, message: '경고 부여에 실패했습니다.' });
     }
     setWarnModal({ isOpen: false, memberId: null, nickname: '' });
   };
@@ -553,7 +585,7 @@ export default function AdminPage() {
                   {/* 상단: 아이콘 Row (좌: 리스트 / 우: 정렬, 엑셀) */}
                   <div className="flex justify-between items-end">
                     {/* 왼쪽: 리스트 아이콘 + 정렬 드롭다운 */}
-                    <div className="relative">
+                    <div className="relative" ref={sortRef}>
                       <div
                         onClick={(e) => {
                           e.stopPropagation();
@@ -597,7 +629,7 @@ export default function AdminPage() {
                     {/* 오른쪽: 필터, 엑셀 아이콘 */}
                     <div className="flex items-end gap-[0.83cqw]">
                       {/* Sort Icon + Filter Dropdown */}
-                      <div className="relative">
+                      <div className="relative" ref={filterRef}>
                         <div
                           onClick={(e) => {
                             e.stopPropagation();
@@ -811,7 +843,7 @@ export default function AdminPage() {
                         {/* 첨부 이미지 표시 */}
                         {selectedInquiry.imageUrl && (
                           <div className="mt-[1.85cqh]">
-                            <h4 className="text-[1.04cqw] font-bold mb-[0.93cqh] text-[#594E36]">📎 첨부 이미지</h4>
+                            <h4 className="text-[1.04cqw] font-bold mb-[0.93cqh] text-[#594E36]">첨부 이미지</h4>
                             <img
                               src={selectedInquiry.imageUrl}
                               alt="첨부 이미지"
@@ -879,9 +911,9 @@ export default function AdminPage() {
               <div className="w-[91.25cqw] h-[73.33cqh] bg-[#FDFBF6] rounded-[2.08cqw] shadow-lg flex flex-col items-center p-[2.08cqw] relative">
                 {/* 검색바 (Search Bar) */}
                 {/* 검색 영역 (리스트 아이콘 - 검색바 - 정렬/엑셀 아이콘) */}
-                <div className="flex items-center justify-between mb-[2cqh] w-full">
+                <div className="flex items-center justify-between mb-[1cqh] w-full">
                   {/* 왼쪽: 리스트 아이콘 + 정렬 드롭다운 */}
-                  <div className="relative">
+                  <div className="relative" ref={memberSortRef}>
                     <div
                       onClick={(e) => {
                         e.stopPropagation();
@@ -943,7 +975,7 @@ export default function AdminPage() {
                   {/* 오른쪽: 필터, Excel Icon */}
                   <div className="flex items-center gap-[0.83cqw]">
                     {/* Sort Icon + Filter Dropdown */}
-                    <div className="relative">
+                    <div className="relative" ref={memberFilterRef}>
                       <div
                         onClick={(e) => {
                           e.stopPropagation();
@@ -1032,23 +1064,39 @@ export default function AdminPage() {
                 </div>
 
                 {/* 테이블 영역 */}
-                <div className="w-full flex-1 overflow-auto bg-white rounded-[1.04cqw] shadow-inner border-[0.1cqw] border-[#594E36]/10 mb-[1.5cqh]">
-                  <table className="w-full text-left border-collapse">
+                <div className="w-full flex-1 overflow-hidden bg-white rounded-[1.04cqw] shadow-inner border-[0.1cqw] border-[#594E36]/10 mb-[1cqh]">
+                  <table className="w-full h-full text-left border-collapse">
                     <thead className="bg-[#F9F0A3] sticky top-0 z-10">
                       <tr>
-                        <th className="p-[1.04cqw] text-[0.83cqw] font-black text-[#594E36]">닉네임</th>
-                        <th className="p-[1.04cqw] text-[0.83cqw] font-black text-[#594E36]">이메일</th>
-                        <th className="p-[1.04cqw] text-[0.83cqw] font-black text-[#594E36] text-center">레벨</th>
-                        <th className="p-[1.04cqw] text-[0.83cqw] font-black text-[#594E36] text-center">보유 벨</th>
-                        <th className="p-[1.04cqw] text-[0.83cqw] font-black text-[#594E36] text-center">접속</th>
-                        <th className="p-[1.04cqw] text-[0.83cqw] font-black text-[#594E36] text-center">
+                        <th className="px-[0.52cqw] py-[0.7cqh] text-[0.83cqw] font-black text-[#594E36]">닉네임</th>
+                        <th className="px-[0.52cqw] py-[0.7cqh] text-[0.83cqw] font-black text-[#594E36]">이메일</th>
+                        <th className="px-[0.52cqw] py-[0.7cqh] text-[0.83cqw] font-black text-[#594E36] text-center">
+                          레벨
+                        </th>
+                        <th className="px-[0.52cqw] py-[0.7cqh] text-[0.83cqw] font-black text-[#594E36] text-center">
+                          보유 벨
+                        </th>
+                        <th className="px-[0.52cqw] py-[0.7cqh] text-[0.83cqw] font-black text-[#594E36] text-center">
+                          접속
+                        </th>
+                        <th className="px-[0.52cqw] py-[0.7cqh] text-[0.83cqw] font-black text-[#594E36] text-center">
                           마지막 로그인
                         </th>
-                        <th className="p-[1.04cqw] text-[0.83cqw] font-black text-[#594E36] text-center">신고</th>
-                        <th className="p-[1.04cqw] text-[0.83cqw] font-black text-[#594E36] text-center">경고</th>
-                        <th className="p-[1.04cqw] text-[0.83cqw] font-black text-[#594E36] text-center">상태</th>
-                        <th className="p-[1.04cqw] text-[0.83cqw] font-black text-[#594E36] text-center">역할</th>
-                        <th className="p-[1.04cqw] text-[0.83cqw] font-black text-[#594E36] text-center">가입일</th>
+                        <th className="px-[0.52cqw] py-[0.7cqh] text-[0.83cqw] font-black text-[#594E36] text-center">
+                          신고
+                        </th>
+                        <th className="px-[0.52cqw] py-[0.7cqh] text-[0.83cqw] font-black text-[#594E36] text-center">
+                          경고
+                        </th>
+                        <th className="px-[0.52cqw] py-[0.7cqh] text-[0.83cqw] font-black text-[#594E36] text-center">
+                          상태
+                        </th>
+                        <th className="px-[0.52cqw] py-[0.7cqh] text-[0.83cqw] font-black text-[#594E36] text-center">
+                          역할
+                        </th>
+                        <th className="px-[0.52cqw] py-[0.7cqh] text-[0.83cqw] font-black text-[#594E36] text-center">
+                          가입일
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1057,24 +1105,26 @@ export default function AdminPage() {
                           key={member.id}
                           className={`border-b border-[#594E36]/10 hover:bg-[#FFFEE0] ${index % 2 === 0 ? 'bg-white' : 'bg-[#F9F3F9]/30'}`}
                         >
-                          <td className="p-[1.04cqw] text-[0.83cqw] font-bold text-[#594E36]">{member.nickname}</td>
-                          <td className="p-[1.04cqw] text-[0.83cqw] font-medium text-[#594E36] opacity-80">
+                          <td className="px-[0.52cqw] py-[0.7cqh] text-[0.83cqw] font-bold text-[#594E36]">
+                            {member.nickname}
+                          </td>
+                          <td className="px-[0.52cqw] py-[0.7cqh] text-[0.83cqw] font-medium text-[#594E36] opacity-80">
                             {member.email}
                           </td>
-                          <td className="p-[1.04cqw] text-[0.83cqw] font-bold text-[#594E36] text-center">
+                          <td className="px-[0.52cqw] py-[0.7cqh] text-[0.83cqw] font-bold text-[#594E36] text-center">
                             Lv.{member.level}
                           </td>
-                          <td className="p-[1.04cqw] text-[0.83cqw] font-bold text-[#594E36] text-center">
+                          <td className="px-[0.52cqw] py-[0.7cqh] text-[0.83cqw] font-bold text-[#594E36] text-center">
                             {member.bell?.toLocaleString() || 0}
                           </td>
                           {/* 접속 상태 */}
-                          <td className="p-[1.04cqw] text-center">
+                          <td className="px-[0.52cqw] py-[0.7cqh] text-center">
                             <span
                               className={`inline-block w-[0.8cqw] h-[0.8cqw] rounded-full ${member.isOnline ? 'bg-[#78D7B2]' : 'bg-[#D9D9D9]'}`}
                             />
                           </td>
                           {/* 마지막 로그인 */}
-                          <td className="p-[1.04cqw] text-[0.73cqw] font-medium text-[#594E36] text-center opacity-60">
+                          <td className="px-[0.52cqw] py-[0.7cqh] text-[0.73cqw] font-medium text-[#594E36] text-center opacity-60">
                             {member.lastLoginAt
                               ? new Date(member.lastLoginAt).toLocaleString('ko-KR', {
                                   month: '2-digit',
@@ -1085,7 +1135,7 @@ export default function AdminPage() {
                               : '-'}
                           </td>
                           {/* 신고 횟수 */}
-                          <td className="p-[1.04cqw] text-[0.83cqw] font-bold text-center">
+                          <td className="px-[0.52cqw] py-[0.7cqh] text-[0.83cqw] font-bold text-center">
                             <span
                               className={`${member.reportedCount > 0 ? 'text-[#EB5757]' : 'text-[#594E36] opacity-50'}`}
                             >
@@ -1093,7 +1143,7 @@ export default function AdminPage() {
                             </span>
                           </td>
                           {/* 경고 횟수 + 경고 버튼 */}
-                          <td className="p-[1.04cqw] text-[0.83cqw] font-bold text-center">
+                          <td className="px-[0.52cqw] py-[0.7cqh] text-[0.83cqw] font-bold text-center">
                             <div className="flex items-center justify-center gap-[0.4cqw]">
                               <span
                                 className={`${(member.warningCount || 0) >= 5 ? 'text-[#EB5757]' : (member.warningCount || 0) > 0 ? 'text-[#F9A825]' : 'text-[#594E36] opacity-50'}`}
@@ -1102,15 +1152,14 @@ export default function AdminPage() {
                               </span>
                               <button
                                 onClick={() => handleWarnMember(member.id, member.nickname)}
-                                disabled={member.isSuspended}
-                                className="px-[0.4cqw] py-[0.1cqw] rounded-[0.3cqw] text-[0.6cqw] font-bold bg-[#F9A825] text-white hover:bg-[#F57F17] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                className="px-[0.4cqw] py-[0.1cqw] rounded-[0.3cqw] text-[0.6cqw] font-bold bg-[#F9A825] text-white hover:bg-[#F57F17] transition-colors"
                               >
                                 경고
                               </button>
                             </div>
                           </td>
                           {/* 정지 상태 - 클릭 가능 */}
-                          <td className="p-[1.04cqw] text-center">
+                          <td className="px-[0.52cqw] py-[0.7cqh] text-center">
                             <button
                               onClick={() => handleToggleSuspend(member.id, member.isSuspended)}
                               className={`px-[0.5cqw] py-[0.1cqw] rounded-full text-[0.63cqw] font-bold cursor-pointer hover:opacity-80 transition-opacity ${
@@ -1120,14 +1169,14 @@ export default function AdminPage() {
                               {member.isSuspended ? '정지' : '정상'}
                             </button>
                           </td>
-                          <td className="p-[1.04cqw] text-center">
+                          <td className="px-[0.52cqw] py-[0.7cqh] text-center">
                             <span
                               className={`px-[0.63cqw] py-[0.1cqw] rounded-full text-[0.63cqw] font-bold ${member.role === 'ADMIN' ? 'bg-[#EB5757] text-white' : 'bg-[#78D7B2] text-white'}`}
                             >
                               {member.role}
                             </span>
                           </td>
-                          <td className="p-[1.04cqw] text-[0.83cqw] font-medium text-[#594E36] text-center opacity-60">
+                          <td className="px-[0.52cqw] py-[0.7cqh] text-[0.83cqw] font-medium text-[#594E36] text-center opacity-60">
                             {new Date(member.createdAt).toLocaleDateString()}
                           </td>
                         </tr>
@@ -1137,7 +1186,7 @@ export default function AdminPage() {
                 </div>
 
                 {/* 페이지네이션 */}
-                <div className="flex justify-center gap-[0.42cqw] mb-[1.5cqh]">
+                <div className="flex justify-center gap-[0.42cqw]">
                   <button
                     onClick={() => handleMemberPageChange(memberCurrentPage - 1)}
                     disabled={memberCurrentPage === 0}
@@ -1188,6 +1237,16 @@ export default function AdminPage() {
         message={`${warnModal.nickname}님에게 경고를 부여하시겠습니까?\n(5회 누적 시 자동 정지)`}
         onConfirm={executeWarnMember}
         onCancel={() => setWarnModal({ isOpen: false, memberId: null, nickname: '' })}
+      />
+
+      {/* 알림 모달 */}
+      <ConfirmModal
+        isOpen={alertModal.isOpen}
+        title="알림"
+        message={alertModal.message}
+        onConfirm={() => setAlertModal({ isOpen: false, message: '' })}
+        onCancel={() => setAlertModal({ isOpen: false, message: '' })}
+        confirmOnly
       />
     </AspectLayout>
   );

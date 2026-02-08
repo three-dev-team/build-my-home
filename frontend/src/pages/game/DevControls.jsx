@@ -23,7 +23,7 @@ const DevControls = ({ onStatusChange, onSetLastRound }) => {
           onClick={() => onStatusChange('WAITING_DICE')}
           className="px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-xs rounded shadow"
         >
-          🎲 주사위 굴리기 (RollDicePage)
+          주사위 굴리기 (RollDicePage)
         </button>
         <button
           onClick={() => onStatusChange('WAITING_KK')}

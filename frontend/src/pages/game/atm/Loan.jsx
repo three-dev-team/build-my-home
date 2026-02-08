@@ -36,17 +36,17 @@ const getFallbackCharacterId = () => {
 const fmt = (n) => Number(n || 0).toLocaleString();
 
 export default function Loan({
-                               userBell = 0,
-                               userLoan = 0,
-                               currentPlayerName = '익명의 주민',
-                               currentPlayerCharacterId = null,
-                               isMyTurn = false,
-                               timeoutSeconds,
-                               isBankTile = false,
-                               onAction,
-                               onExit,
-                               onClose,
-                             }) {
+  userBell = 0,
+  userLoan = 0,
+  currentPlayerName = '익명의 주민',
+  currentPlayerCharacterId = null,
+  isMyTurn = false,
+  timeoutSeconds,
+  isBankTile = false,
+  onAction,
+  onExit,
+  onClose,
+}) {
   if (timeoutSeconds === undefined) return null;
 
   const nickname = useMemo(() => safeName(currentPlayerName), [currentPlayerName]);
@@ -309,14 +309,18 @@ export default function Loan({
         const debtStr = `${fmt(newDebt)}벨`;
 
         if (isBankTile) {
-          setDoneText(`${amountStr}을 ${characterName}의 계좌로 송금했습니다\n수수료는 없습니다\n현재 빚은 ${debtStr} 입니다`);
+          setDoneText(
+            `${amountStr}을 ${characterName}의 계좌로 송금했습니다\n수수료는 없습니다\n현재 빚은 ${debtStr} 입니다`,
+          );
           setDoneHighlights([
             { text: amountStr, color: H_AMOUNT },
             { text: debtStr, color: H_DEBT },
             { text: characterName, color: H_NAME },
           ]);
         } else {
-          setDoneText(`${amountStr}을 ${characterName}의 계좌로 송금했습니다\n수수료 ${feeStr}이 부과되었습니다\n현재 빚은 ${debtStr} 입니다`);
+          setDoneText(
+            `${amountStr}을 ${characterName}의 계좌로 송금했습니다\n수수료 ${feeStr}이 부과되었습니다\n현재 빚은 ${debtStr} 입니다`,
+          );
           setDoneHighlights([
             { text: amountStr, color: H_AMOUNT },
             { text: feeStr, color: H_FEE },

@@ -18,7 +18,7 @@ export default function Loading({ message = '로딩 중입니다...', background
       >
         <div className="flex flex-col items-center gap-[1cqw]">
           {/* 애니메이션 효과로 처리 중임을 알림 */}
-          <div className="text-[3cqw] animate-bounce">🍃</div>
+          <div className="text-[3cqw] animate-bounce"></div>
           <div className="text-[2cqw] font-black text-[#8b5a2b]">{message}</div>
         </div>
       </div>

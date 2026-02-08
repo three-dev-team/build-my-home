@@ -163,7 +163,8 @@ public class OAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler 
       .queryParam("token", token)
       .queryParam("nickname", nickname)
       .queryParam("bell", member.getBell())
-      .queryParam("level", member.getLevel());
+      .queryParam("level", member.getLevel())
+      .queryParam("profileImage", member.getProfileImage() != null ? member.getProfileImage() : "");
     
     // 정지 정보 전달
     if (Boolean.TRUE.equals(member.getIsSuspended())) {
