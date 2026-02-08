@@ -44,6 +44,7 @@ import DoubleDice from './itemEffect/DoubleDice.jsx';
 import { leaveGame, leaveGameBeacon } from '../../utils/leaveUtils.js';
 import PlayerLeft from './PlayerLeft.jsx';
 import AutoMove from '../../components/common/AutoMove.jsx';
+import AlertModal from '../../components/common/AlertModal.jsx';
 
 const GamePage = () => {
   // 라우트 파라미터/네비게이션 핸들러
@@ -66,12 +67,23 @@ const GamePage = () => {
   // 유저 이탈 시 토스트
   const [disconnectToast, setDisconnectToast] = useState(null);
   const toastTimerRef = useRef(null);
+
+  // 유저 이탈 시 모달 (INTRO/ORDER 시)
+  const [cancelModal, setCancelModal] = useState(false);
+
+  // 유저 이탈 5초 강제 애니메이션 동안 변화 상태 저장
+  const pendingGameStateRef = useRef(null);
+  const playerLeftTimerRef = useRef(null);
   useEffect(() => {
     return () => {
       if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+      if (playerLeftTimerRef.current) clearTimeout(playerLeftTimerRef.current);
     };
   }, []);
 
+  // 게임 취소/없음 상태 → 언마운트 시 leave 요청 방지용 플래그
+  const gameCancelledRef = useRef(false);
+  const playerLeftUntilRef = useRef(null);
 
   // 인벤토리,ATM 어디서 열었는지 기억(BOARD/HOUSE)
   const inventoryOriginRef = useRef(null);
@@ -229,6 +241,15 @@ const GamePage = () => {
         console.log('>>> ✅ WebSocket 연결됨');
         setStompClient(client);
 
+        // 개인 메시지(GAME_NOT_FOUND 등)
+        client.subscribe('/user/queue/game', (message) => {
+          const data = JSON.parse(message.body);
+          if (data?.type === 'GAME_NOT_FOUND') {
+            gameCancelledRef.current = true;
+            navigate('/room-list', { replace: true });
+          }
+        });
+
         // 게임 메인 토픽 구독
         client.subscribe(`/topic/games/${roomId}`, (message) => {
           const data = JSON.parse(message.body);
@@ -315,17 +336,54 @@ const GamePage = () => {
             return;
           }
 
+          // 게임 취소(INTRO/순서결정 중 이탈)
+          if (t === 'GAME_CANCELLED') {
+            if (playerLeftTimerRef.current) clearTimeout(playerLeftTimerRef.current);
+            playerLeftTimerRef.current = null;
+            pendingGameStateRef.current = null;
+            playerLeftUntilRef.current = null;
+
+            gameCancelledRef.current = true;
+            setCancelModal(true);
+            return;
+          }
+
+
           // PLAYER_DISCONNECTED: 비현재턴 이탈 시 토스트
           if (t === 'PLAYER_DISCONNECTED') {
-            if (gameState?.status === 'PLAYER_LEFT') return; // 중복 방지(선택)
+            // if (gameState?.status === 'PLAYER_LEFT') return; // 중복 방지(선택)
             setDisconnectToast(data.nickname);
             if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
             toastTimerRef.current = setTimeout(() => setDisconnectToast(null), 3000);
             return;
           }
 
-          // 기본: 서버에서 온 gameState로 동기화
           if (data && typeof data === 'object' && 'status' in data) {
+            // PLAYER_LEFT 연출 중이면 최신 상태만 저장
+            if (playerLeftUntilRef.current && Date.now() < playerLeftUntilRef.current) {
+              pendingGameStateRef.current = data;
+              return;
+            }
+            playerLeftUntilRef.current = null;
+
+            // PLAYER_LEFT 최소 5초 연출 보장
+            if (data.status === 'PLAYER_LEFT') {
+              playerLeftUntilRef.current = Date.now() + 5000;
+              pendingGameStateRef.current = null;
+
+              // 기존 타이머 정리
+              if (playerLeftTimerRef.current) clearTimeout(playerLeftTimerRef.current);
+
+              playerLeftTimerRef.current = setTimeout(() => {
+                playerLeftUntilRef.current = null;
+                playerLeftTimerRef.current = null;
+                if (pendingGameStateRef.current) {
+                  setGameState(pendingGameStateRef.current);
+                  pendingGameStateRef.current = null;
+                }
+              }, 5000);
+            }
+
             setGameState(data);
           }
         });
@@ -358,7 +416,7 @@ const GamePage = () => {
 
     // 언마운트 시 연결 해제
     return () => {
-      if (client.active && client.connected) {
+      if (!gameCancelledRef.current && client.active && client.connected) {
         leaveGame(client, roomId);
       }
       if (client.active) {
@@ -372,7 +430,9 @@ const GamePage = () => {
   // 탭 닫기/새로고침 시 서버에 leave 알림
   useEffect(() => {
     const handleBeforeUnload = () => {
-      leaveGameBeacon(roomId);
+      if (!gameCancelledRef.current) {
+        leaveGameBeacon(roomId);
+      }
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
@@ -551,10 +611,6 @@ const GamePage = () => {
     );
   }
 
-  console.log('players:', gameState.players);
-  console.log('originalTurnOrder:', gameState.originalTurnOrder);
-  console.log('turnOrder:', gameState.turnOrder);
-
   // 낚시 페이즈인지(상태 + 소켓 연결 확인)
   const isFishingPhase = ['WAITING_FISHING', 'FISHING_IN_PROGRESS'].includes(gameState?.status);
   const showInventorySpectatorWait = isSpectatorWait && !!inventoryUsingMemberId;
@@ -565,7 +621,14 @@ const GamePage = () => {
       <div className="game-root">
         {/* 배경: CSS 변수로 상태에 따라 이미지 교체 */}
         <div className="game-bg" aria-hidden="true" style={cssVars} />
-
+        <AlertModal
+          isOpen={cancelModal}
+          icon="⚠️"
+          title="게임 취소"
+          message="플레이어가 이탈하여 게임이 취소되었습니다."
+          confirmText="확인"
+          onConfirm={() => navigate(`/rooms/${roomId}`, { replace: true })}
+        />
         <div className="game-stage">
           {/* 이탈 유저 토스트 */}
           {disconnectToast && (

@@ -3,7 +3,10 @@ package com.buildmyhome.game.controller;
 import com.buildmyhome.common.jwt.JwtTokenProvider;
 import com.buildmyhome.game.dto.GamePlayerState;
 import com.buildmyhome.game.dto.GameState;
+import com.buildmyhome.game.dto.GameStatus;
 import com.buildmyhome.game.service.GameStateService;
+import com.buildmyhome.room.service.RoomStateService;
+import com.buildmyhome.roomlist.service.RoomListService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -24,6 +27,8 @@ public class GameLeaveController {
     private final GameStateService gameStateService;
     private final SimpMessagingTemplate messagingTemplate;
     private final JwtTokenProvider jwtTokenProvider;
+    private final RoomListService roomListService;
+    private final RoomStateService roomStateService;
 
     /**
       sendBeacon 전용 엔드포인트
@@ -60,6 +65,18 @@ public class GameLeaveController {
             return;
         }
 
+        // INTRO/순서결정 중에는 게임 취소 → 전원 room-list 복귀
+        if (gameState.getStatus() == GameStatus.INTRO
+                || gameState.getStatus() == GameStatus.DETERMINING_ORDER) {
+            log.info(">>> ⚠️ 게임 준비 중 이탈 → 게임 취소 - memberId: {}, roomId: {}", memberId, roomId);
+            gameStateService.removeGame(roomId);
+            roomListService.endGame(roomId);
+            roomStateService.removePlayerFromRoom(roomId, memberId);
+            messagingTemplate.convertAndSend("/topic/games/" + roomId,
+                    Map.of("type", "GAME_CANCELLED", "memberId", memberId));
+            return;
+        }
+
         GamePlayerState player = gameState.getPlayers().get(memberId);
         if (player == null) {
             log.warn(">>> ⚠️ 존재하지 않는 플레이어 - memberId: {}", memberId);
@@ -74,16 +91,6 @@ public class GameLeaveController {
 
         // 1. 서비스에 이탈 처리 위임
         String result = gameStateService.removePlayerFromGame(roomId, memberId);
-
-        // 2. 다른 플레이어들에게 알림
-//        messagingTemplate.convertAndSend(
-//                "/topic/games/" + roomId,
-//                Map.of(
-//                        "type", "PLAYER_DISCONNECTED",
-//                        "memberId", memberId,
-//                        "nickname", player.getNickname()
-//                )
-//        );
 
         // 2. 비현재 턴 이탈만 토스트 알림
         if ("REMOVED".equals(result)) {

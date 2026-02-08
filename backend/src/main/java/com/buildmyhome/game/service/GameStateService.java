@@ -18,4 +18,11 @@ public interface GameStateService {
     Map<Long, GameState> getAllGames();
 
     String removePlayerFromGame(Long roomId, Long memberId);
+
+    void rejoinPlayer(Long roomId, Long memberId);
+
+    void removeGame(Long roomId);
+
+    // memberId로 참여 중인 게임의 roomId 조회 (없으면 null)
+    Long findActiveGameByMemberId(Long memberId);
 }

@@ -26,6 +26,7 @@ public class GameState {
     private List<Long> turnOrder = new ArrayList<>(); // 플레이용 턴순서
     private List<Long> originalTurnOrder = new ArrayList<>(); // 최초 턴순서 백업 (재접속 복원용)
     private Long leftPlayerId;  // 이탈한 플레이어 ID (PLAYER_LEFT 연출용)
+    private Set<Long> playersYetToPlay = new HashSet<>(); // 다음 라운드 안전 계산용
 
     private int currentTurnIndex = 0;
     private Long currentPlayerId; // 현재 플레이어(주사위 굴리는 플레이어)
