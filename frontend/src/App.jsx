@@ -67,12 +67,20 @@ function App() {
   // 2시간 플레이 경고
   const { showWarning, playMinutes, dismissWarning } = usePlayTimeWarning(120);
 
-  // 브라우저 배율 경고 (실시간 감지)
-  const [showZoomWarning, setShowZoomWarning] = useState(window.devicePixelRatio !== 1);
+  // 브라우저 배율 경고 (순수 브라우저 줌만 감지, OS 디스플레이 스케일 무시)
+  const getBrowserZoom = () => {
+    const ratio = window.outerWidth / window.innerWidth;
+    return Math.round(ratio * 100);
+  };
+  const [showZoomWarning, setShowZoomWarning] = useState(() => {
+    const zoom = getBrowserZoom();
+    return zoom < 95 || zoom > 105; // 5% 허용 오차
+  });
 
   useEffect(() => {
     const checkZoom = () => {
-      if (window.devicePixelRatio !== 1) {
+      const zoom = getBrowserZoom();
+      if (zoom < 95 || zoom > 105) {
         setShowZoomWarning(true);
       }
     };
