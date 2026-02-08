@@ -134,6 +134,10 @@ public class GameWsController {
         response.setTotalRounds(gameState.getTotalRounds());
         response.setRadishPrice(gameState.getRadishPrice()); // 무 시세 항상 포함
 
+        // 이탈 로직
+        response.setOriginalTurnOrder(gameState.getOriginalTurnOrder());
+        response.setLeftPlayerId(gameState.getLeftPlayerId());
+
         // 타임아웃 계산 로직 (경과 시간 반영)
         int definitionTimeout = gameState.getStatus().getTimeoutSeconds();
         if (definitionTimeout > 0 && gameState.getStatusUpdatedAt() != null) {
