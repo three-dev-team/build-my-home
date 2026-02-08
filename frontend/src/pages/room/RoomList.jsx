@@ -8,6 +8,7 @@ import AspectLayout from '../../components/layout/AspectLayout';
 
 import { CHARACTERS } from '../../constants/characters.js';
 import { COLORS } from '../../constants/colors.js';
+import { getMyIdFromToken } from '../../utils/auth.js';
 
 const API_BASE = ''; // Vite proxy 쓰면 "" 유지
 
@@ -40,6 +41,9 @@ export default function RoomList() {
 
   const [roomPlayersMap, setRoomPlayersMap] = useState({});
   const roomPlayersMapRef = useRef({});
+
+  // 재접속 모달
+  const [activeGame, setActiveGame] = useState(null); // { roomId: 312 }
 
   useEffect(() => {
     roomPlayersMapRef.current = roomPlayersMap;
@@ -111,6 +115,24 @@ export default function RoomList() {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    const checkActiveGame = async () => {
+      try {
+        const myId = getMyIdFromToken();
+        if (!myId) return;
+        const res = await fetch(`${API_BASE}/api/roomlists/active-game?memberId=${myId}`, {
+          headers: authHeaders(),
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.active) setActiveGame({ roomId: data.roomId });
+      } catch (e) {
+        console.error('active game check failed:', e);
+      }
+    };
+    checkActiveGame();
+  }, []);
 
   useEffect(() => {
     refreshRooms('');
@@ -670,6 +692,43 @@ export default function RoomList() {
         )}
 
         {inviteCodeOpen && <InviteCodeModal onClose={() => setInviteCodeOpen(false)} onSubmit={handleInviteCode} />}
+        {activeGame && !createOpen && !joinOpen && !searchOpen && !inviteCodeOpen && !transitioning && (
+          <div
+            className="fixed inset-0 bg-black/60 z-[200] flex items-center justify-center backdrop-blur-md"
+            onMouseDown={() => setActiveGame(null)}
+          >
+            <div
+              className="bg-white rounded-[2.08cqw] p-[2.08cqw] shadow-2xl w-[31.25cqw] flex flex-col items-center"
+              onMouseDown={(e) => e.stopPropagation()}
+            >
+              <h2 className="text-[1.67cqw] font-black mb-[1.85cqh]" style={{ color: COLORS.roomList.textMain }}>
+                진행 중인 게임이 있습니다
+              </h2>
+              <p className="text-[1.25cqw] font-bold mb-[3.7cqh]" style={{ color: COLORS.roomList.textMain, opacity: 0.7 }}>
+                다시 참여하시겠습니까?
+              </p>
+              <div className="flex gap-[0.83cqw] w-full">
+                <button
+                  onClick={() => {setActiveGame(null);}}
+                  className="flex-1 h-[6.48cqh] rounded-[1.25cqw] bg-gray-300 text-white text-[1.46cqw] font-bold hover:brightness-105"
+                >
+                  나중에
+                </button>
+                <button
+                  onClick={() => {
+                    setActiveGame(null);
+                    sessionStorage.setItem('joinedRoom', String(activeGame.roomId));
+                    navigate(`/games/${activeGame.roomId}`);
+                  }}
+                  className="flex-1 h-[6.48cqh] rounded-[1.25cqw] text-white text-[1.46cqw] font-bold hover:brightness-105"
+                  style={{ backgroundColor: COLORS.roomList.btnMain }}
+                >
+                  참여하기
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </AspectLayout>
   );
@@ -747,8 +806,8 @@ function CreateIslandModal({ onClose, onCreate }) {
       className="fixed inset-0 bg-black/60 z-[200] flex items-center justify-center p-[0.83cqw] backdrop-blur-md overflow-auto"
       onMouseDown={onClose}
     >
-      {/* 
-          Modal Spec: 
+      {/*
+          Modal Spec:
           W: 1132px -> 58.96cqw
           H: 985px -> 91.2cqh
           Padding Top: 104px -> 9.63cqh
@@ -1006,11 +1065,11 @@ function JoinIslandModal({ room, initialPlayers, onClose, onConfirm }) {
       className="fixed inset-0 bg-black/60 z-[200] flex items-center justify-center p-[0.83cqw] backdrop-blur-md"
       onMouseDown={onClose}
     >
-      {/* 
+      {/*
           Modal Spec from Image 1:
           W: 1132px -> 58.96cqw
           H: 985px -> 91.2cqh
-          Padding Top: 104px -> 9.63cqh 
+          Padding Top: 104px -> 9.63cqh
       */}
       <div
         className="w-[58.96cqw] h-[91.2cqh] flex flex-col items-center shadow-none relative"

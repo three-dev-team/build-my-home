@@ -20,6 +20,7 @@ public class GamePlayerState {
     // 게임 이탈 정보
     private boolean disconnected = false;           // 이탈 상태 여부
     private java.time.LocalDateTime disconnectedAt; // 이탈 시각 (60초 타이머용)
+    private int lastPlayedRound = 0;
 
     // 게임 진행 정보
     private Integer orderDiceValue; // 순서 정하기용 주사위 값

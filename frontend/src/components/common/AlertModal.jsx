@@ -11,7 +11,7 @@ export default function AlertModal({ isOpen, icon, title, message, confirmText =
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50">
       <div className="bg-[#FDFBF6] rounded-[1.5cqw] p-[2cqw] w-[30cqw] text-center shadow-xl">
         {/* 아이콘 */}
         {icon && <div className="text-[4cqw] mb-[1cqh]">{icon}</div>}

@@ -5,8 +5,10 @@ import com.buildmyhome.game.dto.GamePlayerState;
 import com.buildmyhome.game.dto.GameState;
 
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.buildmyhome.game.dto.GameStatus;
@@ -83,28 +85,41 @@ public class GameStateServiceImpl implements GameStateService {
         GameState gameState = gameStates.get(roomId);
         if (gameState == null) return;
         synchronized (gameState) {
-            // [중요] 기존 타임아웃 해제
             gameState.clearCurrentTimeout();
             if (gameState.getTurnOrder().isEmpty()) {
                 throw new IllegalStateException("턴 순서가 설정되지 않았습니다.");
             }
 
+            // ★ 현재 플레이어 턴 완료 처리 (다음 플레이어로 바꾸기 전에)
+            Long finishedId = gameState.getCurrentPlayerId();
+            if (gameState.getPlayersYetToPlay() != null) {
+                GamePlayerState finishedPlayer = gameState.getPlayers().get(finishedId);
+                if (finishedPlayer != null) {
+                    finishedPlayer.setLastPlayedRound(gameState.getCurrentRound());
+                }
+                gameState.getPlayersYetToPlay().remove(finishedId);
+                gameState.getPlayersYetToPlay().removeIf(id -> {
+                    GamePlayerState p = gameState.getPlayers().get(id);
+                    return p == null || p.isDisconnected();
+                });
+
+                // ★ 라운드 종료 체크 (이것만으로 라운드 증가 — index==0 기준 삭제)
+                if (gameState.getPlayersYetToPlay().isEmpty()) {
+                    turnToNextRound(gameState);
+                }
+            }
+
+            // 다음 플레이어 선정
             int nextPlayerIndex = (gameState.getCurrentTurnIndex() + 1) % gameState.getTurnOrder().size();
             gameState.setCurrentTurnIndex(nextPlayerIndex);
             gameState.setCurrentPlayerId(gameState.getTurnOrder().get(nextPlayerIndex));
 
-            if (nextPlayerIndex == 0) {
-                turnToNextRound(gameState);
-            }
+            // ★ 삭제: if (nextPlayerIndex == 0) { turnToNextRound(gameState); }
 
             GamePlayerState currentPlayer = gameState.getPlayers().get(gameState.getCurrentPlayerId());
-
-            // 다음 사람에게 턴 넘기기 전 청소
             if (currentPlayer != null) {
                 currentPlayer.clearTurnData();
-                currentPlayer.setItemUsed(false); // 아이템 사용 기록 초기화
-
-                // 스킵 체크 → 바로 PLAYER_SKIPPED
+                currentPlayer.setItemUsed(false);
                 if (currentPlayer.getSkipNextTurnCount() > 0) {
                     currentPlayer.setSkipNextTurnCount(currentPlayer.getSkipNextTurnCount() - 1);
                     gameState.setStatus(GameStatus.PLAYER_SKIPPED);
@@ -112,8 +127,6 @@ public class GameStateServiceImpl implements GameStateService {
                     gameState.setStatus(GameStatus.WAITING_PLAYER_ACTION);
                 }
             }
-
-//            gameState.setStatus(GameStatus.WAITING_PLAYER_ACTION);
             gameState.setStatusUpdatedAt(LocalDateTime.now());
         }
     }
@@ -149,6 +162,9 @@ public class GameStateServiceImpl implements GameStateService {
             }
 
             turnOrder.remove(idx);
+            if (gameState.getPlayersYetToPlay() != null) {
+                gameState.getPlayersYetToPlay().remove(memberId);
+            }
 
             // 3. 남은 플레이어 1명 이하면 게임 종료
             if (turnOrder.size() <= 1) {
@@ -166,6 +182,9 @@ public class GameStateServiceImpl implements GameStateService {
                 // 막턴인 사람이 나갔을 경우
                 if (currentIdx >= turnOrder.size()) {
                     gameState.setCurrentTurnIndex(0);
+                }
+
+                if (gameState.getPlayersYetToPlay() != null && gameState.getPlayersYetToPlay().isEmpty()) {
                     turnToNextRound(gameState);
                 }
                 // 새 현재 플레이어 세팅
@@ -190,9 +209,105 @@ public class GameStateServiceImpl implements GameStateService {
         }
     }
 
+    @Override
+    public void rejoinPlayer(Long roomId, Long memberId) {
+        GameState gameState = gameStates.get(roomId);
+        if (gameState == null) return;
+
+        synchronized (gameState) {
+            GamePlayerState player = gameState.getPlayers().get(memberId);
+            if (player == null || !player.isDisconnected()) return;
+
+            // 0. PLAYER_LEFT 연출 중 본인 복귀 시 상태 복구
+            if (gameState.getStatus() == GameStatus.PLAYER_LEFT &&
+                    Objects.equals(gameState.getLeftPlayerId(), memberId)) {
+                gameState.setLeftPlayerId(null);
+                gameState.setStatus(GameStatus.WAITING_PLAYER_ACTION);
+            }
+
+            // 1. disconnected 해제
+            player.setDisconnected(false);
+            player.setDisconnectedAt(null);
+
+            // 2. turnOrder에 원래 위치로 복원
+            List<Long> turnOrder = gameState.getTurnOrder();
+            if (turnOrder.contains(memberId)) {
+                // 이미 turnOrder에 있으면 playersYetToPlay만 조건부 추가
+                // (아직 차례가 안 왔으면 이번 라운드 참여 가능)
+                if (gameState.getPlayersYetToPlay() != null) {
+                    if (player.getLastPlayedRound() < gameState.getCurrentRound()) {
+                        gameState.getPlayersYetToPlay().add(memberId);
+                    }
+                }
+                log.info(">>> ✅ 플레이어 복귀 - memberId: {}, roomId: {}, turnOrder: {}", memberId, roomId, turnOrder);
+                return;
+            }
+
+            List<Long> original = gameState.getOriginalTurnOrder();
+            if (original == null || original.isEmpty()) {
+                turnOrder.add(memberId);
+            } else {
+                int origIdx = original.indexOf(memberId);
+                if (origIdx < 0) {
+                    turnOrder.add(memberId); // fallback: 맨 뒤
+                } else {
+                    // originalTurnOrder에서 뒤에 있는 첫 활성 플레이어 앞에 삽입
+                    int insertIdx = turnOrder.size();
+                    for (int j = 1; j < original.size(); j++) {
+                        Long nextId = original.get((origIdx + j) % original.size());
+                        int posInCurrent = turnOrder.indexOf(nextId);
+                        if (posInCurrent >= 0) {
+                            insertIdx = posInCurrent;
+                            break;
+                        }
+                    }
+                    turnOrder.add(insertIdx, memberId);
+                }
+            }
+
+            // 3. currentTurnIndex 보정 (turnOrder 삽입으로 인덱스 밀림 방지)
+            int currentPlayerIdx = turnOrder.indexOf(gameState.getCurrentPlayerId());
+            if (currentPlayerIdx >= 0) {
+                gameState.setCurrentTurnIndex(currentPlayerIdx);
+            }
+
+            // 4. playersYetToPlay 조건부 추가 (아직 차례 안 왔으면 이번 라운드 참여)
+            if (gameState.getPlayersYetToPlay() != null) {
+                if (player.getLastPlayedRound() < gameState.getCurrentRound()) {
+                    gameState.getPlayersYetToPlay().add(memberId);
+                }
+            }
+
+            log.info(">>> ✅ 플레이어 복귀 - memberId: {}, roomId: {}, turnOrder: {}", memberId, roomId, turnOrder);
+        }
+    }
+
+    @Override
+    public void removeGame(Long roomId) {
+        GameState gameState = gameStates.get(roomId);
+        if (gameState != null) {
+            gameState.clearCurrentTimeout();
+        }
+        gameStates.remove(roomId);
+    }
+
+    @Override
+    public Long findActiveGameByMemberId(Long memberId) {
+        for (Map.Entry<Long, GameState> entry : gameStates.entrySet()) {
+            GameState gs = entry.getValue();
+            if (gs.getPlayers() == null) continue;
+            if (gs.isGameOver() || gs.getStatus() == GameStatus.FINISHED) continue;
+            boolean found = gs.getPlayers().values().stream()
+                    .anyMatch(p -> memberId.equals(p.getMemberId()));
+            if (found) return entry.getKey();
+        }
+        return null;
+    }
+
     // 라운드 증가 처리 메서드
     private void turnToNextRound(GameState gameState) {
         gameState.setCurrentRound(gameState.getCurrentRound() + 1); // 라운드 증가
+        gameState.setPlayersYetToPlay(new HashSet<>(gameState.getTurnOrder())); // 시작 순간 현재 접속한 플레이어 등록
         // 라운드 시작 순간: 무 시세 1회 변경(방 공용)
         gameState.setRadishPrice(java.util.concurrent.ThreadLocalRandom.current().nextInt(
                 GameConstants.RADISH_PRICE_MIN, GameConstants.RADISH_PRICE_MAX + 1
