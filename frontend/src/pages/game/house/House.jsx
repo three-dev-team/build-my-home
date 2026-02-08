@@ -1,4 +1,3 @@
-// House.jsx (풀코드) ✅ 업그레이드 판정/부족문구/재화키(대소문자) 싹 정리 + "가" 단독/공백 버그 방지
 import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 
@@ -8,6 +7,7 @@ import ExitButton from '../../../components/common/ExitButton.jsx';
 import { CHARACTERS } from '../../../constants/characters.js';
 import { COLORS, withAlpha } from '../../../constants/colors.js';
 import { HOUSE_LEVEL_MAP, normalizeHouseLevelByAny } from '../../../constants/houseLevel.js';
+import { roEuro } from '../../../constants/josa.js';
 
 import './HouseCommon.css';
 import HouseStep0 from './HouseStep0.jsx';
@@ -39,7 +39,6 @@ const getCurrentHouseLevel = (player) => {
 
 const pickLevelObj = (level) => (HOUSE_LEVEL_MAP || []).find((x) => Number(x?.level) === Number(level)) || null;
 
-// ✅ bell 필드 호환(서버/과거 혼재 방어)
 const getOwnedBell = (player) => {
   const cand = [player?.bell, player?.money, player?.coins, player?.balance];
   const v = cand.find((x) => x !== undefined && x !== null);
@@ -47,8 +46,6 @@ const getOwnedBell = (player) => {
   return Number.isFinite(n) && n >= 0 ? n : 0;
 };
 
-// ✅ resources: EnumMap -> JSON { WOOD: 1, ... }가 일반적
-// 과거/클라에서 소문자 키로도 올 수 있어서 둘 다 지원
 const getOwnedResource = (player, keyUpper) => {
   const up = String(keyUpper ?? '').trim();
   const low = up.toLowerCase();
@@ -66,30 +63,28 @@ const getOwnedResource = (player, keyUpper) => {
   return Number.isFinite(n) && n >= 0 ? n : 0;
 };
 
-// ✅ requiredResourcesForNextHouse: EnumMap -> JSON { WOOD: 2, ... } 우선 사용
-// 없으면 nextObj(프론트 상수: wood/iron...)로 fallback
-const getRequiredResource = (player, keyUpper, nextObj) => {
+const getMissingResource = (player, keyUpper, nextObj) => {
   const up = String(keyUpper ?? '').trim();
   const low = up.toLowerCase();
 
   const req = player?.requiredResourcesForNextHouse;
-  if (req) {
+  if (req && typeof req === 'object') {
     const v1 = req?.[up];
-    if (typeof v1 === 'number') return v1;
+    if (typeof v1 === 'number') return Math.max(0, v1);
 
     const v2 = req?.[low];
-    if (typeof v2 === 'number') return v2;
+    if (typeof v2 === 'number') return Math.max(0, v2);
 
     const n = Number(v1 ?? v2);
-    if (Number.isFinite(n) && n >= 0) return n;
+    if (Number.isFinite(n)) return Math.max(0, n);
   }
 
-  // fallback: 프론트 상수
-  const nf = Number(nextObj?.[low] ?? 0);
-  return Number.isFinite(nf) && nf >= 0 ? nf : 0;
+  const total = Number(nextObj?.[up] ?? nextObj?.[low] ?? 0);
+  const owned = getOwnedResource(player, up);
+  const miss = Math.max(0, (Number.isFinite(total) ? total : 0) - owned);
+  return miss;
 };
 
-// ✅ 부족 메시지에서 사용할 한글명(고정)
 const KO_RESOURCE = {
   WOOD: '목재',
   IRON: '철광석',
@@ -100,18 +95,16 @@ const KO_RESOURCE = {
   FLOORING: '바닥재',
 };
 
-// ✅ 업그레이드 요구조건 계산(서버 bool/nextHouseLevel 있으면 최우선 반영)
+// 업그레이드 가능 여부/부족 문구 계산(서버 requiredResources 우선, 없으면 nextObj 기반 계산)
 const calcUpgradeRequirement = (player) => {
   const cur = getCurrentHouseLevel(player);
 
-  // nextHouseLevel(enum) 있으면 그걸 따름(없으면 cur+1)
   const nextFromServer = player?.nextHouseLevel;
   const nextLv = nextFromServer != null ? normalizeHouseLevelByAny(nextFromServer) : cur + 1;
 
   const nextObj = pickLevelObj(nextLv);
 
   if (!nextObj) {
-    // 최고 레벨
     return {
       hasAllMaterials: false,
       lackMessage: '이미 최고 레벨이라구리!',
@@ -122,35 +115,26 @@ const calcUpgradeRequirement = (player) => {
   const nextName = nextObj?.name || `level ${nextLv}`;
   const lacks = [];
 
-  // bell 부족
   const needBell = Number(nextObj?.bell ?? 0);
   const ownedBell = getOwnedBell(player);
   const lackBell = Math.max(0, needBell - ownedBell);
   if (lackBell > 0) lacks.push(`${lackBell}벨`);
 
-  // resource 부족(서버 요구사항 우선)
   const RESOURCE_KEYS = ['WOOD', 'IRON', 'CLOTH', 'BRICK', 'WALLPAPER', 'CLAY', 'FLOORING'];
   RESOURCE_KEYS.forEach((K) => {
-    const need = getRequiredResource(player, K, nextObj);
-    if (need <= 0) return;
+    const missing = getMissingResource(player, K, nextObj);
+    if (missing <= 0) return;
 
-    const owned = getOwnedResource(player, K);
-    const lack = Math.max(0, need - owned);
-
-    if (lack > 0) {
-      const nm = KO_RESOURCE[K] || K;
-      lacks.push(`${nm} ${lack}개`);
-    }
+    const nm = KO_RESOURCE[K] || K;
+    lacks.push(`${nm} ${missing}개`);
   });
 
-  // ✅ 서버 canUpgradeHouse가 있으면 그걸 최우선(진짜 판정은 서버)
   const serverCan = player?.canUpgradeHouse;
   const hasAllMaterials = typeof serverCan === 'boolean' ? serverCan : lacks.length === 0;
 
-  // ✅ "아직 가 더 필요" / " ... 가" 공백 버그 방지
   let lackMessage = '';
   if (!hasAllMaterials) {
-    const head = `${nextName}로 업그레이드 하려 왔나구리?\n`;
+    const head = `${nextName}${roEuro(nextName)} 업그레이드 하려 왔나구리?\n`;
     if (lacks.length === 0) {
       lackMessage = `${head}아직 재료가 더 필요하다구리.`;
     } else if (lacks.length === 1) {
@@ -165,8 +149,9 @@ const calcUpgradeRequirement = (player) => {
 
 export default function House({
                                 player,
-                                materialsPlayer, // ✅ 추가: 내 재화(업그레이드 판정용)
+                                materialsPlayer,
                                 isMyTurn,
+                                isSpectator = false,
                                 onClose,
                                 onAction,
                                 onInventory,
@@ -174,23 +159,25 @@ export default function House({
                               }) {
   const step = Number(player?.uiStep ?? 0);
 
+  // 내 턴 + 비관전일 때만 단계 이동/액션 가능
+  const canInteract = !!isMyTurn && !isSpectator;
+
   const setStep = (newStep) => {
-    if (!isMyTurn) return;
+    if (!canInteract) return;
     onAction?.('SET_STEP', { uiStep: newStep });
   };
 
   const character = useMemo(() => pickCharacter(player?.characterId), [player?.characterId]);
 
-  // ✅ 핵심: 업그레이드 판정/부족문구는 "내 턴이면 내 재화"로 계산
+  // 재료 표시는 내 턴이면 materialsPlayer 우선(없으면 player)
   const matPlayer = isMyTurn ? (materialsPlayer || player) : player;
-
   const { hasAllMaterials, lackMessage } = useMemo(() => calcUpgradeRequirement(matPlayer), [matPlayer]);
 
   const PANEL_BG = withAlpha(COLORS.ac.black, 0.55);
   const CARD_BG = withAlpha(COLORS.ac.black, 0.35);
 
   const handleBack = () => {
-    if (!isMyTurn) return;
+    if (!canInteract) return;
 
     if (step === 4) return setStep(1);
     if (step >= 2) return setStep(1);
@@ -199,8 +186,9 @@ export default function House({
     onClose?.();
   };
 
-  // ✅ 기존 로직 유지
   const canUpgrade = !!hasAllMaterials;
+
+  // Step4(완료 화면)에서는 Exit 숨김, Step3에서는 업그레이드 가능하면 Exit 숨김
   const showExit = step !== 4 && (step !== 3 || !canUpgrade);
 
   return (
@@ -249,7 +237,7 @@ export default function House({
               px={px}
               onBackToNaugul={() => setStep(1)}
               onConfirmUpgrade={() => {
-                if (!isMyTurn) return;
+                if (!canInteract) return;
                 onAction?.('UPGRADE_HOUSE', {});
               }}
               hasAllMaterials={hasAllMaterials}
@@ -260,17 +248,24 @@ export default function House({
           {step === 4 && (
             <HouseStep4BuildFinish
               player={player}
-              isMyTurn={isMyTurn}
               character={character}
-              px={px}
-              onAutoNext={() => setStep(1)}
+              // Step4 OK: (1) 즉시 CLOSE, (2) 3초 뒤 FINAL 전송
+              onCloseNow={() => {
+                if (!canInteract) return;
+                onAction?.('HOUSE_FINISH_OK', { actionDataStr: 'CLOSE' });
+              }}
+              onFinishAfter3s={() => {
+                if (!canInteract) return;
+                onAction?.('HOUSE_FINISH_OK', { actionDataStr: 'FINAL' });
+              }}
+              isSpectator={isSpectator || !isMyTurn}
             />
           )}
 
           {showExit && (
             <ExitButton
               onClick={handleBack}
-              disabled={!isMyTurn}
+              disabled={!canInteract}
               style={{ position: 'absolute', right: px(30), bottom: px(28) }}
             />
           )}

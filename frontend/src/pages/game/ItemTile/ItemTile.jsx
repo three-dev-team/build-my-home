@@ -57,7 +57,7 @@ export default function ItemTile({ gameState, myId, isMyTurn = true, onAction, o
 
   const myTurn = toBool(isMyTurn);
 
-  // ItemTile 배경 이미지 경로(이 파일 내부에서만 사용)
+  // ItemTile 배경 이미지(컴포넌트 내부 전용)
   const ITEM_TILE_BG_URL = '/images/item/bg-itemtile.webp';
 
   // currentPlayer null 프레임 대비(lastCp 유지)
@@ -74,7 +74,7 @@ export default function ItemTile({ gameState, myId, isMyTurn = true, onAction, o
   // 서버 uiStep을 안전한 step 값으로 변환
   const rawStep = useMemo(() => clampStep(cp?.uiStep ?? 0), [cp?.uiStep]);
 
-  // 표시용 플레이어 이름/캐릭터 이미지 구성
+  // 표시용 플레이어 이름/캐릭터 이미지
   const playerName = String(cp?.nickname ?? '').trim();
 
   const character = useMemo(() => getCharacter(cp?.characterId), [cp?.characterId]);
@@ -107,22 +107,19 @@ export default function ItemTile({ gameState, myId, isMyTurn = true, onAction, o
   // onAction 호출 안전 래핑
   const wrappedAction = useCallback((type, payload) => onAction?.(type, payload), [onAction]);
 
-  // 나가기 핸들러(내 턴일 때만 처리)
+  // 나가기: 내 턴에서만 처리
   const handleExit = useExitHandler(myTurn, onExit);
 
-  // 이벤트 사이클 키(방/현재플레이어/라운드 단위로 리셋)
-  // (tileIndex / eventSeq 같은 게 gameState에 있으면 여기에 꼭 포함하는 게 더 안전함)
+  // 이벤트 사이클 키(이 값이 바뀌면 step 누적/잠금 등 로컬 상태를 리셋)
   const cycleKey = useMemo(() => {
     return `${gameState?.roomId ?? 'x'}|${gameState?.currentPlayerId ?? 'x'}|${gameState?.currentRound ?? 'x'}|WAITING_ITEMS`;
   }, [gameState?.roomId, gameState?.currentPlayerId, gameState?.currentRound]);
 
-  // step이 뒤로 내려가는 프레임 방지(최대 step만 유지)
-  // ⚠️ render 중에 ref를 갱신하지 말고 state로 관리
+  // step이 순간 뒤로 내려가는 프레임 방지: rawStep의 "최대치"만 유지
   const [stableStep, setStableStep] = useState(0);
   const stepMaxRef = useRef(0);
 
   useEffect(() => {
-    // 새 사이클 진입 시 초기화
     stepMaxRef.current = 0;
     setStableStep(0);
   }, [cycleKey]);
@@ -130,7 +127,6 @@ export default function ItemTile({ gameState, myId, isMyTurn = true, onAction, o
   const isFreshEnter = rawStep === 0 && cp?.actionDataStr == null;
 
   useEffect(() => {
-    // 새 진입으로 판단되면 강제 초기화
     if (isFreshEnter) {
       stepMaxRef.current = 0;
       setStableStep(0);
@@ -138,20 +134,14 @@ export default function ItemTile({ gameState, myId, isMyTurn = true, onAction, o
   }, [isFreshEnter]);
 
   useEffect(() => {
-    // rawStep 업데이트에 맞춰 최대 step을 effect에서만 갱신
     const next = Math.max(stepMaxRef.current, rawStep);
     if (next !== stepMaxRef.current) {
       stepMaxRef.current = next;
       setStableStep(next);
-    } else {
-      // 최대값 변화는 없지만 rawStep이 0으로 내려가는 프레임 등에서
-      // stableStep을 괜히 내리지 않기 위해 아무것도 하지 않음
     }
   }, [rawStep]);
 
-  // ✅ 빈 화면 방지용 "안전 표시 step" 계산
-  // - stableStep=1인데 inventoryFull=false가 순간 발생하면 SelectScreen이 렌더 안 돼서 화면이 비었음
-  // - 이 케이스는 DiscoverScreen으로 폴백(혹은 로딩 화면)해서 절대 빈 화면이 안 나오게 함
+  // 빈 화면 방지: Select 조건(inventoryFull)이 깨지면 Discover로 폴백
   const displayStep = useMemo(() => {
     if (stableStep === 1 && !inventoryFull) return 0;
     return stableStep;
@@ -184,7 +174,7 @@ export default function ItemTile({ gameState, myId, isMyTurn = true, onAction, o
                   onAction={wrappedAction}
                   characterDeliveryImage={deliveryImage}
                   characterHappyImage={happyImage}
-                  // ✅ candidateKey가 이미 있으면(서버가 먼저 뽑아둔 상태) Discover에서 연타 막는 데도 활용 가능
+                  // candidateKey가 이미 있으면(서버가 먼저 뽑은 상태) Discover에서 연타 방지 등에 활용 가능
                   hasCandidate={Boolean(candidateKey)}
                 />
               )}
@@ -218,5 +208,6 @@ export default function ItemTile({ gameState, myId, isMyTurn = true, onAction, o
     </div>
   );
 
+  // 오버레이 UI는 body에 포탈로 렌더링
   return createPortal(ui, document.body);
 }

@@ -3,6 +3,7 @@ import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react'
 import { useGameTimer } from '../../../hooks/useGameTimer.js';
 import { CHARACTERS } from '../../../constants/characters.js';
 import { COLORS } from '../../../constants/colors.js';
+import { iGa, eulReul } from '../../constants/josa.js';
 
 import LoanView from './LoanView.jsx';
 const LOADING_MS = 3000;

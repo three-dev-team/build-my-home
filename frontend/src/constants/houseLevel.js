@@ -117,7 +117,6 @@ const isResourceNeededForLevel = (levelObj, resourceKey, ownedResources = null) 
   return ownedQty < requiredQty;
 };
 
-
 export const isAnyRewardNeededForNextLevel = (viewerHouseLevel, dropKeys = [], ownedResources = null) => {
   const next = getNextHouseLevelByLevel(viewerHouseLevel);
   if (!next) return { nextLevel: null, isNeeded: false };
@@ -134,23 +133,4 @@ export const getHouseIconByLevel = (levelOrKey, characterId = null) => {
 
   if (key === 'MYHOME') return getHouseImageFromCharacter(characterId);
   return HOUSE_DETAILS[key]?.icon ?? null;
-};
-
-const getJongIndex = (word) => {
-  const s = String(word ?? '').trim();
-  if (!s) return -1;
-
-  const last = s[s.length - 1];
-  const code = last.charCodeAt(0);
-  if (code < 0xac00 || code > 0xd7a3) return -1;
-
-  return (code - 0xac00) % 28;
-};
-
-/* 텐트로 / 집으로 / 마을로(ㄹ 받침 예외) */
-export const roEuro = (word) => {
-  const jong = getJongIndex(word);
-  if (jong <= 0) return '로';
-  if (jong === 8) return '로';
-  return '으로';
 };

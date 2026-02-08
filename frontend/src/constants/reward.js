@@ -186,15 +186,3 @@ export const getCount = (obj, key) => {
   const v = obj[key];
   return typeof v === 'number' ? v : 0;
 };
-
-const hasJong = (word) => {
-  if (!word) return false;
-  const last = word[word.length - 1];
-  const code = last.charCodeAt(0);
-  if (code < 0xac00 || code > 0xd7a3) return false;
-  return (code - 0xac00) % 28 !== 0;
-};
-
-export const waGwa = (word) => (hasJong(word) ? '과' : '와');
-export const eulReul = (word) => (hasJong(word) ? '을' : '를');
-export const iGa = (word) => (hasJong(word) ? '이' : '가');

@@ -10,8 +10,6 @@
     width: 100%;
     height: 100%;
     overflow: hidden;
-
-    /* House.jsx에서 --s 세팅 */
     container-type: size;
 }
 
@@ -28,7 +26,7 @@
     pointer-events: none;
 }
 
-/* ===== Step0 공용(인라인 스타일 제거용) ===== */
+/* step0 공용 */
 .houseStep0Pill {
     position: absolute;
     padding-top: calc(16 * var(--s));
