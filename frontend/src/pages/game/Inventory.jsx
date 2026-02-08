@@ -9,6 +9,7 @@ import {
   rewardIconSrc,
 } from '../../constants/reward.js';
 import { COLORS, withAlpha } from '../../constants/colors.js';
+import { SHOP_ITEMS, shopItemImageSrc } from '../../constants/shopItems.js';
 
 const BASE = {
   inventory: '/images/inventory',
@@ -71,11 +72,55 @@ export default function Inventory({ player, onClose }) {
     return out;
   }, []);
 
+  const SHOP_NAME_MAP = useMemo(() => {
+    const m = {};
+    for (const it of SHOP_ITEMS || []) {
+      if (it?.key) m[it.key] = it?.name || it.key;
+    }
+    return m;
+  }, []);
+
+  const shopItemCounts = useMemo(() => {
+    const raw = player?.shopItems;
+    const acc = {};
+    if (!raw) return acc;
+
+    if (Array.isArray(raw)) {
+      for (const v of raw) {
+        const k = typeof v === 'string' ? v : v?.key;
+        if (!k) continue;
+        acc[k] = (acc[k] || 0) + 1;
+      }
+      return acc;
+    }
+
+    if (raw && typeof raw === 'object') {
+      for (const [k, v] of Object.entries(raw)) {
+        const n = Number(v ?? 0);
+        if (!n || n <= 0) continue;
+        acc[k] = (acc[k] || 0) + n;
+      }
+    }
+
+    return acc;
+  }, [player?.shopItems]);
+
   const entries = useMemo(() => {
     const list = [];
     const pushIfOwned = (prefix, key, count) => {
       if (!count || count <= 0) return;
       list.push({ id: `${prefix}_${key}`, key, label: koName(key), count, src: rewardIconSrc(key) });
+    };
+
+    const pushShopIfOwned = (key, count) => {
+      if (!count || count <= 0) return;
+      list.push({
+        id: `SHOP_${key}`,
+        key,
+        label: SHOP_NAME_MAP[key] || key,
+        count,
+        src: shopItemImageSrc(key),
+      });
     };
 
     for (const k of RESOURCE_ORDER || []) {
@@ -84,10 +129,24 @@ export default function Inventory({ player, onClose }) {
     }
     for (const k of FRUIT_ORDER || []) pushIfOwned('HAR', k, getCount(player.harvests, k));
     for (const k of FISH_ORDER || []) pushIfOwned('FISH', k, getCount(player.harvests, k));
+
     const radishQty = Number(player?.radishQty ?? 0);
-    if (radishQty > 0) { list.push({ id: 'RADISH_RADISH', key: 'RADISH', label: '무', count: radishQty, src: RADISH_ICON_SRC,});}
+    if (radishQty > 0) {
+      list.push({ id: 'RADISH_RADISH', key: 'RADISH', label: '무', count: radishQty, src: RADISH_ICON_SRC });
+    }
+
+    for (const [k, n] of Object.entries(shopItemCounts || {})) {
+      pushShopIfOwned(k, n);
+    }
+
     return list;
-  }, [player.resources, player.harvests, player?.radishQty]);
+  }, [
+    player.resources,
+    player.harvests,
+    player?.radishQty,
+    shopItemCounts,
+    SHOP_NAME_MAP,
+  ]);
 
   const slotItems = entries.slice(0, 40);
 
