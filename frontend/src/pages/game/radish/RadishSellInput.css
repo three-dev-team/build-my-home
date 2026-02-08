@@ -108,3 +108,20 @@
     pointer-events: none;
     white-space: nowrap;
 }
+
+/* aria-disabled=true(관전자 등)일 때: 커서/호버/클릭/포커스 효과 전부 무효화 */
+.mupaniSell-root[aria-disabled="true"] * {
+    cursor: default !important;
+}
+
+.mupaniSell-root[aria-disabled="true"] button:hover,
+.mupaniSell-root[aria-disabled="true"] [role="button"]:hover,
+.mupaniSell-root[aria-disabled="true"] button:active,
+.mupaniSell-root[aria-disabled="true"] [role="button"]:active,
+.mupaniSell-root[aria-disabled="true"] button:focus,
+.mupaniSell-root[aria-disabled="true"] [role="button"]:focus {
+    transform: none !important;
+    filter: none !important;
+    box-shadow: none !important;
+    outline: none !important;
+}

@@ -1,4 +1,3 @@
-// RadishSellComplete.jsx
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 import AutoMove from '../../../components/common/AutoMove.jsx';
@@ -21,11 +20,13 @@ export default function RadishSellComplete({
                                              afterTypedExitMs = 3000,
                                              onExit,
                                            }) {
+  // open=false면 렌더링하지 않음
   if (!open) return null;
 
   const qtyText = useMemo(() => fmt(soldQty), [soldQty]);
   const amtText = useMemo(() => fmt(soldAmount), [soldAmount]);
 
+  // 타이핑 완료 후 자동 종료를 위한 상태/타이머
   const [typedDone, setTypedDone] = useState(false);
   const exitTimerRef = useRef(null);
 
@@ -52,6 +53,7 @@ export default function RadishSellComplete({
     };
   }, [typedDone, onExit, afterTypedExitMs]);
 
+  // 판매 수량/금액 하이라이트
   const highlights = useMemo(
     () => [
       { text: qtyText, color: COLORS.ac.nookCyan },
@@ -85,7 +87,7 @@ export default function RadishSellComplete({
           optionDisabled
           optionColor={COLORS.subtitle.optionBox}
           optionTextColor={COLORS.subtitle.optionText}
-          onTypingComplete={() => setTypedDone(true)}
+          onTypingComplete={() => setTypedDone(true)} // 타이핑 끝나면 자동 종료 타이머 시작
         />
       </div>
     </div>

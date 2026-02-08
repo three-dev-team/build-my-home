@@ -2,8 +2,6 @@
     position: absolute;
     inset: 0;
     pointer-events: none;
-
-    /* UI(1420x920) 중앙 배치 기준 좌상단 오프셋 */
     --uiOffsetX: calc((100cqw - (1420 * var(--s))) / 2);
     --uiOffsetY: calc((100cqh - (920 * var(--s))) / 2);
 }
