@@ -142,6 +142,13 @@ const GamePage = () => {
   // 현재 턴 플레이어(현 상태의 currentPlayerId 기준)
   const currentPlayer = playersArr.find((p) => Number(p?.memberId) === Number(gameState?.currentPlayerId)) || null;
 
+  // 낚시 떡밥(ShopItemType.FISHING_CHANCE) 보유 여부 -> 현재 턴 플레이어의 shopItems 기준
+  const currentTurnHasBait = useMemo(() => {
+    const list = currentPlayer?.shopItems;
+    if (!Array.isArray(list)) return false;
+    return list.some((v) => String(v) === 'FISHING_CHANCE');
+  }, [currentPlayer?.shopItems]);
+
   // 내 턴 여부(현재 턴 플레이어가 나인지)
   const isParticipant = playersArr.some((p) => Number(p?.memberId) === Number(myId));
   const isMyTurn = gameState && isParticipant ? Number(myId) === Number(gameState.currentPlayerId) : false;
@@ -257,11 +264,10 @@ const GamePage = () => {
 
           const t = data?.type;
 
-          // 낚시/룸이벤트: gameState를 덮지 않고 분리 저장(UI 전용 처리)
-          const isRoomEvent = typeof t === 'string' && t.startsWith('ROOM_EVENT_');
-          const isFishingError = t === 'ERROR' && typeof data?.eventType === 'string' && data.eventType === 'FISHING';
-
-          if (isRoomEvent || isFishingError) {
+          const isFishingEvent = data?.eventType === 'FISHING';
+          const isFishingError = t === 'ERROR' && data?.eventType === 'FISHING';
+          // 낚시/이벤트 메시지는 gameState 덮지 말고 분리 저장
+          if (isFishingEvent || isFishingError) {
             setFishingEventMessage(data);
             return;
           }
@@ -850,11 +856,15 @@ const GamePage = () => {
                 currentPlayerName={currentPlayer?.nickname}
                 timeoutSeconds={gameState.timeoutSeconds || 0}
                 eventMessage={fishingEventMessage}
+                hasBait={currentTurnHasBait}
+                currentPlayer={currentPlayer}
+                onGameAction={handleAction}
                 onExit={handleFishingExitLocal}
                 onStartFishing={handleFishingStart}
                 onFishingAction={handleFishingAction}
               />
             )}
+
 
             {/* 상점 */}
             {gameState.status === 'WAITING_SHOP' && (

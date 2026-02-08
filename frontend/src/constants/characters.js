@@ -60,7 +60,7 @@ export const CHARACTERS = [
     quote: '동글동글 귀여운 게 최고야',
     habit: '동글',
     key: 'michel',
-    color: '#34C4D3',
+    color: '#44f4da',
     headY: 44,
   }),
   makeCharacter({
@@ -78,7 +78,7 @@ export const CHARACTERS = [
     quote: '배고파... 샌드위치 먹고 싶어',
     habit: '노라줘',
     key: 'bingti',
-    color: '#363c59',
+    color: '#232947',
     headY: 46,
   }),
   makeCharacter({

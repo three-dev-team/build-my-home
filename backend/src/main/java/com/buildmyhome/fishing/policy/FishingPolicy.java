@@ -26,8 +26,8 @@ public class FishingPolicy {
     private static final double LARGE_PUMP_PROGRESS_MIN = 13.5;
     private static final double LARGE_PUMP_PROGRESS_MAX = 14.5;
 
-    private static final double LARGE_PUMP_TENSION_MIN = 19.0;
-    private static final double LARGE_PUMP_TENSION_MAX = 20.0;
+    private static final double LARGE_PUMP_TENSION_MIN = 17.0;
+    private static final double LARGE_PUMP_TENSION_MAX = 18.0;
 
     private static final double LARGE_TENSION_COOLDOWN_PER_MS = 0.025;
 

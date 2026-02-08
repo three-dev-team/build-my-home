@@ -532,9 +532,8 @@ public class GameWsController {
         }
       }
 
-      try {
-        GameMessage response = defaultGameResponse("ACTION_PROCESSED", gameState);
-        boolean endMupaniAfterSend = false;
+            try {
+                GameMessage response = defaultGameResponse("ACTION_PROCESSED", gameState);
 
         // 2. 타입에 따라 분기 처리
         switch (actionType) {
@@ -854,6 +853,34 @@ public class GameWsController {
             response.setActionData(player.getActionData()); // 첫번째 주사위 값
             break;
 
+                    case "DOUBLE_DICE_COMPLETE":
+                        if (gameState.getStatus() != GameStatus.ROLLING_DOUBLE_DICE) break;
+                        gameState.setStatus(GameStatus.MOVING);
+                        response.setType("DOUBLE_DICE_MOVE_START");
+                        response.setMovePath(player.getMovePath());
+                        break;
+                    case "FISHING_INTRO_NEXT": {
+                        if (gameState.getStatus() != GameStatus.WAITING_FISHING) break;
+                        if (!memberId.equals(gameState.getCurrentPlayerId())) break;
+                        boolean baitAvailable = player.getShopItems() != null
+                                && player.getShopItems().stream().anyMatch(it -> it == ShopItemType.FISHING_CHANCE);
+                        int nextStep = baitAvailable ? 1 : 2;
+                        player.setUiStep(nextStep);
+                        response.setType("STEP_CHANGED");
+                        break;
+                    }
+                    case "FISHING_INTRO_DECIDE_BAIT": {
+                        if (gameState.getStatus() != GameStatus.WAITING_FISHING) break;
+                        if (!memberId.equals(gameState.getCurrentPlayerId())) break;
+                        int useBait = message.getActionData(); // 0/1
+                        player.setActionData(useBait);
+                        player.setUiStep(2);
+                        response.setType("STEP_CHANGED");
+                        response.setMemberId(memberId);
+                        break;
+                    }
+
+                }
           case "DOUBLE_DICE_COMPLETE":
             if (gameState.getStatus() != GameStatus.ROLLING_DOUBLE_DICE) break;
             gameState.setStatus(GameStatus.MOVING);
@@ -974,28 +1001,29 @@ public class GameWsController {
       if (!actorId.equals(gameState.getCurrentPlayerId())) return;
       if (gameState.getPlayers().get(actorId) == null) return;
 
-      useBait = Boolean.TRUE.equals(req.getUseBait());
-      ht = req.getHarvestType();
-    }
-    if (ht == null || ht.isBlank()) {
-      fishingService.startFishing(roomId, actorId, useBait);
-    } else {
-      fishingService.startFishing(roomId, actorId, ht);
-    }
-    GameMessage stepResponse = null;
-    synchronized (gameState) {
-      if (gameState.getStatus() == GameStatus.FISHING_IN_PROGRESS) {
-        GamePlayerState player = gameState.getPlayers().get(actorId);
-        if (player != null) {
-          player.setUiStep(2);
-          stepResponse = defaultGameResponse("FISHING_STEP_CHANGED", gameState);
+            useBait = Boolean.TRUE.equals(req.getUseBait());
+            ht = req.getHarvestType();
         }
-      }
+        if (ht == null || ht.isBlank()) {
+            fishingService.startFishing(roomId, actorId, useBait);
+        } else {
+            fishingService.startFishing(roomId, actorId, ht);
+        }
+        GameMessage stepResponse = null;
+        synchronized (gameState) {
+            if (gameState.getStatus() == GameStatus.FISHING_IN_PROGRESS) {
+                GamePlayerState p = gameState.getPlayers().get(actorId);
+                if (p != null) {
+                    p.setUiStep(3);
+                    stepResponse = defaultGameResponse("STEP_CHANGED", gameState);
+                    stepResponse.setMemberId(actorId);
+                }
+            }
+        }
+        if (stepResponse != null) {
+            simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, stepResponse);
+        }
     }
-    if (stepResponse != null) {
-      simpMessagingTemplate.convertAndSend("/topic/games/" + roomId, stepResponse);
-    }
-  }
 
   // fishing : /app/games/fishing/action
   @MessageMapping("/games/fishing/action")
