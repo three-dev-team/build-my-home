@@ -8,7 +8,7 @@ import BellPanel from '../../components/common/BellPanel.jsx';
 import AutoMove from '../../components/common/AutoMove.jsx';
 import { COLORS } from '../../constants/colors.js';
 import { CHARACTERS } from '../../constants/characters.js';
-import { eunNeun } from '../../constants/josa.js';
+import { eunNeun } from '../../utils/josa.js';
 
 // 무파니 칸 당사자(현재 턴 플레이어) 보너스 수량
 const MUPANI_BONUS = 2;
