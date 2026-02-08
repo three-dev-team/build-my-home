@@ -4,6 +4,7 @@ import './css/RollDicePage.css';
 import { CHARACTERS } from '../../constants/characters.js';
 import Shadow from '../../components/common/Shadow.jsx'
 import useSpaceKey from '../../hooks/useSpaceKey.js';
+import { iGa } from '../../constants/josa.js';
 
 const RollDicePage = ({ currentPlayer, isMyTurn, diceValue, isRolling, onRollComplete, onAnimationEnd }) => {
   // 스페이스바 핸들러
@@ -15,6 +16,8 @@ const RollDicePage = ({ currentPlayer, isMyTurn, diceValue, isRolling, onRollCom
   }, {});
 
   const charImg = currentPlayer?.characterId ? CHARACTER_IMG[currentPlayer.characterId] : null;
+
+  const name = String(currentPlayer?.nickname ?? '').trim() || '플레이어';
 
   return (
     <div className="roll-dice-container">
@@ -39,7 +42,7 @@ const RollDicePage = ({ currentPlayer, isMyTurn, diceValue, isRolling, onRollCom
           ? ``
           : isMyTurn
             ? '스페이스바를 눌러 주사위를 굴리기'
-            : `${currentPlayer?.nickname}이 주사위를 굴리고 있어요`}
+            : `${name}${iGa(name)} 주사위를 굴리고 있어요`}
       </InstructionText>
     </div>
   );

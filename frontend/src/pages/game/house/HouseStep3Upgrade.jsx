@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
 import Subtitle from '../../../components/common/Subtitle.jsx';
 import { COLORS, withAlpha } from '../../../constants/colors.js';
-import { HOUSE_LEVEL_MAP, getHouseIconByLevel, normalizeHouseLevelByAny, roEuro } from '../../../constants/houseLevel.js';
+import { HOUSE_LEVEL_MAP, getHouseIconByLevel, normalizeHouseLevelByAny } from '../../../constants/houseLevel.js';
+import { roEuro } from '../../../constants/josa.js';
 import { CHARACTERS } from '../../../constants/characters.js';
 import './HouseStep3Upgrade.css';
 

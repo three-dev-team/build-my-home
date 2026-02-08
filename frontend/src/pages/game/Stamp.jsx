@@ -10,6 +10,7 @@ import useSpaceKey from '../../hooks/useSpaceKey.js';
 import { COLORS } from '../../constants/colors.js';
 import { CHARACTERS } from '../../constants/characters.js';
 import CircleBlackout from '../../components/common/CircleBlackout.jsx';
+import { iGa } from '../../constants/josa.js';
 
 const DUPLICATE_REWARD = 20;
 
@@ -53,6 +54,7 @@ const STAMP_CONFIG = {
 };
 
 const Stamp = ({ isMyTurn = false, player, currentPlayerName = '익명의 주민', onAction, onExit }) => {
+  const name = String(currentPlayerName ?? '').trim() || '익명의 주민';
   // position으로 stampType 계산
   const position = player?.position || 0;
   const tile = boardTiles.find((t) => t.id === position);
@@ -195,7 +197,7 @@ const Stamp = ({ isMyTurn = false, player, currentPlayerName = '익명의 주민
 
             {/* 스페이스바 안내 메시지 */}
             <InstructionText>
-              {isMyTurn ? '스페이스바를 눌러 도장 찍기' : `${currentPlayerName}이 도장을 찍는 중입니다...`}
+              {isMyTurn ? '스페이스바를 눌러 도장 찍기' : `${name}${iGa(name)} 도장을 찍는 중입니다...`}
             </InstructionText>
           </div>
         </div>

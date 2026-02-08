@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 import Subtitle from '../../../components/common/Subtitle.jsx';
 import AutoMove from '../../../components/common/AutoMove.jsx';
-import { koName, rewardImageSrc, waGwa, iGa } from '../../../constants/reward.js';
+import { koName, rewardImageSrc } from '../../../constants/reward.js';
+import { waGwa, iGa, eulReul } from '../../../constants/josa.js';
 import { isAnyRewardNeededForNextLevel } from '../../../constants/houseLevel.js';
 import { COLORS } from '../../../constants/colors.js';
 import Shadow from '../../../components/common/Shadow.jsx';
@@ -39,9 +40,9 @@ export default function RewardGetScreen({
   // 메인 문구(획득)
   const mainLine = useMemo(() => {
     const prefix = '야호';
-    if (aName && bName) return `${prefix} ${aName}${waGwa(aName)} ${bName}를 획득했다!`;
-    if (aName) return `${prefix} ${aName}를 획득했다!`;
-    if (bName) return `${prefix} ${bName}를 획득했다!`;
+    if (aName && bName) return `${prefix} ${aName}${waGwa(aName)} ${bName}${eulReul(bName)} 획득했다!`;
+    if (aName) return `${prefix} ${aName}${eulReul(aName)} 획득했다!`;
+    if (bName) return `${prefix} ${bName}${eulReul(bName)} 획득했다!`;
     return `${prefix} 보상을 획득했다!`;
   }, [aName, bName]);
 

@@ -7,6 +7,7 @@ import ExitButton from '../../../components/common/ExitButton.jsx';
 import { CHARACTERS } from '../../../constants/characters.js';
 import { COLORS, withAlpha } from '../../../constants/colors.js';
 import { HOUSE_LEVEL_MAP, normalizeHouseLevelByAny } from '../../../constants/houseLevel.js';
+import { roEuro } from '../../../constants/josa.js';
 
 import './HouseCommon.css';
 import HouseStep0 from './HouseStep0.jsx';
@@ -133,7 +134,7 @@ const calcUpgradeRequirement = (player) => {
 
   let lackMessage = '';
   if (!hasAllMaterials) {
-    const head = `${nextName}로 업그레이드 하려 왔나구리?\n`;
+    const head = `${nextName}${roEuro(nextName)} 업그레이드 하려 왔나구리?\n`;
     if (lacks.length === 0) {
       lackMessage = `${head}아직 재료가 더 필요하다구리.`;
     } else if (lacks.length === 1) {
