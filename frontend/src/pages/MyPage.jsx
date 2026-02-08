@@ -246,7 +246,7 @@ export default function MyPage() {
           {userData.createdAt
             ? new Date(userData.createdAt)
                 .toLocaleDateString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit' })
-                .replace(/\. /g, '년 ')
+                .replace(/\. /g, '월 ')
                 .replace('.', '일')
             : '정보 없음'}
         </div>
