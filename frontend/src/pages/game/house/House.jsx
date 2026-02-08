@@ -7,7 +7,7 @@ import ExitButton from '../../../components/common/ExitButton.jsx';
 import { CHARACTERS } from '../../../constants/characters.js';
 import { COLORS, withAlpha } from '../../../constants/colors.js';
 import { HOUSE_LEVEL_MAP, normalizeHouseLevelByAny } from '../../../constants/houseLevel.js';
-import { roEuro } from '../../../constants/josa.js';
+import { roEuro } from '../../../utils/josa.js';
 
 import './HouseCommon.css';
 import HouseStep0 from './HouseStep0.jsx';

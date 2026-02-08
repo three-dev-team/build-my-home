@@ -3,7 +3,7 @@ import Subtitle from '../../../components/common/Subtitle.jsx';
 import AutoMove from '../../../components/common/AutoMove.jsx';
 import { COLORS } from '../../../constants/colors.js';
 import { HOUSE_LEVEL_MAP, getHouseIconByLevel, normalizeHouseLevelByAny } from '../../../constants/houseLevel.js';
-import { roEuro } from '../../../constants/josa.js';
+import { roEuro } from '../../../utils/josa.js';
 import './HouseStep4BuildFinish.css';
 
 const IMG = {

@@ -95,7 +95,10 @@ const TopButtons = ({
     // gap-6 = 24px = 1.25cqw
     <div className={`flex gap-[1.25cqw] items-start ${className}`}>
       {/* 프로필 (아이콘 + 닉네임) - gap-1 = 4px = 0.37cqh */}
-      <button onClick={onProfileClick} className="flex flex-col items-center gap-[0.37cqh] group relative z-20">
+      <button
+        onClick={onProfileClick}
+        className="flex flex-col items-center gap-[0.37cqh] group relative z-20 w-[4.17cqw] flex-shrink-0"
+      >
         <div
           className={`${iconBoxStyle} overflow-hidden p-0 border-[0.26cqw] border-white`}
           style={{ backgroundColor: iconBg }}
@@ -108,7 +111,7 @@ const TopButtons = ({
         </div>
         {/* 닉네임 뱃지 - hover 시에만 표시 */}
         <div
-          className="flex items-center justify-center min-w-[4.17cqw] h-[3.7cqh] rounded-[1.04cqw] shadow-sm px-[0.63cqw] opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+          className="absolute top-[8.65cqh] left-1/2 -translate-x-1/2 flex items-center justify-center min-w-[4.17cqw] h-[3.7cqh] rounded-[1.04cqw] shadow-sm px-[0.63cqw] opacity-0 group-hover:opacity-100 transition-opacity duration-200 whitespace-nowrap"
           style={{ backgroundColor: colors.badgeBg }}
         >
           {/* 24px = 1.25cqw text */}
@@ -122,12 +125,12 @@ const TopButtons = ({
       </button>
 
       {/* 알림 */}
-      <button onClick={onBellClick} className={`${iconBoxStyle} relative z-20`} style={{ backgroundColor: iconBg }}>
+      <button onClick={onBellClick} className={`${iconBoxStyle} flex-shrink-0`} style={{ backgroundColor: iconBg }}>
         <BellIcon className="w-[2.08cqw] h-[2.08cqw]" style={{ color: colors.text }} />
       </button>
 
       {/* 설정 (드롭다운 트리거) */}
-      <div className="relative">
+      <div className="relative flex-shrink-0">
         <button
           onClick={() => setIsDropdownOpen(!isDropdownOpen)}
           className={`${iconBoxStyle}`}
