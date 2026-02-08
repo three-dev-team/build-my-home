@@ -25,6 +25,12 @@ public interface MemberService {
 
   boolean existsByEmail(String email);
 
+  boolean existsDeletedByEmail(String email);
+
+  void restoreAccount(String email, String password, String nickname);
+
+  void hardDeleteAndRejoin(JoinRequest dto);
+
   void updateNickname(
     String email,
     @NotBlank(message = "닉네임은 필수입니다.") @Size(
@@ -38,5 +44,7 @@ public interface MemberService {
 
   void unlinkSocialAccount(String email, String provider);
 
-  MemberResponse updateProfileImage(String email, org.springframework.web.multipart.MultipartFile file);
+  MemberResponse updateProfileImage(String email, String imagePath);
+
+  void logout(String email);
 }

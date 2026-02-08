@@ -3,6 +3,44 @@ import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { COLORS } from '../../constants/colors';
 import AspectLayout from '../../components/layout/AspectLayout';
+import AuthAlertModal from '../../components/common/AuthAlertModal';
+import AuthConfirmModal from '../../components/common/AuthConfirmModal';
+
+// --- 눈 아이콘 (비밀번호 표시/숨김) ---
+const EyeIcon = ({ className }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    strokeWidth={1.5}
+    stroke="currentColor"
+    className={className}
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z"
+    />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+  </svg>
+);
+
+const EyeSlashIcon = ({ className }) => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    strokeWidth={1.5}
+    stroke="currentColor"
+    className={className}
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88"
+    />
+  </svg>
+);
 
 export default function Join() {
   const [email, setEmail] = useState('');
@@ -10,6 +48,8 @@ export default function Join() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [nickname, setNickname] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // 상태 관리 (인증 및 로직)
   const [isSending, setIsSending] = useState(false); // 메일 발송 중 상태 (중복 클릭 방지)
@@ -17,10 +57,13 @@ export default function Join() {
   const [isEmailSent, setIsEmailSent] = useState(false); // 인증번호 발송 여부
   const [isEmailVerified, setIsEmailVerified] = useState(false); // 이메일 인증 완료 여부
   const [isNicknameChecked, setIsNicknameChecked] = useState(false); // 닉네임 체크 완료 여부
+  const [isDeletedAccount, setIsDeletedAccount] = useState(false); // 탈퇴 계정 여부
+  const [restoreMode, setRestoreMode] = useState(false); // true=복구, false=처음부터
 
   // UI 관리
   // const [modal, setModal] = useState({ isOpen: false, message: "" });
   const [modal, setModal] = useState({ isOpen: false, message: '', showButton: true });
+  const [deleteAccountModal, setDeleteAccountModal] = useState(false); // 탈퇴 계정 선택 모달
   const navigate = useNavigate();
   const API_BASE_URL = '/api/member';
 
@@ -68,17 +111,42 @@ export default function Join() {
     openModal('이메일 중복 확인 및\n인증번호 발송 중 입니다', false);
 
     try {
-      await axios.post(`${API_BASE_URL}/send-registration-code`, { email });
-      // 성공 시: 버튼이 있는 모달로 내용 업데이트
-      openModal('사용 가능한 이메일입니다\n인증번호를 발송했습니다', true);
-      setIsEmailSent(true);
-      setTimeLeft(300);
+      const response = await axios.post(`${API_BASE_URL}/send-registration-code`, { email });
+      const data = response.data;
+
+      if (data.status === 'DELETED_ACCOUNT') {
+        // 탈퇴 계정 감지 → 인증 메일 없이 바로 모달 표시
+        setIsDeletedAccount(true);
+        closeModal();
+        setDeleteAccountModal(true);
+      } else {
+        // 정상 신규 가입
+        openModal('사용 가능한 이메일입니다\n인증번호를 발송했습니다', true);
+        setIsDeletedAccount(false);
+        setIsEmailSent(true);
+        setTimeLeft(300);
+      }
     } catch (error) {
-      // 실패 시: 에러 메시지와 함께 버튼 노출
-      const errorMsg = error.response?.data || '메일 발송에 실패했습니다';
+      const errorMsg = error.response?.data?.message || error.response?.data || '메일 발송에 실패했습니다';
       openModal(errorMsg, true);
     } finally {
       setIsSending(false);
+    }
+  };
+
+  // 탈퇴 계정 복구 핸들러 (이메일 인증 필수)
+  const handleRestore = async () => {
+    if (!isEmailVerified) return openModal('이메일 인증을 완료해주세요');
+    if (isPasswordInvalid) return openModal('비밀번호 규칙을 지켜주세요');
+    if (isPasswordMismatch) return openModal('비밀번호가 일치하지 않습니다');
+    if (!isNicknameChecked) return openModal('닉네임 중복 체크를 완료해주세요');
+
+    try {
+      await axios.post(`${API_BASE_URL}/restore`, { email, password, nickname });
+      openModal('계정이 복구되었습니다!\n로그인해주세요');
+      setTimeout(() => navigate('/'), 2000);
+    } catch (error) {
+      openModal('계정 복구에 실패했습니다');
     }
   };
 
@@ -146,13 +214,16 @@ export default function Join() {
     if (!isNicknameChecked) return openModal('닉네임 중복 체크를 완료해주세요');
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/join`, { email, password, nickname });
+      const endpoint = isDeletedAccount ? `${API_BASE_URL}/rejoin` : `${API_BASE_URL}/join`;
+      const response = await axios.post(endpoint, { email, password, nickname });
       if (response.status === 200 || response.status === 201) {
         openModal('마이홈의 주민이\n되신 것을 환영합니다!');
         setTimeout(() => navigate('/'), 2000);
       }
     } catch (error) {
-      openModal('회원가입에 실패했습니다');
+      console.error('회원가입 에러:', error.response?.data);
+      const msg = error.response?.data?.message || '회원가입에 실패했습니다';
+      openModal(msg);
     }
   };
 
@@ -160,25 +231,82 @@ export default function Join() {
     <AspectLayout>
       <div className="w-full h-full bg-cover bg-center flex items-center justify-center overflow-hidden font-gosanja bg-[url('/images/bg-pattern-1.png')]">
         {/* 커스텀 모달 */}
-        {modal.isOpen && (
+        <AuthAlertModal
+          isOpen={modal.isOpen}
+          message={modal.message}
+          showButton={modal.showButton}
+          onClose={closeModal}
+        />
+
+        {/* 탈퇴 계정 선택 모달 */}
+        {deleteAccountModal && (
           <div className="fixed inset-0 z-[300] flex items-center justify-center bg-black/50 backdrop-blur-sm">
             <div
-              className="relative w-[18.23cqw] rounded-[2.08cqw] border-[0.31cqw] shadow-2xl p-[1.67cqw] flex flex-col items-center animate-in zoom-in-95 duration-200"
+              className="relative w-[22cqw] rounded-[2.08cqw] border-[0.31cqw] shadow-2xl p-[2cqw] flex flex-col items-center animate-in zoom-in-95 duration-200"
               style={{ backgroundColor: COLORS.ac.creamWhite, borderColor: COLORS.ac.coffeeBrown }}
             >
               <p
-                className="font-bold text-center whitespace-pre-wrap mb-[1.25cqw] text-[0.83cqw]"
+                className="font-bold text-center whitespace-pre-wrap mb-[0.6cqw] text-[1cqw]"
+                style={{ color: COLORS.ac.darkBrown }}
+              >
+                삭제 내역이 존재합니다
+              </p>
+              <p
+                className="font-bold text-center whitespace-pre-wrap mb-[1.5cqw] text-[0.73cqw]"
                 style={{ color: COLORS.text }}
               >
-                {modal.message}
+                계정을 복구하시겠습니까?{'\n'}복구 시 비밀번호와 닉네임만 새로 설정하면 됩니다
               </p>
-              <button
-                onClick={closeModal}
-                className="px-[2.08cqw] py-[0.42cqw] rounded-full font-black active:scale-95 transition-all text-[1.04cqw]"
-                style={{ backgroundColor: COLORS.ac.coffeeBrown, color: COLORS.ac.creamIvory }}
-              >
-                확인
-              </button>
+              <div className="flex gap-[0.8cqw] w-full">
+                <button
+                  onClick={async () => {
+                    setDeleteAccountModal(false);
+                    setRestoreMode(false);
+                    setIsDeletedAccount(true);
+                    // 처음부터 선택 시 인증 메일 발송
+                    setIsSending(true);
+                    openModal('인증번호 발송 중 입니다', false);
+                    try {
+                      await axios.post(`${API_BASE_URL}/send-registration-code`, { email, force: 'true' });
+                      openModal('인증번호를 발송했습니다\n새로운 계정으로 가입됩니다');
+                      setIsEmailSent(true);
+                      setTimeLeft(300);
+                    } catch {
+                      openModal('인증번호 발송에 실패했습니다');
+                    } finally {
+                      setIsSending(false);
+                    }
+                  }}
+                  className="flex-1 py-[0.6cqw] rounded-[1.5cqw] font-black active:scale-95 transition-all text-[0.83cqw]"
+                  style={{ backgroundColor: '#D9D9D9', color: COLORS.ac.darkBrown }}
+                >
+                  처음부터
+                </button>
+                <button
+                  onClick={async () => {
+                    setDeleteAccountModal(false);
+                    setRestoreMode(true);
+                    setIsDeletedAccount(true);
+                    // 계정 복구 시에도 인증 메일 발송
+                    setIsSending(true);
+                    openModal('인증번호 발송 중 입니다', false);
+                    try {
+                      await axios.post(`${API_BASE_URL}/send-registration-code`, { email, force: 'true' });
+                      openModal('인증번호를 발송했습니다\n인증 후 계정이 복구됩니다');
+                      setIsEmailSent(true);
+                      setTimeLeft(300);
+                    } catch {
+                      openModal('인증번호 발송에 실패했습니다');
+                    } finally {
+                      setIsSending(false);
+                    }
+                  }}
+                  className="flex-1 py-[0.6cqw] rounded-[1.5cqw] font-black active:scale-95 transition-all text-[0.83cqw]"
+                  style={{ backgroundColor: COLORS.ac.coffeeBrown, color: COLORS.ac.creamIvory }}
+                >
+                  계정 복구
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -298,11 +426,11 @@ export default function Join() {
             {/* 비밀번호 */}
             <div className="relative w-[22.92cqw]">
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 placeholder="비밀번호를 입력하세요"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full text-left pl-[1.67cqw] outline-none transition-all placeholder-opacity-100"
+                className="w-full text-left pl-[1.67cqw] pr-[3cqw] outline-none transition-all placeholder-opacity-100"
                 style={{
                   height: '4.17cqw',
                   borderRadius: '2.08cqw',
@@ -311,16 +439,36 @@ export default function Join() {
                   color: COLORS.text,
                 }}
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-[1.25cqw] top-1/2 -translate-y-1/2 transition-colors"
+                style={{ color: COLORS.ac.coffeeBrown }}
+              >
+                {showPassword ? (
+                  <EyeIcon className="w-[1.67cqw] h-[1.67cqw]" />
+                ) : (
+                  <EyeSlashIcon className="w-[1.67cqw] h-[1.67cqw]" />
+                )}
+              </button>
             </div>
+            {isPasswordInvalid && (
+              <p
+                className="w-[22.92cqw] pl-[1.67cqw] text-[0.73cqw] font-bold"
+                style={{ color: '#EB5757', marginTop: '-0.6cqw' }}
+              >
+                8~16자, 영문/숫자/특수문자를 모두 포함해주세요
+              </p>
+            )}
 
             {/* 비밀번호 확인 */}
             <div className="relative w-[22.92cqw]">
               <input
-                type="password"
+                type={showConfirmPassword ? 'text' : 'password'}
                 placeholder="비밀번호 확인"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full text-left pl-[1.67cqw] outline-none transition-all placeholder-opacity-100"
+                className="w-full text-left pl-[1.67cqw] pr-[3cqw] outline-none transition-all placeholder-opacity-100"
                 style={{
                   height: '4.17cqw',
                   borderRadius: '2.08cqw',
@@ -329,7 +477,27 @@ export default function Join() {
                   color: COLORS.text,
                 }}
               />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-[1.25cqw] top-1/2 -translate-y-1/2 transition-colors"
+                style={{ color: COLORS.ac.coffeeBrown }}
+              >
+                {showConfirmPassword ? (
+                  <EyeIcon className="w-[1.67cqw] h-[1.67cqw]" />
+                ) : (
+                  <EyeSlashIcon className="w-[1.67cqw] h-[1.67cqw]" />
+                )}
+              </button>
             </div>
+            {isPasswordMismatch && (
+              <p
+                className="w-[22.92cqw] pl-[1.67cqw] text-[0.73cqw] font-bold"
+                style={{ color: '#EB5757', marginTop: '-0.6cqw' }}
+              >
+                비밀번호가 일치하지 않습니다
+              </p>
+            )}
 
             {/* 닉네임 */}
             <div className="flex items-center gap-[0.52cqw] w-[22.92cqw]">
@@ -368,7 +536,8 @@ export default function Join() {
 
             {/* 가입 완료 버튼 */}
             <button
-              type="submit"
+              type={restoreMode ? 'button' : 'submit'}
+              onClick={restoreMode ? handleRestore : undefined}
               className="mt-[1.04cqw] flex items-center justify-center text-[1.67cqw] font-black active:scale-95 transition-transform shadow-lg hover:brightness-110"
               style={{
                 width: '22.92cqw',
@@ -381,7 +550,7 @@ export default function Join() {
               }}
             >
               <span className="relative z-10" style={{ paddingBottom: '0.16cqw' }}>
-                주민 가입 완료!
+                {restoreMode ? '계정 복구 완료!' : '주민 가입 완료!'}
               </span>
             </button>
           </form>

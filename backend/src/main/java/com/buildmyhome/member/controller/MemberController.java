@@ -9,7 +9,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/member")
@@ -49,13 +48,46 @@ public class MemberController {
   }
 
   @PostMapping("/send-registration-code")
-  public ResponseEntity<String> sendRegistrationCode(@RequestBody Map<String, String> request) {
+  public ResponseEntity<?> sendRegistrationCode(@RequestBody Map<String, String> request) {
     String email = request.get("email");
+    boolean force = "true".equals(request.get("force"));
+    // 활성 계정 중복 체크
     if (memberService.existsByEmail(email)) {
-      return ResponseEntity.status(HttpStatus.CONFLICT).body("이미 가입된 이메일입니다. 😢");
+      return ResponseEntity.status(HttpStatus.CONFLICT).body("이미 가입된 이메일입니다");
+    }
+    // 탈퇴 계정 체크 (force=true이면 건너뛰고 인증 메일 발송)
+    if (!force && memberService.existsDeletedByEmail(email)) {
+      return ResponseEntity.ok(Map.of("status", "DELETED_ACCOUNT", "message", "삭제된 계정 내역이 존재합니다"));
     }
     memberService.sendRegistrationCode(email);
-    return ResponseEntity.ok("인증번호가 발송되었습니다.");
+    return ResponseEntity.ok(Map.of("status", "OK", "message", "인증번호가 발송되었습니다"));
+  }
+
+  // 탈퇴 계정 복구
+  @PostMapping("/restore")
+  public ResponseEntity<?> restoreAccount(@RequestBody Map<String, String> request) {
+    try {
+      memberService.restoreAccount(
+          request.get("email"),
+          request.get("password"),
+          request.get("nickname")
+      );
+      return ResponseEntity.ok(Map.of("message", "계정이 복구되었습니다"));
+    } catch (Exception e) {
+      return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+    }
+  }
+
+  // 탈퇴 계정 완전 삭제 후 재가입
+  @PostMapping("/rejoin")
+  public ResponseEntity<?> rejoin(@RequestBody JoinRequest dto) {
+    try {
+      memberService.hardDeleteAndRejoin(dto);
+      return ResponseEntity.status(HttpStatus.CREATED).build();
+    } catch (Exception e) {
+      e.printStackTrace();
+      return ResponseEntity.badRequest().body(Map.of("message", e.getMessage() != null ? e.getMessage() : "알 수 없는 오류"));
+    }
   }
 
   @PostMapping("/verify-code")
@@ -124,10 +156,18 @@ public class MemberController {
   }
 
   @PostMapping("/profile-image")
-  public ResponseEntity<MemberResponse> uploadProfileImage(
-      @RequestParam("file") MultipartFile file, Authentication authentication) {
+  public ResponseEntity<?> updateProfileImage(
+      @RequestBody Map<String, String> body, Authentication authentication) {
     String email = authentication.getName();
-    MemberResponse response = memberService.updateProfileImage(email, file);
+    String imagePath = body.get("profileImage");
+    MemberResponse response = memberService.updateProfileImage(email, imagePath);
     return ResponseEntity.ok(response);
+  }
+
+  @PostMapping("/logout")
+  public ResponseEntity<Void> logout(Authentication authentication) {
+    String email = authentication.getName();
+    memberService.logout(email);
+    return ResponseEntity.ok().build();
   }
 }

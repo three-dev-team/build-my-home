@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import axios from 'axios';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { Cog6ToothIcon, BellIcon, UserIcon } from '@heroicons/react/24/solid';
 
@@ -25,6 +27,7 @@ const TopButtons = ({
   onProfileClick,
   onBellClick,
   onConfigClick,
+  onNavigate,
   colors = {
     text: '#7B6C53', // coffeeBrown
     iconBg: '#FDFBF6', // creamWhite
@@ -37,8 +40,10 @@ const TopButtons = ({
   showShadow = true,
   className = '',
 }) => {
-  const navigate = useNavigate();
+  const routerNavigate = useNavigate();
+  const nav = onNavigate || routerNavigate;
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   // 기본값 설정 (colors prop에 일부만 들어올 경우 대비)
   const iconBg = colors.iconBg || '#FDFBF6';
@@ -49,8 +54,23 @@ const TopButtons = ({
   // 80px = 4.17cqw, 4px = 0.37cqh shadow
   const iconBoxStyle = `w-[4.17cqw] h-[4.17cqw] rounded-full flex items-center justify-center ${showShadow ? 'shadow-[0_0.37cqh_0.37cqh_rgba(0,0,0,0.1)]' : ''} hover:scale-105 transition-transform cursor-pointer relative z-20`;
 
-  const handleLogout = () => {
-    // 로그아웃 로직 - 모든 세션 데이터 삭제
+  const handleLogout = async () => {
+    // 서버에 로그아웃 알림 (isOnline = false)
+    try {
+      const token = sessionStorage.getItem('token');
+      if (token) {
+        await axios.post(
+          '/api/member/logout',
+          {},
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          },
+        );
+      }
+    } catch (error) {
+      console.error('로그아웃 API 호출 실패:', error);
+    }
+    // 모든 세션 데이터 삭제
     sessionStorage.removeItem('token');
     sessionStorage.removeItem('memberId');
     sessionStorage.removeItem('role');
@@ -58,11 +78,11 @@ const TopButtons = ({
     sessionStorage.removeItem('bell');
     sessionStorage.removeItem('level');
     sessionStorage.removeItem('profileImage');
-    navigate('/');
+    routerNavigate('/');
   };
 
   const handleInquiry = () => {
-    navigate('/user-inquiry'); // 문의 페이지로 이동
+    nav('/user-inquiry'); // 문의 페이지로 이동
     setIsDropdownOpen(false);
   };
 
@@ -76,9 +96,15 @@ const TopButtons = ({
     <div className={`flex gap-[1.25cqw] items-start ${className}`}>
       {/* 프로필 (아이콘 + 닉네임) - gap-1 = 4px = 0.37cqh */}
       <button onClick={onProfileClick} className="flex flex-col items-center gap-[0.37cqh] group relative z-20">
-        <div className={`${iconBoxStyle} overflow-hidden p-0`} style={{ backgroundColor: iconBg }}>
-          {/* w-10 h-10 = 40px = 2.08cqw */}
-          <UserIcon className="w-[2.08cqw] h-[2.08cqw]" style={{ color: colors.text }} />
+        <div
+          className={`${iconBoxStyle} overflow-hidden p-0 border-[0.26cqw] border-white`}
+          style={{ backgroundColor: iconBg }}
+        >
+          {profileImage ? (
+            <img src={profileImage} alt="profile" className="w-full h-full object-cover" />
+          ) : (
+            <UserIcon className="w-[2.08cqw] h-[2.08cqw]" style={{ color: colors.text }} />
+          )}
         </div>
         {/* 닉네임 뱃지 - hover 시에만 표시 */}
         <div
@@ -131,7 +157,7 @@ const TopButtons = ({
             {sessionStorage.getItem('role') === 'ADMIN' ? (
               <button
                 onClick={() => {
-                  navigate('/admin');
+                  nav('/admin');
                   setIsDropdownOpen(false);
                 }}
                 className="w-full py-[0.83cqw] font-bold text-[1.04cqw] transition-colors border-b-[0.05cqw]"
@@ -159,7 +185,10 @@ const TopButtons = ({
               </button>
             )}
             <button
-              onClick={handleLogout}
+              onClick={() => {
+                setIsDropdownOpen(false);
+                setShowLogoutConfirm(true);
+              }}
               className="w-full py-[0.83cqw] hover:bg-[#FFF0F0] text-[#EB5757] font-bold text-[1.04cqw] transition-colors"
             >
               로그아웃
@@ -170,6 +199,37 @@ const TopButtons = ({
 
       {/* 드롭다운 닫기용 백그라운드 클릭 감지 (투명 오버레이) */}
       {isDropdownOpen && <div className="fixed inset-0 z-10" onClick={() => setIsDropdownOpen(false)} />}
+
+      {/* 로그아웃 확인 모달 */}
+      {showLogoutConfirm &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[9999] bg-black/40 flex items-center justify-center backdrop-blur-sm"
+            onClick={() => setShowLogoutConfirm(false)}
+          >
+            <div
+              className="bg-[#FDFBF6] rounded-[20px] p-[40px] w-[400px] shadow-2xl flex flex-col items-center gap-[24px]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <p className="text-[18px] font-bold text-[#594E36] text-center">정말 로그아웃 하시겠습니까?</p>
+              <div className="flex gap-[12px]">
+                <button
+                  onClick={() => setShowLogoutConfirm(false)}
+                  className="px-[28px] py-[12px] text-[14px] font-bold rounded-[12px] bg-[#E5E5E5] text-[#594E36] hover:scale-105 transition-transform"
+                >
+                  취소
+                </button>
+                <button
+                  onClick={handleLogout}
+                  className="px-[28px] py-[12px] text-[14px] font-bold rounded-[12px] bg-[#EB5757] text-white hover:scale-105 transition-transform"
+                >
+                  로그아웃
+                </button>
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 };

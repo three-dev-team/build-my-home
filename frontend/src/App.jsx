@@ -18,7 +18,7 @@ import Loading from './components/common/Loading.jsx';
 import AlertModal from './components/common/AlertModal.jsx';
 import ZoomWarningModal from './components/common/ZoomWarningModal.jsx';
 import usePlayTimeWarning from './hooks/usePlayTimeWarning.js';
-import NoticePage from './pages/NoticePage.jsx'
+import NoticePage from './pages/NoticePage.jsx';
 
 // 라우트 가드 컴포넌트들 (App 함수 밖에 정의해야 리마운트 방지)
 const ProtectedRoute = ({ children }) => {
@@ -225,10 +225,7 @@ function App() {
           />
 
           {/* 공지사항 페이지 */}
-          <Route
-            path="/notifications"
-            element={<NoticePage />}
-          />
+          <Route path="/notifications" element={<NoticePage />} />
 
           <Route path="*" element={<NotFound />} />
         </Routes>
@@ -271,7 +268,7 @@ function App() {
 
       {/* 브라우저 배율 경고 모달 */}
       {/* 필요하면 이 부분 주석 */}
-      {/*{showZoomWarning && <ZoomWarningModal onDismiss={() => setShowZoomWarning(false)} />}*/}
+      {showZoomWarning && <ZoomWarningModal onDismiss={() => setShowZoomWarning(false)} />}
     </>
   );
 }

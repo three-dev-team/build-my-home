@@ -360,6 +360,7 @@ export default function RoomList() {
             nickname={sessionStorage.getItem('nickname') || '주민'}
             profileImage={sessionStorage.getItem('profileImage')}
             onProfileClick={() => navigate('/mypage')}
+            onBellClick={() => navigate('/notifications')}
             onConfigClick={() => navigate('/config')}
             colors={{
               text: COLORS.roomList.textMain,
@@ -410,7 +411,7 @@ export default function RoomList() {
               {rooms.length === 0 && !loading ? (
                 <div className="flex flex-col items-center opacity-60 mt-[15cqh] pb-[3.7cqh]">
                   <span className="text-[1.67cqw] font-bold text-[#7B5EA7]">아직 만들어진 섬이 없어!</span>
-                  <span className="text-[1.25cqw] text-[#9B7EC4] mt-[0.19cqh]">직접 새로운 섬을 만들어볼까? 🏝️</span>
+                  <span className="text-[1.25cqw] text-[#9B7EC4] mt-[0.19cqh]">직접 새로운 섬을 만들어볼까?</span>
                 </div>
               ) : (
                 <div className="flex flex-col items-center pb-[1.85cqh] pt-[3.7cqh]">
@@ -612,7 +613,7 @@ export default function RoomList() {
         {transitioning && (
           <div className="fixed inset-0 z-[9999] bg-black/40 flex items-center justify-center">
             <div className="bg-white px-[2.08cqw] py-[1.48cqh] rounded-[2.08cqw] flex flex-col items-center shadow-2xl animate-bounce">
-              <span className="text-[2.08cqw]">✈️</span>
+              <span className="text-[2.08cqw]"></span>
               <span className="text-[1.25cqw] font-bold text-[#5A4A6F] mt-[0.37cqh]">섬으로 이동 중...</span>
             </div>
           </div>

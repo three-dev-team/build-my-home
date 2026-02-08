@@ -79,7 +79,7 @@ export default function Store() {
             <div className="mt-2 flex items-center gap-2 bg-[#fdf2d9]/20 px-4 py-1 rounded-full whitespace-nowrap">
               {/* 벨(코인) 아이콘 */}
               <div className="w-8 h-8 flex items-center justify-center bg-[#ffd700] rounded-full border-2 border-[#b8860b] shadow-sm">
-                <span className="text-[#b8860b] text-xs font-bold">💰</span>
+                <span className="text-[#b8860b] text-xs font-bold"></span>
               </div>
 
               {/* 가격 텍스트 */}

@@ -3,10 +3,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import TopButtons from '../components/common/TopButtons';
 import AspectLayout from '../components/layout/AspectLayout';
 import AlertModal from '../components/common/AlertModal';
+import { getMemberInfo } from '../api/memberApi';
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [nickname, setNickname] = useState('');
+  const [profileImage, setProfileImage] = useState(sessionStorage.getItem('profileImage'));
   const [showUI, setShowUI] = useState(true);
   const [fadeIn, setFadeIn] = useState(false);
   const [showSuspendModal, setShowSuspendModal] = useState(false);
@@ -54,6 +56,18 @@ export default function Home() {
     if (token) {
       setIsLoggedIn(true);
       setNickname(savedNickname || '주민');
+
+      // profileImage가 sessionStorage에 없으면 API에서 가져오기
+      if (!sessionStorage.getItem('profileImage')) {
+        getMemberInfo()
+          .then((res) => {
+            if (res.data.profileImage) {
+              sessionStorage.setItem('profileImage', res.data.profileImage);
+              setProfileImage(res.data.profileImage);
+            }
+          })
+          .catch(() => {});
+      }
     }
 
     // 정지 정보 로드 및 자동 모달 표시
@@ -120,7 +134,7 @@ export default function Home() {
         */}
         <TopButtons
           nickname={isLoggedIn ? nickname : '로그인'}
-          profileImage={sessionStorage.getItem('profileImage')}
+          profileImage={profileImage}
           onProfileClick={() => navigate(isLoggedIn ? '/myPage' : '/login')}
           onBellClick={() => navigate('/notifications')}
           onConfigClick={() => navigate('/config')}

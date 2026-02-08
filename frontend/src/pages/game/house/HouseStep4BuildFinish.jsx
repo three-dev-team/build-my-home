@@ -2,12 +2,8 @@ import React, { useEffect, useMemo, useState, useCallback, useRef } from 'react'
 import Subtitle from '../../../components/common/Subtitle.jsx';
 import AutoMove from '../../../components/common/AutoMove.jsx';
 import { COLORS } from '../../../constants/colors.js';
-import {
-  HOUSE_LEVEL_MAP,
-  getHouseIconByLevel,
-  normalizeHouseLevelByAny,
-  roEuro,
-} from '../../../constants/houseLevel.js';
+import { HOUSE_LEVEL_MAP, getHouseIconByLevel, normalizeHouseLevelByAny } from '../../../constants/houseLevel.js';
+import { roEuro } from '../../../constants/josa.js';
 import './HouseStep4BuildFinish.css';
 
 const IMG = {
@@ -28,12 +24,12 @@ const getCurrentHouseLevel = (player) => {
 };
 
 export default function HouseStep4BuildFinish({
-                                                player,
-                                                character,
-                                                onCloseNow, // 즉시 닫힘(서버 브로드캐스트 1단계)
-                                                onFinishAfter3s, // 3초 뒤 종료(서버 브로드캐스트 2단계)
-                                                isSpectator = false,
-                                              }) {
+  player,
+  character,
+  onCloseNow, // 즉시 닫힘(서버 브로드캐스트 1단계)
+  onFinishAfter3s, // 3초 뒤 종료(서버 브로드캐스트 2단계)
+  isSpectator = false,
+}) {
   const myName = useMemo(() => getPlayerDisplayName(player), [player]);
   const characterId = player?.characterId;
 

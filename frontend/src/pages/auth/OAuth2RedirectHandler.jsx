@@ -51,6 +51,12 @@ export default function OAuth2RedirectHandler() {
         sessionStorage.setItem('bell', bell || '0');
         sessionStorage.setItem('level', level || '1');
 
+        // 프로필 이미지 저장
+        const profileImage = params.get('profileImage');
+        if (profileImage) {
+          sessionStorage.setItem('profileImage', profileImage);
+        }
+
         // 정지 정보 저장
         sessionStorage.setItem('isSuspended', isSuspended === 'true' ? 'true' : 'false');
         if (suspendedUntil) {

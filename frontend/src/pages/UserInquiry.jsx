@@ -131,7 +131,7 @@ export default function UserInquiryPage() {
   // 문의 작성
   const handleSubmitInquiry = async () => {
     if (!title.trim() || !content.trim()) {
-      alert('제목과 내용을 모두 입력해주세요! 🌿');
+      alert('제목과 내용을 모두 입력해주세요!');
       return;
     }
 
@@ -156,7 +156,7 @@ export default function UserInquiryPage() {
         },
       });
 
-      alert('문의가 등록되었습니다! 🎉');
+      alert('문의가 등록되었습니다!');
       setTitle('');
       setContent('');
       setCategory('USER_REPORT');
@@ -402,7 +402,7 @@ export default function UserInquiryPage() {
                           border: `0.16cqw solid ${COLORS.userInquiry.darkBrown}`,
                         }}
                       >
-                        📎 이미지 첨부
+                        이미지 첨부
                       </label>
                       <input
                         type="file"
@@ -492,7 +492,7 @@ export default function UserInquiryPage() {
                 </div>
               ) : myInquiries.length === 0 ? (
                 <div className="flex-1 flex flex-col items-center justify-center gap-[1.85cqh]">
-                  <p className="text-[1.25cqw] font-bold text-[#9CA3AF]">아직 문의 내역이 없어요 🌿</p>
+                  <p className="text-[1.25cqw] font-bold text-[#9CA3AF]">아직 문의 내역이 없어요</p>
                 </div>
               ) : (
                 <div className="flex-1 overflow-y-auto px-[1.04cqw] py-[0.93cqh] space-y-[1.48cqh] scrollbar-thin scrollbar-thumb-[#D1D5DB] scrollbar-track-transparent">
@@ -618,7 +618,7 @@ export default function UserInquiryPage() {
                 style={{ backgroundColor: COLORS.userInquiry.creamIvory }}
               >
                 <h3 className="text-[1.04cqw] font-bold mb-[0.93cqh]" style={{ color: COLORS.userInquiry.darkBrown }}>
-                  📝 문의 내용
+                  문의 내용
                 </h3>
                 <p className="text-[0.94cqw] text-[#4B5563] whitespace-pre-wrap leading-relaxed">
                   {selectedInquiry.content}
@@ -631,7 +631,7 @@ export default function UserInquiryPage() {
                       className="text-[0.94cqw] font-bold mb-[0.93cqh]"
                       style={{ color: COLORS.userInquiry.darkBrown }}
                     >
-                      📎 첨부 이미지
+                      첨부 이미지
                     </h4>
                     <img
                       src={selectedInquiry.imageUrl}
@@ -645,7 +645,7 @@ export default function UserInquiryPage() {
 
               {selectedInquiry.answer ? (
                 <div className="bg-[#E8F5E9] p-[1.25cqw] rounded-[1.04cqw] border-[0.16cqw] border-[#81C784]">
-                  <h3 className="text-[1.04cqw] font-bold text-[#2E7D32] mb-[0.93cqh]">💬 답변</h3>
+                  <h3 className="text-[1.04cqw] font-bold text-[#2E7D32] mb-[0.93cqh]">답변</h3>
                   <p className="text-[0.94cqw] text-[#1B5E20] whitespace-pre-wrap leading-relaxed mb-[0.93cqh]">
                     {selectedInquiry.answer.content}
                   </p>
