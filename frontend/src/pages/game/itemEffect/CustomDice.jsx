@@ -5,6 +5,7 @@ import { CHARACTERS } from '../../../constants/characters.js';
 import '../css/RollDicePage.css';
 import useSpaceKey from '../../../hooks/useSpaceKey.js';
 import useArrowKey from '../../../hooks/useArrowKey.js';
+import { iGa } from '../../../constants/josa.js';
 
 const DICE_IMAGES = Array.from({ length: 6 }, (_, i) => `/images/dice/custom-dice-${i + 1}.webp`);
 
@@ -64,7 +65,7 @@ const CustomDice = ({ player, isMyTurn, onSelect }) => {
       <InstructionText>
         {isMyTurn
           ? '◀ ▶ 방향키로 숫자를 선택하고 스페이스바를 누르기'
-          : `${player?.nickname}이(가) 주사위를 선택하고 있어요`}
+          : `${player?.nickname}${iGa(player?.nickname)} 주사위를 선택하고 있어요`}
       </InstructionText>
     </div>
   );

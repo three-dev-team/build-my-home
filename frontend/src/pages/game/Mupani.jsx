@@ -8,6 +8,7 @@ import BellPanel from '../../components/common/BellPanel.jsx';
 import AutoMove from '../../components/common/AutoMove.jsx';
 import { COLORS } from '../../constants/colors.js';
 import { CHARACTERS } from '../../constants/characters.js';
+import { eunNeun } from '../../constants/josa.js';
 
 // 무파니 칸 당사자(현재 턴 플레이어) 보너스 수량
 const MUPANI_BONUS = 2;
@@ -63,6 +64,7 @@ export default function Mupani({ gameState, myId, onBuy, onSkip }) {
   // return null 전에 문자열/색상 계산(훅 순서 안전)
   const totalCostText = String(totalCost.toLocaleString());
   const ownerNickname = String(myPlayer?.nickname ?? '').trim();
+  const safeOwnerName = ownerNickname || '플레이어';
 
   const ownerCharacterColor = useMemo(() => {
     const cid = Number(myPlayer?.characterId ?? myPlayer?.character?.id ?? myPlayer?.character ?? 0);
@@ -226,7 +228,7 @@ export default function Mupani({ gameState, myId, onBuy, onSkip }) {
                 <img src="/images/mupani/ui-mupani.webp" alt="무파니 UI" className="mupani-ui-image" />
 
                 <div className="mupani-header-question">
-                  1무에 <span className="highlight-price"> {radishPrice}벨</span>인데 얼마나 사실래?
+                  1무에 <span className="highlight-price">{radishPrice}벨</span>인데 얼마나 사실래?
                 </div>
 
                 <div className="mupani-radish-display"> {qty}</div>
@@ -254,7 +256,8 @@ export default function Mupani({ gameState, myId, onBuy, onSkip }) {
               nameColor={mupani.nameBox}
               nameTextColor={mupani.nameText}
               contentText={`${qty}무라면...\n다 해서 ${totalCostText}벨인데 이렇게 사실래?${
-                isMupaniOwner ? `\n할머니가 ${ownerNickname}은 덤으로 ${MUPANI_BONUS}무 더 챙겨주래` : ''
+              isMupaniOwner
+                ? `\n할머니가 ${safeOwnerName}${eunNeun(safeOwnerName)} 덤으로 ${MUPANI_BONUS}무 더 챙겨주래` : ''
               }`}
               highlights={[
                 { text: `${qty}`, color: COLORS.ac.green },

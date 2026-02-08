@@ -1,6 +1,7 @@
 import React from 'react';
 import './Machurilla.css';
 import InstructionText from '../../../components/common/InstructionText.jsx';
+import { iGa } from '../../../constants/josa.js';
 
 const IMG = {
   clickSvg: '/images/board/icon-click.svg',
@@ -8,6 +9,7 @@ const IMG = {
 };
 
 const CardSelectScreen = ({ isMyTurn, onSelect, player }) => {
+  const name = String(player?.nickname ?? '').trim() || '플레이어';
   return (
     <div className="machurilla-bg machurilla-bg-card">
       <div className="machurilla-card-area">
@@ -37,7 +39,7 @@ const CardSelectScreen = ({ isMyTurn, onSelect, player }) => {
             />
           </span>
         ) : (
-          `${player?.nickname || '플레이어'}가 카드를 고르고 있습니다`
+          `${name}${iGa(name)} 카드를 고르고 있습니다`
         )}
       </InstructionText>
     </div>
