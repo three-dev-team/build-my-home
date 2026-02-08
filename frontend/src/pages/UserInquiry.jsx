@@ -2,14 +2,61 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import TopButtons from '../components/common/TopButtons';
-import ExitButton from '../components/common/ExitButton';
 import HomeButton from '../components/common/HomeButton';
 import AspectLayout from '../components/layout/AspectLayout';
 import { COLORS } from '../constants/colors';
 
+// 모달 컴포넌트
+function Modal({ message, onConfirm }) {
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center backdrop-blur-sm"
+      style={{ backgroundColor: 'rgba(0, 0, 0, 0.25)' }}
+      onClick={onConfirm}
+    >
+      <div
+        className="relative p-[2.08cqw] rounded-[2.08cqw] w-[36cqw] shadow-2xl"
+        style={{ backgroundColor: COLORS.userInquiry.creamPink }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* 메시지 */}
+        <p
+          className="text-[1.25cqw] font-bold text-center mb-[2.78cqh] whitespace-pre-wrap"
+          style={{ color: COLORS.userInquiry.darkBrown }}
+        >
+          {message}
+        </p>
+
+        {/* 확인 버튼 */}
+        <div className="flex justify-center">
+          <button
+            onClick={onConfirm}
+            className="px-[2.08cqw] py-[0.93cqh] text-[0.94cqw] font-bold rounded-[1.04cqw] transition-all hover:scale-105"
+            style={{
+              backgroundColor: COLORS.userInquiry.darkBrown,
+              color: COLORS.userInquiry.creamWhite,
+            }}
+          >
+            확인
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function UserInquiryPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('write'); // write, list
+
+  // 날짜 포맷 함수
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}. ${month}. ${day}`;
+  };
 
   // 문의 작성 상태
   const [title, setTitle] = useState('');
@@ -17,6 +64,7 @@ export default function UserInquiryPage() {
   const [category, setCategory] = useState('USER_REPORT');
   const [imageFile, setImageFile] = useState(null); // 이미지 파일
   const [imagePreview, setImagePreview] = useState(null); // 등록할때 이미지 미리보기
+  const max_length = 2000;
 
   // 문의 목록 상태
   const [myInquiries, setMyInquiries] = useState([]);
@@ -26,12 +74,76 @@ export default function UserInquiryPage() {
 
   const [loading, setLoading] = useState(false);
 
+  // 모달 상태
+  const [modal, setModal] = useState({
+    isOpen: false,
+    message: '',
+  });
+
+  // 모달 헬퍼 함수
+  const showModal = (message) => {
+    setModal({
+      isOpen: true,
+      message,
+    });
+  };
+
+  const closeModal = () => {
+    setModal({
+      isOpen: false,
+      message: '',
+    });
+  };
+
   // 카테고리 옵션 (이미지 경로 설정)
   const categories = [
     { value: 'USER_REPORT', label: '유저 신고', icon: '/images/user-inquiry/icon-siren.svg' },
     { value: 'BUG_REPORT', label: '버그 신고', icon: '/images/user-inquiry/icon-bug.svg' },
     { value: 'ETC', label: '기타', icon: '/images/user-inquiry/icon-etc.svg' },
   ];
+
+  // 카테고리별 내용 템플릿
+  const categoryTemplates = {
+    USER_REPORT: `* 신고 유저 닉네임:
+
+* 신고 사유:
+`,
+    BUG_REPORT: `* 버그 발생 위치:
+
+* 버그 내용:
+`,
+    ETC: `* 문의 내용:
+`,
+  };
+
+  // 초기 템플릿 설정
+  useEffect(() => {
+    if (activeTab === 'write' && !content.trim()) {
+      setContent(categoryTemplates[category]);
+    }
+  }, [activeTab]);
+
+  // 카테고리 변경 핸들러 (템플릿 자동 적용)
+  const handleCategoryChange = (newCategory) => {
+    setCategory(newCategory);
+
+    // 내용이 비어있거나, 기존 템플릿과 동일하면 새 템플릿으로 교체
+    const isEmptyOrTemplate =
+      !content.trim() || Object.values(categoryTemplates).some((template) => content === template);
+
+    if (isEmptyOrTemplate) {
+      setContent(categoryTemplates[newCategory]);
+    }
+    // 내용이 이미 작성되어 있으면 확인 후 교체
+    else {
+      if (window.confirm('카테고리를 변경하면 작성 중인 내용이 템플릿으로 변경됩니다.\n계속하시겠습니까?')) {
+        setContent(categoryTemplates[newCategory]);
+      } else {
+        // 취소하면 카테고리도 원래대로
+        return;
+      }
+    }
+  };
 
   // 내 문의 목록 불러오기
   useEffect(() => {
@@ -78,7 +190,7 @@ export default function UserInquiryPage() {
       }
     } catch (error) {
       console.error('문의 목록 조회 실패:', error);
-      alert('문의 목록을 불러오는데 실패했습니다.');
+      showModal('문의 목록을 불러오는데 실패했습니다.');
     } finally {
       setLoading(false);
     }
@@ -99,14 +211,14 @@ export default function UserInquiryPage() {
       // 이미지 파일 유효성 검사
       const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
       if (!allowedTypes.includes(file.type)) {
-        alert('이미지 파일만 업로드 가능합니다. (jpg, png, gif, webp)');
+        showModal('이미지 파일만 업로드 가능합니다. \n ex) jpg, png, gif, webp');
         e.target.value = '';
         return;
       }
 
       // 파일 크기 체크 (5MB)
       if (file.size > 5 * 1024 * 1024) {
-        alert('파일 크기는 5MB를 초과할 수 없습니다.');
+        showModal('파일 크기는 5MB를 초과할 수 없습니다.');
         e.target.value = '';
         return;
       }
@@ -131,7 +243,7 @@ export default function UserInquiryPage() {
   // 문의 작성
   const handleSubmitInquiry = async () => {
     if (!title.trim() || !content.trim()) {
-      alert('제목과 내용을 모두 입력해주세요! 🌿');
+      showModal('제목과 내용을 모두 입력해주세요!');
       return;
     }
 
@@ -156,7 +268,7 @@ export default function UserInquiryPage() {
         },
       });
 
-      alert('문의가 등록되었습니다! 🎉');
+      showModal('문의가 등록되었습니다!');
       setTitle('');
       setContent('');
       setCategory('USER_REPORT');
@@ -165,7 +277,7 @@ export default function UserInquiryPage() {
       setActiveTab('list');
     } catch (error) {
       console.error('문의 등록 실패:', error);
-      alert('문의 등록에 실패했습니다.');
+      showModal('문의 등록에 실패했습니다.');
     } finally {
       setLoading(false);
     }
@@ -181,7 +293,7 @@ export default function UserInquiryPage() {
       setSelectedInquiry(response.data);
     } catch (error) {
       console.error('문의 상세 조회 실패:', error);
-      alert('문의 내용을 불러오는데 실패했습니다.');
+      showModal('문의 내용을 불러오는데 실패했습니다.');
     }
   };
 
@@ -190,7 +302,7 @@ export default function UserInquiryPage() {
     const isAnswered = status === 'ANSWERED';
     return (
       <span
-        className="px-[1.25cqw] py-[0.6cqh] rounded-full text-[0.83cqw] font-bold text-white"
+        className="px-[1.25cqw] py-[0.6cqh] rounded-full text-[0.83cqw] text-white"
         style={{
           backgroundColor: isAnswered ? COLORS.userInquiry.nookMint : COLORS.userInquiry.nookCyan,
         }}
@@ -206,7 +318,7 @@ export default function UserInquiryPage() {
       USER_REPORT: {
         label: '유저 신고',
         icon: '/images/user-inquiry/icon-siren.svg',
-        bgColor: COLORS.userInquiry.creamIvory,
+        bgColor: COLORS.userInquiry.red,
         textColor: COLORS.userInquiry.darkBrown,
       },
       BUG_REPORT: {
@@ -265,8 +377,8 @@ export default function UserInquiryPage() {
             showShadow={false}
             colors={{
               text: COLORS.userInquiry.darkBrown,
-              badgeBg: '#7B6C53', // coffeeBrown
-              badgeText: '#FFFEE0', // creamIvory
+              badgeBg: COLORS.ac.coffeeBrown,
+              badgeText: COLORS.ac.creamIvory,
             }}
           />
         </div>
@@ -279,7 +391,7 @@ export default function UserInquiryPage() {
         {/* 타이틀 영역 - 상단 고정 (Config.jsx와 동일한 레이아웃) */}
         <div className="absolute top-[7cqh] left-1/2 -translate-x-1/2 flex flex-col items-center gap-[0.88cqw] w-[40cqw] z-20">
           <h1 className="text-[3.125cqw] font-black text-[#594E36] whitespace-nowrap">
-            {activeTab === 'write' ? '문의하기' : '내 문의내역'}
+            {activeTab === 'write' ? '문의하기' : '문의내역'}
           </h1>
 
           {/* Divider - 직접 점선 구현 (Config.jsx와 동일) */}
@@ -314,7 +426,7 @@ export default function UserInquiryPage() {
                   {categories.map((cat) => (
                     <button
                       key={cat.value}
-                      onClick={() => setCategory(cat.value)}
+                      onClick={() => handleCategoryChange(cat.value)}
                       className="flex items-center gap-[0.42cqw] px-[1.25cqw] py-[0.93cqh] rounded-[1.04cqw] font-bold text-[1.04cqw] transition-all"
                       style={{
                         backgroundColor:
@@ -354,8 +466,8 @@ export default function UserInquiryPage() {
                   type="text"
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
-                  placeholder="제목"
-                  className="flex-1 h-[5.56cqh] px-[1.25cqw] rounded-[1.04cqw] border-[0.16cqw] outline-none text-[1.04cqw] font-bold placeholder:text-[#D1D5DB]"
+                  placeholder="제목을 입력해주세요"
+                  className="flex-1 h-[5.56cqh] px-[1.25cqw] rounded-[1.04cqw] border-[0.16cqw] outline-none text-[1.04cqw] placeholder:text-[#D1D5DB]"
                   style={{
                     backgroundColor: COLORS.userInquiry.creamIvory,
                     borderColor: 'transparent',
@@ -378,9 +490,13 @@ export default function UserInquiryPage() {
                 <div className="flex-1 flex flex-col gap-[1.48cqh]">
                   <textarea
                     value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                    placeholder="내용"
-                    className="w-full h-[23.15cqh] p-[1.25cqw] rounded-[1.04cqw] border-[0.16cqw] outline-none text-[1.04cqw] font-bold resize-none placeholder:text-[#D1D5DB]"
+                    onChange={(e) => {
+                      if (e.target.value.length <= max_length) {
+                        setContent(e.target.value);
+                      }
+                    }}
+                    maxLength={max_length}
+                    className="w-full h-[23.15cqh] p-[1.25cqw] rounded-[1.04cqw] border-[0.16cqw] outline-none text-[1.04cqw] resize-none placeholder:text-[#D1D5DB]"
                     style={{
                       backgroundColor: COLORS.userInquiry.creamIvory,
                       borderColor: 'transparent',
@@ -389,6 +505,22 @@ export default function UserInquiryPage() {
                     onFocus={(e) => (e.target.style.borderColor = COLORS.userInquiry.yellow)}
                     onBlur={(e) => (e.target.style.borderColor = 'transparent')}
                   />
+                  {/* ✅ 글자수 표시 (오른쪽 정렬) */}
+                  <div className="flex justify-end -mt-[0.46cqh]">
+                    <span
+                      className="text-[0.73cqw] font-bold"
+                      style={{
+                        color:
+                          content.length >= max_length
+                            ? COLORS.ac.red
+                            : content.length >= max_length * 0.9
+                              ? COLORS.userInquiry.coffeeBrown
+                              : '#9CA3AF',
+                      }}
+                    >
+                      {content.length.toLocaleString()} / {max_length.toLocaleString()}
+                    </span>
+                  </div>
                   {/* 첨부파일 영역 */}
                   {!imagePreview ? (
                     // ✅ 이미지 없을 때는 기존 그대로 (라벨 없음)
@@ -402,7 +534,7 @@ export default function UserInquiryPage() {
                           border: `0.16cqw solid ${COLORS.userInquiry.darkBrown}`,
                         }}
                       >
-                        📎 이미지 첨부
+                        이미지 첨부
                       </label>
                       <input
                         type="file"
@@ -469,7 +601,7 @@ export default function UserInquiryPage() {
                 <button
                   onClick={handleSubmitInquiry}
                   disabled={loading}
-                  className="px-[3.33cqw] py-[1.39cqh] text-[1.25cqw] font-bold rounded-[1.04cqw] hover:scale-105 active:scale-95 transition-transform disabled:opacity-50"
+                  className="px-[3.33cqw] py-[1.39cqh] text-[1.25cqw] rounded-[1.04cqw] hover:scale-105 active:scale-95 transition-transform disabled:opacity-50"
                   style={{
                     backgroundColor: COLORS.userInquiry.darkBrown,
                     color: COLORS.userInquiry.creamWhite,
@@ -492,7 +624,7 @@ export default function UserInquiryPage() {
                 </div>
               ) : myInquiries.length === 0 ? (
                 <div className="flex-1 flex flex-col items-center justify-center gap-[1.85cqh]">
-                  <p className="text-[1.25cqw] font-bold text-[#9CA3AF]">아직 문의 내역이 없어요 🌿</p>
+                  <p className="text-[1.25cqw] font-bold text-[#9CA3AF]">아직 문의 내역이 없어요</p>
                 </div>
               ) : (
                 <div className="flex-1 overflow-y-auto px-[1.04cqw] py-[0.93cqh] space-y-[1.48cqh] scrollbar-thin scrollbar-thumb-[#D1D5DB] scrollbar-track-transparent">
@@ -503,9 +635,9 @@ export default function UserInquiryPage() {
                       className="bg-white px-[2.08cqw] py-[1.85cqh] rounded-[2.08cqw] flex flex-col gap-[1.11cqh] cursor-pointer hover:bg-gray-50 transition"
                     >
                       {/* 1열: 문의번호 | 날짜 */}
-                      <div className="flex justify-between items-center text-[0.83cqw] text-[#9CA3AF] font-bold">
-                        <span>[문의번호] {inquiry.id}</span>
-                        <span>{new Date(inquiry.createdAt).toLocaleDateString('ko-KR')}</span>
+                      <div className="flex justify-between items-center text-[0.83cqw] text-[#9CA3AF]">
+                        <span>No. {inquiry.id}</span>
+                        <span>{formatDate(inquiry.createdAt)}</span>
                       </div>
 
                       {/* 2열: 제목 */}
@@ -532,7 +664,7 @@ export default function UserInquiryPage() {
                         className="px-[1.67cqw] py-[0.93cqh] text-[0.83cqw] font-bold rounded-[1.04cqw] transition"
                         style={{
                           backgroundColor: COLORS.userInquiry.creamIvory,
-                          color: '#F57F17',
+                          color: COLORS.primary,
                         }}
                       >
                         {loading ? '로딩 중...' : '더 보기'}
@@ -558,28 +690,25 @@ export default function UserInquiryPage() {
         <div className="flex gap-[1.04cqw] mt-[2.78cqh]">
           <button
             onClick={() => setActiveTab('write')}
-            className={`px-[2.5cqw] py-[1.39cqh] rounded-[2.08cqw] text-[1.25cqw] font-bold transition-transform hover:scale-105 active:scale-95`}
+            className={`px-[2.5cqw] py-[1.39cqh] rounded-[2.08cqw] text-[1.25cqw] transition-transform hover:scale-105 active:scale-95`}
             style={{
               backgroundColor: activeTab === 'write' ? COLORS.userInquiry.nookMint : '#E5E7EB',
-              color: activeTab === 'write' ? 'white' : '#9CA3AF',
+              color: activeTab === 'write' ? 'white' : COLORS.text,
             }}
           >
             문의작성
           </button>
           <button
             onClick={() => setActiveTab('list')}
-            className={`px-[2.5cqw] py-[1.39cqh] rounded-[2.08cqw] text-[1.25cqw] font-bold transition-transform hover:scale-105 active:scale-95`}
+            className={`px-[2.5cqw] py-[1.39cqh] rounded-[2.08cqw] text-[1.25cqw] transition-transform hover:scale-105 active:scale-95`}
             style={{
               backgroundColor: activeTab === 'list' ? COLORS.userInquiry.nookCyan : '#E5E7EB',
-              color: activeTab === 'list' ? 'white' : '#9CA3AF',
+              color: activeTab === 'list' ? 'white' : COLORS.text,
             }}
           >
             내 문의내역
           </button>
         </div>
-
-        {/* 나가기 버튼 */}
-        <ExitButton onClick={() => navigate('/home')} className="absolute bottom-[2.78cqh] right-[2.08cqw]" />
 
         {/* 문의 상세 모달 */}
         {selectedInquiry && (
@@ -598,12 +727,10 @@ export default function UserInquiryPage() {
                     <CategoryBadge category={selectedInquiry.category} />
                     <StatusBadge status={selectedInquiry.status} />
                   </div>
-                  <h2 className="text-[1.67cqw] font-black" style={{ color: COLORS.userInquiry.darkBrown }}>
+                  <h3 className="text-[1.67cqw] font-black" style={{ color: COLORS.userInquiry.darkBrown }}>
                     {selectedInquiry.title}
-                  </h2>
-                  <span className="text-[0.83cqw] text-[#9CA3AF]">
-                    {new Date(selectedInquiry.createdAt).toLocaleDateString('ko-KR')}
-                  </span>
+                  </h3>
+                  <span className="text-[0.83cqw] text-[#9CA3AF]">{formatDate(selectedInquiry.createdAt)}</span>
                 </div>
                 <button
                   onClick={() => setSelectedInquiry(null)}
@@ -617,10 +744,10 @@ export default function UserInquiryPage() {
                 className="p-[1.25cqw] rounded-[1.04cqw] mb-[1.85cqh]"
                 style={{ backgroundColor: COLORS.userInquiry.creamIvory }}
               >
-                <h3 className="text-[1.04cqw] font-bold mb-[0.93cqh]" style={{ color: COLORS.userInquiry.darkBrown }}>
-                  📝 문의 내용
+                <h3 className="text-[1.04cqw] mb-[0.93cqh]" style={{ color: COLORS.userInquiry.darkBrown }}>
+                  문의 내용
                 </h3>
-                <p className="text-[0.94cqw] text-[#4B5563] whitespace-pre-wrap leading-relaxed">
+                <p className="text-[1.29cqw] text-[#4B5563] whitespace-pre-wrap leading-relaxed">
                   {selectedInquiry.content}
                 </p>
 
@@ -631,7 +758,7 @@ export default function UserInquiryPage() {
                       className="text-[0.94cqw] font-bold mb-[0.93cqh]"
                       style={{ color: COLORS.userInquiry.darkBrown }}
                     >
-                      📎 첨부 이미지
+                      첨부 이미지
                     </h4>
                     <img
                       src={selectedInquiry.imageUrl}
@@ -645,23 +772,24 @@ export default function UserInquiryPage() {
 
               {selectedInquiry.answer ? (
                 <div className="bg-[#E8F5E9] p-[1.25cqw] rounded-[1.04cqw] border-[0.16cqw] border-[#81C784]">
-                  <h3 className="text-[1.04cqw] font-bold text-[#2E7D32] mb-[0.93cqh]">💬 답변</h3>
+                  <h3 className="text-[1.04cqw] text-[#2E7D32] mb-[0.93cqh]">답변</h3>
                   <p className="text-[0.94cqw] text-[#1B5E20] whitespace-pre-wrap leading-relaxed mb-[0.93cqh]">
                     {selectedInquiry.answer.content}
                   </p>
                   <span className="text-[0.73cqw] text-[#4CAF50]">
-                    답변일: {new Date(selectedInquiry.answer.createdAt).toLocaleDateString('ko-KR')}
+                    답변일: {formatDate(selectedInquiry.answer.createdAt)}
                   </span>
                 </div>
               ) : (
                 <div className="bg-[#F3F4F6] p-[1.25cqw] rounded-[1.04cqw] flex justify-center">
-                  <span className="text-[0.94cqw] font-bold text-[#9CA3AF]">⏳ 아직 답변이 등록되지 않았어요</span>
+                  <span className="text-[0.94cqw] text-[#9CA3AF]"> 아직 답변 등록 전입니다..</span>
                 </div>
               )}
             </div>
           </div>
         )}
       </div>
+      {modal.isOpen && <Modal message={modal.message} onConfirm={closeModal} />}
     </AspectLayout>
   );
 }
