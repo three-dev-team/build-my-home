@@ -16,4 +16,6 @@ public interface GameStateService {
 
     // 서버 메모리에 있는 현재 진행 중인 모든 방의 게임 상태를 가져오기
     Map<Long, GameState> getAllGames();
+
+    String removePlayerFromGame(Long roomId, Long memberId);
 }

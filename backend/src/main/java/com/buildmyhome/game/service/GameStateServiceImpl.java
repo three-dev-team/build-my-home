@@ -5,12 +5,15 @@ import com.buildmyhome.game.dto.GamePlayerState;
 import com.buildmyhome.game.dto.GameState;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.buildmyhome.game.dto.GameStatus;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+@Slf4j
 @Service
 public class GameStateServiceImpl implements GameStateService {
 
@@ -118,6 +121,73 @@ public class GameStateServiceImpl implements GameStateService {
     @Override
     public Map<Long, GameState> getAllGames() {
         return gameStates;
+    }
+
+    // 이탈 플레이어 게임에서 제거 메소드
+    @Override
+    public String removePlayerFromGame(Long roomId, Long memberId) {
+        GameState gameState = gameStates.get(roomId);
+        if (gameState == null) return "GAME_NOT_FOUND";
+
+        synchronized (gameState) {
+            // 1. 이탈한 플레이어 마킹
+            GamePlayerState player = gameState.getPlayers().get(memberId);
+            if (player == null) return "PLAYER_NOT_FOUND";
+            player.setDisconnected(true);
+            player.setDisconnectedAt(java.time.LocalDateTime.now());
+
+            // 2. turnOrder에서 제거
+            List<Long> turnOrder = gameState.getTurnOrder();
+            int idx = turnOrder.indexOf(memberId);
+            // 현재턴이 이탈한 플레이어 턴이었을 경우 방어 위한 필드
+            boolean wasCurrentTurn = memberId.equals(gameState.getCurrentPlayerId());
+
+            // 이미 제거되었을겨우(이탈 3중 방어 관련)
+            if (idx == -1) {
+                log.info(">>> ⚠️ 이미 turnOrder에서 제거된 플레이어 - memberId: {}, roomId: {}", memberId, roomId);
+                return "PLAYER_ALREADY_REMOVED";
+            }
+
+            turnOrder.remove(idx);
+
+            // 3. 남은 플레이어 1명 이하면 게임 종료
+            if (turnOrder.size() <= 1) {
+                log.info(">>> ⚠️플레이어 이탈로 게임 종료 - 남은 인원: {}, roomId: {}", turnOrder.size(), roomId);
+                gameState.clearCurrentTimeout();
+                calculateRanking(roomId);
+                gameState.setStatus(GameStatus.FINISHED);
+                gameState.setGameOver(true);
+                return "GAME_OVER";
+            }
+
+            // 4. 인덱스 보정
+            int currentIdx = gameState.getCurrentTurnIndex();
+            if (wasCurrentTurn) {
+                // 막턴인 사람이 나갔을 경우
+                if (currentIdx >= turnOrder.size()) {
+                    gameState.setCurrentTurnIndex(0);
+                    turnToNextRound(gameState);
+                }
+                // 새 현재 플레이어 세팅
+                // 막턴이었던 사람이 나가면 0번째 사람 차례로 세팅
+                Long updatedPlayerId = turnOrder.get(gameState.getCurrentTurnIndex());
+                gameState.setCurrentPlayerId(updatedPlayerId);
+                GamePlayerState updatedPlayer = gameState.getPlayers().get(updatedPlayerId);
+                if (updatedPlayer != null) {
+                    updatedPlayer.clearTurnData();
+                    updatedPlayer.setItemUsed(false);
+                    gameState.setLeftPlayerId(memberId);  // 이탈한 플레이어 ID 저장
+                    gameState.setStatus(GameStatus.PLAYER_LEFT);
+                    gameState.setStatusUpdatedAt(java.time.LocalDateTime.now());
+                }
+                return "NEXT_TURN";
+
+            } else if (idx < currentIdx) {
+                // 현재턴보다 앞 사람이 빠짐, 현재턴인사람 idx 조정
+                gameState.setCurrentTurnIndex(currentIdx - 1);
+            }
+            return "REMOVED";
+        }
     }
 
     // 라운드 증가 처리 메서드

@@ -42,6 +42,8 @@ import CustomDice from './itemEffect/CustomDice.jsx';
 import GoldDice from './itemEffect/GoldDice.jsx';
 import DoubleDice from './itemEffect/DoubleDice.jsx';
 import { leaveGame, leaveGameBeacon } from '../../utils/leaveUtils.js';
+import PlayerLeft from './PlayerLeft.jsx';
+import AutoMove from '../../components/common/AutoMove.jsx';
 
 const GamePage = () => {
   // 라우트 파라미터/네비게이션 핸들러
@@ -60,6 +62,16 @@ const GamePage = () => {
 
   // STOMP client 인스턴스 저장(연결 후 set)
   const [stompClient, setStompClient] = useState(null);
+
+  // 유저 이탈 시 토스트
+  const [disconnectToast, setDisconnectToast] = useState(null);
+  const toastTimerRef = useRef(null);
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+    };
+  }, []);
+
 
   // 인벤토리,ATM 어디서 열었는지 기억(BOARD/HOUSE)
   const inventoryOriginRef = useRef(null);
@@ -303,6 +315,15 @@ const GamePage = () => {
             return;
           }
 
+          // PLAYER_DISCONNECTED: 비현재턴 이탈 시 토스트
+          if (t === 'PLAYER_DISCONNECTED') {
+            if (gameState?.status === 'PLAYER_LEFT') return; // 중복 방지(선택)
+            setDisconnectToast(data.nickname);
+            if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+            toastTimerRef.current = setTimeout(() => setDisconnectToast(null), 3000);
+            return;
+          }
+
           // 기본: 서버에서 온 gameState로 동기화
           if (data && typeof data === 'object' && 'status' in data) {
             setGameState(data);
@@ -542,6 +563,16 @@ const GamePage = () => {
         <div className="game-bg" aria-hidden="true" style={cssVars} />
 
         <div className="game-stage">
+          {/* 이탈 유저 토스트 */}
+          {disconnectToast && (
+            <div style={{ position: 'absolute', top: 'calc(40 * var(--s))', left: '50%', transform: 'translateX(-50%)', zIndex: 99999 }}>
+              <AutoMove
+                text={`${disconnectToast}의 연결이 끊어졌습니다`}
+                widthPx={600}
+              />
+            </div>
+          )}
+
           {/* 상단 턴 카운터/시세/무 안내(HUD) */}
           {shouldShowHud && (
             <TurnCounter
@@ -701,6 +732,15 @@ const GamePage = () => {
                 key={currentPlayer?.memberId}
                 isMyTurn={isMyTurn}
                 player={currentPlayer}
+                onExit={handleEventComplete}
+              />
+            )}
+
+            {/* 유저 이탈 알림 */}
+            {gameState.status === 'PLAYER_LEFT' && (
+              <PlayerLeft
+                player={playersArr.find(p => Number(p.memberId) === Number(gameState.leftPlayerId))}
+                isMyTurn={isMyTurn}
                 onExit={handleEventComplete}
               />
             )}
