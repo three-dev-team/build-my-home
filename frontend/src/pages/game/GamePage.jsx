@@ -551,6 +551,10 @@ const GamePage = () => {
     );
   }
 
+  console.log('players:', gameState.players);
+  console.log('originalTurnOrder:', gameState.originalTurnOrder);
+  console.log('turnOrder:', gameState.turnOrder);
+
   // 낚시 페이즈인지(상태 + 소켓 연결 확인)
   const isFishingPhase = ['WAITING_FISHING', 'FISHING_IN_PROGRESS'].includes(gameState?.status);
   const showInventorySpectatorWait = isSpectatorWait && !!inventoryUsingMemberId;
@@ -1058,6 +1062,7 @@ const GamePage = () => {
               currentPlayerId={gameState.currentPlayerId}
               myId={myId}
               turnOrder={gameState.turnOrder || []}
+              originalTurnOrder={gameState.originalTurnOrder || gameState.turnOrder || []}
             />
           )}
         </div>

@@ -76,17 +76,29 @@ public class GameLeaveController {
         String result = gameStateService.removePlayerFromGame(roomId, memberId);
 
         // 2. 다른 플레이어들에게 알림
-        messagingTemplate.convertAndSend(
-                "/topic/games/" + roomId,
-                Map.of(
-                        "type", "PLAYER_DISCONNECTED",
-                        "memberId", memberId,
-                        "nickname", player.getNickname()
-                )
-        );
+//        messagingTemplate.convertAndSend(
+//                "/topic/games/" + roomId,
+//                Map.of(
+//                        "type", "PLAYER_DISCONNECTED",
+//                        "memberId", memberId,
+//                        "nickname", player.getNickname()
+//                )
+//        );
+
+        // 2. 비현재 턴 이탈만 토스트 알림
+        if ("REMOVED".equals(result)) {
+            messagingTemplate.convertAndSend(
+                    "/topic/games/" + roomId,
+                    Map.of(
+                            "type", "PLAYER_DISCONNECTED",
+                            "memberId", memberId,
+                            "nickname", player.getNickname()
+                    )
+            );
+        }
 
         // 3. 결과에 따라 gameState 브로드캐스트
-        if ("GAME_OVER".equals(result) || "NEXT_TURN".equals(result)) {
+        if ("GAME_OVER".equals(result) || "NEXT_TURN".equals(result) || "REMOVED".equals(result)) {
             messagingTemplate.convertAndSend("/topic/games/" + roomId, gameState);
         }
     }

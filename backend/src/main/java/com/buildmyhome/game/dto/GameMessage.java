@@ -29,6 +29,10 @@ public class GameMessage {
     private int uiStep;
     private List<Integer> movePath; // 플레이어 이동 경로 (칸 인덱스 리스트) -> 프론트 이동 애니메이션용
 
+    // 이탈자 처리
+    private List<Long> originalTurnOrder;
+    private Long leftPlayerId;
+
     private ShopSession shopSession;
     private ShopItemType shopItemType; // 구매할 아이템
     private ResourceType resourceType; // 구매/판매할 재화

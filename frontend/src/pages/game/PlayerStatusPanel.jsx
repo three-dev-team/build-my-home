@@ -96,30 +96,52 @@ const buildRankMap = (players) => {
 };
 
 // turnOrder 기준으로 "현재 턴부터" 시작하도록 players 회전
-const buildTurnRotatedPlayers = (players, turnOrder, currentPlayerId) => {
+const buildTurnRotatedPlayers = (players, turnOrder, currentPlayerId, originalTurnOrder) => {
   const list = Array.isArray(players) ? players.slice() : [];
-  const order = Array.isArray(turnOrder) ? turnOrder.map((x) => Number(x)) : [];
+  const origOrder = Array.isArray(originalTurnOrder) ? originalTurnOrder.map((x) => Number(x)) : [];
   const curId = Number(currentPlayerId);
-
-  if (!order.length || !curId) return list;
-
   const byId = new Map(list.map((p) => [Number(p?.memberId), p]));
-  const idx = order.findIndex((id) => id === curId);
+
+  // fallback: 비정상이면 originalTurnOrder 기준 정렬
+  if (!curId || !origOrder.length) {
+    if (origOrder.length) {
+      return origOrder.map((id) => byId.get(id)).filter(Boolean);
+    }
+    return list;
+  }
+
+  // originalTurnOrder 기준으로 현재 턴부터 회전
+  const idx = origOrder.findIndex((id) => id === curId);
   if (idx < 0) return list;
+  const rotated = origOrder.slice(idx).concat(origOrder.slice(0, idx));
 
-  const rotatedIds = order.slice(idx).concat(order.slice(0, idx));
-  const rotatedPlayers = rotatedIds.map((id) => byId.get(id)).filter(Boolean);
-
-  // turnOrder 누락 플레이어 보정
-  const included = new Set(rotatedPlayers.map((p) => Number(p?.memberId)));
-  const extras = list.filter((p) => !included.has(Number(p?.memberId)));
-
-  return rotatedPlayers.concat(extras);
+  return rotated.map((id) => byId.get(id)).filter(Boolean);
 };
 
-export default function PlayerStatusPanel({ players = [], currentPlayerId, myId, turnOrder = [] }) {
+// const buildTurnRotatedPlayers = (players, turnOrder, currentPlayerId) => {
+//   const list = Array.isArray(players) ? players.slice() : [];
+//   const order = Array.isArray(turnOrder) ? turnOrder.map((x) => Number(x)) : [];
+//   const curId = Number(currentPlayerId);
+//
+//   if (!order.length || !curId) return list;
+//
+//   const byId = new Map(list.map((p) => [Number(p?.memberId), p]));
+//   const idx = order.findIndex((id) => id === curId);
+//   if (idx < 0) return list;
+//
+//   const rotatedIds = order.slice(idx).concat(order.slice(0, idx));
+//   const rotatedPlayers = rotatedIds.map((id) => byId.get(id)).filter(Boolean);
+//
+//   // turnOrder 누락 플레이어 보정
+//   const included = new Set(rotatedPlayers.map((p) => Number(p?.memberId)));
+//   const extras = list.filter((p) => !included.has(Number(p?.memberId)));
+//
+//   return rotatedPlayers.concat(extras);
+// };
+
+export default function PlayerStatusPanel({ players = [], currentPlayerId, myId, turnOrder = [], originalTurnOrder = [] }) {
   // 카드 배치용(현재 턴부터) players
-  const rotatedPlayers = buildTurnRotatedPlayers(players, turnOrder, currentPlayerId);
+  const rotatedPlayers = buildTurnRotatedPlayers(players, turnOrder, currentPlayerId, originalTurnOrder);
   // 랭킹 표시용(memberId -> rankNum)
   const rankMap = buildRankMap(players);
 
@@ -158,7 +180,7 @@ export default function PlayerStatusPanel({ players = [], currentPlayerId, myId,
           return (
             <div
               key={pid}
-              className={`ps-card ${isCurrentTurn ? 'is-current' : ''} ${isMe ? 'is-me' : ''}`}
+              className={`ps-card ${isCurrentTurn ? 'is-current' : ''} ${isMe ? 'is-me' : ''} ${player?.disconnected ? 'is-disconnected' : ''}`}
             >
               <div className="ps-box">
                 {/* 집/랭크 */}

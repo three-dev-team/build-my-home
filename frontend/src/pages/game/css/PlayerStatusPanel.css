@@ -196,3 +196,8 @@
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
+/* 이탈 플레이어 반투명 */
+.ps-card.is-disconnected {
+    opacity: 0.4;
+}
