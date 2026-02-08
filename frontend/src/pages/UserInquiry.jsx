@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import TopButtons from '../components/common/TopButtons';
@@ -103,45 +103,53 @@ export default function UserInquiryPage() {
   ];
 
   // 카테고리별 내용 템플릿
-  const categoryTemplates = {
-    USER_REPORT: `* 신고 유저 닉네임:
+  const categoryTemplates = useMemo(
+    () => ({
+      USER_REPORT: `* 신고 유저 닉네임:
 
 * 신고 사유:
 `,
-    BUG_REPORT: `* 버그 발생 위치:
+      BUG_REPORT: `* 버그 발생 위치:
 
 * 버그 내용:
 `,
-    ETC: `* 문의 내용:
+      ETC: `* 문의 내용:
 `,
-  };
+    }),
+    [],
+  );
 
   // 초기 템플릿 설정
   useEffect(() => {
     if (activeTab === 'write' && !content.trim()) {
       setContent(categoryTemplates[category]);
     }
-  }, [activeTab]);
+  }, [activeTab, category, categoryTemplates]); // deps 완성
 
   // 카테고리 변경 핸들러 (템플릿 자동 적용)
   const handleCategoryChange = (newCategory) => {
-    setCategory(newCategory);
+    // 현재 카테고리와 같으면 아무것도 안 함
+    if (newCategory === category) {
+      return;
+    }
 
     // 내용이 비어있거나, 기존 템플릿과 동일하면 새 템플릿으로 교체
     const isEmptyOrTemplate =
       !content.trim() || Object.values(categoryTemplates).some((template) => content === template);
 
     if (isEmptyOrTemplate) {
+      // 즉시 변경
+      setCategory(newCategory);
       setContent(categoryTemplates[newCategory]);
     }
     // 내용이 이미 작성되어 있으면 확인 후 교체
     else {
       if (window.confirm('카테고리를 변경하면 작성 중인 내용이 템플릿으로 변경됩니다.\n계속하시겠습니까?')) {
+        // 확인 후에만 변경
+        setCategory(newCategory);
         setContent(categoryTemplates[newCategory]);
-      } else {
-        // 취소하면 카테고리도 원래대로
-        return;
       }
+      // 취소하면 아무것도 안 함 (category는 이전 값 유지)
     }
   };
 
@@ -782,7 +790,7 @@ export default function UserInquiryPage() {
                 </div>
               ) : (
                 <div className="bg-[#F3F4F6] p-[1.25cqw] rounded-[1.04cqw] flex justify-center">
-                  <span className="text-[0.94cqw] text-[#9CA3AF]"> 아직 답변 등록 전입니다..</span>
+                  <span className="text-[0.94cqw] text-[#9CA3AF]">답변 등록 전입니다.</span>
                 </div>
               )}
             </div>
