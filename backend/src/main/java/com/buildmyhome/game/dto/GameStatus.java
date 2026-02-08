@@ -15,6 +15,7 @@ public enum GameStatus {
     WAITING_DICE(20), // 주사위 굴리기 대기
     ROLLING_DICE(10), // 주사위 굴리는 중 (애니메이션 연출 시간 확보용)
     PLAYER_SKIPPED(0), // 플레이어 스킵 턴 상태(프론트에서 타임아웃 처리)
+    PLAYER_LEFT(0),    // 플레이어 이탈 상태(연출 후 다음 턴으로)
     MOVING(0), // 캐릭터 이동 중 (애니메이션 연출 시간 확보용)
     WAITING_HOUSE(0), // 집짓기
     WAITING_RADISH_SELL(0), // 무 판매 화면
@@ -49,7 +50,6 @@ public enum GameStatus {
 
     // --- 다음 턴으로 넘어가기 전 ---
     TURN_END_PENDING(0), // 턴 종료 전 확인 단계
-
     FINISHED(0); // 결과 페이지
 
     private final int timeoutSeconds;
