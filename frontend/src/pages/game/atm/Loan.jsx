@@ -3,7 +3,6 @@ import React, { useMemo, useState, useEffect, useRef, useCallback } from 'react'
 import { useGameTimer } from '../../../hooks/useGameTimer.js';
 import { CHARACTERS } from '../../../constants/characters.js';
 import { COLORS } from '../../../constants/colors.js';
-import { iGa, eulReul } from '../../constants/josa.js';
 
 import LoanView from './LoanView.jsx';
 const LOADING_MS = 3000;
@@ -241,8 +240,8 @@ export default function Loan({
       return '';
     }
 
-    if (!Number.isFinite(val) || val <= 0) return '상환할 금액을 입력해줘.';
-    if (val > repayMax) return '상환 가능한 금액을 초과했어.';
+    if (!Number.isFinite(val) || val <= 0) return '상환할 금액을 입력해주세요';
+    if (val > repayMax) return '상환 가능한 금액을 초과했습니다';
     return '';
   };
 

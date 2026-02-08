@@ -4,7 +4,7 @@ import './css/RollDicePage.css';
 import { CHARACTERS } from '../../constants/characters.js';
 import Shadow from '../../components/common/Shadow.jsx'
 import useSpaceKey from '../../hooks/useSpaceKey.js';
-import { iGa } from '../../constants/josa.js';
+import { iGa } from '../../utils/josa.js';
 
 const RollDicePage = ({ currentPlayer, isMyTurn, diceValue, isRolling, onRollComplete, onAnimationEnd }) => {
   // 스페이스바 핸들러

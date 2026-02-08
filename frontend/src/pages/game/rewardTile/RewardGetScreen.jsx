@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Subtitle from '../../../components/common/Subtitle.jsx';
 import AutoMove from '../../../components/common/AutoMove.jsx';
 import { koName, rewardImageSrc } from '../../../constants/reward.js';
-import { waGwa, iGa, eulReul } from '../../../constants/josa.js';
+import { waGwa, iGa, eulReul } from '../../../utils/josa.js';
 import { isAnyRewardNeededForNextLevel } from '../../../constants/houseLevel.js';
 import { COLORS } from '../../../constants/colors.js';
 import Shadow from '../../../components/common/Shadow.jsx';

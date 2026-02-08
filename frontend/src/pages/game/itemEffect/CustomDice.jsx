@@ -5,7 +5,7 @@ import { CHARACTERS } from '../../../constants/characters.js';
 import '../css/RollDicePage.css';
 import useSpaceKey from '../../../hooks/useSpaceKey.js';
 import useArrowKey from '../../../hooks/useArrowKey.js';
-import { iGa } from '../../../constants/josa.js';
+import { iGa } from '../../../utils/josa.js';
 
 const DICE_IMAGES = Array.from({ length: 6 }, (_, i) => `/images/dice/custom-dice-${i + 1}.webp`);
 
