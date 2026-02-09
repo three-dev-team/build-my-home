@@ -422,9 +422,6 @@ const GamePage = () => {
 
     // 언마운트 시 연결 해제
     return () => {
-      if (!gameCancelledRef.current && client.active && client.connected) {
-        leaveGame(client, roomId);
-      }
       if (client.active) {
         client.deactivate();
         setStompClient(null);
@@ -432,17 +429,6 @@ const GamePage = () => {
       }
     };
   }, [roomId, token, navigate, myId]);
-
-  // 탭 닫기/새로고침 시 서버에 leave 알림
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      if (!gameCancelledRef.current) {
-        leaveGameBeacon(roomId);
-      }
-    };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [roomId]);
 
   // ---------------------- [END]: 보안 관련된 코드입니다 수정 시 담당자 보고 후 수정 ---------------------- //
 
@@ -598,8 +584,11 @@ const GamePage = () => {
 
   // 룸 나가기(룸리스트 leave publish)
   const handleLeaveRoom = () => {
-    if (!stompClient) return;
-    console.log('>>> 🚪 Explicit Leave Room Triggered');
+    if (!stompClient?.connected) return;
+    stompClient.publish({
+      destination: '/app/games/leave',
+      body: JSON.stringify({ roomId: Number(roomId) }),
+    });
     stompClient.publish({
       destination: '/app/roomlist/rooms/leave',
       body: JSON.stringify({ roomId: Number(roomId) }),
@@ -638,7 +627,13 @@ const GamePage = () => {
         <div className="game-stage">
           {/* 이탈 유저 토스트 */}
           {disconnectToast && (
-            <div style={{ position: 'absolute', top: 'calc(40 * var(--s))', left: '50%', transform: 'translateX(-50%)', zIndex: 99999 }}>
+            <div style={{
+              position: 'absolute',
+              top: 'calc(40 * var(--s))',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 99999,
+            }}>
               <AutoMove
                 text={`${disconnectToast}의 연결이 끊어졌습니다`}
                 widthPx={600}
@@ -1003,7 +998,8 @@ const GamePage = () => {
                     body: JSON.stringify({ roomId, type: 'GOLD_DICE_ROLL' }),
                   });
                 }}
-                onAnimationEnd={() => {}}
+                onAnimationEnd={() => {
+                }}
                 onComplete={() => {
                   stompClient.publish({
                     destination: '/app/games/action',
