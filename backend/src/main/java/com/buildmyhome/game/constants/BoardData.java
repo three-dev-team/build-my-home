@@ -2,35 +2,37 @@ package com.buildmyhome.game.constants;
 
 import com.buildmyhome.game.dto.GameStatus;
 
-// TODO: 반드시 프론트 데이터(boardData.js)와 일치해야 함
-
 public class BoardData {
 
     private static final TileType[] TILES = {
             TileType.START, // 0
-            TileType.RESOURCE, // 1
-            TileType.HARVEST, // 2
-            TileType.SHOP, // 3
-            TileType.STAMP_GAPDOL, // 4
+            TileType.FISHING, // 1
+            TileType.MUPANI, // 2
+            TileType.HARVEST, // 3
+            TileType.ITEM, // 4
             TileType.RESOURCE, // 5
-            TileType.LOAN, // 6
-            TileType.HARVEST, // 7
-            TileType.ITEM, // 8
-            TileType.STAMP_MUSEUM, // 9
-            TileType.RESOURCE, // 10
-            TileType.FISHING, // 11
-            TileType.KK, // 12
-            TileType.HARVEST, // 13
-            TileType.STAMP_AIRPORT, // 14
-            TileType.MACHURILLA, // 15
-            TileType.RESOURCE, // 16
-            TileType.HARVEST, // 17
-            TileType.SWAP, // 18
-            TileType.RESOURCE, // 19
-            TileType.ITEM, // 20
-            TileType.MUPANI, // 21
-            TileType.HARVEST, // 22
-            TileType.FISHING, // 23
+            TileType.HARVEST, // 6
+            TileType.STAMP_AIRPORT, // 7
+            TileType.SHOP, // 8
+            TileType.MACHURILLA, // 9
+            TileType.LOAN, // 10
+            TileType.HARVEST, // 11
+            TileType.FISHING, // 12
+            TileType.RESOURCE, // 13
+            TileType.KK, //14
+            TileType.HARVEST, // 15
+            TileType.STAMP_MUSEUM, // 16
+            TileType.ITEM, // 17
+            TileType.HARVEST, // 18
+            TileType.LOAN, // 19
+            TileType.RESOURCE, // 20
+            TileType.SHOP, // 21
+            TileType.SWAP, // 22
+            TileType.SWAP, // 23
+            TileType.STAMP_GAPDOL, // 24
+            TileType.HARVEST, // 25
+            TileType.FISHING, // 26
+            TileType.RESOURCE, // 27
     };
 
     public static TileType getTileType(int position) {

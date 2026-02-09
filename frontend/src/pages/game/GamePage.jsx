@@ -36,7 +36,7 @@ import Swap from './swap/Swap.jsx';
 
 import Subtitle from '../../components/common/Subtitle.jsx';
 import DialogBox from '../../components/common/DialogBox.jsx';
-import { COLORS } from '../../constants/colors.js';
+import { COLORS, withAlpha } from '../../constants/colors.js';
 import { CHARACTERS } from '../../constants/characters.js';
 import CustomDice from './itemEffect/CustomDice.jsx';
 import GoldDice from './itemEffect/GoldDice.jsx';
@@ -198,7 +198,7 @@ const GamePage = () => {
   // 배경 이미지
   const BG = {
     ATM: '/images/board/bg-atm.webp',
-    BOARD: '/images/bg-home.png',
+    BOARD: '/images/bg-board.webp',
   };
 
   const bgImage = useMemo(() => {
@@ -218,8 +218,21 @@ const GamePage = () => {
     if (status === 'WAITING_HOUSE') return `url('${houseBgUrl}')`;
     return `url('${BG.BOARD}')`;
   }, [atmOpen, atmUsingMemberId, inventoryOpen, inventoryUsingMemberId, status, houseBgUrl]);
-  const cssVars = useMemo(() => ({ '--bg-image': bgImage }), [bgImage]);
 
+  const cssVars = useMemo(
+    () => ({
+      '--bg-image': bgImage,
+      '--hud-white-65': withAlpha(COLORS.ac.white, 0.65),
+      '--hud-white-88': withAlpha(COLORS.ac.white, 0.88),
+      '--hud-white-92': withAlpha(COLORS.ac.white, 0.92),
+      '--hud-white-95': withAlpha(COLORS.ac.white, 0.95),
+      '--hud-glass-14': withAlpha(COLORS.ac.white, 0.14),
+      '--hud-glass-18': withAlpha(COLORS.ac.white, 0.18),
+      '--hud-glass-20': withAlpha(COLORS.ac.white, 0.20),
+      '--shadow-25': withAlpha(COLORS.ac.black, 0.25),
+    }),
+    [bgImage]
+  );
 
   // ---------------------- [START]: 보안 관련된 코드입니다 수정 시 담당자(@Tiffany) 보고 후 수정 ---------------------- //
   // 잘못된 경로로 게임 페이지에 들어오는 걸 막는 코드
