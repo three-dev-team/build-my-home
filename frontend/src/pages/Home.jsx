@@ -15,6 +15,7 @@ export default function Home() {
   const [suspendedUntil, setSuspendedUntil] = useState(null);
   const navigate = useNavigate();
   const audioRef = useRef(null);
+  const videoRef = useRef(null);
 
   // --- (오디오 체크) ---
   useEffect(() => {
@@ -106,6 +107,10 @@ export default function Home() {
     }
   };
 
+  const handleBackgroundClick = () => {
+    handleGameStart();
+  };
+
   // 정지 해제 시간 포맷
   const formatSuspendedUntil = () => {
     if (!suspendedUntil) return '';
@@ -124,50 +129,74 @@ export default function Home() {
   return (
     <AspectLayout>
       <div
-        className={`relative w-full h-full bg-black bg-cover bg-center flex items-center justify-center overflow-hidden font-gosanja bg-[url('/images/bg-home.png')] transition-opacity duration-1000 ${
+        onClick={handleBackgroundClick}
+        className={`relative w-full h-full bg-black bg-cover bg-center flex items-center justify-center overflow-hidden font-gosanja] transition-opacity duration-1000 ${
           fadeIn ? 'opacity-100' : 'opacity-0'
         }`}
       >
-        {/* 2. 상단 우측 메뉴 (TopButtons 컴포넌트 사용) 
+        {/* 배경 비디오 */}
+        <video
+          ref={videoRef}
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="absolute top-0 left-0 w-full h-full object-cover pointer-events-none"
+          style={{ zIndex: 0 }}
+        >
+          <source src="/video/bg-home.mp4" type="video/mp4" />
+        </video>
+
+        {/* 배경음악 */}
+        <audio ref={audioRef} src="/sound/intro.mp3" loop />
+
+        {/* 2. 상단 우측 메뉴 (TopButtons 컴포넌트 사용)
             - Top: 3.7cqh
             - Right: 2.08cqw
         */}
-        <TopButtons
-          nickname={isLoggedIn ? nickname : '로그인'}
-          profileImage={profileImage}
-          onProfileClick={() => navigate(isLoggedIn ? '/myPage' : '/login')}
-          onBellClick={() => navigate('/notifications')}
-          onConfigClick={() => navigate('/config')}
-          colors={{
-            text: '#594E36',
-            badgeBg: '#7B6C53', // coffeeBrown
-            badgeText: '#FFFEE0', // creamIvory
-          }}
+        <div
           className={`absolute top-[3.7cqh] right-[2.08cqw] z-50 ${uiTransitionClass}`}
-        />
+          onClick={(e) => e.stopPropagation()}
+        >
+          <TopButtons
+            nickname={isLoggedIn ? nickname : '로그인'}
+            profileImage={profileImage}
+            onProfileClick={() => navigate(isLoggedIn ? '/myPage' : '/login')}
+            onBellClick={() => navigate('/notifications')}
+            onConfigClick={() => navigate('/config')}
+            colors={{
+              text: '#594E36',
+              badgeBg: '#7B6C53', // coffeeBrown
+              badgeText: '#FFFEE0', // creamIvory
+            }}
+          />
+        </div>
 
         {/*<audio ref={audioRef} src="/sounds/home_bgm.mp3" loop />*/}
 
-        {/* 1. 상단 좌측 로고 (위치/크기 조정) 
+        {/* 1. 상단 좌측 로고 (위치/크기 조정)
             - Top: 20px -> 1.04cqw
             - Left: 56px -> 2.92cqw
             - Width: 360px -> 18.75cqw
             - Height: 180px -> 9.38cqw
             - Image Width: 634px -> 33cqw (컨테이너보다 큼. 원본 유지 위해 w-[33cqw] 사용하거나 컨테이너에 맞춤)
         */}
-        <header className={`absolute top-[1.04cqw] left-[2.92cqw] z-10 ${uiTransitionClass}`}>
+        <header
+          className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 ${uiTransitionClass}`}
+          onClick={(e) => e.stopPropagation()}
+        >
           <Link to="/home" className="inline-block hover:scale-105 transition-transform">
-            <img src="/images/ui-logo.png" alt="지어봐요 마이홈 로고" className="w-[20cqw] drop-shadow-md" />
+            <img src="/images/ui-logo.png" alt="지어봐요 마이홈 로고" className="w-[25cqw] drop-shadow-md" />
           </Link>
         </header>
 
-        {/* 3. 우측 하단 게임 시작 버튼 (540*190) 
+        {/* 3. 우측 하단 게임 시작 버튼 (540*190)
             - Bottom: 24px -> 1.25cqw (bottom-6 approx)
             - Right: 12px -> 0.63cqw (right-3 approx)
             - Width: 540px -> 28.13cqw
             - Height: 190px -> 9.9cqw
         */}
-        <div className={`absolute bottom-[1.25cqw] right-[0.63cqw] z-30 ${uiTransitionClass}`}>
+        {/*<div className={`absolute bottom-[1.25cqw] right-[0.63cqw] z-30 ${uiTransitionClass}`}>
           <div onClick={handleGameStart} className="inline-block group cursor-pointer">
             <img
               src="/images/btn-start.png"
@@ -175,7 +204,7 @@ export default function Home() {
               className="w-[28.13cqw] h-[9.9cqw] object-contain hover:scale-105 active:scale-95 transition-transform drop-shadow-[0_0.4cqw_0.2cqw_rgba(0,0,0,0.3)]"
             />
           </div>
-        </div>
+        </div>*/}
 
         {/* 정지 안내 모달 */}
         <AlertModal
