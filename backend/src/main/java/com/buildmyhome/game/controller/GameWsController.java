@@ -853,40 +853,32 @@ public class GameWsController {
             response.setActionData(player.getActionData()); // 첫번째 주사위 값
             break;
 
-                    case "DOUBLE_DICE_COMPLETE":
-                        if (gameState.getStatus() != GameStatus.ROLLING_DOUBLE_DICE) break;
-                        gameState.setStatus(GameStatus.MOVING);
-                        response.setType("DOUBLE_DICE_MOVE_START");
-                        response.setMovePath(player.getMovePath());
-                        break;
-                    case "FISHING_INTRO_NEXT": {
-                        if (gameState.getStatus() != GameStatus.WAITING_FISHING) break;
-                        if (!memberId.equals(gameState.getCurrentPlayerId())) break;
-                        boolean baitAvailable = player.getShopItems() != null
-                                && player.getShopItems().stream().anyMatch(it -> it == ShopItemType.FISHING_CHANCE);
-                        int nextStep = baitAvailable ? 1 : 2;
-                        player.setUiStep(nextStep);
-                        response.setType("STEP_CHANGED");
-                        break;
-                    }
-                    case "FISHING_INTRO_DECIDE_BAIT": {
-                        if (gameState.getStatus() != GameStatus.WAITING_FISHING) break;
-                        if (!memberId.equals(gameState.getCurrentPlayerId())) break;
-                        int useBait = message.getActionData(); // 0/1
-                        player.setActionData(useBait);
-                        player.setUiStep(2);
-                        response.setType("STEP_CHANGED");
-                        response.setMemberId(memberId);
-                        break;
-                    }
-
-                }
           case "DOUBLE_DICE_COMPLETE":
             if (gameState.getStatus() != GameStatus.ROLLING_DOUBLE_DICE) break;
             gameState.setStatus(GameStatus.MOVING);
             response.setType("DOUBLE_DICE_MOVE_START");
             response.setMovePath(player.getMovePath());
             break;
+          case "FISHING_INTRO_NEXT": {
+            if (gameState.getStatus() != GameStatus.WAITING_FISHING) break;
+            if (!memberId.equals(gameState.getCurrentPlayerId())) break;
+            boolean baitAvailable = player.getShopItems() != null
+                    && player.getShopItems().stream().anyMatch(it -> it == ShopItemType.FISHING_CHANCE);
+            int nextStep = baitAvailable ? 1 : 2;
+            player.setUiStep(nextStep);
+            response.setType("STEP_CHANGED");
+            break;
+          }
+          case "FISHING_INTRO_DECIDE_BAIT": {
+            if (gameState.getStatus() != GameStatus.WAITING_FISHING) break;
+            if (!memberId.equals(gameState.getCurrentPlayerId())) break;
+            int useBait = message.getActionData(); // 0/1
+            player.setActionData(useBait);
+            player.setUiStep(2);
+            response.setType("STEP_CHANGED");
+            response.setMemberId(memberId);
+            break;
+          }
         }
 
         // 상점 상태 인트로 관련 내용
