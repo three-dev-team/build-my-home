@@ -535,351 +535,342 @@ public class GameWsController {
             try {
                 GameMessage response = defaultGameResponse("ACTION_PROCESSED", gameState);
 
-        // 2. 타입에 따라 분기 처리
-        switch (actionType) {
-          case "LOAN_BORROW":
-            loanService.borrow(roomId, memberId, message.getAmount(), message.isBankTile());
-            response.setType("LOAN_BORROWED");
-            break;
-          case "LOAN_REPAY":
-            loanService.repay(roomId, memberId, message.getAmount());
-            response.setType("LOAN_REPAID");
-            break;
-          case "STAMP_COLLECT":
-            boolean canCollectStamp = stampService.collectStamp(player, message.getActionDataStr());
-            player.setUiStep(2);
-            response.setType(canCollectStamp ? "STAMP_ADDED" : "STAMP_DUPLICATE");
-            break;
-          case "SHOP_INTRO_DONE":
-            shopService.updateIntroShown(roomId);
-            response.setType("SHOP_INTRO_DONE");
-            break;
-          case "SHOP_TAB_CHANGE":
-            shopService.updateIntroShown(roomId);
-            player.setUiStep(message.getUiStep());
-            response.setType("SHOP_TAB_CHANGED");
-            break;
-          case "SHOP_SELECT":
-            shopService.updateIntroShown(roomId);
-            // relay는 현재 턴 플레이어가 아이템 선택했을 때, 그 정보를 다른 플레이어들에게 전달하는 메시지
-            GameMessage relay = shopService.relayMessage(roomId, memberId, message);
-            response = relay;
-            break;
-          case "SHOP_SELECT_CLEAR":
-            response.setType("SHOP_SELECT_CLEAR");
-            break;
-          case "SHOP_BUY_ITEM":
-            shopService.buyItem(roomId, memberId, message.getShopItemType());
-            break;
-          case "SHOP_BUY_RESOURCE":
-            shopService.buyResource(
-                roomId, memberId, message.getResourceType(), message.getQuantity());
-            break;
-          case "SHOP_SELL_RESOURCE":
-            shopService.sellResource(
-                roomId, memberId, message.getResourceType(), message.getQuantity());
-            break;
-          case "SHOP_SELL_HARVEST":
-            shopService.sellHarvest(
-                roomId, memberId, message.getHarvestType(), message.getQuantity());
-            break;
-          case "KK_ACTION":
-            int songId = (message.getActionData() != null) ? message.getActionData() : 0;
-            kkService.payEntryFee(player, songId);
-            player.setUiStep(2);
-            response.setType("KK_FEE_PAID");
-            break;
-          case "SWAP_START_PLAYER1_ROULETTE":
-            swapService.startPlayer1Roulette(roomId, memberId);
-            response.setType("SWAP_PLAYER1_ROULETTE_STARTED");
-            break;
-          case "SWAP_START_PLAYER2_ROULETTE":
-            swapService.startPlayer2Roulette(roomId, memberId);
-            response.setType("SWAP_PLAYER2_ROULETTE_STARTED");
-            break;
-          case "SWAP_START_ARROW_ROULETTE":
-            swapService.startArrowRoulette(roomId, memberId);
-            response.setType("SWAP_ARROW_ROULETTE_STARTED");
-            break;
-          case "SWAP_PLAYER1_CONFIRM":
-            swapService.confirmPlayer1(roomId, memberId, message.getPlayer1Id());
-            response.setType("SWAP_PLAYER1_CONFIRMED");
-            break;
-          case "SWAP_PLAYER2_CONFIRM":
-            swapService.confirmPlayer2(roomId, memberId, message.getPlayer2Id());
-            response.setType("SWAP_PLAYER2_CONFIRMED");
-            break;
-          case "SWAP_ARROW_CONFIRM":
-            swapService.confirmArrow(
-                roomId, memberId, message.getCategory(), message.getDirection());
-            response.setType("SWAP_ARROW_CONFIRMED");
-            break;
-          case "REWARD_CONFIRM":
-            {
-              if (gameState.getStatus() == GameStatus.WAITING_RESOURCES
-                  || gameState.getStatus() == GameStatus.WAITING_HARVEST) {
-                player.setUiStep(1);
-                response.setType("REWARD_CONFIRMED");
-              }
-              break;
-            }
-          case "REWARD_NEXT":
-            {
-              if (gameState.getStatus() == GameStatus.WAITING_RESOURCES
-                  || gameState.getStatus() == GameStatus.WAITING_HARVEST) {
-                player.setUiStep(1);
-                response.setType("REWARD_NEXT");
-              }
-              break;
-            }
-          case "BUILD_HOUSE":
-            player.setUiStep(0);
-            houseService.updateHouseInfo(player);
-            gameState.setStatus(GameStatus.WAITING_HOUSE);
-            response.setType("BUILD_HOUSE_START");
-            break;
-          case "UPGRADE_HOUSE":
-            houseService.upgradeHouse(player);
-            player.setUiStep(4);
-            response.setType("HOUSE_UPGRADED");
-            break;
-          case "HOUSE_FINISH_OK":
-            {
-              if (gameState.getStatus() != GameStatus.WAITING_HOUSE) break;
-              if (!memberId.equals(gameState.getCurrentPlayerId())) break;
-              String mode = message.getActionDataStr();
-              if ("CLOSE".equals(mode)) {
-                response.setType("HOUSE_FINISH_OK");
-                response.setActionDataStr("HOUSE_FINISH_CLOSED");
-                for (GamePlayerState p : gameState.getPlayers().values()) {
-                  if (p == null) continue;
-                  p.setActionDataStr("HOUSE_FINISH_CLOSED");
-                }
-                break;
-              }
-              if (!"FINAL".equals(mode)) break;
-              for (GamePlayerState p : gameState.getPlayers().values()) {
-                if (p == null) continue;
-                p.setUiStep(1);
-                p.setActionDataStr(null);
-              }
-              response.setType("HOUSE_FINISH_OK");
-              response.setActionDataStr(null);
-              break;
-            }
-          case "OPEN_RADISH_SELL":
-            gameState.setStatus(GameStatus.WAITING_RADISH_SELL);
-            player.setUiStep(0);
-            player.setActionData(0);
-            response.setType("RADISH_SELL_OPENED");
-            break;
-          case "RADISH_SELL":
-            {
-              if (gameState.getStatus() != GameStatus.WAITING_RADISH_SELL) {
-                response.setType("RADISH_SELL_INVALID_STATUS");
-                break;
-              }
-              int qty = Math.max(1, message.getQuantity());
-              MupaniService.TradeResult tr = mupaniService.sell(gameState, memberId, qty);
-              applyTradeResult(response, memberId, tr);
-              if ("RADISH_SOLD".equals(tr.type())) {
-                player.setUiStep(2);
-                response.setUiStep(2);
-              }
-              response.setPlayers(new ArrayList<>(gameState.getPlayers().values()));
-              break;
-            }
-          case "RADISH_BUY":
-            {
-              int qty = Math.max(1, message.getQuantity());
-              MupaniService.MupaniActionResult ar =
-                  mupaniService.buy(roomId, gameState, memberId, qty);
-              applyTradeResult(response, memberId, ar.trade());
-              response.setPlayers(new ArrayList<>(gameState.getPlayers().values()));
-              break;
-            }
-          case "RADISH_SKIP":
-            {
-              MupaniService.MupaniActionResult ar = mupaniService.skip(roomId, gameState, memberId);
-              applyTradeResult(response, memberId, ar.trade());
-              response.setPlayers(new ArrayList<>(gameState.getPlayers().values()));
-              break;
-            }
-          case "OPEN_ATM":
-            response.setType("ATM_OPENED");
-            response.setMemberId(memberId);
-            break;
-          case "CLOSE_ATM":
-            response.setType("ATM_CLOSED");
-            response.setMemberId(memberId);
-            break;
-          case "CLOSE_ACTION":
-            gameState.clearCurrentTimeout();
-            player.setUiStep(0); // UI 스텝 초기화
-            player.setActionDataStr(null); // 이전 이벤트 연출 데이터 정리(잔상 방지)
-            gameState.setStatus(GameStatus.WAITING_PLAYER_ACTION);
-            response.setType("ACTION_CLOSED");
-            break;
-          case "SET_STEP":
-            player.setUiStep(message.getUiStep()); // 특정 값으로 설정
-            response.setType("STEP_CHANGED");
-            break;
-          case "START_STAMP_EXCHANGE":
-            int reward = stampService.exchangeStamps(player);
-            player.setUiStep(2);
-            player.setActionData(reward);
-            response.setType("START_STAMP_EXCHANGED");
-            break;
-          case "START_STAMP_SKIP":
-            player.setUiStep(3);
-            response.setType("START_STAMP_SKIPPED");
-            break;
-          case "MACHURILLA_SELECT":
-            machurillaService.applyCardEffect(gameState, player);
-            player.setUiStep(3);
-            response.setType("MACHURILLA_SELECTED");
-            break;
-          case "OPEN_INVENTORY":
-            response.setType("INVENTORY_OPENED");
-            response.setMemberId(memberId);
-            break;
-          case "CLOSE_INVENTORY":
-            response.setType("INVENTORY_CLOSED");
-            response.setMemberId(memberId);
-            break;
-          case "GET_RANDOM_ITEM":
-            {
-              ItemType item = itemService.getRandomItem(player);
-              player.setActionDataStr(item.name());
-              gameState.setStatus(GameStatus.WAITING_ITEMS);
-              boolean invFull = player.getItems() != null && player.getItems().size() >= 3;
-              if (!invFull) {
-                itemService.addItem(player, item);
-                player.setUiStep(3);
-              } else {
-                player.setUiStep(1);
-              }
-              response.setType("RANDOM_ITEM_SELECTED");
-              break;
-            }
-          case "HANDLE_INVENTORY_FULL":
-            {
-              int selectedIdx = message.getActionData();
-              boolean invFull = player.getItems() != null && player.getItems().size() >= 3;
-              if (!invFull) return;
-              if (selectedIdx < 3) {
-                ItemType dropItem = player.getItems().get(selectedIdx);
-                ItemType newItem = ItemType.valueOf(player.getActionDataStr());
-                itemService.swapItem(player, dropItem, newItem);
-              } else {
-                player.setActionDataStr(null);
-              }
-              player.setUiStep(3);
-              response.setType("INVENTORY_HANDLED");
-              break;
-            }
-          case "SELECT_ITEM_TO_DROP":
-            {
-              player.setActionData(message.getActionData());
-              response.setType("ITEM_DROP_SELECTED");
-              break;
-            }
-          case "OPEN_ITEM_INVENTORY":
-            gameState.setStatus(GameStatus.WAITING_USING_ITEM);
-            response.setType("ITEM_INVENTORY_OPENED");
-            break;
-          case "SELECT_ITEM_TO_USE":
-            player.setActionData(message.getActionData()); // 선택한 인덱스
-            response.setType("ITEM_USE_SELECTED");
-            break;
-          case "CLOSE_ITEM_INVENTORY":
-            gameState.setStatus(GameStatus.WAITING_PLAYER_ACTION);
-            response.setType("ITEM_INVENTORY_CLOSED");
-            break;
-          case "USE_ITEM":
-            try {
-              String useItemType = message.getActionDataStr();
-              int useItemIdx = message.getActionData();
-              GameStatus nextStatus =
-                  itemService.useItem(gameState, player, useItemType, useItemIdx);
-              gameState.setStatus(nextStatus);
-              response.setType("ITEM_USED");
-            } catch (IllegalArgumentException e) {
-              response.setType("ITEM_USE_ERROR");
-              response.setErrorMessage(e.getMessage());
-            }
-            break;
-          case "PIPE_COMPLETE":
-            player.clearTurnData();
-            gameState.setStatus(GameStatus.WAITING_PLAYER_ACTION);
-            response.setType("PIPE_COMPLETED");
-            break;
-          case "MIRROR_COMPLETE":
-            player.clearTurnData();
-            gameState.setStatus(GameStatus.WAITING_PLAYER_ACTION);
-            response.setType("MIRROR_COMPLETED");
-            break;
-          case "CUSTOM_DICE_SELECT":
-            GameStatus customStatus = itemService.rollCustomDice(player, message.getActionData());
-            moveService.movePlayer(player, player.getDiceValue());
-            gameState.setStatus(customStatus);
-            response.setType("DICE_ROLLING");
-            response.setDiceValue(player.getDiceValue());
-            break;
-          case "GOLD_DICE_ROLL":
-            GameStatus goldStatus = itemService.rollGoldDice(player);
-            moveService.movePlayer(player, player.getDiceValue());
-            gameState.setStatus(goldStatus);
-            response.setType("GOLD_DICE_ROLLING");
-            response.setDiceValue(player.getDiceValue());
-            break;
-          case "GOLD_DICE_COMPLETE":
-            if (gameState.getStatus() != GameStatus.ROLLING_GOLD_DICE) break;
-            gameState.setStatus(GameStatus.MOVING);
-            response.setType("GOLD_DICE_MOVE_START");
-            response.setMovePath(player.getMovePath());
-            break;
-          case "DOUBLE_DICE_ROLL":
-            GameStatus doubleStatus = itemService.rollDoubleDice(player);
-            if (doubleStatus == GameStatus.ROLLING_DOUBLE_DICE) {
-              moveService.movePlayer(player, player.getDiceValue());
-            }
-            gameState.setStatus(doubleStatus);
-            response.setType(
-                doubleStatus == GameStatus.WAITING_DOUBLE_DICE
-                    ? "DOUBLE_DICE_FIRST"
-                    : "DOUBLE_DICE_SECOND");
-            response.setDiceValue(player.getDiceValue()); // 첫번째에는 null 두번째에는 합계
-            response.setActionData(player.getActionData()); // 첫번째 주사위 값
-            break;
+                // 2. 타입에 따라 분기 처리
+                switch (actionType) {
+                    case "LOAN_BORROW":
+                        loanService.borrow(roomId, memberId, message.getAmount(), message.isBankTile());
+                        response.setType("LOAN_BORROWED");
+                        break;
+                    case "LOAN_REPAY":
+                        loanService.repay(roomId, memberId, message.getAmount());
+                        response.setType("LOAN_REPAID");
+                        break;
+                    case "STAMP_COLLECT":
+                        boolean canCollectStamp = stampService.collectStamp(player, message.getActionDataStr());
+                        player.setUiStep(2);
+                        response.setType(canCollectStamp ? "STAMP_ADDED" : "STAMP_DUPLICATE");
+                        break;
+                    case "SHOP_INTRO_DONE":
+                        shopService.updateIntroShown(roomId);
+                        response.setType("SHOP_INTRO_DONE");
+                        break;
+                    case "SHOP_TAB_CHANGE":
+                        shopService.updateIntroShown(roomId);
+                        player.setUiStep(message.getUiStep());
+                        response.setType("SHOP_TAB_CHANGED");
+                        break;
+                    case "SHOP_SELECT":
+                        shopService.updateIntroShown(roomId);
+                        // relay는 현재 턴 플레이어가 아이템 선택했을 때, 그 정보를 다른 플레이어들에게 전달하는 메시지
+                        GameMessage relay = shopService.relayMessage(roomId, memberId, message);
+                        response = relay;
+                        break;
+                    case "SHOP_SELECT_CLEAR":
+                        response.setType("SHOP_SELECT_CLEAR");
+                        break;
+                    case "SHOP_BUY_ITEM":
+                        shopService.buyItem(roomId, memberId, message.getShopItemType());
+                        break;
+                    case "SHOP_BUY_RESOURCE":
+                        shopService.buyResource(
+                                roomId, memberId, message.getResourceType(), message.getQuantity());
+                        break;
+                    case "SHOP_SELL_RESOURCE":
+                        shopService.sellResource(
+                                roomId, memberId, message.getResourceType(), message.getQuantity());
+                        break;
+                    case "SHOP_SELL_HARVEST":
+                        shopService.sellHarvest(
+                                roomId, memberId, message.getHarvestType(), message.getQuantity());
+                        break;
+                    case "KK_ACTION":
+                        int songId = (message.getActionData() != null) ? message.getActionData() : 0;
+                        kkService.payEntryFee(player, songId);
+                        player.setUiStep(2);
+                        response.setType("KK_FEE_PAID");
+                        break;
+                    case "SWAP_START_PLAYER1_ROULETTE":
+                        swapService.startPlayer1Roulette(roomId, memberId);
+                        response.setType("SWAP_PLAYER1_ROULETTE_STARTED");
+                        break;
+                    case "SWAP_START_PLAYER2_ROULETTE":
+                        swapService.startPlayer2Roulette(roomId, memberId);
+                        response.setType("SWAP_PLAYER2_ROULETTE_STARTED");
+                        break;
+                    case "SWAP_START_ARROW_ROULETTE":
+                        swapService.startArrowRoulette(roomId, memberId);
+                        response.setType("SWAP_ARROW_ROULETTE_STARTED");
+                        break;
+                    case "SWAP_PLAYER1_CONFIRM":
+                        swapService.confirmPlayer1(roomId, memberId, message.getPlayer1Id());
+                        response.setType("SWAP_PLAYER1_CONFIRMED");
+                        break;
+                    case "SWAP_PLAYER2_CONFIRM":
+                        swapService.confirmPlayer2(roomId, memberId, message.getPlayer2Id());
+                        response.setType("SWAP_PLAYER2_CONFIRMED");
+                        break;
+                    case "SWAP_ARROW_CONFIRM":
+                        swapService.confirmArrow(
+                                roomId, memberId, message.getCategory(), message.getDirection());
+                        response.setType("SWAP_ARROW_CONFIRMED");
+                        break;
+                    case "REWARD_CONFIRM": {
+                        if (gameState.getStatus() == GameStatus.WAITING_RESOURCES
+                                || gameState.getStatus() == GameStatus.WAITING_HARVEST) {
+                            player.setUiStep(1);
+                            response.setType("REWARD_CONFIRMED");
+                        }
+                        break;
+                    }
+                    case "REWARD_NEXT": {
+                        if (gameState.getStatus() == GameStatus.WAITING_RESOURCES
+                                || gameState.getStatus() == GameStatus.WAITING_HARVEST) {
+                            player.setUiStep(1);
+                            response.setType("REWARD_NEXT");
+                        }
+                        break;
+                    }
+                    case "BUILD_HOUSE":
+                        player.setUiStep(0);
+                        houseService.updateHouseInfo(player);
+                        gameState.setStatus(GameStatus.WAITING_HOUSE);
+                        response.setType("BUILD_HOUSE_START");
+                        break;
+                    case "UPGRADE_HOUSE":
+                        houseService.upgradeHouse(player);
+                        player.setUiStep(4);
+                        response.setType("HOUSE_UPGRADED");
+                        break;
+                    case "HOUSE_FINISH_OK": {
+                        if (gameState.getStatus() != GameStatus.WAITING_HOUSE) break;
+                        if (!memberId.equals(gameState.getCurrentPlayerId())) break;
+                        String mode = message.getActionDataStr();
+                        if ("CLOSE".equals(mode)) {
+                            response.setType("HOUSE_FINISH_OK");
+                            response.setActionDataStr("HOUSE_FINISH_CLOSED");
+                            for (GamePlayerState p : gameState.getPlayers().values()) {
+                                if (p == null) continue;
+                                p.setActionDataStr("HOUSE_FINISH_CLOSED");
+                            }
+                            break;
+                        }
+                        if (!"FINAL".equals(mode)) break;
+                        for (GamePlayerState p : gameState.getPlayers().values()) {
+                            if (p == null) continue;
+                            p.setUiStep(1);
+                            p.setActionDataStr(null);
+                        }
+                        response.setType("HOUSE_FINISH_OK");
+                        response.setActionDataStr(null);
+                        break;
+                    }
+                    case "OPEN_RADISH_SELL":
+                        gameState.setStatus(GameStatus.WAITING_RADISH_SELL);
+                        player.setUiStep(0);
+                        player.setActionData(0);
+                        response.setType("RADISH_SELL_OPENED");
+                        break;
+                    case "RADISH_SELL": {
+                        if (gameState.getStatus() != GameStatus.WAITING_RADISH_SELL) {
+                            response.setType("RADISH_SELL_INVALID_STATUS");
+                            break;
+                        }
+                        int qty = Math.max(1, message.getQuantity());
+                        MupaniService.TradeResult tr = mupaniService.sell(gameState, memberId, qty);
+                        applyTradeResult(response, memberId, tr);
+                        if ("RADISH_SOLD".equals(tr.type())) {
+                            player.setUiStep(2);
+                            response.setUiStep(2);
+                        }
+                        response.setPlayers(new ArrayList<>(gameState.getPlayers().values()));
+                        break;
+                    }
+                    case "RADISH_BUY": {
+                        int qty = Math.max(1, message.getQuantity());
+                        MupaniService.MupaniActionResult ar =
+                                mupaniService.buy(roomId, gameState, memberId, qty);
+                        applyTradeResult(response, memberId, ar.trade());
+                        response.setPlayers(new ArrayList<>(gameState.getPlayers().values()));
+                        break;
+                    }
+                    case "RADISH_SKIP": {
+                        MupaniService.MupaniActionResult ar = mupaniService.skip(roomId, gameState, memberId);
+                        applyTradeResult(response, memberId, ar.trade());
+                        response.setPlayers(new ArrayList<>(gameState.getPlayers().values()));
+                        break;
+                    }
+                    case "OPEN_ATM":
+                        response.setType("ATM_OPENED");
+                        response.setMemberId(memberId);
+                        break;
+                    case "CLOSE_ATM":
+                        response.setType("ATM_CLOSED");
+                        response.setMemberId(memberId);
+                        break;
+                    case "CLOSE_ACTION":
+                        gameState.clearCurrentTimeout();
+                        player.setUiStep(0); // UI 스텝 초기화
+                        player.setActionDataStr(null); // 이전 이벤트 연출 데이터 정리(잔상 방지)
+                        gameState.setStatus(GameStatus.WAITING_PLAYER_ACTION);
+                        response.setType("ACTION_CLOSED");
+                        break;
+                    case "SET_STEP":
+                        player.setUiStep(message.getUiStep()); // 특정 값으로 설정
+                        response.setType("STEP_CHANGED");
+                        break;
+                    case "START_STAMP_EXCHANGE":
+                        int reward = stampService.exchangeStamps(player);
+                        player.setUiStep(2);
+                        player.setActionData(reward);
+                        response.setType("START_STAMP_EXCHANGED");
+                        break;
+                    case "START_STAMP_SKIP":
+                        player.setUiStep(3);
+                        response.setType("START_STAMP_SKIPPED");
+                        break;
+                    case "MACHURILLA_SELECT":
+                        machurillaService.applyCardEffect(gameState, player);
+                        player.setUiStep(3);
+                        response.setType("MACHURILLA_SELECTED");
+                        break;
+                    case "OPEN_INVENTORY":
+                        response.setType("INVENTORY_OPENED");
+                        response.setMemberId(memberId);
+                        break;
+                    case "CLOSE_INVENTORY":
+                        response.setType("INVENTORY_CLOSED");
+                        response.setMemberId(memberId);
+                        break;
+                    case "GET_RANDOM_ITEM": {
+                        ItemType item = itemService.getRandomItem(player);
+                        player.setActionDataStr(item.name());
+                        gameState.setStatus(GameStatus.WAITING_ITEMS);
+                        boolean invFull = player.getItems() != null && player.getItems().size() >= 3;
+                        if (!invFull) {
+                            itemService.addItem(player, item);
+                            player.setUiStep(3);
+                        } else {
+                            player.setUiStep(1);
+                        }
+                        response.setType("RANDOM_ITEM_SELECTED");
+                        break;
+                    }
+                    case "HANDLE_INVENTORY_FULL": {
+                        int selectedIdx = message.getActionData();
+                        boolean invFull = player.getItems() != null && player.getItems().size() >= 3;
+                        if (!invFull) return;
+                        if (selectedIdx < 3) {
+                            ItemType dropItem = player.getItems().get(selectedIdx);
+                            ItemType newItem = ItemType.valueOf(player.getActionDataStr());
+                            itemService.swapItem(player, dropItem, newItem);
+                        } else {
+                            player.setActionDataStr(null);
+                        }
+                        player.setUiStep(3);
+                        response.setType("INVENTORY_HANDLED");
+                        break;
+                    }
+                    case "SELECT_ITEM_TO_DROP": {
+                        player.setActionData(message.getActionData());
+                        response.setType("ITEM_DROP_SELECTED");
+                        break;
+                    }
+                    case "OPEN_ITEM_INVENTORY":
+                        gameState.setStatus(GameStatus.WAITING_USING_ITEM);
+                        response.setType("ITEM_INVENTORY_OPENED");
+                        break;
+                    case "SELECT_ITEM_TO_USE":
+                        player.setActionData(message.getActionData()); // 선택한 인덱스
+                        response.setType("ITEM_USE_SELECTED");
+                        break;
+                    case "CLOSE_ITEM_INVENTORY":
+                        gameState.setStatus(GameStatus.WAITING_PLAYER_ACTION);
+                        response.setType("ITEM_INVENTORY_CLOSED");
+                        break;
+                    case "USE_ITEM":
+                        try {
+                            String useItemType = message.getActionDataStr();
+                            int useItemIdx = message.getActionData();
+                            GameStatus nextStatus =
+                                    itemService.useItem(gameState, player, useItemType, useItemIdx);
+                            gameState.setStatus(nextStatus);
+                            response.setType("ITEM_USED");
+                        } catch (IllegalArgumentException e) {
+                            response.setType("ITEM_USE_ERROR");
+                            response.setErrorMessage(e.getMessage());
+                        }
+                        break;
+                    case "PIPE_COMPLETE":
+                        player.clearTurnData();
+                        gameState.setStatus(GameStatus.WAITING_PLAYER_ACTION);
+                        response.setType("PIPE_COMPLETED");
+                        break;
+                    case "MIRROR_COMPLETE":
+                        player.clearTurnData();
+                        gameState.setStatus(GameStatus.WAITING_PLAYER_ACTION);
+                        response.setType("MIRROR_COMPLETED");
+                        break;
+                    case "CUSTOM_DICE_SELECT":
+                        GameStatus customStatus = itemService.rollCustomDice(player, message.getActionData());
+                        moveService.movePlayer(player, player.getDiceValue());
+                        gameState.setStatus(customStatus);
+                        response.setType("DICE_ROLLING");
+                        response.setDiceValue(player.getDiceValue());
+                        break;
+                    case "GOLD_DICE_ROLL":
+                        GameStatus goldStatus = itemService.rollGoldDice(player);
+                        moveService.movePlayer(player, player.getDiceValue());
+                        gameState.setStatus(goldStatus);
+                        response.setType("GOLD_DICE_ROLLING");
+                        response.setDiceValue(player.getDiceValue());
+                        break;
+                    case "GOLD_DICE_COMPLETE":
+                        if (gameState.getStatus() != GameStatus.ROLLING_GOLD_DICE) break;
+                        gameState.setStatus(GameStatus.MOVING);
+                        response.setType("GOLD_DICE_MOVE_START");
+                        response.setMovePath(player.getMovePath());
+                        break;
+                    case "DOUBLE_DICE_ROLL":
+                        GameStatus doubleStatus = itemService.rollDoubleDice(player);
+                        if (doubleStatus == GameStatus.ROLLING_DOUBLE_DICE) {
+                            moveService.movePlayer(player, player.getDiceValue());
+                        }
+                        gameState.setStatus(doubleStatus);
+                        response.setType(
+                                doubleStatus == GameStatus.WAITING_DOUBLE_DICE
+                                        ? "DOUBLE_DICE_FIRST"
+                                        : "DOUBLE_DICE_SECOND");
+                        response.setDiceValue(player.getDiceValue()); // 첫번째에는 null 두번째에는 합계
+                        response.setActionData(player.getActionData()); // 첫번째 주사위 값
+                        break;
 
-          case "DOUBLE_DICE_COMPLETE":
-            if (gameState.getStatus() != GameStatus.ROLLING_DOUBLE_DICE) break;
-            gameState.setStatus(GameStatus.MOVING);
-            response.setType("DOUBLE_DICE_MOVE_START");
-            response.setMovePath(player.getMovePath());
-            break;
-          case "FISHING_INTRO_NEXT": {
-            if (gameState.getStatus() != GameStatus.WAITING_FISHING) break;
-            if (!memberId.equals(gameState.getCurrentPlayerId())) break;
-            boolean baitAvailable = player.getShopItems() != null
-                    && player.getShopItems().stream().anyMatch(it -> it == ShopItemType.FISHING_CHANCE);
-            int nextStep = baitAvailable ? 1 : 2;
-            player.setUiStep(nextStep);
-            response.setType("STEP_CHANGED");
-            break;
-          }
-          case "FISHING_INTRO_DECIDE_BAIT": {
-            if (gameState.getStatus() != GameStatus.WAITING_FISHING) break;
-            if (!memberId.equals(gameState.getCurrentPlayerId())) break;
-            int useBait = message.getActionData(); // 0/1
-            player.setActionData(useBait);
-            player.setUiStep(2);
-            response.setType("STEP_CHANGED");
-            response.setMemberId(memberId);
-            break;
-          }
-        }
+                    case "DOUBLE_DICE_COMPLETE":
+                        if (gameState.getStatus() != GameStatus.ROLLING_DOUBLE_DICE) break;
+                        gameState.setStatus(GameStatus.MOVING);
+                        response.setType("DOUBLE_DICE_MOVE_START");
+                        response.setMovePath(player.getMovePath());
+                        break;
+                    case "FISHING_INTRO_NEXT": {
+                        if (gameState.getStatus() != GameStatus.WAITING_FISHING) break;
+                        if (!memberId.equals(gameState.getCurrentPlayerId())) break;
+                        boolean baitAvailable = player.getShopItems() != null
+                                && player.getShopItems().stream().anyMatch(it -> it == ShopItemType.FISHING_CHANCE);
+                        int nextStep = baitAvailable ? 1 : 2;
+                        player.setUiStep(nextStep);
+                        response.setType("STEP_CHANGED");
+                        break;
+                    }
+                    case "FISHING_INTRO_DECIDE_BAIT": {
+                        if (gameState.getStatus() != GameStatus.WAITING_FISHING) break;
+                        if (!memberId.equals(gameState.getCurrentPlayerId())) break;
+                        int useBait = message.getActionData(); // 0/1
+                        player.setActionData(useBait);
+                        player.setUiStep(2);
+                        response.setType("STEP_CHANGED");
+                        response.setMemberId(memberId);
+                        break;
+                    }
+                }
 
         // 상점 상태 인트로 관련 내용
         if (gameState.getStatus() == GameStatus.WAITING_SHOP) {
