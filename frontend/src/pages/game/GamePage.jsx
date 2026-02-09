@@ -36,12 +36,11 @@ import Swap from './swap/Swap.jsx';
 
 import Subtitle from '../../components/common/Subtitle.jsx';
 import DialogBox from '../../components/common/DialogBox.jsx';
-import { COLORS, withAlpha } from '../../constants/colors.js';
+import { COLORS } from '../../constants/colors.js';
 import { CHARACTERS } from '../../constants/characters.js';
 import CustomDice from './itemEffect/CustomDice.jsx';
 import GoldDice from './itemEffect/GoldDice.jsx';
 import DoubleDice from './itemEffect/DoubleDice.jsx';
-import { leaveGame, leaveGameBeacon } from '../../utils/leaveUtils.js';
 import PlayerLeft from './PlayerLeft.jsx';
 import AutoMove from '../../components/common/AutoMove.jsx';
 import AlertModal from '../../components/common/AlertModal.jsx';
