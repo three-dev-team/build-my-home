@@ -148,7 +148,9 @@ export default function Login() {
     const params = new URLSearchParams(window.location.search);
     const error = params.get('error');
     if (error === 'suspended') {
-      openAlert('정지된 계정입니다.\n\n운영 정책 위반으로 로그인이\n제한되었습니다.');
+      openAlert(
+        '정지된 계정입니다.\n\n운영 정책 위반으로 로그인이\n제한되었습니다.\n\n이의제기 신청은 문의하기를 이용해주세요.',
+      );
       // URL에서 에러 파라미터 제거
       window.history.replaceState({}, '', '/');
     }
@@ -222,7 +224,9 @@ export default function Login() {
       const errorMsg = error.response?.data?.message || error.response?.data || '';
       // 정지된 계정 에러 메시지 감지
       if (typeof errorMsg === 'string' && errorMsg.includes('정지된 계정')) {
-        openAlert('정지된 계정입니다.\n\n운영 정책 위반으로 로그인이\n제한되었습니다.');
+        openAlert(
+          '정지된 계정입니다.\n\n운영 정책 위반으로 로그인이\n제한되었습니다.\n\n이의제기 신청은 문의하기를 이용해주세요.',
+        );
       } else {
         openAlert('로그인 정보를 확인해주세요.');
       }
