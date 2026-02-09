@@ -1,6 +1,6 @@
 // frontend/src/pages/room/RoomList.jsx
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Client } from '@stomp/stompjs';
 import TopButtons from '../../components/common/TopButtons';
 import HomeButton from '../../components/common/HomeButton';
@@ -19,6 +19,9 @@ const CHARACTER_BY_ID = new Map(CHARACTERS.map((c) => [Number(c.id), c]));
 
 export default function RoomList() {
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const [showKickedAlert, setShowKickedAlert] = useState(false);
 
   const [createOpen, setCreateOpen] = useState(false);
   const [joinOpen, setJoinOpen] = useState(false);
@@ -48,6 +51,15 @@ export default function RoomList() {
   useEffect(() => {
     roomPlayersMapRef.current = roomPlayersMap;
   }, [roomPlayersMap]);
+
+  // 강퇴 알림 감지
+  useEffect(() => {
+    if (location.state?.kicked) {
+      setShowKickedAlert(true);
+      // state 초기화 (새로고침 시 다시 안 뜨게)
+      window.history.replaceState({}, '');
+    }
+  }, [location.state]);
 
   const showToast = (msg) => {
     setToast(msg);
@@ -448,10 +460,10 @@ export default function RoomList() {
                         {/* 리스트 아이템 - 1200px = 62.5cqw, 92px = 8.52cqh, 40px = 2.08cqw radius, 12px = 1.11cqh margin */}
                         <div className="w-[62.5cqw] h-[8.52cqh] bg-white rounded-[2.08cqw] flex items-center px-[2.08cqw] shadow-sm relative my-[1.11cqh] shrink-0 hover:scale-[1.01] transition-transform">
                           {/* [좌측 영역] 잠금 + 제목 - 400px = 20.83cqw, 40px = 2.08cqw, 20px = 1.04cqw gap, 32px = 1.67cqw text, 320px = 16.67cqw max-width */}
-                          <div className="flex items-center gap-[1.04cqw] w-[20.83cqw]">
+                          <div className="flex items-center gap-[1.04cqw] w-[20.83cqw] shrink-0">
                             {room.isPrivate ? (
                               <div
-                                className="w-[2.08cqw] h-[2.08cqw]"
+                                className="w-[2.08cqw] h-[2.08cqw] shrink-0"
                                 style={{
                                   backgroundColor: COLORS.roomList.lock,
                                   maskImage: `url("/images/roomlist/icon-lock.svg")`,
@@ -465,7 +477,7 @@ export default function RoomList() {
                                 }}
                               />
                             ) : (
-                              <div className="w-[2.08cqw] h-[2.08cqw]" />
+                              <div className="w-[2.08cqw] h-[2.08cqw] shrink-0" />
                             )}
                             <span
                               className="text-[1.67cqw] font-bold truncate max-w-[16.67cqw] pt-[0.09cqh]"
@@ -476,7 +488,7 @@ export default function RoomList() {
                           </div>
 
                           {/* [중앙 영역] 주사위 + 정보 그룹 - 48px = 2.5cqw, 52px = 2.71cqw gap, 24px = 1.25cqw text */}
-                          <div className="absolute left-[50%] -translate-x-1/2 flex items-center gap-[2.71cqw]">
+                          <div className="flex-1 flex items-center justify-center gap-[2.71cqw]">
                             {/* 주사위 */}
                             <div
                               className="w-[2.5cqw] h-[2.5cqw] bg-[#8B5E83]"
@@ -504,7 +516,7 @@ export default function RoomList() {
                                     maskSize: 'contain',
                                   }}
                                 />
-                                <span className="truncate max-w-[6.25cqw]">{room.hostNickname}</span>
+                                <span className="truncate w-[6.25cqw]">{room.hostNickname}</span>
                               </div>
                               <div
                                 className="flex items-center gap-[0.42cqw] text-[1.25cqw] font-bold"
@@ -526,7 +538,7 @@ export default function RoomList() {
                           </div>
 
                           {/* [우측 영역] 캐릭터 프리뷰 + 입장 버튼 - 40px = 2.08cqw gap */}
-                          <div className="ml-auto flex items-center gap-[2.08cqw]">
+                          <div className="w-[22.5cqw] shrink-0 flex items-center justify-end gap-[2.08cqw]">
                             {/* 캐릭터 프리뷰 - 60px = 3.13cqw 슬롯 */}
                             <RoomCharacterImages players={playersPreview} maxSlots={Math.min(room.maxPlayers, 4)} />
 
@@ -681,7 +693,7 @@ export default function RoomList() {
 
         {searchOpen && (
           <SearchModal
-            initialKeyword={keyword}
+            initialKeyword=""
             onClose={() => setSearchOpen(false)}
             onSearch={(newKeyword) => {
               setKeyword(newKeyword);
@@ -692,6 +704,24 @@ export default function RoomList() {
         )}
 
         {inviteCodeOpen && <InviteCodeModal onClose={() => setInviteCodeOpen(false)} onSubmit={handleInviteCode} />}
+
+        {/* 강퇴 알림 모달 */}
+        {showKickedAlert && (
+          <div className="fixed inset-0 bg-black/60 z-[9999] flex items-center justify-center backdrop-blur-md">
+            <div className="bg-white rounded-[2.08cqw] p-[2.08cqw] shadow-2xl w-[31.25cqw] flex flex-col items-center">
+              <h2 className="text-[1.67cqw] font-black mb-[1.85cqh]" style={{ color: COLORS.roomList.textMain }}>
+                방장에 의해 강퇴되었습니다
+              </h2>
+              <button
+                onClick={() => setShowKickedAlert(false)}
+                className="w-[12cqw] h-[5cqh] rounded-[1.25cqw] text-white text-[1.46cqw] font-bold hover:brightness-105"
+                style={{ backgroundColor: COLORS.roomList.btnMain }}
+              >
+                확인
+              </button>
+            </div>
+          </div>
+        )}
         {activeGame && !createOpen && !joinOpen && !searchOpen && !inviteCodeOpen && !transitioning && (
           <div
             className="fixed inset-0 bg-black/60 z-[200] flex items-center justify-center backdrop-blur-md"
@@ -704,12 +734,17 @@ export default function RoomList() {
               <h2 className="text-[1.67cqw] font-black mb-[1.85cqh]" style={{ color: COLORS.roomList.textMain }}>
                 진행 중인 게임이 있습니다
               </h2>
-              <p className="text-[1.25cqw] font-bold mb-[3.7cqh]" style={{ color: COLORS.roomList.textMain, opacity: 0.7 }}>
+              <p
+                className="text-[1.25cqw] font-bold mb-[3.7cqh]"
+                style={{ color: COLORS.roomList.textMain, opacity: 0.7 }}
+              >
                 다시 참여하시겠습니까?
               </p>
               <div className="flex gap-[0.83cqw] w-full">
                 <button
-                  onClick={() => {setActiveGame(null);}}
+                  onClick={() => {
+                    setActiveGame(null);
+                  }}
                   className="flex-1 h-[6.48cqh] rounded-[1.25cqw] bg-gray-300 text-white text-[1.46cqw] font-bold hover:brightness-105"
                 >
                   나중에

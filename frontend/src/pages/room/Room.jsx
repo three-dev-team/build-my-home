@@ -71,6 +71,7 @@ function Room() {
   // 신고 상태 (UI 전용) (Report States)
   const [showReportModal, setShowReportModal] = useState(false);
   const [reportTarget, setReportTarget] = useState(null);
+  const [reportTitle, setReportTitle] = useState('');
   const [reportReason, setReportReason] = useState('');
 
   // [New] 준비 상태 경고 모달
@@ -218,7 +219,10 @@ function Room() {
             }));
           }
           if (data.type === 'PLAYER_KICKED') {
-            if (Number(data.memberId) === Number(getMyIdFromToken())) setShowKickedAlert(true);
+            if (Number(data.memberId) === Number(getMyIdFromToken())) {
+              sessionStorage.removeItem('joinedRoom');
+              navigate('/room-list', { state: { kicked: true } });
+            }
           }
         });
         client.publish({ destination: '/app/rooms/get-players', body: JSON.stringify({ roomId: roomId }) });
@@ -295,13 +299,28 @@ function Room() {
   // 신고 UI 액션 (Report UI Actions)
   const handleReport = (player) => {
     setReportTarget(player);
+    setReportTitle('');
     setReportReason('');
     setShowReportModal(true);
   };
-  const submitReport = () => {
-    // 실제 서버 전송 로직은 없음 (UI Only)
-    console.log(`Reported ${reportTarget?.nickname}: ${reportReason}`);
-    alert('신고가 접수되었습니다.');
+  const submitReport = async () => {
+    if (!reportTitle.trim() || !reportReason.trim()) return;
+    try {
+      const token = sessionStorage.getItem('token');
+      const formData = new FormData();
+      formData.append('title', reportTitle);
+      formData.append('content', `* 신고 유저 닉네임: ${reportTarget?.nickname}\n\n* 신고 사유:\n${reportReason}`);
+      formData.append('category', 'USER_REPORT');
+      await fetch('/api/member/inquiries', {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        body: formData,
+      });
+      alert('신고가 접수되었습니다.');
+    } catch (error) {
+      console.error('신고 실패:', error);
+      alert('신고 접수에 실패했습니다.');
+    }
     setShowReportModal(false);
     setReportTarget(null);
   };
@@ -325,7 +344,7 @@ function Room() {
         {/* --- 오버레이 (강퇴, 카운트다운) --- */}
         {showKickConfirm && (
           <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
-            <div className="bg-white rounded-[1.67cqw] p-[1.67cqw] border-[0.21cqw] border-[#ff6b6b] text-center">
+            <div className="bg-white rounded-[1.67cqw] p-[1.67cqw] text-center">
               <h3 className="text-[1.25cqw] font-black mb-[0.83cqw]">강퇴하시겠습니까?</h3>
               <div className="flex gap-[0.83cqw] justify-center">
                 <button
@@ -373,8 +392,8 @@ function Room() {
 
         {/* --- 신고 모달 (UI 전용) --- */}
         {showReportModal && (
-          <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center animate-fade-in">
-            <div className="bg-white rounded-[1.67cqw] p-[1.67cqw] w-[26.04cqw] border-[0.21cqw] border-[#ff6b6b] shadow-2xl flex flex-col items-center relative">
+          <div className="fixed inset-0 z-[9999] bg-black/50 flex items-center justify-center animate-fade-in">
+            <div className="bg-white rounded-[1.67cqw] p-[1.67cqw] w-[26.04cqw] shadow-2xl flex flex-col items-center relative">
               {/* 헤더 */}
               <div className="flex flex-col items-center gap-[0.42cqw] mb-[1.25cqw]">
                 <ExclamationTriangleIcon className="w-[2.5cqw] h-[2.5cqw] text-[#ff6b6b]" />
@@ -385,7 +404,16 @@ function Room() {
                 </p>
               </div>
 
-              {/* 텍스트 입력 */}
+              {/* 제목 입력 */}
+              <input
+                className="w-full h-[3.13cqw] bg-[#F9F0EA] rounded-[0.63cqw] px-[0.83cqw] text-[#594E36] font-bold text-[0.94cqw] focus:outline-none focus:ring-2 focus:ring-[#E76C21] mb-[0.63cqw] placeholder-gray-400"
+                placeholder="신고 제목"
+                value={reportTitle}
+                onChange={(e) => setReportTitle(e.target.value)}
+                maxLength={25}
+              />
+
+              {/* 사유 입력 */}
               <textarea
                 className="w-full h-[6.25cqw] bg-[#F9F0EA] rounded-[0.63cqw] p-[0.83cqw] text-[#594E36] font-bold text-[0.94cqw] resize-none focus:outline-none focus:ring-2 focus:ring-[#E76C21] mb-[1.25cqw] placeholder-gray-400"
                 placeholder="신고 사유를 작성해주세요..."
