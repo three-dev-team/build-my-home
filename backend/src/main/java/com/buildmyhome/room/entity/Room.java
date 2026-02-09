@@ -41,9 +41,8 @@ public class Room extends BaseTimeEntity {
   @Column
   private String password;
 
-  @Column(unique = true, length = 6)
+  @Column(unique = true)
   private String inviteCode;
-
 
   public enum Status {
     WAITING, // 대기 중

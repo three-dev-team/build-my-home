@@ -20,7 +20,9 @@ export default function AlertModal({ isOpen, icon, title, message, confirmText =
         <h2 className="text-[1.4cqw] font-bold text-[#594E36] mb-[1cqh]">{title}</h2>
 
         {/* 메시지 */}
-        <div className="text-[1cqw] text-[#7B6C53] mb-[2cqh] leading-relaxed">{message}</div>
+        <div className="text-[1cqw] text-[#7B6C53] mb-[2cqh] leading-relaxed" style={{ whiteSpace: 'pre-line' }}>
+          {message}
+        </div>
 
         {/* 확인 버튼 */}
         <button

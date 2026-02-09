@@ -180,7 +180,7 @@ export default function Home() {
         {/* 정지 안내 모달 */}
         <AlertModal
           isOpen={showSuspendModal}
-          message={`🚫 계정이 정지되었습니다.\n\n운영 정책 위반으로 게임 이용이\n제한되었습니다.\n\n정지 해제: ${formatSuspendedUntil()}`}
+          message={`🚫 계정이 정지되었습니다.\n\n운영 정책 위반으로 게임 이용이\n제한되었습니다.\n\n정지 해제: ${formatSuspendedUntil()}\n\n이의제기 신청은 문의하기를 이용해주세요.`}
           onConfirm={() => setShowSuspendModal(false)}
         />
       </div>
