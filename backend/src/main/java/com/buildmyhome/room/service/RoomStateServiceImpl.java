@@ -90,6 +90,11 @@ public class RoomStateServiceImpl implements RoomStateService {
   @Override
   public void createRoom(Long roomId, int totalRounds, int maxPlayers) {
     RoomState room = new RoomState(roomId, totalRounds, maxPlayers);
+    // maxPlayers에 따라 초과 슬롯 자동 잠금 (1-based index)
+    // 예: maxPlayers=2이면 슬롯 3,4 잠금, maxPlayers=3이면 슬롯 4 잠금
+    for (int i = maxPlayers + 1; i <= 4; i++) {
+      room.toggleLock(i);
+    }
     roomStates.put(roomId, room);
   }
 
