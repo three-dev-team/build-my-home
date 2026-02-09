@@ -8,6 +8,7 @@ export default function usePlayTimeWarning(warningMinutes = 120) {
   const [showWarning, setShowWarning] = useState(false);
   const [playMinutes, setPlayMinutes] = useState(0);
   const intervalRef = useRef(null);
+  const lastWarningMultiple = useRef(0);
 
   useEffect(() => {
     const token = sessionStorage.getItem('token');
@@ -28,7 +29,12 @@ export default function usePlayTimeWarning(warningMinutes = 120) {
 
         setPlayMinutes(diffMinutes);
 
-        if (diffMinutes >= warningMinutes) {
+        // 현재 도달한 배수
+        const currentMultiple = Math.floor(diffMinutes / warningMinutes);
+
+        // 새로운 배수에 도달했을 때만 경고
+        if (currentMultiple > 0 && currentMultiple > lastWarningMultiple.current) {
+          lastWarningMultiple.current = currentMultiple;
           setShowWarning(true);
         }
       };
