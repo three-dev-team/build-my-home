@@ -25,4 +25,7 @@ public interface GameStateService {
 
     // memberId로 참여 중인 게임의 roomId 조회 (없으면 null)
     Long findActiveGameByMemberId(Long memberId);
+
+    // 끊김 상태 5초동안 저장 후 진짜 이탈 처리
+    void markDisconnected(Long roomId, Long memberId);
 }
