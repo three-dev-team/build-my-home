@@ -28,9 +28,9 @@ export default function RewardGetScreen({
                                           dropRunId = 0,
                                           onDropOneDone,
                                           viewerNameText,
-                                          viewerHouseLevel,
                                           viewerNameColor,
-                                          viewerOwnedResources = {},
+                                          actorHouseLevel,
+                                          actorOwnedResources = {},
                                         }) {
   const [k1, k2] = dropKeys;
 
@@ -48,6 +48,7 @@ export default function RewardGetScreen({
 
   // 관전자 이름(없으면 빈 문자열)
   const viewerName = useMemo(() => String(viewerNameText ?? '').trim(), [viewerNameText]);
+
   const { subLine, nextLevelNameForHighlight, viewerNameForHighlight } = useMemo(() => {
     if (kind === 'fruit') {
       const line = viewerName
@@ -61,8 +62,12 @@ export default function RewardGetScreen({
       };
     }
 
-    // resource
-    const { nextLevel, isNeeded } = isAnyRewardNeededForNextLevel(viewerHouseLevel, dropKeys, viewerOwnedResources);
+    // resource: "현재 턴 플레이어(actor=cp)" 기준으로 다음 집 필요 여부 판단
+    const { nextLevel, isNeeded } = isAnyRewardNeededForNextLevel(
+      actorHouseLevel,
+      dropKeys,
+      actorOwnedResources
+    );
 
     if (!nextLevel) {
       return {
@@ -79,7 +84,7 @@ export default function RewardGetScreen({
       nextLevelNameForHighlight: nextLevel.name,
       viewerNameForHighlight: '',
     };
-  }, [kind, viewerName, viewerHouseLevel, dropKeys, viewerOwnedResources]);
+  }, [kind, viewerName, actorHouseLevel, dropKeys, actorOwnedResources]);
 
   // Subtitle 본문(2줄)
   const contentText = useMemo(() => `${mainLine}\n${subLine}`, [mainLine, subLine]);
@@ -92,10 +97,12 @@ export default function RewardGetScreen({
     if (aName) list.push({ text: aName, color: rewardHighlightColor });
     if (bName) list.push({ text: bName, color: rewardHighlightColor });
 
+    // fruit에서만 관전자 이름 하이라이트
     if (kind === 'fruit' && viewerNameForHighlight && viewerNameColor) {
       list.push({ text: viewerNameForHighlight, color: viewerNameColor });
     }
 
+    // resource에서만 다음 집 하이라이트
     if (kind === 'resource' && nextLevelNameForHighlight) {
       list.push({ text: nextLevelNameForHighlight, color: COLORS.primary });
     }
