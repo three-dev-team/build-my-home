@@ -10,31 +10,52 @@ const MainBoardPage = ({
                        }) => {
   // movePath 기반 이동 애니메이션용 임시 position 상태
   const [animatingPosition, setAnimatingPosition] = useState(null);
-  const isMovingNow = animatingPosition !== null;
+
+  const [isAnimating, setIsAnimating] = useState(false);
 
   useEffect(() => {
-    // movePath 기반 position 단계 갱신 처리
     if (movePath && movePath.length > 0) {
       const timers = [];
+      setIsAnimating(true);
 
-      // movePath step별 animatingPosition 설정 타이머 등록
       movePath.forEach((position, index) => {
-        const timer = setTimeout(() => setAnimatingPosition(position), index * 500);
+        const timer = setTimeout(() => {
+          setAnimatingPosition(position);
+        }, index * 500);
         timers.push(timer);
       });
 
-      // 애니메이션 종료 처리 및 onMoveComplete 콜백 호출
-      const finalPositionTimer = setTimeout(() => {
-        setAnimatingPosition(null);
+      const finalPosition = movePath[movePath.length - 1];
+
+      const doneTimer = setTimeout(() => {
+        setAnimatingPosition(finalPosition);
+        setIsAnimating(false);
         onMoveComplete?.();
       }, movePath.length * 500 + 200);
 
-      timers.push(finalPositionTimer);
+      timers.push(doneTimer);
 
-      // 타이머 정리 처리
       return () => timers.forEach((t) => clearTimeout(t));
     }
   }, [movePath, onMoveComplete]);
+
+  // 서버/상태(players)가 최종 위치로 갱신되면 그때 animatingPosition 해제
+  useEffect(() => {
+    if (animatingPosition === null) return;
+    if (isAnimating) return;
+
+    const me = (players || []).find(
+      (p) => Number(p?.memberId) === Number(currentPlayerId)
+    );
+    if (!me) return;
+
+    const serverPos = Number(me?.position);
+    const finalPos = Number(animatingPosition);
+
+    if (Number.isFinite(serverPos) && Number.isFinite(finalPos) && serverPos === finalPos) {
+      setAnimatingPosition(null);
+    }
+  }, [players, currentPlayerId, animatingPosition, isAnimating]);
 
   // 타일별 슬롯 인덱스 및 인원 수 계산
   const { slotIndexByMemberId, countByPosition } = useMemo(() => {
@@ -42,7 +63,6 @@ const MainBoardPage = ({
     const countMap = new Map(); // position -> count
     const byPos = new Map(); // position -> players[]
 
-    // position 기준 플레이어 그룹핑 처리
     (players || []).forEach((p) => {
       const pos = Number(p?.position);
       if (!Number.isFinite(pos)) return;
@@ -50,7 +70,6 @@ const MainBoardPage = ({
       byPos.get(pos).push(p);
     });
 
-    // position별 인원 수 집계 및 슬롯 인덱스 부여 처리
     byPos.forEach((arr, pos) => {
       countMap.set(Number(pos), arr.length);
 
@@ -69,26 +88,15 @@ const MainBoardPage = ({
   return (
     <div className="game-board">
       <div className="board-layer">
-        {/* 플레이어 말 렌더링 */}
         {(players || []).map((player) => {
           const memberId = Number(player?.memberId);
-
-          // memberId 기준 고정 슬롯 인덱스
           const slotIndex = slotIndexByMemberId.get(memberId) ?? 0;
-
-          // 현재 플레이어 이동 중 position 우선 적용
+          const isCurrent = Number(memberId) === Number(currentPlayerId);
           const finalPos =
-            Number(player?.memberId) === Number(currentPlayerId) && animatingPosition !== null
-              ? animatingPosition
-              : player?.position;
-
-          // 동일 타일 인원 수 기반 오프셋 분산용 countOnTile
+            isCurrent && animatingPosition !== null ? animatingPosition : player?.position;
           const posNum = Number(finalPos ?? player?.position);
           const countOnTile = Number.isFinite(posNum) ? (countByPosition.get(posNum) ?? 1) : 1;
-
-          // 현재 턴 말만 이동 transition ON
-          const isCurrent = Number(player?.memberId) === Number(currentPlayerId);
-          const isMovingMarker = isCurrent && isMovingNow;
+          const isMovingMarker = isCurrent && isAnimating;
 
           return (
             <PlayerMarker
