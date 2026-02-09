@@ -1,23 +1,23 @@
-/* MainBoardPage.css */
-
 .game-board {
-  position: relative;
-  width: 700px; /* 7칸 * 100px */
-  height: 700px; /* 7칸 * 100px */
-  margin: 40px auto;
+    position: absolute;
+    inset: 0;
+    z-index: 1600;
+    pointer-events: none;
+    container-type: size;
 }
 
-.tile {
-  position: absolute;
-  width: 50px;
-  height: 50px;
-  /*border: 1px solid white;*/
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 14px;
-  color: rgba(0, 0, 0, 0.2);
-  text-align: center;
-  word-break: keep-all;
+.board-layer {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+}
+.game-board {
+    position: absolute;
+    inset: 0;
+    z-index: 1600;
+    pointer-events: none;
+    container-type: size;
+    --sx: calc(100cqw / 1920);
+    --sy: calc(100cqh / 1080);
+    --s: min(var(--sx), var(--sy));
 }
