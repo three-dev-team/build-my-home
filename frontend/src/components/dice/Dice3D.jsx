@@ -123,8 +123,8 @@ const Dice3D = ({ value, onAnimationEnd }) => {
 
   return (
     <div className="dice-container" style={{
-      width: 'calc(150 * var(--s))',
-      height: 'calc(150 * var(--s))',
+      width: '90%',
+      height: '90%',
       position: 'relative',
       display: 'flex',
       justifyContent: 'center',
