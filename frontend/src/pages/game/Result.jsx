@@ -61,6 +61,15 @@ const Result = ({ gameState, myId, roomId, onLeave }) => {
     });
   }, [sortedPlayers]);
 
+  // Result 마운트 중 body 스크롤 차단 (confetti 캔버스로 인한 스크롤바 방지)
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
+
   // 10초 카운트다운 및 자동 나가기
   useEffect(() => {
     const timer = setInterval(() => {
@@ -80,10 +89,10 @@ const Result = ({ gameState, myId, roomId, onLeave }) => {
   }, [navigate]);
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-black/60 flex items-center justify-center backdrop-blur-sm">
+    <div className="fixed inset-0 z-[9999] bg-black/60 flex items-center justify-center backdrop-blur-sm overflow-hidden">
       <div
         className={[
-          'w-full max-w-4xl max-h-[90vh] overflow-y-auto px-8 py-10 rounded-[50px]',
+          'w-full max-w-4xl max-h-[90vh] overflow-y-auto overflow-x-hidden px-8 py-10 rounded-[50px]',
           TONE.cardBg,
           'border-[6px] shadow-[0_30px_100px_rgba(0,0,0,0.5)]',
           TONE.border,
@@ -91,7 +100,7 @@ const Result = ({ gameState, myId, roomId, onLeave }) => {
       >
         {/* 헤더 */}
         <div className="text-center mb-10">
-          <h1 className={`text-4xl sm:text-5xl font-black ${TONE.brownText} drop-shadow-sm mb-4`}>🎉 게임 종료 🎉</h1>
+          <h1 className={`text-4xl sm:text-5xl font-black ${TONE.brownText} drop-shadow-sm mb-4`}>게임 종료</h1>
           <p className={`text-lg font-bold ${TONE.brownText2}`}>드디어 꿈꾸던 마이홈이 완성되었습니다!</p>
         </div>
 
@@ -148,15 +157,13 @@ const Result = ({ gameState, myId, roomId, onLeave }) => {
                   </div>
 
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-sm font-bold text-[#8a6e57]">
-                    <span>📉 대출금: {player.loan.toLocaleString()} bells</span>
+                    <span>대출금: {player.loan.toLocaleString()} bells</span>
                     <span className="w-[1px] h-3 bg-[#d6b98a]" />
-                    <span>🏡 집 Level: {player.houseLevel}</span>
+                    <span>집 Level: {player.houseLevel}</span>
                     <span className="w-[1px] h-3 bg-[#d6b98a]" />
-                    <span>💰 자산: {player.bell.toLocaleString()} bells</span>
+                    <span>자산: {player.bell.toLocaleString()} bells</span>
                   </div>
                 </div>
-
-                {isWinner && <div className="absolute -top-4 -right-2 text-4xl animate-bounce">👑</div>}
               </div>
             );
           })}
@@ -177,7 +184,7 @@ const Result = ({ gameState, myId, roomId, onLeave }) => {
                 'bg-[#4A90E2] hover:bg-[#357ABD] border-[#2E6DA4]',
               ].join(' ')}
             >
-              계속하기 🔄
+              계속하기
             </button>
             <button
               onClick={() => {
@@ -189,7 +196,7 @@ const Result = ({ gameState, myId, roomId, onLeave }) => {
                 TONE.greenBtn,
               ].join(' ')}
             >
-              나가기 🚪
+              나가기
             </button>
           </div>
         </div>

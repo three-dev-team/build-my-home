@@ -85,6 +85,7 @@
 /* 커서 설정 */
 html,
 body {
+  overflow: hidden;
   /* 전체 영역 기본 커서 */
   cursor:
     url('/images/icon-cursor.svg') 6 6,
