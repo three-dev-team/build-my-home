@@ -83,16 +83,16 @@ public class GameLeaveController {
             return;
         }
 
-        // 이미 이탈 처리된 경우 중복 방지
-        if (player.isDisconnected()) {
-            log.info(">>> ⚠️️ 이미 이탈 상태 - memberId: {}", memberId);
+        // 이미 이탈 처리된 경우 중복 방지 (turnOrder에서 이미 제거됐는지로 판단)
+        if (player.isDisconnected() && !gameState.getTurnOrder().contains(memberId)) {
+            log.info(">>> ⚠️️ 이미 이탈 처리 완료 - memberId: {}", memberId);
             return;
         }
 
         // 1. 서비스에 이탈 처리 위임
         String result = gameStateService.removePlayerFromGame(roomId, memberId);
 
-        // 2. 비현재 턴 이탈만 토스트 알림
+        // 2. 이탈한 플레이어 다른 플레이어에게 토스트 (현재 턴 제외 -> player_left jsx에서 별도 처리)
         if ("REMOVED".equals(result)) {
             messagingTemplate.convertAndSend(
                     "/topic/games/" + roomId,

@@ -7,11 +7,11 @@ public class GameConstants {
     public static final int DICE_MAX = 6;
 
     // 보드
-    public static final int BOARD_SIZE = 24;
+    public static final int BOARD_SIZE = 28;
 
     // KK 공연장
     public static final int KK_ENTRY_FEE = 100;
-    public static final int KK_SONG_COUNT = 2;
+    public static final int KK_SONG_COUNT = 4;
 
     // 스탬프 보상
     public static final int[] STAMP_REWARDS = {0, 50, 200, 1000};

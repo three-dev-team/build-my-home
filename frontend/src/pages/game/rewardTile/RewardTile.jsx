@@ -34,14 +34,14 @@ const pickCurrentPlayer = (gameState) => {
 const hasAnyPositive = (obj) =>
   !!obj && typeof obj === 'object' && Object.keys(obj).some((k) => Number(obj?.[k] || 0) > 0);
 
-// 관전자 표시용 이름/집레벨/이름색 + 보유 재료(resources) 확정 추출
+// 관전자 표시용 이름/집레벨/이름색 + 보유 재료(resources) 확정 추출 (내 정보)
 const pickViewerInfo = (gameState, myId) => {
   const players = Array.isArray(gameState?.players) ? gameState.players : [];
   const me = players.find((p) => Number(p?.memberId) === Number(myId)) || null;
   const ssNick = (sessionStorage.getItem('nickname') || '').trim();
   const viewerNameText = (String(me?.nickname ?? '').trim() || ssNick || '').trim();
-  const rawLevel = me?.houseLevel ?? null; // 백엔드: HouseLevel enum이 내려올 것
-  const viewerHouseLevel = rawLevel; // 숫자/문자열/enum 다 올 수 있어서 그대로 전달(houseLevel util이 처리)
+  const rawLevel = me?.houseLevel ?? null;
+  const viewerHouseLevel = rawLevel;
   const myCharId = me?.characterId ?? null;
   const ch = CHARACTERS.find((c) => Number(c.id) === Number(myCharId)) || null;
   const viewerNameColor = ch?.color;
@@ -115,7 +115,22 @@ export default function RewardTile({ roomId, stompClient, gameState, isMyTurn })
 
     const ch = CHARACTERS.find((c) => Number(c.id) === Number(picked.characterId)) || null;
     dialogColorRef.current = ch?.color;
-  }, [myTurn, uiStep, gameState?.currentPlayerId, gameState?.players, myId, viewerInfo?.viewerNameText, viewerInfo?.viewerNameColor]);
+  }, [
+    myTurn,
+    uiStep,
+    gameState?.currentPlayerId,
+    gameState?.players,
+    myId,
+    viewerInfo?.viewerNameText,
+    viewerInfo?.viewerNameColor,
+  ]);
+
+  // 현재 턴 플레이어(cp) 기준 houseLevel/resources (resource 멘트 판정용)
+  const actorHouseLevel = useMemo(() => cp?.houseLevel ?? null, [cp?.houseLevel]);
+  const actorOwnedResources = useMemo(() => {
+    const r = cp?.resources;
+    return r && typeof r === 'object' ? r : {};
+  }, [cp?.resources]);
 
   // 화면 표시용 파생 데이터 묶음
   const derived = useMemo(() => {
@@ -290,9 +305,9 @@ export default function RewardTile({ roomId, stompClient, gameState, isMyTurn })
                   dropRunId={dropRunId}
                   onDropOneDone={onDropOneDone}
                   viewerNameText={dialogViewerName}
-                  viewerHouseLevel={viewerInfo?.viewerHouseLevel}
                   viewerNameColor={dialogViewerColor}
-                  viewerOwnedResources={viewerInfo?.viewerOwnedResources}
+                  actorHouseLevel={actorHouseLevel}
+                  actorOwnedResources={actorOwnedResources}
                 />
               </motion.div>
             )}

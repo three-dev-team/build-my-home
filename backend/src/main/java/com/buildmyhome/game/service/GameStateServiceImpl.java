@@ -304,6 +304,19 @@ public class GameStateServiceImpl implements GameStateService {
         return null;
     }
 
+    @Override
+    public void markDisconnected(Long roomId, Long memberId) {
+        GameState gameState = gameStates.get(roomId);
+        if (gameState == null) return;
+
+        synchronized (gameState) {
+            GamePlayerState player = gameState.getPlayers().get(memberId);
+            if (player == null) return;
+            player.setDisconnected(true);
+            player.setDisconnectedAt(LocalDateTime.now());
+        }
+    }
+
     // 라운드 증가 처리 메서드
     private void turnToNextRound(GameState gameState) {
         gameState.setCurrentRound(gameState.getCurrentRound() + 1); // 라운드 증가

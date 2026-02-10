@@ -1,19 +1,53 @@
-/* PlayerMarker.css */
-
 .player-marker {
-  position: absolute;
-  width: 60px;
-  height: 60px;
-  z-index: 100;
-  /* 타일 100px의 중앙: (100 - 60) / 2 = 20px */
-  margin-left: 20px;
-  margin-top: 20px;
-  transition: all 0.4s ease-out;
-  pointer-events: none;
+    position: absolute;
+    z-index: 2100;
+    pointer-events: none;
+    transform: translate(-50%, -100%);
+    transition: none;
+}
+
+.player-marker.is-moving {
+    transition: left 0.4s ease-in-out, top 0.4s ease-in-out;
+}
+
+.player-marker-wrap {
+    position: relative;
+    width: calc(54 * var(--s));
+    height: calc(92 * var(--s));
+    overflow: visible;
+}
+
+.player-marker-box {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
 }
 
 .character-img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    transform: translateX(-50%);
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center bottom;
+    user-select: none;
+    pointer-events: none;
+}
+
+.player-marker .char-shadow-wrap {
+    width: 100%;
+    height: 100%;
+}
+
+.player-marker .char-shadow {
+    width: 78%;
+    height: 12%;
+    bottom: -6%;
+    left: 50%;
+    transform: translateX(-50%);
+    filter: blur(calc(1 * var(--s)));
+    opacity: 1;
 }

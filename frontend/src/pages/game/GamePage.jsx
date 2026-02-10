@@ -41,7 +41,6 @@ import { CHARACTERS } from '../../constants/characters.js';
 import CustomDice from './itemEffect/CustomDice.jsx';
 import GoldDice from './itemEffect/GoldDice.jsx';
 import DoubleDice from './itemEffect/DoubleDice.jsx';
-import { leaveGame, leaveGameBeacon } from '../../utils/leaveUtils.js';
 import PlayerLeft from './PlayerLeft.jsx';
 import AutoMove from '../../components/common/AutoMove.jsx';
 import AlertModal from '../../components/common/AlertModal.jsx';
@@ -199,7 +198,7 @@ const GamePage = () => {
   // 배경 이미지
   const BG = {
     ATM: '/images/board/bg-atm.webp',
-    BOARD: '/images/bg-home.png',
+    BOARD: '/images/bg-board.webp',
   };
 
   const bgImage = useMemo(() => {
@@ -219,8 +218,21 @@ const GamePage = () => {
     if (status === 'WAITING_HOUSE') return `url('${houseBgUrl}')`;
     return `url('${BG.BOARD}')`;
   }, [atmOpen, atmUsingMemberId, inventoryOpen, inventoryUsingMemberId, status, houseBgUrl]);
-  const cssVars = useMemo(() => ({ '--bg-image': bgImage }), [bgImage]);
 
+  const cssVars = useMemo(
+    () => ({
+      '--bg-image': bgImage,
+      '--hud-white-65': withAlpha(COLORS.ac.white, 0.65),
+      '--hud-white-88': withAlpha(COLORS.ac.white, 0.88),
+      '--hud-white-92': withAlpha(COLORS.ac.white, 0.92),
+      '--hud-white-95': withAlpha(COLORS.ac.white, 0.95),
+      '--hud-glass-14': withAlpha(COLORS.ac.white, 0.14),
+      '--hud-glass-18': withAlpha(COLORS.ac.white, 0.18),
+      '--hud-glass-20': withAlpha(COLORS.ac.white, 0.20),
+      '--shadow-25': withAlpha(COLORS.ac.black, 0.25),
+    }),
+    [bgImage]
+  );
 
   // ---------------------- [START]: 보안 관련된 코드입니다 수정 시 담당자(@Tiffany) 보고 후 수정 ---------------------- //
   // 잘못된 경로로 게임 페이지에 들어오는 걸 막는 코드
@@ -422,9 +434,6 @@ const GamePage = () => {
 
     // 언마운트 시 연결 해제
     return () => {
-      if (!gameCancelledRef.current && client.active && client.connected) {
-        leaveGame(client, roomId);
-      }
       if (client.active) {
         client.deactivate();
         setStompClient(null);
@@ -432,17 +441,6 @@ const GamePage = () => {
       }
     };
   }, [roomId, token, navigate, myId]);
-
-  // 탭 닫기/새로고침 시 서버에 leave 알림
-  useEffect(() => {
-    const handleBeforeUnload = () => {
-      if (!gameCancelledRef.current) {
-        leaveGameBeacon(roomId);
-      }
-    };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [roomId]);
 
   // ---------------------- [END]: 보안 관련된 코드입니다 수정 시 담당자 보고 후 수정 ---------------------- //
 
@@ -598,8 +596,11 @@ const GamePage = () => {
 
   // 룸 나가기(룸리스트 leave publish)
   const handleLeaveRoom = () => {
-    if (!stompClient) return;
-    console.log('>>> 🚪 Explicit Leave Room Triggered');
+    if (!stompClient?.connected) return;
+    stompClient.publish({
+      destination: '/app/games/leave',
+      body: JSON.stringify({ roomId: Number(roomId) }),
+    });
     stompClient.publish({
       destination: '/app/roomlist/rooms/leave',
       body: JSON.stringify({ roomId: Number(roomId) }),
@@ -638,7 +639,13 @@ const GamePage = () => {
         <div className="game-stage">
           {/* 이탈 유저 토스트 */}
           {disconnectToast && (
-            <div style={{ position: 'absolute', top: 'calc(40 * var(--s))', left: '50%', transform: 'translateX(-50%)', zIndex: 99999 }}>
+            <div style={{
+              position: 'absolute',
+              top: 'calc(40 * var(--s))',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              zIndex: 99999,
+            }}>
               <AutoMove
                 text={`${disconnectToast}의 연결이 끊어졌습니다`}
                 widthPx={600}
@@ -1003,7 +1010,8 @@ const GamePage = () => {
                     body: JSON.stringify({ roomId, type: 'GOLD_DICE_ROLL' }),
                   });
                 }}
-                onAnimationEnd={() => {}}
+                onAnimationEnd={() => {
+                }}
                 onComplete={() => {
                   stompClient.publish({
                     destination: '/app/games/action',
